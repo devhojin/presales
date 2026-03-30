@@ -4,6 +4,43 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* 상품 상세 설명 스타일 */
+.product-description h3 {
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+.product-description h3:first-child {
+  margin-top: 0;
+}
+.product-description p {
+  margin-bottom: 1.2rem;
+  line-height: 1.85;
+  color: var(--muted-foreground);
+}
+.product-description ul, .product-description ol {
+  margin: 1rem 0 1.5rem;
+  padding-left: 1.5rem;
+}
+.product-description li {
+  margin-bottom: 0.5rem;
+  line-height: 1.75;
+  color: var(--muted-foreground);
+}
+.product-description li ul {
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+.product-description strong {
+  color: var(--foreground);
+}
+.product-description hr {
+  margin: 2.5rem 0;
+  border-color: var(--border);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

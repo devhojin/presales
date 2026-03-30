@@ -199,7 +199,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <h2 className="text-lg font-bold">상품 상세 설명</h2>
           </div>
           <div
-            className="p-6 sm:p-8 prose prose-base max-w-none prose-headings:text-foreground prose-headings:mt-8 prose-headings:mb-4 prose-p:text-muted-foreground prose-p:leading-relaxed prose-p:mb-4 prose-li:text-muted-foreground prose-li:leading-relaxed prose-strong:text-foreground prose-ul:my-4 prose-ol:my-4 prose-hr:my-12"
+            className="p-6 sm:p-8 product-description text-[15px]"
             dangerouslySetInnerHTML={{ __html: product.description_html }}
           />
         </div>
