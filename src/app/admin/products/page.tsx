@@ -123,6 +123,13 @@ export default function AdminProducts() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
+                      <Link
+                        href={`/admin/products/${product.id}`}
+                        className="p-1.5 rounded-md hover:bg-blue-50 text-gray-400 hover:text-blue-600"
+                        title="수정"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Link>
                       <button
                         onClick={() => togglePublish(product.id, product.is_published)}
                         className="p-1.5 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-600"
