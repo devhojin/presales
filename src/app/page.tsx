@@ -1,11 +1,71 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
-import { ProductCard } from '@/components/ProductCard'
-import { products } from '@/lib/data'
-import { FileText, Download, Globe, Handshake, ArrowRight } from 'lucide-react'
+import { type DbProduct, formatPrice, allTiers } from '@/lib/types'
+import { useCartStore } from '@/stores/cart-store'
+import { FileText, Download, Globe, Handshake, ArrowRight, ShoppingCart, Check } from 'lucide-react'
+
+function FeaturedCard({ product }: { product: DbProduct }) {
+  const tierInfo = allTiers.find((t) => t.id === product.tier)
+  const discount = product.original_price > 0 ? Math.round((1 - product.price / product.original_price) * 100) : 0
+  const { toggleItem, isInCart } = useCartStore()
+  const inCart = isInCart(product.id)
+
+  return (
+    <Link href={`/store/${product.id}`} className="group">
+      <div className="border border-border rounded-xl overflow-hidden bg-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+        <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+          {product.thumbnail_url ? (
+            <img src={product.thumbnail_url} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center"><span className="text-4xl">📄</span></div>
+          )}
+          {tierInfo && <Badge className={`absolute top-3 left-3 ${tierInfo.color} border text-xs`}>{tierInfo.label}</Badge>}
+          {!product.is_free && discount > 0 && <Badge className="absolute top-3 right-3 bg-red-500 text-white border-0 text-xs">-{discount}%</Badge>}
+          {product.is_free && <Badge className="absolute top-3 right-3 bg-emerald-500 text-white border-0 text-xs">무료</Badge>}
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleItem({ productId: product.id, title: product.title, price: product.price, originalPrice: product.original_price, thumbnail: product.thumbnail_url || '', format: product.format || '' }) }}
+            className={`absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md ${inCart ? 'bg-primary text-primary-foreground' : 'bg-white/90 text-gray-600 hover:bg-white hover:text-primary'}`}
+          >
+            {inCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
+          </button>
+        </div>
+        <div className="p-4 space-y-2">
+          <p className="text-xs text-muted-foreground">{product.categories?.name || '문서'}</p>
+          <h3 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">{product.title}</h3>
+          <div className="flex items-center gap-2">
+            {product.is_free ? <span className="text-base font-bold text-emerald-600">무료</span> : (
+              <>
+                <span className="text-base font-bold text-primary">{formatPrice(product.price)}</span>
+                {product.original_price > product.price && <span className="text-xs text-muted-foreground line-through">{formatPrice(product.original_price)}</span>}
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </Link>
+  )
+}
 
 export default function Home() {
-  const featuredProducts = products.slice(0, 4)
+  const [products, setProducts] = useState<DbProduct[]>([])
+
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('products')
+        .select('*, categories(id, name, slug)')
+        .eq('is_published', true)
+        .order('download_count', { ascending: false })
+        .limit(8)
+      setProducts(data || [])
+    }
+    load()
+  }, [])
 
   return (
     <div>
@@ -14,29 +74,18 @@ export default function Home() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.15),transparent_50%)]" />
         <div className="container mx-auto px-4 py-20 md:py-32 relative z-10">
           <div className="max-w-3xl">
-            <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 mb-6">
-              공공조달 제안서 전문 플랫폼
-            </Badge>
+            <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 mb-6">공공조달 제안서 전문 플랫폼</Badge>
             <h1 className="text-3xl md:text-5xl font-bold leading-tight mb-6">
-              공공조달의 복잡함을
-              <br />
-              <span className="text-blue-400">문서로 단순하게</span>
+              공공조달의 복잡함을<br /><span className="text-blue-400">문서로 단순하게</span>
             </h1>
             <p className="text-lg text-blue-100/80 mb-8 max-w-xl leading-relaxed">
-              나라장터·조달청 입찰에 최적화된 기술제안서, 가격제안서,
-              발표PT 템플릿. 실전 경험이 녹아든 문서로 수주 확률을 높이세요.
+              나라장터·조달청 입찰에 최적화된 기술제안서, 가격제안서, 발표PT 템플릿. 실전 경험이 녹아든 문서로 수주 확률을 높이세요.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/store"
-                className="inline-flex items-center justify-center h-11 px-6 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium text-sm transition-colors"
-              >
+              <Link href="/store" className="inline-flex items-center justify-center h-11 px-6 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium text-sm transition-colors">
                 템플릿 스토어 둘러보기 <ArrowRight className="ml-2 w-4 h-4" />
               </Link>
-              <Link
-                href="/consulting"
-                className="inline-flex items-center justify-center h-11 px-6 rounded-lg border border-blue-400/30 text-blue-200 hover:bg-blue-500/10 font-medium text-sm transition-colors"
-              >
+              <Link href="/consulting" className="inline-flex items-center justify-center h-11 px-6 rounded-lg border border-blue-400/30 text-blue-200 hover:bg-blue-500/10 font-medium text-sm transition-colors">
                 전문가 컨설팅 알아보기
               </Link>
             </div>
@@ -74,16 +123,13 @@ export default function Home() {
               <h2 className="text-2xl font-bold">인기 템플릿</h2>
               <p className="text-muted-foreground mt-1">가장 많이 찾는 공공조달 문서 템플릿</p>
             </div>
-            <Link
-              href="/store"
-              className="inline-flex items-center h-9 px-4 rounded-lg border border-border bg-background hover:bg-muted text-sm font-medium transition-colors"
-            >
+            <Link href="/store" className="inline-flex items-center h-9 px-4 rounded-lg border border-border bg-background hover:bg-muted text-sm font-medium transition-colors">
               전체보기 <ArrowRight className="ml-1 w-4 h-4" />
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {products.slice(0, 4).map((product) => (
+              <FeaturedCard key={product.id} product={product} />
             ))}
           </div>
         </div>
@@ -92,26 +138,11 @@ export default function Home() {
       {/* CTA */}
       <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            첫 입찰, 어디서부터 시작해야 할지 모르겠다면?
-          </h2>
-          <p className="text-blue-100/80 mb-8 max-w-lg mx-auto">
-            무료 입찰 가이드부터 전문가 1:1 컨설팅까지.
-            프리세일즈가 함께합니다.
-          </p>
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">첫 입찰, 어디서부터 시작해야 할지 모르겠다면?</h2>
+          <p className="text-blue-100/80 mb-8 max-w-lg mx-auto">무료 입찰 가이드부터 전문가 1:1 컨설팅까지. 프리세일즈가 함께합니다.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/store"
-              className="inline-flex items-center justify-center h-11 px-6 rounded-lg bg-white text-blue-700 hover:bg-blue-50 font-medium text-sm transition-colors"
-            >
-              무료 가이드 받기
-            </Link>
-            <Link
-              href="/consulting"
-              className="inline-flex items-center justify-center h-11 px-6 rounded-lg border border-white/30 text-white hover:bg-white/10 font-medium text-sm transition-colors"
-            >
-              컨설팅 상담 신청
-            </Link>
+            <Link href="/store" className="inline-flex items-center justify-center h-11 px-6 rounded-lg bg-white text-blue-700 hover:bg-blue-50 font-medium text-sm transition-colors">무료 가이드 받기</Link>
+            <Link href="/consulting" className="inline-flex items-center justify-center h-11 px-6 rounded-lg border border-white/30 text-white hover:bg-white/10 font-medium text-sm transition-colors">컨설팅 상담 신청</Link>
           </div>
         </div>
       </section>
