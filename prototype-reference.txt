@@ -1,0 +1,2062 @@
+Magic Patterns Artifact: 80fc81e9-f369-4528-bc44-14fc94f8b890
+======================================================================
+
+======================================================================
+FILE: pages/Home.tsx
+======================================================================
+
+import React, { useState } from 'react'
+import {
+  ArrowRightIcon,
+  FileTextIcon,
+  UsersIcon,
+  CheckCircle2Icon,
+  ShieldCheckIcon,
+  TargetIcon,
+  TrendingUpIcon,
+  ClipboardCheckIcon,
+  AlertTriangleIcon,
+  DownloadIcon,
+  BookOpenIcon,
+  PhoneIcon,
+  ChevronDownIcon,
+  ZapIcon,
+  SearchIcon,
+} from 'lucide-react'
+import { Button } from '../components/ui/Button'
+import { Card, CardContent } from '../components/ui/Card'
+import { Badge } from '../components/ui/Badge'
+import { products, formatPrice } from '../lib/data'
+
+interface HomeProps {
+  navigate: (page: string, params?: Record<string, number>) => void
+}
+
+export function Home({ navigate }: HomeProps) {
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
+
+  return (
+    <main className="flex-1">
+      {/* Hero Section — 공공조달 특화 */}
+      <section className="relative bg-[#0B1629] text-white pt-20 pb-28 overflow-hidden">
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff10_1px,transparent_1px),linear-gradient(to_bottom,#ffffff10_1px,transparent_1px)] bg-[size:40px_40px]" />
+        </div>
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-3xl mx-auto text-center">
+            <Badge className="mb-6 bg-blue-600/20 text-blue-300 border-blue-500/30 px-4 py-1.5">
+              공공조달 제안서 전문 플랫폼
+            </Badge>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6 tracking-tight">
+              공공입찰, 제안서 하나로
+              <br />
+              <span className="text-blue-400">수주율이 달라집니다</span>
+            </h1>
+            <p className="text-lg md:text-xl text-white/50 max-w-2xl mx-auto mb-10 leading-relaxed">
+              나라장터·조달청 입찰 경험 17년 전문가가 직접 만든
+              <br className="hidden md:block" />
+              기술제안서·가격제안서·발표PT 템플릿
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button
+                size="lg"
+                onClick={() => navigate('store')}
+                className="w-full sm:w-auto text-base bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                템플릿 스토어 바로가기 <ArrowRightIcon className="ml-2 w-5 h-5" />
+              </Button>
+              <button
+                className="w-full sm:w-auto h-12 rounded-md px-8 text-lg inline-flex items-center justify-center font-medium transition-colors border border-white/40 bg-transparent text-white hover:bg-white/10"
+              >
+                <DownloadIcon className="mr-2 w-5 h-5" />
+                무료 입찰 가이드 다운로드
+              </button>
+            </div>
+          </div>
+
+          {/* Trust indicators — 팀 기반 사실만 */}
+          <div className="mt-16 grid grid-cols-3 gap-8 max-w-2xl mx-auto text-center">
+            {[
+              { num: '17년+', label: '팀 평균 실무 경력' },
+              { num: '300+', label: '팀원 누적 프로젝트' },
+              { num: '85%', label: '팀원 수주 성공률' },
+            ].map((stat, i) => (
+              <div key={i}>
+                <div className="text-2xl md:text-3xl font-bold text-blue-400 mb-1">
+                  {stat.num}
+                </div>
+                <div className="text-xs text-white/40">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pain Point Section */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-bold text-primary mb-4">
+              처음 공공입찰, 이런 고민 있으시죠?
+            </h2>
+            <p className="text-muted-foreground">
+              프리세일즈가 모든 고민을 해결해드립니다
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+            {[
+              {
+                icon: AlertTriangleIcon,
+                pain: '제안서 목차를 어떻게 잡아야 할지 모르겠어요',
+                solution: '평가항목별 최적화된 목차 구조 제공',
+                color: 'text-red-500 bg-red-50',
+              },
+              {
+                icon: SearchIcon,
+                pain: '입찰공고를 봐도 무슨 말인지 이해가 안 돼요',
+                solution: '공고 분석법 + 핵심 키워드 추출 가이드',
+                color: 'text-orange-500 bg-orange-50',
+              },
+              {
+                icon: FileTextIcon,
+                pain: '가격제안서와 원가계산서 작성이 막막해요',
+                solution: '대가산정·원가계산 자동화 엑셀 템플릿',
+                color: 'text-amber-500 bg-amber-50',
+              },
+              {
+                icon: UsersIcon,
+                pain: '발표PT는 뭘 어떻게 준비해야 하나요?',
+                solution: '3분/10분 발표 시나리오 + Q&A 대응 가이드',
+                color: 'text-purple-500 bg-purple-50',
+              },
+            ].map((item, i) => (
+              <Card key={i} className="group hover:shadow-lg transition-all">
+                <CardContent className="p-6">
+                  <div
+                    className={`w-12 h-12 rounded-xl ${item.color} flex items-center justify-center mb-4`}
+                  >
+                    <item.icon className="w-6 h-6" />
+                  </div>
+                  <p className="font-semibold text-foreground text-sm mb-3 leading-snug">
+                    &ldquo;{item.pain}&rdquo;
+                  </p>
+                  <div className="flex items-start gap-2">
+                    <CheckCircle2Icon className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {item.solution}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Product Tiers */}
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-bold text-primary mb-4">
+              필요에 맞는 템플릿을 선택하세요
+            </h2>
+            <p className="text-muted-foreground">
+              기본 가이드부터 올인원 패키지까지
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {[
+              {
+                tier: '기본 템플릿',
+                price: '3.5만~6.5만',
+                desc: '개별 문서 양식이 필요한 분',
+                features: [
+                  '입찰 서류 체크리스트',
+                  '발표 PT 슬라이드 양식',
+                  '원가계산서/가격제안서',
+                  '작성 가이드라인 포함',
+                ],
+                cta: '기본 템플릿 보기',
+                highlighted: false,
+                icon: FileTextIcon,
+                color: 'bg-emerald-50 text-emerald-600 border-emerald-200',
+              },
+              {
+                tier: '프리미엄 템플릿',
+                price: '8.9만~12만',
+                desc: '완성도 높은 기술제안서가 필요한 분',
+                features: [
+                  '평가항목별 최적화 구조',
+                  '산업별 맞춤 템플릿 (IT/건설)',
+                  '실전 사례 기반 작성 가이드',
+                  '정량+정성 평가 대응 통합',
+                ],
+                cta: '프리미엄 보기',
+                highlighted: true,
+                icon: ShieldCheckIcon,
+                color: 'bg-blue-50 text-blue-600 border-blue-200',
+              },
+              {
+                tier: '올인원 패키지',
+                price: '25만',
+                desc: '제안서+발표+가격+컨설팅 전부',
+                features: [
+                  '기술제안서 풀 템플릿',
+                  '발표PT + 시나리오 스크립트',
+                  '가격제안서 + 원가계산',
+                  '30분 전문가 화상 컨설팅',
+                ],
+                cta: '패키지 상세보기',
+                highlighted: false,
+                icon: ZapIcon,
+                color: 'bg-amber-50 text-amber-600 border-amber-200',
+              },
+            ].map((item, i) => (
+              <Card
+                key={i}
+                className={`relative overflow-hidden cursor-pointer group hover:shadow-xl transition-all ${
+                  item.highlighted
+                    ? 'border-2 border-blue-500 shadow-lg scale-[1.02]'
+                    : ''
+                }`}
+                onClick={() => navigate('store')}
+              >
+                {item.highlighted && (
+                  <div className="absolute top-0 left-0 right-0 bg-blue-600 text-white text-xs font-bold text-center py-1.5">
+                    가장 많이 선택
+                  </div>
+                )}
+                <CardContent className={`p-8 ${item.highlighted ? 'pt-12' : ''}`}>
+                  <div className={`w-14 h-14 rounded-2xl ${item.color} flex items-center justify-center mb-5`}>
+                    <item.icon className="w-7 h-7" />
+                  </div>
+                  <h3 className="text-xl font-bold text-primary mb-1">{item.tier}</h3>
+                  <p className="text-sm text-muted-foreground mb-4">{item.desc}</p>
+                  <div className="mb-6">
+                    <span className="text-2xl font-bold text-primary">₩{item.price}</span>
+                  </div>
+                  <ul className="space-y-2.5 mb-8">
+                    {item.features.map((f, j) => (
+                      <li key={j} className="flex items-start gap-2 text-sm">
+                        <CheckCircle2Icon className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                        <span className="text-foreground">{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button
+                    className="w-full"
+                    variant={item.highlighted ? 'default' : 'outline'}
+                  >
+                    {item.cta}
+                    <ArrowRightIcon className="ml-2 w-4 h-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Products Preview */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-end mb-10">
+            <div>
+              <h2 className="text-3xl font-bold text-primary mb-3">
+                인기 템플릿
+              </h2>
+              <p className="text-muted-foreground">
+                공공입찰 실무자가 가장 많이 찾는 문서
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => navigate('store')}
+              className="hidden md:flex"
+            >
+              전체보기 <ArrowRightIcon className="ml-2 w-4 h-4" />
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {products.slice(0, 4).map((product) => {
+              const discount = Math.round(
+                ((product.originalPrice - product.price) / product.originalPrice) * 100,
+              )
+              const tierInfo = product.tier === 'package'
+                ? { label: '패키지', cls: 'bg-amber-100 text-amber-800' }
+                : product.tier === 'premium'
+                ? { label: '프리미엄', cls: 'bg-blue-100 text-blue-800' }
+                : { label: '기본', cls: 'bg-emerald-100 text-emerald-800' }
+
+              return (
+                <Card
+                  key={product.id}
+                  className="overflow-hidden cursor-pointer group hover:shadow-md transition-all"
+                  onClick={() => navigate('product-detail', { id: product.id })}
+                >
+                  <div className="aspect-[4/3] overflow-hidden relative border-b border-border">
+                    <img
+                      src={product.thumbnail}
+                      alt={product.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute top-3 left-3 flex gap-1.5">
+                      <Badge variant="secondary" className={tierInfo.cls}>
+                        {tierInfo.label}
+                      </Badge>
+                    </div>
+                    {discount > 0 && (
+                      <Badge className="absolute top-3 right-3 bg-red-500 text-white border-none">
+                        -{discount}%
+                      </Badge>
+                    )}
+                  </div>
+                  <CardContent className="p-5">
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {product.docTypes.slice(0, 2).map((dt) => (
+                        <span
+                          key={dt}
+                          className="px-2 py-0.5 text-[10px] rounded-full bg-blue-50 text-blue-600 font-medium"
+                        >
+                          #{dt}
+                        </span>
+                      ))}
+                    </div>
+                    <h3 className="font-semibold text-primary mb-3 line-clamp-2 text-sm leading-snug group-hover:text-blue-600 transition-colors">
+                      {product.title}
+                    </h3>
+                    <div className="flex items-end gap-2">
+                      <span className="text-lg font-bold text-primary">
+                        {formatPrice(product.price)}
+                      </span>
+                      <span className="text-sm text-muted-foreground line-through mb-0.5">
+                        {formatPrice(product.originalPrice)}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => navigate('store')}
+            className="w-full mt-8 md:hidden"
+          >
+            전체 템플릿 보기
+          </Button>
+        </div>
+      </section>
+
+      {/* How It Works - 프로세스 */}
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-bold text-primary mb-4">
+              3단계로 끝나는 제안서 준비
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+            {[
+              {
+                step: '01',
+                title: '템플릿 구매',
+                desc: '입찰 유형에 맞는 템플릿을 선택합니다. 결제 즉시 다운로드 가능합니다.',
+                icon: DownloadIcon,
+              },
+              {
+                step: '02',
+                title: '가이드 따라 작성',
+                desc: '섹션별 작성 가이드를 따라 자사 내용을 채워 넣습니다. 평가항목별 포인트가 표시되어 있습니다.',
+                icon: FileTextIcon,
+              },
+              {
+                step: '03',
+                title: '전문가 리뷰 (선택)',
+                desc: '작성 후 전문가 스팟 컨설팅을 통해 최종 점검을 받을 수 있습니다.',
+                icon: CheckCircle2Icon,
+              },
+            ].map((item, i) => (
+              <div key={i} className="text-center">
+                <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-5">
+                  <item.icon className="w-8 h-8" />
+                </div>
+                <div className="text-4xl font-bold text-primary/10 mb-2">{item.step}</div>
+                <h4 className="font-bold text-primary text-lg mb-3">{item.title}</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why PRESALES */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-bold text-primary mb-4">
+              왜 프리세일즈인가
+            </h2>
+            <p className="text-muted-foreground">
+              크몽, 네이버 스마트스토어의 범용 템플릿과는 다릅니다
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {[
+              {
+                title: '공공조달 전문',
+                desc: '범용 마켓플레이스가 아닙니다. 공공기관 입찰 제안서만 전문으로 다룹니다. 나라장터, 조달청, 정부과제 등 공공조달에 특화된 노하우만 담았습니다.',
+                icon: TargetIcon,
+              },
+              {
+                title: '평가항목 최적화',
+                desc: '모든 템플릿이 실제 평가기준에 맞춰 설계되었습니다. 기술성, 사업이해도, 수행방안, 프로젝트 관리 등 배점 기준별 가이드가 포함됩니다.',
+                icon: ClipboardCheckIcon,
+              },
+              {
+                title: '현업 전문가 검수',
+                desc: '템플릿을 만드는 팀은 실제 공공사업 입찰·수주·수행 경험이 있는 현업 전문가입니다. 이론이 아닌 실전에서 검증된 구조입니다.',
+                icon: ShieldCheckIcon,
+              },
+              {
+                title: '컨설팅 연결 가능',
+                desc: '템플릿만으로 부족하면 30분 스팟 컨설팅으로 공고 분석, 제안서 리뷰, 발표 코칭을 받을 수 있습니다.',
+                icon: PhoneIcon,
+              },
+            ].map((item, i) => (
+              <Card key={i} className="hover:shadow-md transition-all">
+                <CardContent className="p-6 flex gap-5">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <item.icon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-primary mb-2">{item.title}</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {item.desc}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Free Resource CTA */}
+      <section className="py-16 bg-blue-600 text-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <Badge className="mb-4 bg-white/20 text-white border-white/30">
+              무료 리소스
+            </Badge>
+            <h2 className="text-3xl font-bold mb-4">
+              처음 공공입찰 하시나요?
+            </h2>
+            <p className="text-blue-100 mb-8 max-w-xl mx-auto">
+              나라장터 등록부터 입찰 서류 준비, 제안서 기본 구조까지
+              <br />
+              30페이지 무료 가이드북을 다운로드하세요.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button
+                size="lg"
+                className="bg-white text-blue-600 hover:bg-blue-50 font-semibold px-8"
+              >
+                <DownloadIcon className="mr-2 w-5 h-5" />
+                무료 가이드 다운로드
+              </Button>
+              <button
+                onClick={() => navigate('store')}
+                className="h-12 rounded-md px-8 text-lg inline-flex items-center justify-center font-medium transition-colors border border-white/40 bg-transparent text-white hover:bg-white/10"
+              >
+                템플릿 스토어 보기
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-bold text-primary mb-4">
+              자주 묻는 질문
+            </h2>
+          </div>
+          <div className="space-y-3">
+            {[
+              {
+                q: '공공입찰 경험이 전혀 없는데 템플릿만으로 가능한가요?',
+                a: '기본 템플릿에 포함된 작성 가이드라인을 따라 작성하시면 됩니다. 각 섹션마다 "이 부분에 이런 내용을 넣으세요"라는 구체적인 안내가 있습니다. 처음이시라면 올인원 패키지(30분 컨설팅 포함)를 추천드립니다.',
+              },
+              {
+                q: '템플릿은 어떤 포맷으로 제공되나요?',
+                a: 'PPTX, HWP, EXCEL, PDF 포맷으로 제공됩니다. 대부분의 공공기관이 HWP 제출을 요구하므로, 기술제안서는 HWP + PPTX 이중 포맷으로 드립니다.',
+              },
+              {
+                q: '구매 후 수정/편집이 가능한가요?',
+                a: '모든 템플릿은 편집 가능한 원본 파일로 제공됩니다. 자사 내용에 맞게 자유롭게 수정하실 수 있습니다.',
+              },
+              {
+                q: '환불 정책은 어떻게 되나요?',
+                a: '다운로드 전이라면 전액 환불 가능합니다. 다운로드 후에는 디지털 상품 특성상 환불이 어렵습니다. 구매 전 상품 설명과 미리보기를 꼭 확인해주세요.',
+              },
+              {
+                q: '스팟 컨설팅은 어떻게 진행되나요?',
+                a: '30분 화상 미팅으로 진행됩니다. 입찰공고 분석, 제안서 초안 리뷰, 발표 전략 등 원하시는 주제로 집중 상담합니다. 올인원 패키지에 포함되어 있고, 별도 구매도 가능합니다.',
+              },
+            ].map((faq, i) => (
+              <div
+                key={i}
+                className="border border-border rounded-xl overflow-hidden"
+              >
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/30 transition-colors"
+                >
+                  <span className="font-medium text-foreground pr-4 text-sm">
+                    {faq.q}
+                  </span>
+                  <ChevronDownIcon
+                    className={`w-5 h-5 text-muted-foreground shrink-0 transition-transform ${
+                      openFaq === i ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+                {openFaq === i && (
+                  <div className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed">
+                    {faq.a}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="py-16 bg-[#0B1629] text-white">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-4">
+            다음 입찰, 프리세일즈와 함께 준비하세요
+          </h2>
+          <p className="text-white/50 mb-8 max-w-xl mx-auto">
+            제안서 구조부터 발표 전략까지. 공공입찰 전문가의 노하우를 템플릿에 담았습니다.
+          </p>
+          <Button
+            size="lg"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8"
+            onClick={() => navigate('store')}
+          >
+            템플릿 스토어 바로가기
+            <ArrowRightIcon className="ml-2 w-5 h-5" />
+          </Button>
+        </div>
+      </section>
+    </main>
+  )
+}
+
+
+======================================================================
+FILE: pages/Store.tsx
+======================================================================
+
+import React, { useState } from 'react'
+import { SearchIcon, XIcon, FilterIcon } from 'lucide-react'
+import { Button } from '../components/ui/Button'
+import { Card, CardContent } from '../components/ui/Card'
+import { Badge } from '../components/ui/Badge'
+import { Input } from '../components/ui/Input'
+import { products, formatPrice, allCategories, allDocTypes, allTiers } from '../lib/data'
+
+interface StoreProps {
+  navigate: (page: string, params?: Record<string, number>) => void
+}
+
+export function Store({ navigate }: StoreProps) {
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [selectedTier, setSelectedTier] = useState<string>('')
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const toggleCategory = (cat: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
+    )
+  }
+
+  const clearAllFilters = () => {
+    setSelectedCategories([])
+    setSelectedTier('')
+    setSearchQuery('')
+  }
+
+  const filteredProducts = products.filter((p) => {
+    const matchesCategory =
+      selectedCategories.length === 0 || selectedCategories.includes(p.category)
+    const matchesTier = selectedTier === '' || p.tier === selectedTier
+    const matchesSearch =
+      searchQuery === '' ||
+      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.tags.some((tag) => tag.includes(searchQuery)) ||
+      p.docTypes.some((dt) => dt.includes(searchQuery))
+    return matchesCategory && matchesTier && matchesSearch
+  })
+
+  const activeFilterCount = selectedCategories.length + (selectedTier ? 1 : 0)
+
+  return (
+    <main className="flex-1 bg-muted/10 py-12">
+      <div className="container mx-auto px-4">
+        {/* Header */}
+        <div className="mb-10">
+          <Badge className="mb-3 bg-blue-600/10 text-blue-700 border-blue-200">
+            공공조달 전문
+          </Badge>
+          <h1 className="text-3xl font-bold text-primary mb-3">
+            템플릿 스토어
+          </h1>
+          <p className="text-muted-foreground">
+            공공기관 입찰에 최적화된 제안서·가격서·발표자료 템플릿
+          </p>
+        </div>
+
+        {/* Search */}
+        <div className="relative mb-8 max-w-xl">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <Input
+            placeholder="문서명, 태그, 유형으로 검색 (예: 나라장터, IT, 건설)"
+            value={searchQuery}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setSearchQuery(e.target.value)
+            }
+            className="pl-10"
+          />
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar Filter */}
+          <aside className="w-full lg:w-72 shrink-0 space-y-6">
+            {activeFilterCount > 0 && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  {activeFilterCount}개 필터 적용 중
+                </span>
+                <button
+                  onClick={clearAllFilters}
+                  className="text-xs text-blue-600 hover:underline"
+                >
+                  전체 해제
+                </button>
+              </div>
+            )}
+
+            {/* Tier Filter */}
+            <div>
+              <h3 className="font-semibold mb-3 text-sm uppercase tracking-wider text-muted-foreground">
+                상품 등급
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {allTiers.map((tier) => {
+                  const isActive = selectedTier === tier.id
+                  return (
+                    <button
+                      key={tier.id}
+                      onClick={() => setSelectedTier(isActive ? '' : tier.id)}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                        isActive
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : `${tier.color} hover:opacity-80`
+                      }`}
+                    >
+                      {tier.label}
+                      {isActive && <XIcon className="inline-block ml-1 w-3 h-3" />}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Category Filter */}
+            <div className="pt-4 border-t border-border">
+              <h3 className="font-semibold mb-3 text-sm uppercase tracking-wider text-muted-foreground">
+                카테고리
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {allCategories.map((cat) => {
+                  const isActive = selectedCategories.includes(cat)
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => toggleCategory(cat)}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
+                        isActive
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background text-muted-foreground border-border hover:border-primary/40'
+                      }`}
+                    >
+                      {cat}
+                      {isActive && <XIcon className="inline-block ml-1 w-3 h-3" />}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Consulting Upsell */}
+            <div className="pt-4 border-t border-border">
+              <div className="rounded-lg bg-blue-50 p-4 border border-blue-100">
+                <p className="text-sm text-blue-800 font-medium mb-1">
+                  템플릿만으로 부족하신가요?
+                </p>
+                <p className="text-xs text-blue-600 mb-3">
+                  30분 스팟 컨설팅으로 공고 분석부터 제안서 리뷰까지 전문가와 함께하세요.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs border-blue-200 text-blue-700 hover:bg-blue-100"
+                  onClick={() => navigate('consulting')}
+                >
+                  컨설팅 알아보기
+                </Button>
+              </div>
+            </div>
+          </aside>
+
+          {/* Product Grid */}
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-6">
+              <p className="text-sm text-muted-foreground">
+                총{' '}
+                <span className="font-semibold text-foreground">
+                  {filteredProducts.length}
+                </span>
+                개 템플릿
+              </p>
+              <select className="text-sm border border-border rounded-md px-3 py-1.5 bg-background text-foreground">
+                <option>추천순</option>
+                <option>가격 낮은순</option>
+                <option>가격 높은순</option>
+              </select>
+            </div>
+
+            {filteredProducts.length === 0 ? (
+              <div className="text-center py-20">
+                <p className="text-muted-foreground text-lg mb-2">
+                  검색 결과가 없습니다
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  다른 필터 조건을 시도해보세요
+                </p>
+                <Button variant="outline" className="mt-4" onClick={clearAllFilters}>
+                  필터 초기화
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredProducts.map((product) => {
+                  const discount = Math.round(
+                    ((product.originalPrice - product.price) / product.originalPrice) * 100,
+                  )
+                  const tierInfo =
+                    product.tier === 'package'
+                      ? { label: '패키지', cls: 'bg-amber-100 text-amber-800' }
+                      : product.tier === 'premium'
+                      ? { label: '프리미엄', cls: 'bg-blue-100 text-blue-800' }
+                      : { label: '기본', cls: 'bg-emerald-100 text-emerald-800' }
+
+                  return (
+                    <Card
+                      key={product.id}
+                      className={`group cursor-pointer hover:shadow-lg transition-all duration-300 overflow-hidden ${
+                        product.tier === 'package' ? 'border-2 border-amber-300' : ''
+                      }`}
+                      onClick={() => navigate('product-detail', { id: product.id })}
+                    >
+                      <div className="relative aspect-[4/3] overflow-hidden">
+                        <img
+                          src={product.thumbnail}
+                          alt={product.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute top-3 left-3 flex gap-1.5">
+                          <Badge variant="secondary" className={tierInfo.cls}>
+                            {tierInfo.label}
+                          </Badge>
+                          <Badge variant="secondary" className="bg-white/90 text-foreground">
+                            {product.category}
+                          </Badge>
+                        </div>
+                        {discount > 0 && (
+                          <Badge className="absolute top-3 right-3 bg-red-500 text-white border-none">
+                            -{discount}%
+                          </Badge>
+                        )}
+                        {product.tier === 'package' && (
+                          <div className="absolute bottom-0 left-0 right-0 bg-amber-500 text-white text-xs font-bold text-center py-1.5">
+                            컨설팅 30분 포함
+                          </div>
+                        )}
+                      </div>
+                      <CardContent className="p-5">
+                        <h3 className="font-semibold text-foreground mb-3 line-clamp-2 leading-snug text-sm">
+                          {product.title}
+                        </h3>
+
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                          {product.docTypes.slice(0, 3).map((dt) => (
+                            <span
+                              key={dt}
+                              className="px-2 py-0.5 text-[10px] rounded-full bg-blue-50 text-blue-600 font-medium"
+                            >
+                              #{dt}
+                            </span>
+                          ))}
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5 mb-4">
+                          {product.tags.slice(0, 3).map((tag) => (
+                            <span
+                              key={tag}
+                              className="px-2 py-0.5 text-[10px] rounded-full bg-muted text-muted-foreground"
+                            >
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+
+                        <div className="flex items-end justify-between pt-3 border-t border-border">
+                          <div>
+                            <span className="text-xs text-muted-foreground line-through mr-2">
+                              {formatPrice(product.originalPrice)}
+                            </span>
+                            <span className="text-lg font-bold text-primary">
+                              {formatPrice(product.price)}
+                            </span>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {product.format} · {product.pages}p
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </main>
+  )
+}
+
+
+======================================================================
+FILE: pages/ProductDetail.tsx
+======================================================================
+
+import React, { useState } from 'react'
+import {
+  ChevronRightIcon,
+  CheckCircle2Icon,
+  FileTextIcon,
+  DownloadIcon,
+  Share2Icon,
+  HeartIcon,
+  AlertCircleIcon,
+  ShieldCheckIcon,
+  PhoneIcon,
+} from 'lucide-react'
+import { Button } from '../components/ui/Button'
+import { Badge } from '../components/ui/Badge'
+import { Card, CardContent } from '../components/ui/Card'
+import { products, formatPrice } from '../lib/data'
+
+interface ProductDetailProps {
+  navigate: (page: string, params?: Record<string, number>) => void
+  productId: number
+}
+
+export function ProductDetail({ navigate, productId }: ProductDetailProps) {
+  const [activeTab, setActiveTab] = useState('description')
+  const product = products.find((p) => p.id === productId) || products[0]
+  const discount = Math.round(
+    ((product.originalPrice - product.price) / product.originalPrice) * 100,
+  )
+
+  const tierInfo =
+    product.tier === 'package'
+      ? { label: '패키지', cls: 'bg-amber-100 text-amber-800 border-amber-200' }
+      : product.tier === 'premium'
+      ? { label: '프리미엄', cls: 'bg-blue-100 text-blue-800 border-blue-200' }
+      : { label: '기본', cls: 'bg-emerald-100 text-emerald-800 border-emerald-200' }
+
+  const relatedProducts = products.filter(
+    (p) => p.id !== product.id && p.tier !== 'package',
+  ).slice(0, 3)
+
+  return (
+    <main className="flex-1 bg-background pb-24">
+      {/* Breadcrumb */}
+      <div className="border-b border-border bg-muted/10">
+        <div className="container mx-auto px-4 py-4 flex items-center text-sm text-muted-foreground">
+          <button onClick={() => navigate('home')} className="hover:text-primary">
+            홈
+          </button>
+          <ChevronRightIcon className="w-4 h-4 mx-2" />
+          <button onClick={() => navigate('store')} className="hover:text-primary">
+            템플릿 스토어
+          </button>
+          <ChevronRightIcon className="w-4 h-4 mx-2" />
+          <span className="text-foreground font-medium">{product.category}</span>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-12">
+        <div className="flex flex-col lg:flex-row gap-12">
+          {/* Left: Image */}
+          <div className="w-full lg:w-3/5 space-y-4">
+            <div className="aspect-[4/3] rounded-xl overflow-hidden border border-border bg-muted">
+              <img
+                src={product.thumbnail}
+                alt={product.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+
+          {/* Right: Product Info */}
+          <div className="w-full lg:w-2/5">
+            <div className="sticky top-24">
+              <div className="flex items-center gap-2 mb-4">
+                <Badge variant="secondary" className={tierInfo.cls}>
+                  {tierInfo.label}
+                </Badge>
+                <Badge variant="secondary">{product.category}</Badge>
+              </div>
+
+              <h1 className="text-2xl md:text-3xl font-bold text-primary mb-4 leading-tight">
+                {product.title}
+              </h1>
+
+              {/* Document Type Tags */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                {product.docTypes.map((dt) => (
+                  <span
+                    key={dt}
+                    className="px-3 py-1 text-xs rounded-full bg-blue-50 text-blue-600 font-medium"
+                  >
+                    #{dt}
+                  </span>
+                ))}
+              </div>
+
+              {/* Keyword Tags */}
+              <div className="flex flex-wrap gap-1.5 mb-6 pb-6 border-b border-border">
+                {product.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-2.5 py-0.5 text-xs rounded-full bg-muted text-muted-foreground"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mb-8">
+                <div className="flex items-end gap-3 mb-2">
+                  <span className="text-3xl font-bold text-primary">
+                    {formatPrice(product.price)}
+                  </span>
+                  <Badge variant="destructive" className="mb-1">
+                    {discount}% 할인
+                  </Badge>
+                </div>
+                <div className="text-muted-foreground line-through">
+                  정가 {formatPrice(product.originalPrice)}
+                </div>
+              </div>
+
+              {/* Package special callout */}
+              {product.tier === 'package' && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <PhoneIcon className="w-4 h-4 text-amber-600" />
+                    <span className="font-semibold text-sm text-amber-800">30분 전문가 컨설팅 포함</span>
+                  </div>
+                  <p className="text-xs text-amber-700">
+                    구매 후 공고 분석 및 전략 브리핑을 위한 30분 화상 컨설팅이 무료로 제공됩니다.
+                  </p>
+                </div>
+              )}
+
+              <div className="bg-muted/30 rounded-lg p-4 mb-8 space-y-3 border border-border">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">파일 형식</span>
+                  <span className="font-medium flex items-center gap-2">
+                    <FileTextIcon className="w-4 h-4" /> {product.format}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">페이지 수</span>
+                  <span className="font-medium">{product.pages} Pages</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">파일 크기</span>
+                  <span className="font-medium">{product.size}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mb-6">
+                <Button className="flex-1" size="lg">
+                  바로 구매하기
+                </Button>
+                <Button variant="outline" size="lg" className="px-6">
+                  장바구니
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
+                <button className="flex items-center gap-2 hover:text-primary transition-colors">
+                  <HeartIcon className="w-4 h-4" /> 찜하기
+                </button>
+                <button className="flex items-center gap-2 hover:text-primary transition-colors">
+                  <Share2Icon className="w-4 h-4" /> 공유하기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs Section */}
+        <div className="mt-20">
+          <div className="flex border-b border-border mb-8">
+            {[
+              { id: 'description', label: '상품 설명' },
+              { id: 'included', label: '포함 내용' },
+              { id: 'policy', label: '이용 안내' },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-8 py-4 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="max-w-4xl">
+            {activeTab === 'description' && (
+              <div>
+                <h3 className="text-xl font-bold mb-4">상품 상세 설명</h3>
+                <p className="text-muted-foreground leading-relaxed mb-8">
+                  {product.description}
+                </p>
+                <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
+                  <h4 className="font-semibold mb-4 flex items-center gap-2">
+                    <AlertCircleIcon className="w-5 h-5 text-blue-500" /> 이런 분들께 추천합니다
+                  </h4>
+                  <ul className="space-y-2 text-muted-foreground text-sm">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2Icon className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                      처음 공공입찰에 참여하여 제안서 구조가 막막하신 기업
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2Icon className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                      기존 제안서의 수주율이 낮아 구조 개선이 필요하신 분
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2Icon className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                      평가항목별 최적화된 제안서 템플릿이 필요하신 분
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2Icon className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" />
+                      제안서 작성 시간을 획기적으로 단축하고 싶으신 분
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'included' && (
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold mb-4">포함 내용</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    '편집 가능한 원본 파일 (PPTX/HWP)',
+                    '섹션별 작성 가이드라인 PDF',
+                    '평가항목 매핑 표',
+                    '무료 업데이트 (1년)',
+                    '상업적 이용 가능 (자사 입찰용)',
+                    '이메일 문의 지원',
+                  ].map((item, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 p-4 bg-muted/20 rounded-lg border border-border"
+                    >
+                      <CheckCircle2Icon className="w-5 h-5 text-blue-500 shrink-0" />
+                      <span className="text-sm">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'policy' && (
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold mb-4">이용 안내</h3>
+                <div className="space-y-4 text-sm text-muted-foreground">
+                  <div className="p-4 bg-muted/20 rounded-lg border border-border">
+                    <h4 className="font-semibold text-foreground mb-2">다운로드</h4>
+                    <p>결제 완료 즉시 마이페이지에서 다운로드 가능합니다.</p>
+                  </div>
+                  <div className="p-4 bg-muted/20 rounded-lg border border-border">
+                    <h4 className="font-semibold text-foreground mb-2">환불 정책</h4>
+                    <p>다운로드 전: 전액 환불 가능. 다운로드 후: 디지털 상품 특성상 환불 불가.</p>
+                  </div>
+                  <div className="p-4 bg-muted/20 rounded-lg border border-border">
+                    <h4 className="font-semibold text-foreground mb-2">저작권</h4>
+                    <p>자사 입찰 목적으로 자유롭게 수정 사용 가능합니다. 원본을 타인에게 공유/재판매하는 것은 금지됩니다.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Related Products */}
+        <div className="mt-20 pt-10 border-t border-border">
+          <h3 className="text-xl font-bold text-primary mb-6">함께 보면 좋은 템플릿</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {relatedProducts.map((p) => (
+              <Card
+                key={p.id}
+                className="cursor-pointer hover:shadow-md transition-all group"
+                onClick={() => navigate('product-detail', { id: p.id })}
+              >
+                <div className="aspect-[4/3] overflow-hidden">
+                  <img
+                    src={p.thumbnail}
+                    alt={p.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                </div>
+                <CardContent className="p-4">
+                  <h4 className="font-semibold text-sm line-clamp-2 mb-2 group-hover:text-blue-600 transition-colors">
+                    {p.title}
+                  </h4>
+                  <p className="text-lg font-bold text-primary">{formatPrice(p.price)}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    </main>
+  )
+}
+
+
+======================================================================
+FILE: pages/Consulting.tsx
+======================================================================
+
+import React, { useState } from 'react'
+import {
+  CheckCircle2Icon,
+  ArrowRightIcon,
+  CalendarIcon,
+  MessageSquareIcon,
+  FileTextIcon,
+  ShieldCheckIcon,
+  SearchIcon,
+  ChevronDownIcon,
+  StarIcon,
+  ClockIcon,
+} from 'lucide-react'
+import { Button } from '../components/ui/Button'
+import { Card, CardContent } from '../components/ui/Card'
+import { Badge } from '../components/ui/Badge'
+
+interface ConsultingProps {
+  navigate: (page: string) => void
+}
+
+export function Consulting({ navigate }: ConsultingProps) {
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
+
+  const packages = [
+    {
+      name: '스팟 상담',
+      price: '150,000',
+      unit: '30분',
+      desc: '입찰공고 분석, 제안서 방향 점검, 특정 이슈 빠른 피드백',
+      features: [
+        '화상 미팅 30분',
+        '사전 공고/자료 검토',
+        '핵심 피드백 요약 제공',
+        '이메일 후속 Q&A 1회',
+      ],
+      cta: '상담 예약',
+      highlighted: false,
+    },
+    {
+      name: '제안서 리뷰 패키지',
+      badge: 'BEST',
+      price: '500,000',
+      unit: '건',
+      desc: '작성 완료된 제안서 전문 리뷰 + 수정 방향 리포트',
+      features: [
+        '제안서 전체 리뷰 (50p 이내)',
+        '평가항목별 점수 예측',
+        '수정 방향 리포트 (10p)',
+        '리뷰 후 30분 화상 디브리핑',
+        '1회 재리뷰 포함',
+      ],
+      cta: '리뷰 신청',
+      highlighted: true,
+    },
+    {
+      name: '프로젝트 컨설팅',
+      price: '3,000,000~',
+      unit: '프로젝트',
+      desc: '공고 분석부터 제안서 작성, 발표 리허설까지 전 과정 밀착 지원',
+      features: [
+        '전담 컨설턴트 배정',
+        '입찰공고 분석 및 전략 수립',
+        '제안서 공동 작성/코칭',
+        '발표 PT 리허설 포함',
+        '프로젝트 완료 후 30일 지원',
+      ],
+      cta: '프로젝트 문의',
+      highlighted: false,
+    },
+  ]
+
+  const faqs = [
+    {
+      q: '스팟 상담은 어떤 내용을 다룰 수 있나요?',
+      a: '입찰공고 분석, 제안서 목차 구조 점검, 작성 방향 피드백, 발표 전략, 가격 전략 등 공공조달과 관련된 모든 주제를 다룹니다. 사전에 공고문이나 초안을 보내주시면 더 깊은 상담이 가능합니다.',
+    },
+    {
+      q: '제안서 리뷰는 어떤 기준으로 하나요?',
+      a: '실제 공공기관 평가 기준(기술성, 사업이해도, 수행방안, 프로젝트 관리 등)에 맞춰 각 섹션별로 점수를 예측하고, 보완이 필요한 부분을 구체적으로 짚어드립니다.',
+    },
+    {
+      q: '프로젝트 컨설팅의 기간은 얼마나 걸리나요?',
+      a: '입찰 공고 마감일 기준 2~4주 전부터 시작하는 것을 권장합니다. 긴급 건의 경우 1주 단위 집중 컨설팅도 가능합니다. 구체적인 일정은 문의 시 협의합니다.',
+    },
+    {
+      q: '비용 결제와 환불 정책은 어떻게 되나요?',
+      a: '스팟 상담과 리뷰 패키지는 선결제, 프로젝트 컨설팅은 계약 후 착수금/중도금/잔금 분할 결제가 가능합니다. 서비스 시작 전 취소 시 전액 환불됩니다.',
+    },
+  ]
+
+  return (
+    <main className="flex-1">
+      {/* Hero */}
+      <section className="relative bg-[#0B1629] text-white py-24 overflow-hidden">
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff10_1px,transparent_1px),linear-gradient(to_bottom,#ffffff10_1px,transparent_1px)] bg-[size:60px_60px]" />
+        </div>
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-3xl">
+            <Badge className="mb-6 bg-blue-600/20 text-blue-300 border-blue-500/30">
+              전문가 컨설팅
+            </Badge>
+            <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-6 tracking-tight">
+              템플릿 이상의 도움이
+              <br />
+              <span className="text-blue-400">필요하신가요?</span>
+            </h1>
+            <p className="text-lg text-white/50 max-w-2xl mb-8 leading-relaxed">
+              공공조달 입찰 경험 17년 전문가가 공고 분석부터 제안서 리뷰,
+              발표 코칭까지 직접 지원합니다. 템플릿 구매 고객은 할인이 적용됩니다.
+            </p>
+            <div className="flex items-center gap-6 text-sm text-white/40">
+              <div className="flex items-center gap-2">
+                <ClockIcon className="w-4 h-4" />
+                <span>30분부터 가능</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ShieldCheckIcon className="w-4 h-4" />
+                <span>NDA 기본 체결</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="w-4 h-4" />
+                <span>예약 후 3일 내 진행</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-bold text-primary mb-4">
+              컨설팅 패키지
+            </h2>
+            <p className="text-muted-foreground">
+              프로젝트 규모와 필요에 맞게 선택하세요
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {packages.map((pkg, i) => (
+              <Card
+                key={i}
+                className={`relative overflow-hidden ${
+                  pkg.highlighted
+                    ? 'border-2 border-blue-500 shadow-xl scale-105'
+                    : 'border'
+                }`}
+              >
+                {pkg.badge && (
+                  <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+                    {pkg.badge}
+                  </div>
+                )}
+                <CardContent className="p-8">
+                  <h3 className="text-xl font-bold text-primary mb-2">
+                    {pkg.name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-6">
+                    {pkg.desc}
+                  </p>
+                  <div className="mb-6">
+                    <span className="text-3xl font-bold text-primary">
+                      ₩{pkg.price}
+                    </span>
+                    <span className="text-sm text-muted-foreground ml-1">
+                      / {pkg.unit}
+                    </span>
+                  </div>
+                  <ul className="space-y-3 mb-8">
+                    {pkg.features.map((f, j) => (
+                      <li
+                        key={j}
+                        className="flex items-center gap-2 text-sm text-foreground"
+                      >
+                        <CheckCircle2Icon className="w-4 h-4 text-blue-500 shrink-0" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Button
+                    className="w-full"
+                    variant={pkg.highlighted ? 'default' : 'outline'}
+                  >
+                    {pkg.cta}
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <p className="text-center text-sm text-muted-foreground mt-8">
+            모든 가격은 VAT 별도입니다. 템플릿 구매 고객은 스팟 상담 10% 할인이 적용됩니다.
+          </p>
+        </div>
+      </section>
+
+      {/* 템플릿 + 컨설팅 번들 CTA */}
+      <section className="py-16 bg-blue-600 text-white">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-2xl font-bold mb-4">
+            템플릿 + 컨설팅, 함께하면 더 강력합니다
+          </h2>
+          <p className="text-blue-100 mb-8 max-w-xl mx-auto">
+            올인원 패키지에는 기술제안서·발표PT·가격제안서 풀세트와
+            30분 전문가 컨설팅이 모두 포함되어 있습니다.
+          </p>
+          <Button
+            size="lg"
+            className="bg-white text-blue-600 hover:bg-blue-50 font-semibold px-8"
+            onClick={() => navigate('store')}
+          >
+            올인원 패키지 보기
+            <ArrowRightIcon className="ml-2 w-5 h-5" />
+          </Button>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-bold text-primary mb-4">
+              자주 묻는 질문
+            </h2>
+          </div>
+          <div className="space-y-3">
+            {faqs.map((faq, i) => (
+              <div
+                key={i}
+                className="border border-border rounded-xl overflow-hidden"
+              >
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/30 transition-colors"
+                >
+                  <span className="font-medium text-foreground pr-4 text-sm">
+                    {faq.q}
+                  </span>
+                  <ChevronDownIcon
+                    className={`w-5 h-5 text-muted-foreground shrink-0 transition-transform ${
+                      openFaq === i ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+                {openFaq === i && (
+                  <div className="px-5 pb-5 text-sm text-muted-foreground leading-relaxed">
+                    {faq.a}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="py-16 bg-[#0B1629] text-white">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-2xl font-bold mb-4">
+            지금 바로 상담을 시작하세요
+          </h2>
+          <p className="text-white/50 mb-8 max-w-xl mx-auto">
+            첫 상담 전 간단한 사전 문의를 남겨주시면, 적합한 컨설턴트를 매칭해드립니다.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button
+              size="lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8"
+            >
+              <CalendarIcon className="mr-2 w-5 h-5" />
+              상담 예약하기
+            </Button>
+            <button
+              className="h-12 rounded-md px-8 text-lg inline-flex items-center justify-center font-medium transition-colors border border-white/40 bg-transparent text-white hover:bg-white/10"
+            >
+              <MessageSquareIcon className="mr-2 w-5 h-5" />
+              카카오톡 문의
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  )
+}
+
+
+======================================================================
+FILE: pages/About.tsx
+======================================================================
+
+import React from 'react'
+import {
+  TargetIcon,
+  GlobeIcon,
+  HandshakeIcon,
+  ChevronRightIcon,
+  MailIcon,
+  PhoneIcon,
+  MapPinIcon,
+  ArrowRightIcon,
+} from 'lucide-react'
+import { Card, CardContent } from '../components/ui/Card'
+import { Badge } from '../components/ui/Badge'
+import { Button } from '../components/ui/Button'
+
+export function About() {
+  const teamMembers = [
+    {
+      name: '채호진',
+      role: '대표 / 총괄 디렉터',
+      title: 'CEO & Managing Director',
+      bio: 'IT/플랫폼 분야 17년 경력. 공공/민간 프리세일즈 및 사업개발 전문가. 프리세일즈 플랫폼의 전체 사업 전략과 운영을 총괄합니다.',
+      expertise: ['사업개발', '프리세일즈', '플랫폼 전략'],
+      career: ['前 삼성SDS 사업기획팀', '前 카카오엔터프라이즈 BD', '한양대 경영학 MBA'],
+      color: 'bg-primary',
+    },
+    {
+      name: '박지영',
+      role: '공공조달 / 제안서 리드',
+      title: 'Public Sector Proposal Lead',
+      bio: '공공기관 입찰 제안서 전문. 나라장터, 조달청, 지자체 입찰 전략 수립 및 제안서 작성을 리드합니다. 모든 템플릿의 품질을 검수합니다.',
+      expertise: ['공공조달', '기술제안서', '조달전략'],
+      career: ['前 LG CNS 공공사업부', '前 한국정보화진흥원 평가위원', '이화여대 행정학과'],
+      color: 'bg-blue-600',
+    },
+    {
+      name: '최민호',
+      role: '공공사업 / 정부과제 시니어',
+      title: 'Government Project Senior',
+      bio: '정부 R&D 및 공공사업 전문. KEIT, NIPA 등 다수 정부기관 과제 수행 경험을 바탕으로 정부과제 템플릿과 컨설팅을 담당합니다.',
+      expertise: ['정부R&D', '공공사업', '기술사업화'],
+      career: ['前 KISTI 기술사업화팀', '前 정보통신산업진흥원 PM', '충남대 컴퓨터공학과'],
+      color: 'bg-emerald-600',
+    },
+  ]
+
+  return (
+    <main className="flex-1">
+      {/* Hero */}
+      <section className="relative bg-[#0B1629] text-white py-24 overflow-hidden">
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff10_1px,transparent_1px),linear_gradient(to_bottom,#ffffff10_1px,transparent_1px)] bg-[size:60px_60px]" />
+        </div>
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-3xl">
+            <Badge className="mb-6 bg-blue-600/20 text-blue-300 border-blue-500/30">
+              About PRESALES
+            </Badge>
+            <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-6">
+              공공조달의 복잡함을
+              <br />
+              <span className="text-blue-400">문서로 단순하게</span>
+            </h1>
+            <p className="text-lg text-white/50 max-w-2xl leading-relaxed">
+              프리세일즈는 공공입찰 현장에서 17년간 쌓은 경험을
+              누구나 활용할 수 있는 템플릿과 컨설팅으로 제공합니다.
+              처음 입찰에 도전하는 기업부터 수주율을 높이고 싶은
+              경험자까지, 공공조달의 모든 과정을 돕습니다.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Mission */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-bold text-primary mb-6">
+              우리가 존재하는 이유
+            </h2>
+            <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+              좋은 기술력을 가진 기업이 제안서의 한계로 입찰에서 탈락하는 것을
+              수없이 봐왔습니다. 제안서는 단순한 서류가 아니라 사업의 성패를
+              좌우하는 도구입니다.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                icon: TargetIcon,
+                title: 'Mission',
+                desc: '공공입찰의 진입 장벽을 낮추고, 좋은 기술을 가진 기업이 공정하게 경쟁할 수 있게 돕는다',
+              },
+              {
+                icon: GlobeIcon,
+                title: 'Vision',
+                desc: '한국 No.1 공공조달 제안서 전문 플랫폼',
+              },
+              {
+                icon: HandshakeIcon,
+                title: 'Value',
+                desc: '실전 경험 기반 · 평가기준 최적화 · 고객 수주 성공 중심',
+              },
+            ].map((item, i) => (
+              <Card key={i} className="text-center">
+                <CardContent className="p-8">
+                  <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4">
+                    <item.icon className="w-7 h-7" />
+                  </div>
+                  <h3 className="font-bold text-primary text-lg mb-2">{item.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Team */}
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-bold text-primary mb-4">
+              핵심 팀
+            </h2>
+            <p className="text-muted-foreground">
+              공공조달 현장에서 검증된 전문가들이 직접 운영합니다
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {teamMembers.map((member, i) => (
+              <Card key={i} className="group hover:shadow-lg transition-all overflow-hidden">
+                <CardContent className="p-0">
+                  <div className={`h-2 ${member.color}`} />
+                  <div className="p-6">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div
+                        className={`w-14 h-14 rounded-full ${member.color} flex items-center justify-center text-white font-bold text-lg`}
+                      >
+                        {member.name[0]}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-primary text-lg">{member.name}</h4>
+                        <p className="text-xs text-muted-foreground">{member.role}</p>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground italic mb-4">
+                      {member.title}
+                    </p>
+
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                      {member.bio}
+                    </p>
+
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {member.expertise.map((exp) => (
+                        <span
+                          key={exp}
+                          className="px-2.5 py-0.5 text-[10px] rounded-full bg-blue-50 text-blue-600 font-medium"
+                        >
+                          {exp}
+                        </span>
+                      ))}
+                    </div>
+
+                    <div className="space-y-1.5 pt-4 border-t border-border">
+                      {member.career.map((c, j) => (
+                        <p
+                          key={j}
+                          className="text-[11px] text-muted-foreground flex items-start gap-1.5"
+                        >
+                          <ChevronRightIcon className="w-3 h-3 mt-0.5 shrink-0 text-muted-foreground/50" />
+                          {c}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="text-center mt-10">
+            <p className="text-sm text-muted-foreground">
+              이 외에도 산업별 외부 전문가 네트워크를 통해 프로젝트에 적합한 컨설턴트를 매칭합니다.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* History Timeline */}
+      <section className="py-20 bg-background">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <div className="text-center mb-14">
+            <h2 className="text-3xl font-bold text-primary mb-4">연혁</h2>
+          </div>
+
+          <div className="space-y-8">
+            {[
+              {
+                year: '2025',
+                events: [
+                  '프리세일즈 플랫폼 베타 오픈',
+                  '공공조달 제안서 특화 템플릿 스토어 런칭',
+                  '스팟 컨설팅 서비스 시작',
+                ],
+              },
+              {
+                year: '2024',
+                events: [
+                  'AMARANS Partners 법인 설립',
+                  '공공조달 제안서 컨설팅 서비스 시작',
+                  '핵심 컨설턴트 팀 구성 완료',
+                ],
+              },
+              {
+                year: '2023',
+                events: [
+                  '프리세일즈 사업 기획 착수',
+                  '공공조달 시장 조사 및 고객 검증',
+                ],
+              },
+            ].map((period, i) => (
+              <div key={i} className="flex gap-6">
+                <div className="w-20 shrink-0 text-right">
+                  <span className="text-2xl font-bold text-primary">{period.year}</span>
+                </div>
+                <div className="w-px bg-border relative">
+                  <div className="absolute top-1 -left-1.5 w-3 h-3 rounded-full bg-primary" />
+                </div>
+                <div className="pb-8 space-y-2">
+                  {period.events.map((event, j) => (
+                    <p key={j} className="text-sm text-muted-foreground">
+                      {event}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Contact */}
+      <section className="py-20 bg-[#0B1629] text-white">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">Contact Us</h2>
+              <p className="text-white/50">입찰 프로젝트에 대해 이야기해주세요</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                {
+                  icon: MapPinIcon,
+                  title: '주소',
+                  lines: ['서울특별시 강남구 테헤란로 123', '8층'],
+                },
+                {
+                  icon: PhoneIcon,
+                  title: '연락처',
+                  lines: ['02-1234-5678', '평일 09:00 - 18:00'],
+                },
+                {
+                  icon: MailIcon,
+                  title: '이메일',
+                  lines: ['contact@presales.co.kr'],
+                },
+              ].map((info, i) => (
+                <div key={i} className="text-center">
+                  <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center mx-auto mb-4">
+                    <info.icon className="w-6 h-6 text-blue-400" />
+                  </div>
+                  <h4 className="font-semibold mb-2">{info.title}</h4>
+                  {info.lines.map((line, j) => (
+                    <p key={j} className="text-sm text-white/50">
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              ))}
+            </div>
+
+            <div className="text-center mt-12">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8">
+                프로젝트 문의하기
+                <ArrowRightIcon className="ml-2 w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  )
+}
+
+
+======================================================================
+FILE: pages/MyPage.tsx
+======================================================================
+
+import React from 'react'
+import {
+  Package,
+  Download,
+  User,
+  MessageSquare,
+  FileText,
+  Settings,
+  LogOut,
+} from 'lucide-react'
+import { Button } from '../components/ui/Button'
+import { Card, CardContent } from '../components/ui/Card'
+import { Badge } from '../components/ui/Badge'
+export function MyPage() {
+  const orders = [
+    {
+      id: 'ORD-20240315-01',
+      date: '2024.03.15',
+      title: 'B2B SaaS 플랫폼 투자유치용 사업계획서',
+      price: '150,000원',
+      status: '결제완료',
+    },
+    {
+      id: 'ORD-20240228-03',
+      date: '2024.02.28',
+      title: '공공기관 입찰용 제안서 표준 템플릿',
+      price: '85,000원',
+      status: '다운로드 가능',
+    },
+    {
+      id: 'ORD-20231110-02',
+      date: '2023.11.10',
+      title: '스타트업 월간/분기 경영보고서',
+      price: '65,000원',
+      status: '만료',
+    },
+  ]
+  return (
+    <main className="flex-1 bg-muted/10 py-12">
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* Sidebar */}
+          <aside className="w-full md:w-64 shrink-0">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4 mb-8 pb-6 border-b border-border">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                    홍
+                  </div>
+                  <div>
+                    <div className="font-bold">홍길동 님</div>
+                    <div className="text-xs text-muted-foreground">
+                      hong@example.com
+                    </div>
+                  </div>
+                </div>
+
+                <nav className="space-y-1">
+                  {[
+                    {
+                      icon: Package,
+                      label: '주문 내역',
+                      active: true,
+                    },
+                    {
+                      icon: Download,
+                      label: '다운로드',
+                      active: false,
+                    },
+                    {
+                      icon: MessageSquare,
+                      label: '문의 내역',
+                      active: false,
+                    },
+                    {
+                      icon: User,
+                      label: '내 정보 관리',
+                      active: false,
+                    },
+                    {
+                      icon: Settings,
+                      label: '환경설정',
+                      active: false,
+                    },
+                  ].map((item, i) => (
+                    <button
+                      key={i}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${item.active ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                    >
+                      <item.icon className="w-4 h-4" />
+                      {item.label}
+                    </button>
+                  ))}
+                </nav>
+
+                <div className="mt-8 pt-6 border-t border-border">
+                  <button className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors">
+                    <LogOut className="w-4 h-4" />
+                    로그아웃
+                  </button>
+                </div>
+              </CardContent>
+            </Card>
+          </aside>
+
+          {/* Main Content */}
+          <div className="flex-1 space-y-8">
+            <div>
+              <h1 className="text-2xl font-bold text-primary mb-6">
+                주문 내역
+              </h1>
+              <Card>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-muted-foreground uppercase bg-muted/50 border-b border-border">
+                      <tr>
+                        <th className="px-6 py-4 font-medium">주문번호/일자</th>
+                        <th className="px-6 py-4 font-medium">상품정보</th>
+                        <th className="px-6 py-4 font-medium">결제금액</th>
+                        <th className="px-6 py-4 font-medium">상태</th>
+                        <th className="px-6 py-4 font-medium text-right">
+                          관리
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {orders.map((order, i) => (
+                        <tr
+                          key={i}
+                          className="bg-card hover:bg-muted/30 transition-colors"
+                        >
+                          <td className="px-6 py-4">
+                            <div className="font-medium text-foreground">
+                              {order.id}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {order.date}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-medium text-foreground line-clamp-1">
+                              {order.title}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 font-medium">
+                            {order.price}
+                          </td>
+                          <td className="px-6 py-4">
+                            <Badge
+                              variant={
+                                order.status === '결제완료'
+                                  ? 'default'
+                                  : order.status === '다운로드 가능'
+                                    ? 'secondary'
+                                    : 'outline'
+                              }
+                              className={
+                                order.status === '만료'
+                                  ? 'text-muted-foreground'
+                                  : ''
+                              }
+                            >
+                              {order.status}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={order.status === '만료'}
+                              className="gap-2"
+                            >
+                              <Download className="w-3 h-3" /> 다운로드
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold">다운로드 가능 문서</h3>
+                      <div className="text-2xl font-bold text-primary mt-1">
+                        2건
+                      </div>
+                    </div>
+                  </div>
+                  <Button variant="outline" className="w-full">
+                    다운로드함 가기
+                  </Button>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
+                      <MessageSquare className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold">답변 대기중인 문의</h3>
+                      <div className="text-2xl font-bold text-primary mt-1">
+                        0건
+                      </div>
+                    </div>
+                  </div>
+                  <Button variant="outline" className="w-full">
+                    문의 내역 보기
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  )
+}
+
+
+======================================================================
+FILE: App.tsx
+======================================================================
+
+import React, { useState } from 'react'
+import { Header } from './components/layout/Header'
+import { Footer } from './components/layout/Footer'
+import { Home } from './pages/Home'
+import { Store } from './pages/Store'
+import { ProductDetail } from './pages/ProductDetail'
+import { Consulting } from './pages/Consulting'
+import { About } from './pages/About'
+import { MyPage } from './pages/MyPage'
+
+export function App() {
+  const [currentPage, setCurrentPage] = useState('home')
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null)
+
+  const navigate = (page: string, params?: Record<string, number>) => {
+    setCurrentPage(page)
+    if (params?.id) {
+      setSelectedProductId(params.id)
+    }
+    window.scrollTo(0, 0)
+  }
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'home':
+        return <Home navigate={navigate} />
+      case 'store':
+        return <Store navigate={navigate} />
+      case 'product-detail':
+        return (
+          <ProductDetail
+            navigate={navigate}
+            productId={selectedProductId || 1}
+          />
+        )
+      case 'consulting':
+        return <Consulting navigate={navigate} />
+      case 'about':
+        return <About />
+      case 'mypage':
+        return <MyPage />
+      default:
+        return <Home navigate={navigate} />
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col bg-background text-foreground font-sans">
+      <Header currentPage={currentPage} navigate={navigate} />
+      {renderPage()}
+      <Footer navigate={navigate} />
+    </div>
+  )
+}
+
+
