@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Menu, X } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { Menu, X, User, LogOut, Settings } from 'lucide-react'
 import { CartDrawer } from '@/components/CartDrawer'
+import { createClient } from '@/lib/supabase'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 const navLinks = [
   { href: '/store', label: '템플릿 스토어' },
@@ -14,7 +16,45 @@ const navLinks = [
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [profileMenu, setProfileMenu] = useState(false)
+  const [profile, setProfile] = useState<{ name: string; role: string } | null>(null)
   const pathname = usePathname()
+  const router = useRouter()
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user)
+      if (user) {
+        supabase.from('profiles').select('name, role').eq('id', user.id).single()
+          .then(({ data }) => setProfile(data))
+      }
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      if (session?.user) {
+        supabase.from('profiles').select('name, role').eq('id', session.user.id).single()
+          .then(({ data }) => setProfile(data))
+      } else {
+        setProfile(null)
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  async function handleLogout() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    setProfileMenu(false)
+    router.push('/')
+    router.refresh()
+  }
+
+  // Hide header on admin pages
+  if (pathname?.startsWith('/admin')) return null
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -51,26 +91,71 @@ export function Header() {
 
         <div className="hidden md:flex items-center gap-2">
           <CartDrawer />
-          <Link
-            href="/mypage"
-            className="inline-flex items-center h-7 px-2.5 rounded-lg text-sm font-medium hover:bg-muted transition-colors"
-          >
-            로그인
-          </Link>
-          <Link
-            href="/store"
-            className="inline-flex items-center h-7 px-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/80 transition-colors"
-          >
-            무료 가이드 받기
-          </Link>
+          {user ? (
+            <div className="relative">
+              <button
+                onClick={() => setProfileMenu(!profileMenu)}
+                className="flex items-center gap-2 h-8 px-3 rounded-lg hover:bg-muted transition-colors"
+              >
+                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <span className="text-sm font-medium">{profile?.name || '사용자'}</span>
+              </button>
+              {profileMenu && (
+                <div className="absolute right-0 top-full mt-1 w-48 bg-background border border-border rounded-lg shadow-lg py-1 z-50">
+                  <Link
+                    href="/mypage"
+                    onClick={() => setProfileMenu(false)}
+                    className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors"
+                  >
+                    <User className="w-4 h-4" /> 마이페이지
+                  </Link>
+                  {profile?.role === 'admin' && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setProfileMenu(false)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors"
+                    >
+                      <Settings className="w-4 h-4" /> 관리자
+                    </Link>
+                  )}
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted transition-colors w-full text-left text-red-600"
+                  >
+                    <LogOut className="w-4 h-4" /> 로그아웃
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <Link
+                href="/auth/login"
+                className="inline-flex items-center h-7 px-2.5 rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+              >
+                로그인
+              </Link>
+              <Link
+                href="/store"
+                className="inline-flex items-center h-7 px-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/80 transition-colors"
+              >
+                무료 가이드 받기
+              </Link>
+            </>
+          )}
         </div>
 
-        <button
-          className="md:hidden p-2 text-muted-foreground"
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        >
-          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
+        <div className="md:hidden flex items-center gap-2">
+          <CartDrawer />
+          <button
+            className="p-2 text-muted-foreground"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
       </div>
 
       {isMobileMenuOpen && (
@@ -89,20 +174,49 @@ export function Header() {
               </Link>
             ))}
             <div className="pt-4 border-t border-border flex flex-col gap-2">
-              <Link
-                href="/mypage"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="w-full text-center py-2 rounded-lg border border-border hover:bg-muted text-sm font-medium transition-colors"
-              >
-                로그인
-              </Link>
-              <Link
-                href="/store"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="w-full text-center py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/80 transition-colors"
-              >
-                무료 가이드 받기
-              </Link>
+              {user ? (
+                <>
+                  <Link
+                    href="/mypage"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full text-center py-2 rounded-lg border border-border hover:bg-muted text-sm font-medium transition-colors"
+                  >
+                    마이페이지
+                  </Link>
+                  {profile?.role === 'admin' && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="w-full text-center py-2 rounded-lg border border-border hover:bg-muted text-sm font-medium transition-colors"
+                    >
+                      관리자
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => { handleLogout(); setIsMobileMenuOpen(false) }}
+                    className="w-full text-center py-2 rounded-lg text-red-600 text-sm font-medium hover:bg-red-50 transition-colors"
+                  >
+                    로그아웃
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/auth/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full text-center py-2 rounded-lg border border-border hover:bg-muted text-sm font-medium transition-colors"
+                  >
+                    로그인
+                  </Link>
+                  <Link
+                    href="/auth/signup"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full text-center py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/80 transition-colors"
+                  >
+                    회원가입
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
