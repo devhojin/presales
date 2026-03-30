@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
+import { CartDrawer } from '@/components/CartDrawer'
 
 const navLinks = [
   { href: '/store', label: '템플릿 스토어' },
@@ -48,7 +49,8 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-2">
+          <CartDrawer />
           <Link
             href="/mypage"
             className="inline-flex items-center h-7 px-2.5 rounded-lg text-sm font-medium hover:bg-muted transition-colors"

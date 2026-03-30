@@ -1,11 +1,29 @@
+'use client'
+
 import Link from 'next/link'
-import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { type Product, formatPrice, allTiers } from '@/lib/data'
+import { useCartStore } from '@/stores/cart-store'
+import { ShoppingCart, Check } from 'lucide-react'
 
 export function ProductCard({ product }: { product: Product }) {
   const tierInfo = allTiers.find((t) => t.id === product.tier)
   const discount = Math.round((1 - product.price / product.originalPrice) * 100)
+  const { toggleItem, isInCart } = useCartStore()
+  const inCart = isInCart(product.id)
+
+  const handleCartToggle = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    toggleItem({
+      productId: product.id,
+      title: product.title,
+      price: product.price,
+      originalPrice: product.originalPrice,
+      thumbnail: product.thumbnail,
+      format: product.format,
+    })
+  }
 
   return (
     <Link href={`/store/${product.id}`} className="group">
@@ -26,6 +44,16 @@ export function ProductCard({ product }: { product: Product }) {
               -{discount}%
             </Badge>
           )}
+          <button
+            onClick={handleCartToggle}
+            className={`absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md ${
+              inCart
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-white/90 text-gray-600 hover:bg-white hover:text-primary'
+            }`}
+          >
+            {inCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
+          </button>
         </div>
         <div className="p-4 space-y-2">
           <p className="text-xs text-muted-foreground">{product.vendor}</p>
