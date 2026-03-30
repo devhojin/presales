@@ -146,7 +146,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
           <Separator />
 
-          {product.description && (
+          {product.description && !product.description_html && (
             <div>
               <h3 className="font-semibold mb-2">상품 설명</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
@@ -191,6 +191,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
       </div>
+
+      {/* Rich Description HTML */}
+      {product.description_html && (
+        <div className="mt-12 border border-border rounded-xl overflow-hidden">
+          <div className="bg-muted/50 px-6 py-4 border-b border-border">
+            <h2 className="text-lg font-bold">상품 상세 설명</h2>
+          </div>
+          <div
+            className="p-6 prose prose-sm max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-li:text-muted-foreground prose-strong:text-foreground"
+            dangerouslySetInnerHTML={{ __html: product.description_html }}
+          />
+        </div>
+      )}
 
       {/* Related */}
       {related.length > 0 && (

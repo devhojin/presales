@@ -2,6 +2,7 @@ export interface DbProduct {
   id: number
   title: string
   description: string | null
+  description_html: string | null
   price: number
   original_price: number
   category_id: number | null
