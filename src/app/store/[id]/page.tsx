@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
-import { type DbProduct, formatPrice } from '@/lib/types'
+import { type DbProduct, type DbCategory, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -14,6 +14,7 @@ type TabId = 'info' | 'video' | 'review'
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [product, setProduct] = useState<DbProduct | null>(null)
+  const [categories, setCategories] = useState<DbCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [related, setRelated] = useState<DbProduct[]>([])
   const [activeTab, setActiveTab] = useState<TabId>('info')
@@ -22,28 +23,54 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     async function load() {
       const supabase = createClient()
-      const { data } = await supabase
-        .from('products')
-        .select('*, categories(id, name, slug)')
-        .eq('id', Number(id))
-        .single()
+      const [{ data }, { data: catData }] = await Promise.all([
+        supabase
+          .from('products')
+          .select('*, categories(id, name, slug)')
+          .eq('id', Number(id))
+          .single(),
+        supabase.from('categories').select('*').order('sort_order'),
+      ])
+      setCategories(catData || [])
 
       if (data) {
         setProduct(data)
-        // Load related
-        const { data: rel } = await supabase
-          .from('products')
-          .select('*, categories(id, name, slug)')
-          .eq('is_published', true)
-          .eq('category_id', data.category_id)
-          .neq('id', data.id)
-          .limit(3)
-        setRelated(rel || [])
+        // Load related: find products with overlapping category_ids
+        const productCatIds = data.category_ids && data.category_ids.length > 0
+          ? data.category_ids
+          : data.category_id ? [data.category_id] : []
+
+        if (productCatIds.length > 0) {
+          const { data: allPublished } = await supabase
+            .from('products')
+            .select('*, categories(id, name, slug)')
+            .eq('is_published', true)
+            .neq('id', data.id)
+
+          const relatedProducts = (allPublished || []).filter((p) => {
+            const pCatIds = p.category_ids && p.category_ids.length > 0
+              ? p.category_ids
+              : p.category_id ? [p.category_id] : []
+            return pCatIds.some((cid: number) => productCatIds.includes(cid))
+          }).slice(0, 3)
+          setRelated(relatedProducts)
+        }
       }
       setLoading(false)
     }
     load()
   }, [id])
+
+  const categoryMap = new Map<number, string>()
+  categories.forEach((c) => categoryMap.set(c.id, c.name))
+
+  const getCategoryNames = (p: DbProduct): string[] => {
+    if (p.category_ids && p.category_ids.length > 0) {
+      return p.category_ids.map((cid) => categoryMap.get(cid) || '').filter(Boolean)
+    }
+    if (p.categories?.name) return [p.categories.name]
+    return ['문서']
+  }
 
   if (loading) {
     return (
@@ -107,7 +134,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         {/* Info */}
         <div className="space-y-6">
           <div>
-            <p className="text-sm text-muted-foreground mb-1">{product.categories?.name || '문서'}</p>
+            <div className="flex gap-2 flex-wrap mb-1">
+              {getCategoryNames(product).map((name) => (
+                <span key={name} className="text-sm text-muted-foreground">{name}</span>
+              ))}
+            </div>
             <h1 className="text-2xl font-bold">{product.title}</h1>
           </div>
 
@@ -148,7 +179,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             )}
             <div>
               <p className="text-muted-foreground">카테고리</p>
-              <p className="font-medium">{product.categories?.name || '-'}</p>
+              <p className="font-medium">{getCategoryNames(product).join(', ') || '-'}</p>
             </div>
           </div>
 

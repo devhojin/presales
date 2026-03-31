@@ -8,7 +8,7 @@ import { type DbProduct, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { FileText, Download, Globe, Handshake, ArrowRight, ShoppingCart, Check } from 'lucide-react'
 
-function FeaturedCard({ product }: { product: DbProduct }) {
+function FeaturedCard({ product, categoryNames }: { product: DbProduct; categoryNames: string[] }) {
   const discount = product.original_price > 0 ? Math.round((1 - product.price / product.original_price) * 100) : 0
   const { toggleItem, isInCart } = useCartStore()
   const inCart = isInCart(product.id)
@@ -34,7 +34,11 @@ function FeaturedCard({ product }: { product: DbProduct }) {
           </button>
         </div>
         <div className="p-4 space-y-2">
-          <p className="text-xs text-muted-foreground">{product.categories?.name || '문서'}</p>
+          <div className="flex gap-1 flex-wrap">
+            {categoryNames.map((name) => (
+              <span key={name} className="text-xs text-muted-foreground">{name}</span>
+            ))}
+          </div>
           <h3 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">{product.title}</h3>
           <div className="flex items-center gap-2">
             {product.is_free ? <span className="text-base font-bold text-emerald-600">무료</span> : (
@@ -52,20 +56,36 @@ function FeaturedCard({ product }: { product: DbProduct }) {
 
 export default function Home() {
   const [products, setProducts] = useState<DbProduct[]>([])
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([])
 
   useEffect(() => {
     async function load() {
       const supabase = createClient()
-      const { data } = await supabase
-        .from('products')
-        .select('*, categories(id, name, slug)')
-        .eq('is_published', true)
-        .order('download_count', { ascending: false })
-        .limit(8)
+      const [{ data }, { data: catData }] = await Promise.all([
+        supabase
+          .from('products')
+          .select('*, categories(id, name, slug)')
+          .eq('is_published', true)
+          .order('download_count', { ascending: false })
+          .limit(8),
+        supabase.from('categories').select('id, name').order('sort_order'),
+      ])
       setProducts(data || [])
+      setCategories(catData || [])
     }
     load()
   }, [])
+
+  const categoryMap = new Map<number, string>()
+  categories.forEach((c) => categoryMap.set(c.id, c.name))
+
+  const getCategoryNames = (p: DbProduct): string[] => {
+    if (p.category_ids && p.category_ids.length > 0) {
+      return p.category_ids.map((cid) => categoryMap.get(cid) || '').filter(Boolean)
+    }
+    if (p.categories?.name) return [p.categories.name]
+    return ['문서']
+  }
 
   return (
     <div>
@@ -129,7 +149,7 @@ export default function Home() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {products.slice(0, 4).map((product) => (
-              <FeaturedCard key={product.id} product={product} />
+              <FeaturedCard key={product.id} product={product} categoryNames={getCategoryNames(product)} />
             ))}
           </div>
         </div>

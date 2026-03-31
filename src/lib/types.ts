@@ -7,6 +7,7 @@ export interface DbProduct {
   price: number
   original_price: number
   category_id: number | null
+  category_ids: number[] | null
   tier: string | null
   format: string | null
   pages: number | null

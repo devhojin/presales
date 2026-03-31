@@ -55,7 +55,7 @@ function FileTypeBadges({ format, onClick }: { format: string | null; onClick?: 
   )
 }
 
-function ProductCard({ product, onFileTypeClick }: { product: DbProduct; onFileTypeClick: (type: string) => void }) {
+function ProductCard({ product, onFileTypeClick, categoryNames }: { product: DbProduct; onFileTypeClick: (type: string) => void; categoryNames: string[] }) {
   const discount = product.original_price > 0
     ? Math.round((1 - product.price / product.original_price) * 100)
     : 0
@@ -103,7 +103,11 @@ function ProductCard({ product, onFileTypeClick }: { product: DbProduct; onFileT
         </div>
         <div className="p-4 space-y-2">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">{product.categories?.name || '문서'}</p>
+            <div className="flex gap-1 flex-wrap">
+              {categoryNames.map((name) => (
+                <span key={name} className="text-xs text-muted-foreground">{name}</span>
+              ))}
+            </div>
             <FileTypeBadges format={product.format} onClick={onFileTypeClick} />
           </div>
           <h3 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">
@@ -149,7 +153,7 @@ const allFileTypes = [
 export default function StorePage() {
   const [products, setProducts] = useState<DbProduct[]>([])
   const [categories, setCategories] = useState<DbCategory[]>([])
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
+  const [selectedCategories, setSelectedCategories] = useState<Set<number>>(new Set())
   const [selectedPriceType, setSelectedPriceType] = useState<string | null>(null)
   const [selectedFileType, setSelectedFileType] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -169,9 +173,39 @@ export default function StorePage() {
     load()
   }, [])
 
+  // Build category id->name map for displaying multiple categories
+  const categoryMap = useMemo(() => {
+    const map = new Map<number, string>()
+    categories.forEach((c) => map.set(c.id, c.name))
+    return map
+  }, [categories])
+
+  const getCategoryNames = (product: DbProduct): string[] => {
+    if (product.category_ids && product.category_ids.length > 0) {
+      return product.category_ids.map((id) => categoryMap.get(id) || '').filter(Boolean)
+    }
+    if (product.categories?.name) return [product.categories.name]
+    return ['문서']
+  }
+
+  const toggleCategory = (catId: number) => {
+    setSelectedCategories((prev) => {
+      const next = new Set(prev)
+      if (next.has(catId)) next.delete(catId)
+      else next.add(catId)
+      return next
+    })
+  }
+
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
-      if (selectedCategory && p.category_id !== selectedCategory) return false
+      if (selectedCategories.size > 0) {
+        const productCatIds = p.category_ids && p.category_ids.length > 0
+          ? p.category_ids
+          : p.category_id ? [p.category_id] : []
+        const hasOverlap = productCatIds.some((id) => selectedCategories.has(id))
+        if (!hasOverlap) return false
+      }
       if (selectedPriceType === 'free' && !p.is_free) return false
       if (selectedPriceType === 'paid' && p.is_free) return false
       if (selectedFileType) {
@@ -180,16 +214,17 @@ export default function StorePage() {
       }
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
+        const catNames = getCategoryNames(p)
         return (
           p.title.toLowerCase().includes(q) ||
           p.tags?.some((t) => t.toLowerCase().includes(q)) ||
-          p.categories?.name?.toLowerCase().includes(q) ||
+          catNames.some((n) => n.toLowerCase().includes(q)) ||
           (p.format || '').toLowerCase().includes(q)
         )
       }
       return true
     })
-  }, [products, selectedCategory, selectedPriceType, selectedFileType, searchQuery])
+  }, [products, selectedCategories, selectedPriceType, selectedFileType, searchQuery, categoryMap])
 
   const handleFileTypeClick = (type: string) => {
     setSelectedFileType(selectedFileType === type ? null : type)
@@ -217,9 +252,9 @@ export default function StorePage() {
         {/* 카테고리 필터 */}
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => setSelectedCategory(null)}
+            onClick={() => setSelectedCategories(new Set())}
             className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-              !selectedCategory ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-muted'
+              selectedCategories.size === 0 ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-muted'
             }`}
           >
             전체
@@ -227,9 +262,9 @@ export default function StorePage() {
           {categories.map((cat) => (
             <button
               key={cat.id}
-              onClick={() => setSelectedCategory(selectedCategory === cat.id ? null : cat.id)}
+              onClick={() => toggleCategory(cat.id)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                selectedCategory === cat.id ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-muted'
+                selectedCategories.has(cat.id) ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-muted'
               }`}
             >
               {cat.name}
@@ -289,7 +324,7 @@ export default function StorePage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} onFileTypeClick={handleFileTypeClick} />
+            <ProductCard key={product.id} product={product} onFileTypeClick={handleFileTypeClick} categoryNames={getCategoryNames(product)} />
           ))}
         </div>
       )}

@@ -21,6 +21,7 @@ export default function NewProduct() {
     price: '',
     original_price: '',
     category_id: '',
+    category_ids: [] as number[],
     format: '',
     pages: '',
     file_size: '',
@@ -49,7 +50,8 @@ export default function NewProduct() {
       description: form.description,
       price: parseInt(form.price) || 0,
       original_price: parseInt(form.original_price) || 0,
-      category_id: parseInt(form.category_id) || null,
+      category_id: form.category_ids.length > 0 ? form.category_ids[0] : (parseInt(form.category_id) || null),
+      category_ids: form.category_ids,
       format: form.format,
       pages: parseInt(form.pages) || null,
       file_size: form.file_size,
@@ -109,14 +111,35 @@ export default function NewProduct() {
           </div>
 
           <div>
-            <label className={labelClass}>카테고리</label>
-            <select className={inputClass} value={form.category_id}
-              onChange={(e) => setForm({ ...form, category_id: e.target.value })}>
-              <option value="">선택</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <label className={labelClass}>카테고리 (복수 선택 가능)</label>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((c) => {
+                const checked = form.category_ids.includes(c.id)
+                return (
+                  <label
+                    key={c.id}
+                    className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                      checked
+                        ? 'bg-blue-50 border-blue-300 text-blue-700'
+                        : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        const next = checked
+                          ? form.category_ids.filter(id => id !== c.id)
+                          : [...form.category_ids, c.id]
+                        setForm({ ...form, category_ids: next, category_id: next.length > 0 ? String(next[0]) : '' })
+                      }}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-sm font-medium">{c.name}</span>
+                  </label>
+                )
+              })}
+            </div>
           </div>
         </div>
 

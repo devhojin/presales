@@ -39,6 +39,7 @@ interface ProductForm {
   price: number
   original_price: number
   category_id: string
+  category_ids: number[]
   tier: string
   format: string
   pages: string
@@ -72,6 +73,7 @@ const EMPTY_FORM: ProductForm = {
   price: 0,
   original_price: 0,
   category_id: '',
+  category_ids: [],
   tier: 'basic',
   format: '',
   pages: '',
@@ -283,6 +285,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           price: p.price || 0,
           original_price: p.original_price || 0,
           category_id: String(p.category_id || ''),
+          category_ids: Array.isArray(p.category_ids) ? p.category_ids : (p.category_id ? [p.category_id] : []),
           tier: p.tier || 'basic',
           format: p.format || '',
           pages: p.pages ? String(p.pages) : '',
@@ -325,7 +328,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         youtube_id: form.youtube_id || null,
         price: form.is_free ? 0 : form.price,
         original_price: form.is_free ? 0 : form.original_price,
-        category_id: form.category_id ? parseInt(form.category_id) : null,
+        category_id: form.category_ids.length > 0 ? form.category_ids[0] : (form.category_id ? parseInt(form.category_id) : null),
+        category_ids: form.category_ids,
         tier: form.tier,
         format: form.format || null,
         pages: form.pages ? parseInt(form.pages) : null,
@@ -529,19 +533,39 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 />
               </div>
 
-              {/* 카테고리 */}
+              {/* 카테고리 (복수 선택) */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">카테고리</label>
-                <select
-                  value={form.category_id}
-                  onChange={e => updateField('category_id', e.target.value)}
-                  className={`${inputClass} appearance-none cursor-pointer`}
-                >
-                  <option value="">선택</option>
-                  {categories.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                <label className="block text-xs font-medium text-gray-500 mb-2">카테고리 (복수 선택 가능)</label>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map(c => {
+                    const checked = form.category_ids.includes(c.id)
+                    return (
+                      <label
+                        key={c.id}
+                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                          checked
+                            ? 'bg-blue-50 border-blue-300 text-blue-700'
+                            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            const next = checked
+                              ? form.category_ids.filter(id => id !== c.id)
+                              : [...form.category_ids, c.id]
+                            updateField('category_ids', next)
+                            // Keep category_id in sync for backwards compat
+                            updateField('category_id', next.length > 0 ? String(next[0]) : '')
+                          }}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium">{c.name}</span>
+                      </label>
+                    )
+                  })}
+                </div>
               </div>
 
               {/* 가격 정보 */}
