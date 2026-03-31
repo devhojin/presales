@@ -1,54 +1,37 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Check, Clock, Video, FileText, Users, Star } from 'lucide-react'
+import { createClient } from '@/lib/supabase'
 
-const packages = [
-  {
-    name: '스팟 상담',
-    price: '150,000원',
-    unit: '/ 30분',
-    description: '빠른 피드백이 필요할 때',
-    features: [
-      '화상 미팅 30분',
-      '사전 공고/자료 검토',
-      '핵심 피드백 요약 제공',
-      '이메일 후속 Q&A 1회',
-    ],
-    badge: null,
-    highlight: false,
-  },
-  {
-    name: '제안서 리뷰 패키지',
-    price: '500,000원',
-    unit: '/ 건',
-    description: '완성도 높은 제안서를 위한 전문가 리뷰',
-    features: [
-      '제안서 전체 리뷰 (50p 이내)',
-      '평가항목별 점수 예측',
-      '수정 방향 리포트 (10p)',
-      '30분 화상 디브리핑',
-      '1회 재리뷰 포함',
-    ],
-    badge: 'BEST',
-    highlight: true,
-  },
-  {
-    name: '프로젝트 컨설팅',
-    price: '3,000,000원~',
-    unit: '/ 프로젝트',
-    description: '입찰 전 과정을 함께하는 풀 서포트',
-    features: [
-      '전담 컨설턴트 배정',
-      '입찰공고 분석 및 전략 수립',
-      '제안서 공동 작성/코칭',
-      '발표 PT 리허설',
-      '프로젝트 완료 후 30일 지원',
-    ],
-    badge: null,
-    highlight: false,
-  },
-]
+interface ConsultingPackage {
+  slug: string
+  name: string
+  description: string
+  price: string
+  price_unit: string
+  features: string[]
+  is_best: boolean
+  sort_order: number
+}
 
 export default function ConsultingPage() {
+  const [packages, setPackages] = useState<ConsultingPackage[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('consulting_packages')
+      .select('*')
+      .order('sort_order')
+      .then(({ data }) => {
+        if (data) setPackages(data)
+        setLoading(false)
+      })
+  }, [])
+
   return (
     <div className="container mx-auto px-4 py-10">
       <div className="text-center mb-12">
@@ -66,47 +49,64 @@ export default function ConsultingPage() {
 
       {/* Packages */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-20">
-        {packages.map((pkg) => (
-          <div
-            key={pkg.name}
-            className={`relative rounded-xl border p-6 space-y-6 ${
-              pkg.highlight
-                ? 'border-primary shadow-lg shadow-primary/10 ring-1 ring-primary'
-                : 'border-border'
-            }`}
-          >
-            {pkg.badge && (
-              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
-                {pkg.badge}
-              </Badge>
-            )}
-            <div>
-              <h3 className="text-lg font-bold">{pkg.name}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{pkg.description}</p>
-            </div>
-            <div>
-              <span className="text-2xl font-bold text-primary">{pkg.price}</span>
-              <span className="text-sm text-muted-foreground ml-1">{pkg.unit}</span>
-            </div>
-            <ul className="space-y-3">
-              {pkg.features.map((f) => (
-                <li key={f} className="flex items-start gap-2 text-sm">
-                  <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                  <span>{f}</span>
-                </li>
-              ))}
-            </ul>
-            <button
-              className={`w-full h-10 rounded-lg font-medium text-sm transition-colors ${
-                pkg.highlight
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                  : 'border border-border hover:bg-muted'
-              }`}
-            >
-              상담 신청하기
-            </button>
-          </div>
-        ))}
+        {loading
+          ? Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="rounded-xl border border-border p-6 space-y-6 animate-pulse"
+              >
+                <div className="h-5 bg-muted rounded w-1/2" />
+                <div className="h-4 bg-muted rounded w-3/4" />
+                <div className="h-8 bg-muted rounded w-2/5" />
+                <div className="space-y-3">
+                  {Array.from({ length: 4 }).map((_, j) => (
+                    <div key={j} className="h-4 bg-muted rounded w-full" />
+                  ))}
+                </div>
+                <div className="h-10 bg-muted rounded w-full" />
+              </div>
+            ))
+          : packages.map((pkg) => (
+              <div
+                key={pkg.slug}
+                className={`relative rounded-xl border p-6 space-y-6 ${
+                  pkg.is_best
+                    ? 'border-primary shadow-lg shadow-primary/10 ring-1 ring-primary'
+                    : 'border-border'
+                }`}
+              >
+                {pkg.is_best && (
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
+                    BEST
+                  </Badge>
+                )}
+                <div>
+                  <h3 className="text-lg font-bold">{pkg.name}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">{pkg.description}</p>
+                </div>
+                <div>
+                  <span className="text-2xl font-bold text-primary">{pkg.price}</span>
+                  <span className="text-sm text-muted-foreground ml-1">{pkg.price_unit}</span>
+                </div>
+                <ul className="space-y-3">
+                  {pkg.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-sm">
+                      <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  className={`w-full h-10 rounded-lg font-medium text-sm transition-colors ${
+                    pkg.is_best
+                      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      : 'border border-border hover:bg-muted'
+                  }`}
+                >
+                  상담 신청하기
+                </button>
+              </div>
+            ))}
       </div>
 
       {/* Process */}

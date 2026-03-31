@@ -1,6 +1,38 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase'
+
+const FALLBACK = {
+  company_name: 'AMARANS Partners',
+  ceo_name: '채호진',
+  business_number: '확인 필요',
+  commerce_number: '준비 중',
+  address: '서울특별시 강남구 테헤란로 123',
+  email: 'contact@presales.co.kr',
+  copyright: '2025 AMARANS Partners. All rights reserved.',
+}
 
 export function Footer() {
+  const [s, setS] = useState(FALLBACK)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('site_settings')
+      .select('key, value')
+      .in('key', Object.keys(FALLBACK))
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const map = Object.fromEntries(
+            data.map((r: { key: string; value: string }) => [r.key, r.value])
+          )
+          setS((prev) => ({ ...prev, ...map }))
+        }
+      })
+  }, [])
+
   return (
     <footer className="bg-muted/50 border-t border-border pt-16 pb-8">
       <div className="container mx-auto px-4">
@@ -67,14 +99,14 @@ export function Footer() {
           <div className="text-xs text-muted-foreground space-y-2">
             <p>
               <span className="font-semibold text-foreground mr-2">
-                AMARANS Partners
+                {s.company_name}
               </span>
-              대표: 채호진 | 사업자등록번호: 확인 필요 | 통신판매업신고: 준비 중
+              대표: {s.ceo_name} | 사업자등록번호: {s.business_number} | 통신판매업신고: {s.commerce_number}
             </p>
             <p>
-              서울특별시 강남구 테헤란로 123 | contact@presales.co.kr
+              {s.address} | {s.email}
             </p>
-            <p className="mt-4">&copy; 2025 AMARANS Partners. All rights reserved.</p>
+            <p className="mt-4">&copy; {s.copyright}</p>
           </div>
           <div className="flex gap-4 text-xs font-medium text-muted-foreground">
             <button className="hover:text-primary">이용약관</button>
