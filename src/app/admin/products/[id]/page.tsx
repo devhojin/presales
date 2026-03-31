@@ -1,467 +1,1117 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, useRef, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { ArrowLeft, Save, Eye, EyeOff, Trash2, Play } from 'lucide-react'
+import {
+  ArrowLeft, Save, Eye, EyeOff, Trash2, Play, Plus, X,
+  ImageIcon, FileText, Tag, Upload, Loader2, Code, Monitor,
+  FileType, User, Check
+} from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 
-const RichTextEditor = dynamic(() => import('@/components/RichTextEditor').then(m => ({ default: m.RichTextEditor })), { ssr: false, loading: () => <div className="h-[400px] border border-gray-300 rounded-lg animate-pulse bg-gray-50" /> })
+const RichTextEditor = dynamic(
+  () => import('@/components/RichTextEditor').then(m => ({ default: m.RichTextEditor })),
+  { ssr: false, loading: () => <div className="h-[400px] border border-gray-200 rounded-lg animate-pulse bg-gray-50" /> }
+)
+
+// ===========================
+// Types
+// ===========================
 
 interface Category {
   id: number
   name: string
 }
 
-interface ProductData {
-  id: number
+interface SpecItem {
+  label: string
+  value: string
+}
+
+interface ProductForm {
   title: string
   description: string
-  description_html: string | null
-  youtube_id: string | null
+  description_html: string
+  youtube_id: string
   price: number
   original_price: number
-  category_id: number | null
+  category_id: string
   tier: string
   format: string
-  pages: number | null
+  pages: string
   file_size: string
   thumbnail_url: string
   tags: string[]
   is_published: boolean
   is_free: boolean
-  download_count: number
-  created_at: string
+  overview: string[]
+  features: string[]
+  specs: SpecItem[]
+  file_types: string[]
+  document_orientation: '가로형' | '세로형'
+  badge_new: boolean
+  badge_best: boolean
+  badge_sale: boolean
+  seller: string
 }
 
-export default function EditProduct({ params }: { params: Promise<{ id: string }> }) {
+// ===========================
+// Constants
+// ===========================
+
+const FILE_TYPE_OPTIONS = ['PPT', 'PDF', 'HWP', 'XLS', 'DOC'] as const
+
+const EMPTY_FORM: ProductForm = {
+  title: '',
+  description: '',
+  description_html: '',
+  youtube_id: '',
+  price: 0,
+  original_price: 0,
+  category_id: '',
+  tier: 'basic',
+  format: '',
+  pages: '',
+  file_size: '',
+  thumbnail_url: '',
+  tags: [],
+  is_published: false,
+  is_free: false,
+  overview: [''],
+  features: [''],
+  specs: [{ label: '', value: '' }],
+  file_types: [],
+  document_orientation: '가로형',
+  badge_new: false,
+  badge_best: false,
+  badge_sale: false,
+  seller: '프리세일즈',
+}
+
+// ===========================
+// Reusable: List Editor
+// ===========================
+
+function ListEditor({
+  items,
+  onChange,
+  placeholder,
+  label,
+}: {
+  items: string[]
+  onChange: (items: string[]) => void
+  placeholder: string
+  label: string
+}) {
+  const addItem = () => onChange([...items, ''])
+  const removeItem = (idx: number) => onChange(items.filter((_, i) => i !== idx))
+  const updateItem = (idx: number, value: string) =>
+    onChange(items.map((item, i) => (i === idx ? value : item)))
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-xs font-medium text-gray-500">{label}</label>
+        <button
+          type="button"
+          onClick={addItem}
+          className="inline-flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+        >
+          <Plus className="w-3 h-3" />
+          추가
+        </button>
+      </div>
+      <div className="space-y-2">
+        {items.map((item, idx) => (
+          <div key={idx} className="flex gap-2">
+            <input
+              type="text"
+              value={item}
+              onChange={(e) => updateItem(idx, e.target.value)}
+              placeholder={placeholder}
+              className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all"
+            />
+            {items.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeItem(idx)}
+                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ===========================
+// Reusable: Specs Editor
+// ===========================
+
+function SpecsEditor({
+  specs,
+  onChange,
+}: {
+  specs: SpecItem[]
+  onChange: (specs: SpecItem[]) => void
+}) {
+  const addSpec = () => onChange([...specs, { label: '', value: '' }])
+  const removeSpec = (idx: number) => onChange(specs.filter((_, i) => i !== idx))
+  const updateSpec = (idx: number, field: 'label' | 'value', val: string) =>
+    onChange(specs.map((s, i) => (i === idx ? { ...s, [field]: val } : s)))
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-xs font-medium text-gray-500">스펙 (키-값)</label>
+        <button
+          type="button"
+          onClick={addSpec}
+          className="inline-flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+        >
+          <Plus className="w-3 h-3" />
+          추가
+        </button>
+      </div>
+      <div className="space-y-2">
+        {specs.map((spec, idx) => (
+          <div key={idx} className="flex gap-2">
+            <input
+              type="text"
+              value={spec.label}
+              onChange={(e) => updateSpec(idx, 'label', e.target.value)}
+              placeholder="항목명 (예: 페이지수)"
+              className="w-1/3 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all"
+            />
+            <input
+              type="text"
+              value={spec.value}
+              onChange={(e) => updateSpec(idx, 'value', e.target.value)}
+              placeholder="값 (예: 45p)"
+              className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all"
+            />
+            {specs.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeSpec(idx)}
+                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ===========================
+// Helper: extract YouTube ID
+// ===========================
+
+function extractYoutubeId(input: string): string {
+  if (!input) return ''
+  const match = input.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+  )
+  if (match) return match[1]
+  // If it's already just an ID (11 chars alphanumeric)
+  if (/^[a-zA-Z0-9_-]{11}$/.test(input.trim())) return input.trim()
+  return input
+}
+
+// ===========================
+// Main Page
+// ===========================
+
+export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const [categories, setCategories] = useState<Category[]>([])
-  const [saving, setSaving] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [product, setProduct] = useState<ProductData | null>(null)
-  const [form, setForm] = useState({
-    title: '',
-    description: '',
-    description_html: '',
-    youtube_id: '',
-    price: '',
-    original_price: '',
-    category_id: '',
-    tier: 'basic',
-    format: '',
-    pages: '',
-    file_size: '',
-    thumbnail_url: '',
-    tags: '',
-    is_published: false,
-    is_free: false,
-  })
+  const isNew = id === 'new'
 
+  const [form, setForm] = useState<ProductForm>(EMPTY_FORM)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [showHtmlSource, setShowHtmlSource] = useState(false)
+  const [tagInput, setTagInput] = useState('')
+  const [downloadCount, setDownloadCount] = useState(0)
+  const [createdAt, setCreatedAt] = useState('')
+
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const showToast = (message: string) => {
+    setToast(message)
+    setTimeout(() => setToast(null), 2500)
+  }
+
+  const updateField = <K extends keyof ProductForm>(key: K, value: ProductForm[K]) => {
+    setForm(prev => ({ ...prev, [key]: value }))
+  }
+
+  // Load data
   useEffect(() => {
     async function load() {
       const supabase = createClient()
       const [catRes, prodRes] = await Promise.all([
         supabase.from('categories').select('*').order('sort_order'),
-        supabase.from('products').select('*').eq('id', Number(id)).single(),
+        isNew
+          ? Promise.resolve({ data: null })
+          : supabase.from('products').select('*').eq('id', Number(id)).maybeSingle(),
       ])
       setCategories(catRes.data || [])
+
       if (prodRes.data) {
-        const p = prodRes.data as ProductData
-        setProduct(p)
+        const p = prodRes.data
+        const overview = Array.isArray(p.overview) ? p.overview : []
+        const features = Array.isArray(p.features) ? p.features : []
+        const specs = Array.isArray(p.specs) ? p.specs : []
         setForm({
           title: p.title || '',
           description: p.description || '',
           description_html: p.description_html || '',
           youtube_id: p.youtube_id || '',
-          price: String(p.price || 0),
-          original_price: String(p.original_price || 0),
+          price: p.price || 0,
+          original_price: p.original_price || 0,
           category_id: String(p.category_id || ''),
           tier: p.tier || 'basic',
           format: p.format || '',
-          pages: String(p.pages || ''),
+          pages: p.pages ? String(p.pages) : '',
           file_size: p.file_size || '',
           thumbnail_url: p.thumbnail_url || '',
-          tags: (p.tags || []).join(', '),
-          is_published: p.is_published,
-          is_free: p.is_free,
+          tags: Array.isArray(p.tags) ? p.tags : [],
+          is_published: p.is_published ?? false,
+          is_free: p.is_free ?? false,
+          overview: overview.length > 0 ? overview : [''],
+          features: features.length > 0 ? features : [''],
+          specs: specs.length > 0 ? specs : [{ label: '', value: '' }],
+          file_types: Array.isArray(p.file_types) ? p.file_types : [],
+          document_orientation: p.document_orientation || '가로형',
+          badge_new: p.badge_new ?? false,
+          badge_best: p.badge_best ?? false,
+          badge_sale: p.badge_sale ?? false,
+          seller: p.seller || '프리세일즈',
         })
+        setDownloadCount(p.download_count || 0)
+        setCreatedAt(p.created_at || '')
       }
       setLoading(false)
     }
     load()
-  }, [id])
+  }, [id, isNew])
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setSaving(true)
-
-    const supabase = createClient()
-    const { error } = await supabase
-      .from('products')
-      .update({
-        title: form.title,
-        description: form.description,
-        description_html: form.description_html || null,
-        youtube_id: form.youtube_id || null,
-        price: parseInt(form.price) || 0,
-        original_price: parseInt(form.original_price) || 0,
-        category_id: parseInt(form.category_id) || null,
-        tier: form.tier,
-        format: form.format,
-        pages: parseInt(form.pages) || null,
-        file_size: form.file_size,
-        thumbnail_url: form.thumbnail_url,
-        tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
-        is_published: form.is_published,
-        is_free: form.is_free,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', Number(id))
-
-    if (error) {
-      alert('저장 실패: ' + error.message)
-      setSaving(false)
+  // Save
+  const handleSave = async () => {
+    if (!form.title.trim()) {
+      showToast('상품명을 입력해주세요.')
       return
     }
-    router.push('/admin/products')
+    setSaving(true)
+    try {
+      const supabase = createClient()
+      const dbRow: Record<string, unknown> = {
+        title: form.title,
+        description: form.description || null,
+        description_html: form.description_html || null,
+        youtube_id: form.youtube_id || null,
+        price: form.is_free ? 0 : form.price,
+        original_price: form.is_free ? 0 : form.original_price,
+        category_id: form.category_id ? parseInt(form.category_id) : null,
+        tier: form.tier,
+        format: form.format || null,
+        pages: form.pages ? parseInt(form.pages) : null,
+        file_size: form.file_size || null,
+        thumbnail_url: form.thumbnail_url || null,
+        tags: form.tags,
+        is_published: form.is_published,
+        is_free: form.is_free,
+        overview: form.overview.filter(Boolean),
+        features: form.features.filter(Boolean),
+        specs: form.specs.filter(s => s.label || s.value),
+        file_types: form.file_types,
+        document_orientation: form.document_orientation,
+        badge_new: form.badge_new,
+        badge_best: form.badge_best,
+        badge_sale: form.badge_sale,
+        seller: form.seller || null,
+        updated_at: new Date().toISOString(),
+      }
+
+      if (isNew) {
+        const { error } = await supabase.from('products').insert(dbRow)
+        if (error) throw error
+      } else {
+        const { error } = await supabase.from('products').update(dbRow).eq('id', Number(id))
+        if (error) throw error
+      }
+
+      showToast(isNew ? '상품이 등록되었습니다.' : '상품이 수정되었습니다.')
+      setTimeout(() => router.push('/admin/products'), 1000)
+    } catch (e) {
+      showToast(`저장 오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}`)
+    } finally {
+      setSaving(false)
+    }
   }
 
-  async function handleDelete() {
-    if (!confirm('정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return
-    const supabase = createClient()
-    await supabase.from('products').delete().eq('id', Number(id))
-    router.push('/admin/products')
+  // Delete
+  const handleDelete = async () => {
+    if (!window.confirm('정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from('products').delete().eq('id', Number(id))
+      if (error) throw error
+      showToast('상품이 삭제되었습니다.')
+      setTimeout(() => router.push('/admin/products'), 1000)
+    } catch (e) {
+      showToast(`삭제 오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}`)
+    }
   }
+
+  // Thumbnail upload
+  const handleThumbnailUpload = async (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('파일 크기는 5MB 이하여야 합니다.')
+      return
+    }
+    if (!file.type.startsWith('image/')) {
+      showToast('이미지 파일만 업로드 가능합니다.')
+      return
+    }
+    setUploading(true)
+    try {
+      const supabase = createClient()
+      const ext = file.name.split('.').pop() || 'jpg'
+      const filePath = `${isNew ? 'temp' : id}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('product-thumbnails')
+        .upload(filePath, file, { upsert: true })
+      if (uploadError) throw uploadError
+      const { data: urlData } = supabase.storage
+        .from('product-thumbnails')
+        .getPublicUrl(filePath)
+      updateField('thumbnail_url', urlData.publicUrl)
+      showToast('이미지가 업로드되었습니다.')
+    } catch (err) {
+      showToast(`업로드 오류: ${err instanceof Error ? err.message : '알 수 없는 오류'}`)
+    } finally {
+      setUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  // Tag add
+  const addTag = () => {
+    const v = tagInput.trim()
+    if (v && !form.tags.includes(v)) {
+      updateField('tags', [...form.tags, v])
+      setTagInput('')
+    }
+  }
+
+  const removeTag = (tag: string) => {
+    updateField('tags', form.tags.filter(t => t !== tag))
+  }
+
+  const discount =
+    form.original_price > 0 && form.price < form.original_price
+      ? Math.round((1 - form.price / form.original_price) * 100)
+      : 0
 
   const inputClass =
-    'w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white'
-  const labelClass = 'block text-sm font-medium text-gray-700 mb-1.5'
+    'w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all'
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20 text-gray-400">
+        <Loader2 className="w-5 h-5 animate-spin mr-2" />
         로딩 중...
       </div>
     )
   }
 
-  if (!product) {
-    return (
-      <div className="text-center py-20">
-        <p className="text-gray-400">상품을 찾을 수 없습니다</p>
-        <Link href="/admin/products" className="text-blue-600 text-sm mt-4 inline-block">
-          목록으로 돌아가기
-        </Link>
-      </div>
-    )
-  }
-
-  const discount = form.original_price && form.price
-    ? Math.round((1 - parseInt(form.price) / parseInt(form.original_price)) * 100)
-    : 0
-
   return (
-    <div className="max-w-4xl">
-      <div className="flex items-center justify-between mb-8">
-        <div>
+    <div className="space-y-5">
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-6 right-6 z-50 px-4 py-3 bg-gray-900 text-white text-sm rounded-xl shadow-lg animate-in fade-in slide-in-from-top-2">
+          {toast}
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
           <Link
             href="/admin/products"
-            className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-2"
+            className="w-9 h-9 rounded-lg border border-gray-200 hover:bg-gray-50 flex items-center justify-center transition-colors"
           >
-            <ArrowLeft className="w-4 h-4 mr-1" /> 상품 목록
+            <ArrowLeft className="w-4 h-4 text-gray-600" />
           </Link>
-          <h1 className="text-2xl font-bold">상품 수정</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            ID: {product.id} | 등록일: {new Date(product.created_at).toLocaleDateString('ko-KR')} | 다운로드: {product.download_count}회
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleDelete}
-            className="h-9 px-3 rounded-lg border border-red-200 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors flex items-center gap-1"
-          >
-            <Trash2 className="w-4 h-4" /> 삭제
-          </button>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* 기본 정보 */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">기본 정보</h2>
-            <div className="flex items-center gap-2">
-              {form.is_published ? (
-                <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200">공개</Badge>
-              ) : (
-                <Badge className="bg-gray-50 text-gray-500 border-gray-200">비공개</Badge>
-              )}
-              {form.is_free && (
-                <Badge className="bg-purple-50 text-purple-700 border-purple-200">무료</Badge>
-              )}
-            </div>
-          </div>
-
           <div>
-            <label className={labelClass}>상품명 *</label>
-            <input
-              type="text"
-              required
-              className={inputClass}
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <label className={labelClass}>상품 설명</label>
-            <textarea
-              rows={6}
-              className={inputClass}
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className={labelClass}>판매가 (원) *</label>
-              <input
-                type="number"
-                required
-                className={inputClass}
-                value={form.price}
-                onChange={(e) => setForm({ ...form, price: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>정가 (원)</label>
-              <input
-                type="number"
-                className={inputClass}
-                value={form.original_price}
-                onChange={(e) => setForm({ ...form, original_price: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>할인율</label>
-              <div className="h-[42px] flex items-center px-3 rounded-lg bg-gray-50 border border-gray-200">
-                <span className={`text-sm font-bold ${discount > 0 ? 'text-red-500' : 'text-gray-400'}`}>
-                  {discount > 0 ? `-${discount}%` : '-'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>카테고리</label>
-              <select
-                className={inputClass}
-                value={form.category_id}
-                onChange={(e) => setForm({ ...form, category_id: e.target.value })}
-              >
-                <option value="">선택</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelClass}>티어</label>
-              <select
-                className={inputClass}
-                value={form.tier}
-                onChange={(e) => setForm({ ...form, tier: e.target.value })}
-              >
-                <option value="basic">기본</option>
-                <option value="premium">프리미엄</option>
-                <option value="package">패키지</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* 상세 정보 */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
-          <h2 className="font-semibold text-gray-900">상세 정보</h2>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className={labelClass}>파일 형식</label>
-              <input
-                type="text"
-                className={inputClass}
-                placeholder="PPTX, HWP"
-                value={form.format}
-                onChange={(e) => setForm({ ...form, format: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>페이지 수</label>
-              <input
-                type="number"
-                className={inputClass}
-                value={form.pages}
-                onChange={(e) => setForm({ ...form, pages: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className={labelClass}>파일 크기</label>
-              <input
-                type="text"
-                className={inputClass}
-                placeholder="18MB"
-                value={form.file_size}
-                onChange={(e) => setForm({ ...form, file_size: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className={labelClass}>태그 (쉼표로 구분)</label>
-            <input
-              type="text"
-              className={inputClass}
-              placeholder="공공기관, 나라장터, IT사업"
-              value={form.tags}
-              onChange={(e) => setForm({ ...form, tags: e.target.value })}
-            />
-            {form.tags && (
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {form.tags.split(',').map((tag) => tag.trim()).filter(Boolean).map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-xs">
-                    #{tag}
-                  </Badge>
-                ))}
-              </div>
+            <h1 className="text-xl font-bold text-gray-900">
+              {isNew ? '상품 등록' : '상품 수정'}
+            </h1>
+            {!isNew && (
+              <p className="text-xs text-gray-400 mt-0.5">
+                ID: {id}
+                {createdAt && <> | 등록일: {new Date(createdAt).toLocaleDateString('ko-KR')}</>}
+                {' '}| 다운로드: {downloadCount}회
+              </p>
             )}
           </div>
         </div>
-
-        {/* 썸네일 */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
-          <h2 className="font-semibold text-gray-900">이미지</h2>
-
-          <div>
-            <label className={labelClass}>썸네일 URL</label>
-            <input
-              type="url"
-              className={inputClass}
-              placeholder="https://..."
-              value={form.thumbnail_url}
-              onChange={(e) => setForm({ ...form, thumbnail_url: e.target.value })}
-            />
-          </div>
-
-          {form.thumbnail_url && (
-            <div className="relative w-64 aspect-[4/3] rounded-lg overflow-hidden bg-muted border border-gray-200">
-              <img
-                src={form.thumbnail_url}
-                alt="썸네일 미리보기"
-                className="w-full h-full object-cover"
-              />
-            </div>
+        <div className="flex items-center gap-2">
+          {!isNew && (
+            <button
+              onClick={handleDelete}
+              className="inline-flex items-center gap-2 px-4 py-2.5 border border-red-200 hover:bg-red-50 text-red-600 text-sm font-medium rounded-xl transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              삭제
+            </button>
           )}
-        </div>
-
-        {/* 상세 설명 (리치 에디터) */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
-          <h2 className="font-semibold text-gray-900">상세 설명 (HTML 에디터)</h2>
-          <p className="text-xs text-gray-500">상품 상세 페이지에 표시되는 리치 텍스트 설명입니다. 목차, 포함 내용, 활용 대상 등을 작성하세요.</p>
-          <RichTextEditor
-            content={form.description_html}
-            onChange={(html) => setForm({ ...form, description_html: html })}
-            placeholder="상품 상세 설명을 입력하세요..."
-          />
-        </div>
-
-        {/* 유튜브 */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
-          <div className="flex items-center gap-2">
-            <Play className="w-5 h-5 text-red-500" />
-            <h2 className="font-semibold text-gray-900">유튜브 영상</h2>
-          </div>
-          <div>
-            <label className={labelClass}>유튜브 영상 ID (또는 전체 URL)</label>
-            <input
-              type="text"
-              className={inputClass}
-              placeholder="예: dQw4w9WgXcQ 또는 https://youtube.com/watch?v=..."
-              value={form.youtube_id}
-              onChange={(e) => {
-                let val = e.target.value
-                const match = val.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/)
-                if (match) val = match[1]
-                setForm({ ...form, youtube_id: val })
-              }}
-            />
-            <p className="text-xs text-gray-500 mt-1">유튜브 URL을 붙여넣으면 자동으로 ID가 추출됩니다.</p>
-          </div>
-          {form.youtube_id && (
-            <div className="aspect-video rounded-lg overflow-hidden bg-black">
-              <iframe
-                src={`https://www.youtube.com/embed/${form.youtube_id}`}
-                className="w-full h-full"
-                allowFullScreen
-              />
-            </div>
-          )}
-        </div>
-
-        {/* 공개 설정 */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-          <h2 className="font-semibold text-gray-900">공개 설정</h2>
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              className="w-4 h-4 rounded border-gray-300 text-blue-600"
-              checked={form.is_published}
-              onChange={(e) => setForm({ ...form, is_published: e.target.checked })}
-            />
-            <div>
-              <span className="text-sm font-medium">공개</span>
-              <p className="text-xs text-gray-500">체크하면 스토어에 노출됩니다</p>
-            </div>
-          </label>
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              className="w-4 h-4 rounded border-gray-300 text-blue-600"
-              checked={form.is_free}
-              onChange={(e) => setForm({ ...form, is_free: e.target.checked })}
-            />
-            <div>
-              <span className="text-sm font-medium">무료 상품</span>
-              <p className="text-xs text-gray-500">체크하면 무료로 다운로드 가능합니다</p>
-            </div>
-          </label>
-        </div>
-
-        {/* 버튼 */}
-        <div className="flex gap-3 sticky bottom-0 bg-gray-50 py-4 -mx-8 px-8 border-t border-gray-200">
           <button
-            type="submit"
+            onClick={handleSave}
             disabled={saving}
-            className="h-10 px-6 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
-            {saving ? '저장 중...' : '변경사항 저장'}
+            {saving ? '저장 중...' : '저장'}
           </button>
-          <Link
-            href="/admin/products"
-            className="h-10 px-6 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-50 inline-flex items-center transition-colors"
-          >
-            취소
-          </Link>
         </div>
-      </form>
+      </div>
+
+      {/* 2-column layout */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* LEFT COLUMN */}
+        <div className="flex-1 space-y-5 min-w-0">
+
+          {/* ─── 기본 정보 ─── */}
+          <section className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-gray-400" />
+              기본 정보
+            </h2>
+            <div className="space-y-4">
+              {/* 상품명 */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                  상품명 <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={form.title}
+                  onChange={e => updateField('title', e.target.value)}
+                  placeholder="상품명을 입력하세요"
+                  className={inputClass}
+                />
+              </div>
+
+              {/* 상품 설명 */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">상품 설명</label>
+                <textarea
+                  rows={3}
+                  value={form.description}
+                  onChange={e => updateField('description', e.target.value)}
+                  placeholder="목록/카드에 표시되는 간단한 설명"
+                  className={inputClass}
+                />
+              </div>
+
+              {/* 카테고리 + 티어 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">카테고리</label>
+                  <select
+                    value={form.category_id}
+                    onChange={e => updateField('category_id', e.target.value)}
+                    className={`${inputClass} appearance-none cursor-pointer`}
+                  >
+                    <option value="">선택</option>
+                    {categories.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">티어</label>
+                  <select
+                    value={form.tier}
+                    onChange={e => updateField('tier', e.target.value)}
+                    className={`${inputClass} appearance-none cursor-pointer`}
+                  >
+                    <option value="basic">기본</option>
+                    <option value="premium">프리미엄</option>
+                    <option value="package">패키지</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 가격 정보 */}
+              <div>
+                <label className="flex items-center gap-2 cursor-pointer mb-3">
+                  <input
+                    type="checkbox"
+                    checked={form.is_free}
+                    onChange={e => {
+                      const isFree = e.target.checked
+                      updateField('is_free', isFree)
+                      if (isFree) {
+                        updateField('price', 0)
+                        updateField('original_price', 0)
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">무료 상품</span>
+                </label>
+                {!form.is_free && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1.5">판매가 (원)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={form.price}
+                        onChange={e => updateField('price', Number(e.target.value))}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1.5">정가 (원)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={form.original_price}
+                        onChange={e => updateField('original_price', Number(e.target.value))}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-500 mb-1.5">할인율</label>
+                      <div className="h-[42px] flex items-center px-3 rounded-lg bg-gray-50 border border-gray-200">
+                        <span className={`text-sm font-bold ${discount > 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                          {discount > 0 ? `-${discount}%` : '-'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* ─── 대표 이미지 (썸네일) ─── */}
+          <section className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-gray-400" />
+              대표 이미지
+            </h2>
+            <p className="text-[11px] text-gray-400 mb-3">권장 해상도: 750 x 750px / JPG, PNG, WEBP</p>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={e => {
+                const file = e.target.files?.[0]
+                if (file) handleThumbnailUpload(file)
+              }}
+            />
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* 드래그앤드롭 영역 */}
+              <div
+                className="w-full sm:w-[280px] h-[200px] rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all flex flex-col items-center justify-center gap-2"
+                onClick={() => !uploading && fileInputRef.current?.click()}
+                onDragOver={e => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  e.currentTarget.classList.add('border-blue-400', 'bg-blue-50/50')
+                }}
+                onDragLeave={e => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50/50')
+                }}
+                onDrop={async e => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50/50')
+                  const file = Array.from(e.dataTransfer.files).find(f => f.type.startsWith('image/'))
+                  if (file) handleThumbnailUpload(file)
+                }}
+              >
+                {uploading ? (
+                  <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                ) : (
+                  <>
+                    <Upload className="w-8 h-8 text-gray-300" />
+                    <span className="text-xs text-gray-400">이미지를 드래그하여 놓거나 클릭하여 선택</span>
+                    <span className="text-[10px] text-gray-300">750 x 750px 권장</span>
+                  </>
+                )}
+              </div>
+
+              {/* 썸네일 미리보기 */}
+              {form.thumbnail_url && (
+                <div className="relative group">
+                  <div className="w-[160px] h-[160px] rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                    <img
+                      src={form.thumbnail_url}
+                      alt="썸네일 미리보기"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => updateField('thumbnail_url', '')}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* URL 직접 입력 */}
+            <div className="mt-3">
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">또는 URL 직접 입력</label>
+              <input
+                type="url"
+                value={form.thumbnail_url}
+                onChange={e => updateField('thumbnail_url', e.target.value)}
+                placeholder="https://..."
+                className={inputClass}
+              />
+            </div>
+          </section>
+
+          {/* ─── 상세 설명 (리치 에디터 + HTML 소스) ─── */}
+          <section className="bg-white rounded-xl border border-gray-200 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-gray-400" />
+                상세 설명 (HTML 에디터)
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowHtmlSource(!showHtmlSource)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                  showHtmlSource
+                    ? 'bg-gray-900 text-white border-gray-900'
+                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <Code className="w-3.5 h-3.5" />
+                {showHtmlSource ? 'WYSIWYG' : 'HTML 소스'}
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mb-3">
+              상품 상세 페이지에 표시되는 리치 텍스트 설명입니다.
+            </p>
+
+            {showHtmlSource ? (
+              <textarea
+                value={form.description_html}
+                onChange={e => updateField('description_html', e.target.value)}
+                placeholder="<h2>상품 소개</h2><p>내용을 입력하세요...</p>"
+                rows={16}
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm font-mono text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all bg-gray-50"
+                spellCheck={false}
+              />
+            ) : (
+              <RichTextEditor
+                content={form.description_html}
+                onChange={html => updateField('description_html', html)}
+                placeholder="상품에 대한 상세 소개를 작성하세요..."
+              />
+            )}
+          </section>
+
+          {/* ─── 유튜브 소개 영상 ─── */}
+          <section className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Play className="w-4 h-4 text-red-500" />
+              유튜브 소개 영상
+            </h2>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">유튜브 URL 또는 영상 ID</label>
+              <input
+                type="text"
+                value={form.youtube_id}
+                onChange={e => {
+                  const extracted = extractYoutubeId(e.target.value)
+                  updateField('youtube_id', extracted)
+                }}
+                placeholder="https://www.youtube.com/watch?v=... 또는 영상 ID"
+                className={inputClass}
+              />
+              <p className="text-xs text-gray-400 mt-1">유튜브 URL을 붙여넣으면 자동으로 ID가 추출됩니다.</p>
+            </div>
+            {form.youtube_id && (
+              <div className="mt-3 aspect-video rounded-lg overflow-hidden bg-black max-w-xl">
+                <iframe
+                  src={`https://www.youtube.com/embed/${form.youtube_id}`}
+                  className="w-full h-full"
+                  allowFullScreen
+                />
+              </div>
+            )}
+          </section>
+
+          {/* ─── 소개 리스트 (overview) ─── */}
+          <section className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-4">소개 (Overview)</h2>
+            <p className="text-xs text-gray-400 mb-3">판매 페이지의 &quot;상품 소개&quot; 섹션에 표시됩니다.</p>
+            <ListEditor
+              items={form.overview}
+              onChange={items => updateField('overview', items)}
+              placeholder="소개 내용 입력..."
+              label="소개 항목"
+            />
+          </section>
+
+          {/* ─── 특장점 (features) ─── */}
+          <section className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-4">특장점 (Features)</h2>
+            <p className="text-xs text-gray-400 mb-3">판매 페이지의 &quot;이런 점이 좋아요&quot; 섹션에 표시됩니다.</p>
+            <ListEditor
+              items={form.features}
+              onChange={items => updateField('features', items)}
+              placeholder="특장점 항목 입력..."
+              label="특장점 항목"
+            />
+          </section>
+
+          {/* ─── 스펙 (specs) ─── */}
+          <section className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-4">스펙 정보</h2>
+            <p className="text-xs text-gray-400 mb-3">판매 페이지의 &quot;상품 정보&quot; 테이블에 표시됩니다.</p>
+            <SpecsEditor
+              specs={form.specs}
+              onChange={specs => updateField('specs', specs)}
+            />
+          </section>
+
+          {/* ─── 문서 유형 / 형태 ─── */}
+          <section className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <FileType className="w-4 h-4 text-gray-400" />
+              문서 유형 / 형태
+            </h2>
+            <div className="space-y-4">
+              {/* 파일 유형 체크박스 */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-2">파일 유형 (복수 선택 가능)</label>
+                <div className="flex flex-wrap gap-2">
+                  {FILE_TYPE_OPTIONS.map(ft => {
+                    const checked = form.file_types.includes(ft)
+                    return (
+                      <label
+                        key={ft}
+                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                          checked
+                            ? 'bg-blue-50 border-blue-300 text-blue-700'
+                            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            const next = checked
+                              ? form.file_types.filter(t => t !== ft)
+                              : [...form.file_types, ft]
+                            updateField('file_types', next)
+                          }}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium">{ft}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* 문서 형태 (라디오) */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-2 flex items-center gap-1">
+                  <Monitor className="w-3 h-3" />
+                  문서 형태
+                </label>
+                <div className="flex gap-3">
+                  {(['가로형', '세로형'] as const).map(orient => (
+                    <label
+                      key={orient}
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-colors ${
+                        form.document_orientation === orient
+                          ? 'bg-blue-50 border-blue-300 text-blue-700'
+                          : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="documentOrientation"
+                        checked={form.document_orientation === orient}
+                        onChange={() => updateField('document_orientation', orient)}
+                        className="w-4 h-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-medium">{orient}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* ─── 해시태그 ─── */}
+          <section className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Tag className="w-4 h-4 text-gray-400" />
+              해시태그
+            </h2>
+            <p className="text-xs text-gray-400 mb-3">검색 및 필터링에 사용되는 태그입니다. Enter를 눌러 추가하세요.</p>
+
+            {/* 태그 표시 */}
+            {form.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {form.tags.map(tag => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+                    onClick={() => removeTag(tag)}
+                  >
+                    #{tag}
+                    <X className="w-3 h-3" />
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* 태그 입력 */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={e => setTagInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addTag()
+                  }
+                }}
+                placeholder="태그 입력 후 Enter"
+                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all"
+              />
+              <button
+                type="button"
+                onClick={addTag}
+                className="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </section>
+
+        </div>
+        {/* END LEFT COLUMN */}
+
+        {/* RIGHT SIDEBAR */}
+        <div className="lg:w-[320px] shrink-0 space-y-5">
+
+          {/* 상태 */}
+          <section className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-3">상태</h2>
+            <div className="space-y-3">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.is_published}
+                  onChange={e => updateField('is_published', e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <div>
+                  <span className="text-sm font-medium text-gray-700">공개</span>
+                  <p className="text-xs text-gray-400">체크하면 스토어에 노출됩니다</p>
+                </div>
+              </label>
+              <div className="flex items-center gap-2 pt-1">
+                {form.is_published ? (
+                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                    <Eye className="w-3 h-3 mr-1" />
+                    공개
+                  </Badge>
+                ) : (
+                  <Badge className="bg-gray-50 text-gray-500 border-gray-200">
+                    <EyeOff className="w-3 h-3 mr-1" />
+                    비공개
+                  </Badge>
+                )}
+                {form.is_free && (
+                  <Badge className="bg-purple-50 text-purple-700 border-purple-200">무료</Badge>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* 배지 설정 */}
+          <section className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-3">배지 설정</h2>
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.badge_new}
+                  onChange={e => updateField('badge_new', e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="px-2 py-0.5 text-xs font-bold bg-blue-100 text-blue-600 rounded">NEW</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.badge_best}
+                  onChange={e => updateField('badge_best', e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="px-2 py-0.5 text-xs font-bold bg-orange-100 text-orange-600 rounded">BEST</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.badge_sale}
+                  onChange={e => updateField('badge_sale', e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="px-2 py-0.5 text-xs font-bold bg-red-100 text-red-500 rounded">SALE</span>
+                {discount > 0 && (
+                  <span className="text-xs text-gray-400">(-{discount}%)</span>
+                )}
+              </label>
+            </div>
+          </section>
+
+          {/* 파일 정보 */}
+          <section className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-3">파일 정보</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">파일 형식</label>
+                <input
+                  value={form.format}
+                  onChange={e => updateField('format', e.target.value)}
+                  placeholder="예: PPTX, HWP"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">페이지 수</label>
+                <input
+                  value={form.pages}
+                  onChange={e => updateField('pages', e.target.value)}
+                  placeholder="예: 45"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">파일 크기</label>
+                <input
+                  value={form.file_size}
+                  onChange={e => updateField('file_size', e.target.value)}
+                  placeholder="예: 18MB"
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* 판매자 */}
+          <section className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+              <User className="w-4 h-4 text-gray-400" />
+              판매자
+            </h2>
+            <input
+              value={form.seller}
+              onChange={e => updateField('seller', e.target.value)}
+              placeholder="판매자명"
+              className={inputClass}
+            />
+          </section>
+
+          {/* 빠른 미리보기 */}
+          {form.thumbnail_url && (
+            <section className="bg-white rounded-xl border border-gray-200 p-5">
+              <h2 className="text-sm font-bold text-gray-900 mb-3">미리보기</h2>
+              <div className="rounded-lg overflow-hidden border border-gray-100 bg-gray-50">
+                <div className="aspect-square relative">
+                  <img
+                    src={form.thumbnail_url}
+                    alt="미리보기"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-2 left-2 flex gap-1">
+                    {form.badge_new && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-blue-600 text-white rounded">NEW</span>
+                    )}
+                    {form.badge_best && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-orange-500 text-white rounded">BEST</span>
+                    )}
+                    {form.badge_sale && discount > 0 && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-red-500 text-white rounded">-{discount}%</span>
+                    )}
+                  </div>
+                </div>
+                <div className="p-3">
+                  <p className="text-xs font-semibold text-gray-900 line-clamp-1">{form.title || '상품명'}</p>
+                  <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{form.description || '상품 설명'}</p>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    {form.is_free ? (
+                      <span className="text-xs font-bold text-purple-600">무료</span>
+                    ) : (
+                      <>
+                        {form.original_price > form.price && (
+                          <span className="text-[10px] text-gray-400 line-through">
+                            {form.original_price.toLocaleString()}원
+                          </span>
+                        )}
+                        <span className="text-xs font-bold text-gray-900">
+                          {form.price.toLocaleString()}원
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  {form.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {form.tags.slice(0, 3).map(tag => (
+                        <span key={tag} className="text-[10px] text-gray-400">#{tag}</span>
+                      ))}
+                      {form.tags.length > 3 && (
+                        <span className="text-[10px] text-gray-300">+{form.tags.length - 3}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
+        </div>
+        {/* END RIGHT SIDEBAR */}
+      </div>
     </div>
   )
 }
