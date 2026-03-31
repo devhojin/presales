@@ -848,7 +848,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     <div>
                       <p className="text-2xl mb-2">📄</p>
                       <p className="text-sm text-gray-600 font-medium">PDF 파일을 드래그하거나 클릭해서 업로드</p>
-                      <p className="text-xs text-gray-400 mt-1">미리보기용 PDF 파일 (최대 50MB)</p>
+                      <p className="text-xs text-gray-400 mt-1">미리보기용 PDF 파일</p>
                     </div>
                   )}
                 </div>
