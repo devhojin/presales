@@ -802,28 +802,56 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1.5">미리보기 PDF 파일</label>
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0]
-                    if (!file) return
+                <div
+                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-blue-500', 'bg-blue-50/50') }}
+                  onDragLeave={(e) => { e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50/50') }}
+                  onDrop={async (e) => {
+                    e.preventDefault()
+                    e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50/50')
+                    const file = e.dataTransfer.files[0]
+                    if (!file || !file.name.endsWith('.pdf')) { setToast('PDF 파일만 업로드 가능합니다'); return }
                     const supabase = createClient()
                     const fileName = `preview-${form.title.replace(/[^a-zA-Z0-9가-힣]/g, '_')}-${Date.now()}.pdf`
                     const { error } = await supabase.storage.from('product-previews').upload(fileName, file)
-                    if (error) {
-                      setToast('업로드 실패: ' + error.message)
-                      return
-                    }
+                    if (error) { setToast('업로드 실패: ' + error.message); return }
                     const { data: urlData } = supabase.storage.from('product-previews').getPublicUrl(fileName)
                     updateField('preview_pdf_url', urlData.publicUrl)
                     setToast('PDF 업로드 완료')
                   }}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-                />
-                {form.preview_pdf_url && (
-                  <p className="text-xs text-emerald-600 mt-1">✅ PDF 등록됨: {form.preview_pdf_url.split('/').pop()}</p>
-                )}
+                  className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center transition-colors cursor-pointer hover:border-gray-400"
+                  onClick={() => document.getElementById('pdf-upload-input')?.click()}
+                >
+                  <input
+                    id="pdf-upload-input"
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      const supabase = createClient()
+                      const fileName = `preview-${form.title.replace(/[^a-zA-Z0-9가-힣]/g, '_')}-${Date.now()}.pdf`
+                      const { error } = await supabase.storage.from('product-previews').upload(fileName, file)
+                      if (error) { setToast('업로드 실패: ' + error.message); return }
+                      const { data: urlData } = supabase.storage.from('product-previews').getPublicUrl(fileName)
+                      updateField('preview_pdf_url', urlData.publicUrl)
+                      setToast('PDF 업로드 완료')
+                    }}
+                  />
+                  {form.preview_pdf_url ? (
+                    <div>
+                      <p className="text-sm text-emerald-600 font-medium mb-1">✅ PDF 등록됨</p>
+                      <p className="text-xs text-gray-400">{form.preview_pdf_url.split('/').pop()}</p>
+                      <p className="text-xs text-blue-500 mt-2">클릭하거나 새 파일을 드래그해서 교체</p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-2xl mb-2">📄</p>
+                      <p className="text-sm text-gray-600 font-medium">PDF 파일을 드래그하거나 클릭해서 업로드</p>
+                      <p className="text-xs text-gray-400 mt-1">미리보기용 PDF 파일 (최대 50MB)</p>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
