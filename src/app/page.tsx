@@ -4,12 +4,11 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
-import { type DbProduct, formatPrice, allTiers } from '@/lib/types'
+import { type DbProduct, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { FileText, Download, Globe, Handshake, ArrowRight, ShoppingCart, Check } from 'lucide-react'
 
 function FeaturedCard({ product }: { product: DbProduct }) {
-  const tierInfo = allTiers.find((t) => t.id === product.tier)
   const discount = product.original_price > 0 ? Math.round((1 - product.price / product.original_price) * 100) : 0
   const { toggleItem, isInCart } = useCartStore()
   const inCart = isInCart(product.id)
@@ -23,9 +22,10 @@ function FeaturedCard({ product }: { product: DbProduct }) {
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center"><span className="text-4xl">📄</span></div>
           )}
-          {tierInfo && <Badge className={`absolute top-3 left-3 ${tierInfo.color} border text-xs`}>{tierInfo.label}</Badge>}
+          <Badge className={`absolute top-3 left-3 border text-xs ${product.is_free ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+            {product.is_free ? '무료' : '유료'}
+          </Badge>
           {!product.is_free && discount > 0 && <Badge className="absolute top-3 right-3 bg-red-500 text-white border-0 text-xs">-{discount}%</Badge>}
-          {product.is_free && <Badge className="absolute top-3 right-3 bg-emerald-500 text-white border-0 text-xs">무료</Badge>}
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleItem({ productId: product.id, title: product.title, price: product.price, originalPrice: product.original_price, thumbnail: product.thumbnail_url || '', format: product.format || '' }) }}
             className={`absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md ${inCart ? 'bg-primary text-primary-foreground' : 'bg-white/90 text-gray-600 hover:bg-white hover:text-primary'}`}

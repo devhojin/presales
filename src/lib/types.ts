@@ -7,7 +7,7 @@ export interface DbProduct {
   price: number
   original_price: number
   category_id: number | null
-  tier: 'basic' | 'premium' | 'package'
+  tier: string | null
   format: string | null
   pages: number | null
   file_size: string | null
@@ -33,8 +33,7 @@ export const formatPrice = (price: number) => {
   return new Intl.NumberFormat('ko-KR').format(price) + '원'
 }
 
-export const allTiers = [
-  { id: 'basic', label: '기본', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  { id: 'premium', label: '프리미엄', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-  { id: 'package', label: '패키지', color: 'bg-amber-50 text-amber-700 border-amber-200' },
+export const priceTypes = [
+  { id: 'free', label: '무료', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  { id: 'paid', label: '유료', color: 'bg-blue-50 text-blue-700 border-blue-200' },
 ] as const

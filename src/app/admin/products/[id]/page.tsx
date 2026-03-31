@@ -529,33 +529,19 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 />
               </div>
 
-              {/* 카테고리 + 티어 */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">카테고리</label>
-                  <select
-                    value={form.category_id}
-                    onChange={e => updateField('category_id', e.target.value)}
-                    className={`${inputClass} appearance-none cursor-pointer`}
-                  >
-                    <option value="">선택</option>
-                    {categories.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">티어</label>
-                  <select
-                    value={form.tier}
-                    onChange={e => updateField('tier', e.target.value)}
-                    className={`${inputClass} appearance-none cursor-pointer`}
-                  >
-                    <option value="basic">기본</option>
-                    <option value="premium">프리미엄</option>
-                    <option value="package">패키지</option>
-                  </select>
-                </div>
+              {/* 카테고리 */}
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">카테고리</label>
+                <select
+                  value={form.category_id}
+                  onChange={e => updateField('category_id', e.target.value)}
+                  className={`${inputClass} appearance-none cursor-pointer`}
+                >
+                  <option value="">선택</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
 
               {/* 가격 정보 */}

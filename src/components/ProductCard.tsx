@@ -2,12 +2,11 @@
 
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
-import { type Product, formatPrice, allTiers } from '@/lib/data'
+import { type Product, formatPrice } from '@/lib/data'
 import { useCartStore } from '@/stores/cart-store'
 import { ShoppingCart, Check } from 'lucide-react'
 
 export function ProductCard({ product }: { product: Product }) {
-  const tierInfo = allTiers.find((t) => t.id === product.tier)
   const discount = Math.round((1 - product.price / product.originalPrice) * 100)
   const { toggleItem, isInCart } = useCartStore()
   const inCart = isInCart(product.id)
@@ -34,11 +33,9 @@ export function ProductCard({ product }: { product: Product }) {
             alt={product.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
-          {tierInfo && (
-            <Badge className={`absolute top-3 left-3 ${tierInfo.color} border text-xs`}>
-              {tierInfo.label}
-            </Badge>
-          )}
+          <Badge className={`absolute top-3 left-3 border text-xs ${product.price === 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+            {product.price === 0 ? '무료' : '유료'}
+          </Badge>
           {discount > 0 && (
             <Badge className="absolute top-3 right-3 bg-red-500 text-white border-0 text-xs">
               -{discount}%

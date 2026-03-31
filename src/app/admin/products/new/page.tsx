@@ -21,7 +21,6 @@ export default function NewProduct() {
     price: '',
     original_price: '',
     category_id: '',
-    tier: 'basic',
     format: '',
     pages: '',
     file_size: '',
@@ -51,7 +50,6 @@ export default function NewProduct() {
       price: parseInt(form.price) || 0,
       original_price: parseInt(form.original_price) || 0,
       category_id: parseInt(form.category_id) || null,
-      tier: form.tier,
       format: form.format,
       pages: parseInt(form.pages) || null,
       file_size: form.file_size,
@@ -110,26 +108,15 @@ export default function NewProduct() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className={labelClass}>카테고리</label>
-              <select className={inputClass} value={form.category_id}
-                onChange={(e) => setForm({ ...form, category_id: e.target.value })}>
-                <option value="">선택</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className={labelClass}>티어</label>
-              <select className={inputClass} value={form.tier}
-                onChange={(e) => setForm({ ...form, tier: e.target.value })}>
-                <option value="basic">기본</option>
-                <option value="premium">프리미엄</option>
-                <option value="package">패키지</option>
-              </select>
-            </div>
+          <div>
+            <label className={labelClass}>카테고리</label>
+            <select className={inputClass} value={form.category_id}
+              onChange={(e) => setForm({ ...form, category_id: e.target.value })}>
+              <option value="">선택</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </div>
         </div>
 

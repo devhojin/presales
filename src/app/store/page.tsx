@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Search, ShoppingCart, Check } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
 import Link from 'next/link'
-import { type DbProduct, type DbCategory, formatPrice, allTiers } from '@/lib/types'
+import { type DbProduct, type DbCategory, formatPrice, priceTypes } from '@/lib/types'
 
 const fileTypeColors: Record<string, string> = {
   PPT: 'bg-orange-500 text-white',
@@ -56,7 +56,6 @@ function FileTypeBadges({ format, onClick }: { format: string | null; onClick?: 
 }
 
 function ProductCard({ product, onFileTypeClick }: { product: DbProduct; onFileTypeClick: (type: string) => void }) {
-  const tierInfo = allTiers.find((t) => t.id === product.tier)
   const discount = product.original_price > 0
     ? Math.round((1 - product.price / product.original_price) * 100)
     : 0
@@ -87,12 +86,9 @@ function ProductCard({ product, onFileTypeClick }: { product: DbProduct; onFileT
               <span className="text-4xl">📄</span>
             </div>
           )}
-          {tierInfo && (
-            <Badge className={`absolute top-3 left-3 ${tierInfo.color} border text-xs`}>{tierInfo.label}</Badge>
-          )}
-          {product.is_free && (
-            <Badge className="absolute top-3 right-3 bg-emerald-500 text-white border-0 text-xs">무료</Badge>
-          )}
+          <Badge className={`absolute top-3 left-3 border text-xs ${product.is_free ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+            {product.is_free ? '무료' : '유료'}
+          </Badge>
           {!product.is_free && discount > 0 && (
             <Badge className="absolute top-3 right-3 bg-red-500 text-white border-0 text-xs">-{discount}%</Badge>
           )}
@@ -154,7 +150,7 @@ export default function StorePage() {
   const [products, setProducts] = useState<DbProduct[]>([])
   const [categories, setCategories] = useState<DbCategory[]>([])
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null)
-  const [selectedTier, setSelectedTier] = useState<string | null>(null)
+  const [selectedPriceType, setSelectedPriceType] = useState<string | null>(null)
   const [selectedFileType, setSelectedFileType] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
@@ -176,7 +172,8 @@ export default function StorePage() {
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       if (selectedCategory && p.category_id !== selectedCategory) return false
-      if (selectedTier && p.tier !== selectedTier) return false
+      if (selectedPriceType === 'free' && !p.is_free) return false
+      if (selectedPriceType === 'paid' && p.is_free) return false
       if (selectedFileType) {
         const types = extractFileTypes(p.format)
         if (!types.includes(selectedFileType)) return false
@@ -192,7 +189,7 @@ export default function StorePage() {
       }
       return true
     })
-  }, [products, selectedCategory, selectedTier, selectedFileType, searchQuery])
+  }, [products, selectedCategory, selectedPriceType, selectedFileType, searchQuery])
 
   const handleFileTypeClick = (type: string) => {
     setSelectedFileType(selectedFileType === type ? null : type)
@@ -255,17 +252,17 @@ export default function StorePage() {
           ))}
         </div>
 
-        {/* 티어 필터 */}
+        {/* 무료/유료 필터 */}
         <div className="flex flex-wrap gap-2">
-          {allTiers.map((tier) => (
+          {priceTypes.map((pt) => (
             <button
-              key={tier.id}
-              onClick={() => setSelectedTier(selectedTier === tier.id ? null : tier.id)}
+              key={pt.id}
+              onClick={() => setSelectedPriceType(selectedPriceType === pt.id ? null : pt.id)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-                selectedTier === tier.id ? tier.color : 'border-border hover:bg-muted'
+                selectedPriceType === pt.id ? pt.color : 'border-border hover:bg-muted'
               }`}
             >
-              {tier.label}
+              {pt.label}
             </button>
           ))}
         </div>

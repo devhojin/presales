@@ -64,11 +64,6 @@ type StatusFilter = 'all' | 'published' | 'unpublished'
 
 const PAGE_SIZES = [20, 50, 100] as const
 
-const tierLabels: Record<string, { label: string; class: string }> = {
-  basic: { label: '기본', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  premium: { label: '프리미엄', class: 'bg-blue-50 text-blue-700 border-blue-200' },
-  package: { label: '패키지', class: 'bg-amber-50 text-amber-700 border-amber-200' },
-}
 
 function formatPrice(price: number): string {
   return new Intl.NumberFormat('ko-KR').format(price) + '원'
@@ -267,12 +262,12 @@ function ProductRowCells({
           </div>
         )}
       </td>
-      {/* Tier */}
+      {/* 무료/유료 */}
       <td className="px-3 py-3">
         <Badge
-          className={`text-xs border ${tierLabels[product.tier]?.class || 'bg-gray-50 text-gray-600 border-gray-200'}`}
+          className={`text-xs border ${product.is_free ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}
         >
-          {tierLabels[product.tier]?.label || product.tier}
+          {product.is_free ? '무료' : '유료'}
         </Badge>
       </td>
       {/* Status */}
@@ -622,7 +617,7 @@ export default function AdminProducts() {
                     가격
                   </th>
                   <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 w-20">
-                    티어
+                    구분
                   </th>
                   <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 w-20">
                     상태

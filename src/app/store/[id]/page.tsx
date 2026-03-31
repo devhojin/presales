@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
-import { type DbProduct, formatPrice, allTiers } from '@/lib/types'
+import { type DbProduct, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
@@ -72,7 +72,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     )
   }
 
-  const tierInfo = allTiers.find((t) => t.id === product.tier)
   const discount = product.original_price > product.price
     ? Math.round((1 - product.price / product.original_price) * 100)
     : 0
@@ -100,9 +99,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <span className="text-6xl">📄</span>
             </div>
           )}
-          {tierInfo && (
-            <Badge className={`absolute top-4 left-4 ${tierInfo.color} border`}>{tierInfo.label}</Badge>
-          )}
+          <Badge className={`absolute top-4 left-4 border ${product.is_free ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+            {product.is_free ? '무료' : '유료'}
+          </Badge>
         </div>
 
         {/* Info */}
