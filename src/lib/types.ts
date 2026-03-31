@@ -4,6 +4,9 @@ export interface DbProduct {
   description: string | null
   description_html: string | null
   youtube_id: string | null
+  preview_pdf_url: string | null
+  preview_clear_pages: number
+  preview_blur_pages: number
   price: number
   original_price: number
   category_id: number | null

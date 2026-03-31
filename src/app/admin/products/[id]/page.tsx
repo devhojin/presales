@@ -36,6 +36,9 @@ interface ProductForm {
   description: string
   description_html: string
   youtube_id: string
+  preview_pdf_url: string
+  preview_clear_pages: string
+  preview_blur_pages: string
   price: number
   original_price: number
   category_id: string
@@ -70,6 +73,9 @@ const EMPTY_FORM: ProductForm = {
   description: '',
   description_html: '',
   youtube_id: '',
+  preview_pdf_url: '',
+  preview_clear_pages: '0',
+  preview_blur_pages: '2',
   price: 0,
   original_price: 0,
   category_id: '',
@@ -282,6 +288,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           description: p.description || '',
           description_html: p.description_html || '',
           youtube_id: p.youtube_id || '',
+          preview_pdf_url: p.preview_pdf_url || '',
+          preview_clear_pages: String(p.preview_clear_pages || 0),
+          preview_blur_pages: String(p.preview_blur_pages || 2),
           price: p.price || 0,
           original_price: p.original_price || 0,
           category_id: String(p.category_id || ''),
@@ -326,6 +335,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         description: form.description || null,
         description_html: form.description_html || null,
         youtube_id: form.youtube_id || null,
+        preview_pdf_url: form.preview_pdf_url || null,
+        preview_clear_pages: parseInt(form.preview_clear_pages) || 0,
+        preview_blur_pages: parseInt(form.preview_blur_pages) || 2,
         price: form.is_free ? 0 : form.price,
         original_price: form.is_free ? 0 : form.original_price,
         category_id: form.category_ids.length > 0 ? form.category_ids[0] : (form.category_id ? parseInt(form.category_id) : null),
@@ -780,6 +792,66 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 />
               </div>
             )}
+          </section>
+
+          {/* ─── PDF 미리보기 ─── */}
+          <section className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+              📖 PDF 미리보기
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">미리보기 PDF 파일</label>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    const supabase = createClient()
+                    const fileName = `preview-${form.title.replace(/[^a-zA-Z0-9가-힣]/g, '_')}-${Date.now()}.pdf`
+                    const { error } = await supabase.storage.from('product-previews').upload(fileName, file)
+                    if (error) {
+                      setToast('업로드 실패: ' + error.message)
+                      return
+                    }
+                    const { data: urlData } = supabase.storage.from('product-previews').getPublicUrl(fileName)
+                    updateField('preview_pdf_url', urlData.publicUrl)
+                    setToast('PDF 업로드 완료')
+                  }}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                {form.preview_pdf_url && (
+                  <p className="text-xs text-emerald-600 mt-1">✅ PDF 등록됨: {form.preview_pdf_url.split('/').pop()}</p>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">선명 페이지 수 (0=자동)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.preview_clear_pages}
+                    onChange={e => updateField('preview_clear_pages', e.target.value)}
+                    placeholder="0 (자동: 전체의 5%)"
+                    className={inputClass}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">0이면 자동 (전체의 5%, 최소3, 최대15)</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">블러 페이지 수</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.preview_blur_pages}
+                    onChange={e => updateField('preview_blur_pages', e.target.value)}
+                    placeholder="2"
+                    className={inputClass}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">흐리게 보여줄 페이지 수</p>
+                </div>
+              </div>
+            </div>
           </section>
 
           {/* ─── 소개 리스트 (overview) ─── */}

@@ -7,7 +7,8 @@ import { type DbProduct, type DbCategory, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, ShoppingCart, Heart, Check, Download, Play, Star, PenLine } from 'lucide-react'
+import { ArrowLeft, ShoppingCart, Heart, Check, Download, Play, Star, PenLine, BookOpen } from 'lucide-react'
+import { PdfPreviewModal } from '@/components/pdf-preview-modal'
 
 type TabId = 'info' | 'video' | 'review'
 
@@ -18,6 +19,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [loading, setLoading] = useState(true)
   const [related, setRelated] = useState<DbProduct[]>([])
   const [activeTab, setActiveTab] = useState<TabId>('info')
+  const [showPdfPreview, setShowPdfPreview] = useState(false)
   const { toggleItem, isInCart } = useCartStore()
 
   useEffect(() => {
@@ -130,6 +132,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             {product.is_free ? '무료' : '유료'}
           </Badge>
         </div>
+
+        {/* PDF Preview Button */}
+        {product.preview_pdf_url && (
+          <button
+            onClick={() => setShowPdfPreview(true)}
+            className="w-full bg-gray-50 border border-gray-200 rounded-lg py-3 hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium text-gray-700 -mt-4 lg:col-span-2 lg:-mt-0"
+          >
+            <BookOpen className="w-4 h-4" />
+            📖 문서 미리보기 ▶️
+          </button>
+        )}
 
         {/* Info */}
         <div className="space-y-6">
@@ -365,6 +378,31 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             ))}
           </div>
         </div>
+      )}
+
+      {/* PDF Preview Modal */}
+      {product.preview_pdf_url && (
+        <PdfPreviewModal
+          isOpen={showPdfPreview}
+          onClose={() => setShowPdfPreview(false)}
+          pdfUrl={product.preview_pdf_url}
+          totalPages={product.pages || 30}
+          previewClearPages={product.preview_clear_pages || 0}
+          previewBlurPages={product.preview_blur_pages || 2}
+          productTitle={product.title}
+          price={product.price}
+          onPurchaseClick={() => {
+            setShowPdfPreview(false)
+            toggleItem({
+              productId: product.id,
+              title: product.title,
+              price: product.price,
+              originalPrice: product.original_price,
+              thumbnail: product.thumbnail_url || '',
+              format: product.format || '',
+            })
+          }}
+        />
       )}
     </div>
   )
