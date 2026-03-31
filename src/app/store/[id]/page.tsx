@@ -7,13 +7,16 @@ import { type DbProduct, formatPrice, allTiers } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, ShoppingCart, Heart, Check, Download } from 'lucide-react'
+import { ArrowLeft, ShoppingCart, Heart, Check, Download, Play, Star, PenLine } from 'lucide-react'
+
+type TabId = 'info' | 'video' | 'review'
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [product, setProduct] = useState<DbProduct | null>(null)
   const [loading, setLoading] = useState(true)
   const [related, setRelated] = useState<DbProduct[]>([])
+  const [activeTab, setActiveTab] = useState<TabId>('info')
   const { toggleItem, isInCart } = useCartStore()
 
   useEffect(() => {
@@ -74,6 +77,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     ? Math.round((1 - product.price / product.original_price) * 100)
     : 0
   const inCart = isInCart(product.id)
+
+  const tabs: { id: TabId; label: string }[] = [
+    { id: 'info', label: '상품정보' },
+    { id: 'video', label: '동영상 보기' },
+    { id: 'review', label: '리뷰' },
+  ]
 
   return (
     <div className="container mx-auto px-4 py-10">
@@ -192,38 +201,115 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
-      {/* YouTube */}
-      {product.youtube_id && (
-        <div className="mt-12 border border-border rounded-xl overflow-hidden">
-          <div className="bg-muted/50 px-6 py-4 border-b border-border">
-            <h2 className="text-lg font-bold">영상으로 미리보기</h2>
-          </div>
-          <div className="aspect-video">
-            <iframe
-              src={`https://www.youtube.com/embed/${product.youtube_id}`}
-              className="w-full h-full"
-              allowFullScreen
-            />
-          </div>
+      {/* Tabs */}
+      <div className="mt-12">
+        <div className="border-b border-border sticky top-0 bg-background z-10">
+          <nav className="flex gap-0 -mb-px">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-6 py-3 text-sm transition-colors border-b-2 ${
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600 font-semibold'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
         </div>
-      )}
 
-      {/* Rich Description HTML */}
-      {product.description_html && (
-        <div className="mt-12 border border-border rounded-xl overflow-hidden">
-          <div className="bg-muted/50 px-6 py-4 border-b border-border">
-            <h2 className="text-lg font-bold">상품 상세 설명</h2>
-          </div>
-          <div
-            className="p-6 sm:p-8 product-description text-[15px]"
-            dangerouslySetInnerHTML={{ __html: product.description_html }}
-          />
+        {/* Tab Content */}
+        <div className="py-8">
+          {/* 상품정보 Tab */}
+          {activeTab === 'info' && (
+            <div>
+              {product.description_html ? (
+                <div
+                  className="product-description text-[15px]"
+                  dangerouslySetInnerHTML={{ __html: product.description_html }}
+                />
+              ) : product.description ? (
+                <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
+              ) : (
+                <div className="text-center py-16 text-muted-foreground">
+                  <p>등록된 상품 상세 정보가 없습니다.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 동영상 보기 Tab */}
+          {activeTab === 'video' && (
+            <div>
+              {product.youtube_id ? (
+                <div className="max-w-3xl mx-auto">
+                  <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                    <iframe
+                      src={`https://www.youtube.com/embed/${product.youtube_id}`}
+                      className="absolute inset-0 w-full h-full rounded-lg"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-20">
+                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-muted mb-4">
+                    <Play className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground">등록된 동영상이 없습니다.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 리뷰 Tab */}
+          {activeTab === 'review' && (
+            <div>
+              {/* Average Rating Placeholder */}
+              <div className="flex items-center gap-6 mb-8 p-6 bg-muted/30 rounded-xl">
+                <div className="text-center">
+                  <p className="text-4xl font-bold text-primary">0.0</p>
+                  <div className="flex items-center gap-0.5 mt-1">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star key={i} className="w-4 h-4 text-gray-300" />
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">0개 리뷰</p>
+                </div>
+                <Separator orientation="vertical" className="h-16" />
+                <div className="flex-1 space-y-1.5">
+                  {[5, 4, 3, 2, 1].map((star) => (
+                    <div key={star} className="flex items-center gap-2 text-xs">
+                      <span className="w-4 text-right text-muted-foreground">{star}</span>
+                      <Star className="w-3 h-3 text-gray-300" />
+                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-yellow-400 rounded-full" style={{ width: '0%' }} />
+                      </div>
+                      <span className="w-6 text-right text-muted-foreground">0</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Empty State */}
+              <div className="text-center py-12">
+                <p className="text-muted-foreground mb-4">아직 리뷰가 없습니다.</p>
+                <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
+                  <PenLine className="w-4 h-4" />
+                  리뷰 작성
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Related */}
       {related.length > 0 && (
-        <div className="mt-20">
+        <div className="mt-12">
           <h2 className="text-xl font-bold mb-6">관련 템플릿</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {related.map((p) => (
