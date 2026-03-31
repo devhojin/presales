@@ -192,6 +192,22 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
+      {/* YouTube */}
+      {product.youtube_id && (
+        <div className="mt-12 border border-border rounded-xl overflow-hidden">
+          <div className="bg-muted/50 px-6 py-4 border-b border-border">
+            <h2 className="text-lg font-bold">영상으로 미리보기</h2>
+          </div>
+          <div className="aspect-video">
+            <iframe
+              src={`https://www.youtube.com/embed/${product.youtube_id}`}
+              className="w-full h-full"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
+
       {/* Rich Description HTML */}
       {product.description_html && (
         <div className="mt-12 border border-border rounded-xl overflow-hidden">

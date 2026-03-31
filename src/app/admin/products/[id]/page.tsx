@@ -3,9 +3,12 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { ArrowLeft, Save, Eye, EyeOff, Trash2 } from 'lucide-react'
+import { ArrowLeft, Save, Eye, EyeOff, Trash2, Play } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
+import dynamic from 'next/dynamic'
+
+const RichTextEditor = dynamic(() => import('@/components/RichTextEditor').then(m => ({ default: m.RichTextEditor })), { ssr: false, loading: () => <div className="h-[400px] border border-gray-300 rounded-lg animate-pulse bg-gray-50" /> })
 
 interface Category {
   id: number
@@ -16,6 +19,8 @@ interface ProductData {
   id: number
   title: string
   description: string
+  description_html: string | null
+  youtube_id: string | null
   price: number
   original_price: number
   category_id: number | null
@@ -41,6 +46,8 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
   const [form, setForm] = useState({
     title: '',
     description: '',
+    description_html: '',
+    youtube_id: '',
     price: '',
     original_price: '',
     category_id: '',
@@ -68,6 +75,8 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
         setForm({
           title: p.title || '',
           description: p.description || '',
+          description_html: p.description_html || '',
+          youtube_id: p.youtube_id || '',
           price: String(p.price || 0),
           original_price: String(p.original_price || 0),
           category_id: String(p.category_id || ''),
@@ -96,6 +105,8 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
       .update({
         title: form.title,
         description: form.description,
+        description_html: form.description_html || null,
+        youtube_id: form.youtube_id || null,
         price: parseInt(form.price) || 0,
         original_price: parseInt(form.original_price) || 0,
         category_id: parseInt(form.category_id) || null,
@@ -355,6 +366,50 @@ export default function EditProduct({ params }: { params: Promise<{ id: string }
                 src={form.thumbnail_url}
                 alt="썸네일 미리보기"
                 className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* 상세 설명 (리치 에디터) */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+          <h2 className="font-semibold text-gray-900">상세 설명 (HTML 에디터)</h2>
+          <p className="text-xs text-gray-500">상품 상세 페이지에 표시되는 리치 텍스트 설명입니다. 목차, 포함 내용, 활용 대상 등을 작성하세요.</p>
+          <RichTextEditor
+            content={form.description_html}
+            onChange={(html) => setForm({ ...form, description_html: html })}
+            placeholder="상품 상세 설명을 입력하세요..."
+          />
+        </div>
+
+        {/* 유튜브 */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
+          <div className="flex items-center gap-2">
+            <Play className="w-5 h-5 text-red-500" />
+            <h2 className="font-semibold text-gray-900">유튜브 영상</h2>
+          </div>
+          <div>
+            <label className={labelClass}>유튜브 영상 ID (또는 전체 URL)</label>
+            <input
+              type="text"
+              className={inputClass}
+              placeholder="예: dQw4w9WgXcQ 또는 https://youtube.com/watch?v=..."
+              value={form.youtube_id}
+              onChange={(e) => {
+                let val = e.target.value
+                const match = val.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/)
+                if (match) val = match[1]
+                setForm({ ...form, youtube_id: val })
+              }}
+            />
+            <p className="text-xs text-gray-500 mt-1">유튜브 URL을 붙여넣으면 자동으로 ID가 추출됩니다.</p>
+          </div>
+          {form.youtube_id && (
+            <div className="aspect-video rounded-lg overflow-hidden bg-black">
+              <iframe
+                src={`https://www.youtube.com/embed/${form.youtube_id}`}
+                className="w-full h-full"
+                allowFullScreen
               />
             </div>
           )}
