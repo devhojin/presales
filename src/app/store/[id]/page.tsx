@@ -31,6 +31,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [activeTab, setActiveTab] = useState<TabId>('info')
   const [showPdfPreview, setShowPdfPreview] = useState(false)
   const [hasPurchased, setHasPurchased] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [productFiles, setProductFiles] = useState<ProductFile[]>([])
   const [downloading, setDownloading] = useState(false)
   const { toggleItem, isInCart } = useCartStore()
@@ -59,16 +60,22 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           .order('created_at', { ascending: true })
         setProductFiles(filesData || [])
 
-        // Check purchase status
+        // Check purchase status (무료 = 로그인만 하면 다운로드, 유료 = 결제 필요)
         const { data: { user } } = await supabase.auth.getUser()
-        if (user && !data.is_free) {
-          const { data: paidOrders } = await supabase
-            .from('orders')
-            .select('id, order_items!inner(product_id)')
-            .eq('user_id', user.id)
-            .eq('status', 'paid')
-            .eq('order_items.product_id', data.id)
-          setHasPurchased((paidOrders && paidOrders.length > 0) || false)
+        setIsLoggedIn(!!user)
+        if (user) {
+          if (data.is_free) {
+            // 무료 상품: 로그인만 하면 다운로드 가능
+            setHasPurchased(true)
+          } else {
+            const { data: paidOrders } = await supabase
+              .from('orders')
+              .select('id, order_items!inner(product_id)')
+              .eq('user_id', user.id)
+              .eq('status', 'paid')
+              .eq('order_items.product_id', data.id)
+            setHasPurchased((paidOrders && paidOrders.length > 0) || false)
+          }
         }
 
         // Load related: find products with overlapping category_ids
@@ -97,7 +104,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     load()
   }, [id])
 
-  const canDownload = product?.is_free || hasPurchased
+  const canDownload = hasPurchased // 무료든 유료든 로그인+조건 충족 시 true
 
   async function handleDownload(fileUrl?: string, fileName?: string) {
     if (!product) return
@@ -302,6 +309,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 <Download className="w-4 h-4" />
                 {downloading ? '다운로드 중...' : '다운로드'}
               </button>
+            ) : !isLoggedIn && product.is_free ? (
+              <Link
+                href="/auth/login"
+                className="flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors bg-emerald-600 text-white hover:bg-emerald-700"
+              >
+                <Download className="w-4 h-4" />
+                로그인 후 무료 다운로드
+              </Link>
             ) : (
               <button
                 onClick={() => toggleItem({
