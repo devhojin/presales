@@ -4,6 +4,13 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* 모든 클릭 가능 요소에 손가락 커서 */
+button, [role="button"], a, input[type="submit"], input[type="button"],
+input[type="checkbox"], input[type="radio"], select, label[for],
+[onclick], .cursor-pointer {
+  cursor: pointer !important;
+}
+
 /* 상품 상세 설명 스타일 */
 .product-description h3 {
   margin-top: 2.5rem;

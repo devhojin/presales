@@ -7,10 +7,20 @@ import { type DbProduct, type DbCategory, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, ShoppingCart, Heart, Check, Download, Play, Star, PenLine, BookOpen } from 'lucide-react'
+import { ArrowLeft, ShoppingCart, Heart, Check, Download, Play, BookOpen, FileDown } from 'lucide-react'
 import { PdfPreviewModal } from '@/components/pdf-preview-modal'
+import { ProductReviews } from '@/components/reviews/ProductReviews'
 
 type TabId = 'info' | 'video' | 'review'
+
+interface ProductFile {
+  id: number
+  product_id: number
+  file_name: string
+  file_url: string
+  file_size: string | null
+  created_at: string
+}
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -20,6 +30,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [related, setRelated] = useState<DbProduct[]>([])
   const [activeTab, setActiveTab] = useState<TabId>('info')
   const [showPdfPreview, setShowPdfPreview] = useState(false)
+  const [hasPurchased, setHasPurchased] = useState(false)
+  const [productFiles, setProductFiles] = useState<ProductFile[]>([])
+  const [downloading, setDownloading] = useState(false)
   const { toggleItem, isInCart } = useCartStore()
 
   useEffect(() => {
@@ -37,6 +50,27 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
       if (data) {
         setProduct(data)
+
+        // Load product files
+        const { data: filesData } = await supabase
+          .from('product_files')
+          .select('*')
+          .eq('product_id', data.id)
+          .order('created_at', { ascending: true })
+        setProductFiles(filesData || [])
+
+        // Check purchase status
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user && !data.is_free) {
+          const { data: paidOrders } = await supabase
+            .from('orders')
+            .select('id, order_items!inner(product_id)')
+            .eq('user_id', user.id)
+            .eq('status', 'paid')
+            .eq('order_items.product_id', data.id)
+          setHasPurchased((paidOrders && paidOrders.length > 0) || false)
+        }
+
         // Load related: find products with overlapping category_ids
         const productCatIds = data.category_ids && data.category_ids.length > 0
           ? data.category_ids
@@ -62,6 +96,47 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     }
     load()
   }, [id])
+
+  const canDownload = product?.is_free || hasPurchased
+
+  async function handleDownload(fileUrl?: string, fileName?: string) {
+    if (!product) return
+    setDownloading(true)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+
+      // Log the download
+      if (user) {
+        await supabase.from('download_logs').insert({
+          user_id: user.id,
+          product_id: product.id,
+          file_name: fileName || product.title,
+        })
+      }
+
+      // Increment download count
+      await supabase
+        .from('products')
+        .update({ download_count: (product.download_count || 0) + 1 })
+        .eq('id', product.id)
+      setProduct(prev => prev ? { ...prev, download_count: prev.download_count + 1 } : prev)
+
+      // Trigger file download
+      const url = fileUrl || productFiles[0]?.file_url
+      if (url) {
+        const a = document.createElement('a')
+        a.href = url
+        a.download = fileName || ''
+        a.target = '_blank'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+      }
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   const categoryMap = new Map<number, string>()
   categories.forEach((c) => categoryMap.set(c.id, c.name))
@@ -194,6 +269,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <p className="text-muted-foreground">카테고리</p>
               <p className="font-medium">{getCategoryNames(product).join(', ') || '-'}</p>
             </div>
+            <div>
+              <p className="text-muted-foreground">다운로드</p>
+              <p className="font-medium">{product.download_count}회</p>
+            </div>
           </div>
 
           <Separator />
@@ -214,29 +293,62 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           )}
 
           <div className="flex gap-3">
-            <button
-              onClick={() => toggleItem({
-                productId: product.id,
-                title: product.title,
-                price: product.price,
-                originalPrice: product.original_price,
-                thumbnail: product.thumbnail_url || '',
-                format: product.format || '',
-              })}
-              className={`flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors ${
-                inCart
-                  ? 'bg-muted text-muted-foreground border border-border'
-                  : 'bg-primary text-primary-foreground hover:bg-primary/90'
-              }`}
-            >
-              {inCart ? <><Check className="w-4 h-4" /> 장바구니에 담김</> :
-                product.is_free ? <><Download className="w-4 h-4" /> 무료 다운로드</> :
-                <><ShoppingCart className="w-4 h-4" /> 장바구니 담기</>}
-            </button>
+            {canDownload ? (
+              <button
+                onClick={() => handleDownload()}
+                disabled={downloading}
+                className="flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+              >
+                <Download className="w-4 h-4" />
+                {downloading ? '다운로드 중...' : '다운로드'}
+              </button>
+            ) : (
+              <button
+                onClick={() => toggleItem({
+                  productId: product.id,
+                  title: product.title,
+                  price: product.price,
+                  originalPrice: product.original_price,
+                  thumbnail: product.thumbnail_url || '',
+                  format: product.format || '',
+                })}
+                className={`flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors ${
+                  inCart
+                    ? 'bg-muted text-muted-foreground border border-border'
+                    : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                }`}
+              >
+                {inCart ? <><Check className="w-4 h-4" /> 장바구니에 담김</> :
+                  <><ShoppingCart className="w-4 h-4" /> 구매하기</>}
+              </button>
+            )}
             <button className="h-12 px-4 rounded-lg border border-border hover:bg-muted transition-colors flex items-center justify-center">
               <Heart className="w-5 h-5" />
             </button>
           </div>
+
+          {/* Product Files List */}
+          {canDownload && productFiles.length > 1 && (
+            <div className="border border-border rounded-lg p-4 space-y-2">
+              <h3 className="text-sm font-semibold mb-3">첨부 파일</h3>
+              {productFiles.map((file) => (
+                <div key={file.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <span className="text-sm truncate">{file.file_name}</span>
+                    {file.file_size && <span className="text-xs text-muted-foreground shrink-0">({file.file_size})</span>}
+                  </div>
+                  <button
+                    onClick={() => handleDownload(file.file_url, file.file_name)}
+                    disabled={downloading}
+                    className="text-xs px-3 py-1.5 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors shrink-0 ml-2"
+                  >
+                    다운로드
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
             <p className="text-xs text-amber-800">⚠️ 디지털 상품 특성상 다운로드 후 환불이 제한될 수 있습니다.</p>
@@ -310,42 +422,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
           {/* 리뷰 Tab */}
           {activeTab === 'review' && (
-            <div>
-              {/* Average Rating Placeholder */}
-              <div className="flex items-center gap-6 mb-8 p-6 bg-muted/30 rounded-xl">
-                <div className="text-center">
-                  <p className="text-4xl font-bold text-primary">0.0</p>
-                  <div className="flex items-center gap-0.5 mt-1">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                      <Star key={i} className="w-4 h-4 text-gray-300" />
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">0개 리뷰</p>
-                </div>
-                <Separator orientation="vertical" className="h-16" />
-                <div className="flex-1 space-y-1.5">
-                  {[5, 4, 3, 2, 1].map((star) => (
-                    <div key={star} className="flex items-center gap-2 text-xs">
-                      <span className="w-4 text-right text-muted-foreground">{star}</span>
-                      <Star className="w-3 h-3 text-gray-300" />
-                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                        <div className="h-full bg-yellow-400 rounded-full" style={{ width: '0%' }} />
-                      </div>
-                      <span className="w-6 text-right text-muted-foreground">0</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Empty State */}
-              <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">아직 리뷰가 없습니다.</p>
-                <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors">
-                  <PenLine className="w-4 h-4" />
-                  리뷰 작성
-                </button>
-              </div>
-            </div>
+            <ProductReviews productId={product.id} />
           )}
         </div>
       </div>

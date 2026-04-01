@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Package, ShoppingCart, Users, MessageSquare, TrendingUp } from 'lucide-react'
+import { Package, ShoppingCart, Users, MessageSquare, TrendingUp, Download } from 'lucide-react'
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
@@ -11,16 +11,18 @@ export default function AdminDashboard() {
     members: 0,
     consulting: 0,
     revenue: 0,
+    downloads: 0,
   })
 
   useEffect(() => {
     async function loadStats() {
       const supabase = createClient()
-      const [products, orders, members, consulting] = await Promise.all([
+      const [products, orders, members, consulting, downloads] = await Promise.all([
         supabase.from('products').select('id', { count: 'exact', head: true }),
         supabase.from('orders').select('id', { count: 'exact', head: true }),
         supabase.from('profiles').select('id', { count: 'exact', head: true }),
         supabase.from('consulting_requests').select('id', { count: 'exact', head: true }),
+        supabase.from('download_logs').select('id', { count: 'exact', head: true }),
       ])
 
       const { data: paidOrders } = await supabase
@@ -34,6 +36,7 @@ export default function AdminDashboard() {
         members: members.count || 0,
         consulting: consulting.count || 0,
         revenue: paidOrders?.reduce((sum, o) => sum + o.total_amount, 0) || 0,
+        downloads: downloads.count || 0,
       })
     }
     loadStats()
@@ -45,12 +48,13 @@ export default function AdminDashboard() {
     { icon: Users, label: '가입 회원', value: stats.members + '명', color: 'bg-purple-500' },
     { icon: MessageSquare, label: '컨설팅 신청', value: stats.consulting + '건', color: 'bg-amber-500' },
     { icon: TrendingUp, label: '총 매출', value: new Intl.NumberFormat('ko-KR').format(stats.revenue) + '원', color: 'bg-red-500' },
+    { icon: Download, label: '총 다운로드', value: stats.downloads + '건', color: 'bg-cyan-500' },
   ]
 
   return (
     <div>
       <h1 className="text-2xl font-bold mb-8">관리자 대시보드</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
         {cards.map((card) => (
           <div key={card.label} className="bg-white rounded-xl border border-gray-200 p-6">
             <div className="flex items-center gap-3 mb-3">
