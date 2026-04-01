@@ -2,8 +2,221 @@
 
 import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { Check, X, Clock, Video, FileText, Star } from 'lucide-react'
+import { Check, X, Clock, Video, FileText, Star, Upload, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+
+// ===========================
+// Consulting Inquiry Modal
+// ===========================
+
+function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; onClose: () => void; initialPackage: string }) {
+  const [form, setForm] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    company: '',
+    package_type: initialPackage || 'spot',
+    message: '',
+  })
+  const [file, setFile] = useState<File | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (isOpen) {
+      setForm(f => ({ ...f, package_type: initialPackage || 'spot' }))
+      setSubmitted(false)
+      setError('')
+      document.body.style.overflow = 'hidden'
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [isOpen, initialPackage])
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    if (isOpen) document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [isOpen, onClose])
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    if (f.size > 10 * 1024 * 1024) {
+      setError('파일 크기는 10MB 이하여야 합니다.')
+      return
+    }
+    setError('')
+    setFile(f)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!form.name || !form.phone || !form.email) {
+      setError('이름, 연락처, 이메일은 필수입니다.')
+      return
+    }
+    setSubmitting(true)
+    setError('')
+
+    try {
+      const supabase = createClient()
+
+      // Upload file if exists
+      let fileUrl = ''
+      if (file) {
+        const fileName = `inquiry-${Date.now()}-${file.name}`
+        const { error: uploadErr } = await supabase.storage.from('product-previews').upload(fileName, file)
+        if (!uploadErr) {
+          const { data: urlData } = supabase.storage.from('product-previews').getPublicUrl(fileName)
+          fileUrl = urlData.publicUrl
+        }
+      }
+
+      const messageWithFile = fileUrl
+        ? `${form.message}\n\n[첨부파일] ${fileUrl}`
+        : form.message
+
+      const { error: insertErr } = await supabase.from('consulting_requests').insert({
+        name: form.name,
+        phone: form.phone,
+        email: form.email,
+        company: form.company || null,
+        package_type: form.package_type,
+        message: messageWithFile || null,
+        status: 'pending',
+      })
+
+      if (insertErr) throw insertErr
+      setSubmitted(true)
+    } catch (err: any) {
+      setError('제출 실패: ' + (err.message || '오류가 발생했습니다.'))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (!isOpen) return null
+
+  const pkgOptions = [
+    { value: 'spot', label: '스팟 상담 (150,000원 / 30분)' },
+    { value: 'review', label: '제안서 리뷰 패키지 (500,000원 / 건)' },
+    { value: 'project', label: '프로젝트 컨설팅 (3,000,000원~ / 프로젝트)' },
+  ]
+
+  const inputClass = "w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+  const labelClass = "block text-xs font-medium text-gray-600 mb-1.5"
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[5vh]">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
+          <h2 className="text-lg font-bold text-gray-900">컨설팅 문의</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {submitted ? (
+          <div className="p-8 text-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
+              <Check className="w-8 h-8 text-emerald-600" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">문의가 접수되었습니다</h3>
+            <p className="text-sm text-gray-500 mb-6">24시간 이내에 담당자가 연락드리겠습니다.</p>
+            <button onClick={onClose} className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90">
+              확인
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="p-6 space-y-5">
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">{error}</div>
+            )}
+
+            {/* 요금 방식 */}
+            <div>
+              <label className={labelClass}>요금 방식 *</label>
+              <div className="space-y-2">
+                {pkgOptions.map(opt => (
+                  <label key={opt.value} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${form.package_type === opt.value ? 'border-blue-500 bg-blue-50/50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                    <input
+                      type="radio"
+                      name="package_type"
+                      value={opt.value}
+                      checked={form.package_type === opt.value}
+                      onChange={e => setForm({ ...form, package_type: e.target.value })}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <span className="text-sm font-medium text-gray-700">{opt.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* 이름 */}
+            <div>
+              <label className={labelClass}>이름 <span className="text-red-500">*</span></label>
+              <input type="text" required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="홍길동" className={inputClass} />
+            </div>
+
+            {/* 연락처 */}
+            <div>
+              <label className={labelClass}>연락처 <span className="text-red-500">*</span></label>
+              <input type="tel" required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="010-0000-0000" className={inputClass} />
+            </div>
+
+            {/* 이메일 */}
+            <div>
+              <label className={labelClass}>이메일 <span className="text-red-500">*</span></label>
+              <input type="email" required value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} placeholder="name@company.com" className={inputClass} />
+            </div>
+
+            {/* 회사명 (선택) */}
+            <div>
+              <label className={labelClass}>회사명 <span className="text-gray-400">(선택)</span></label>
+              <input type="text" value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} placeholder="(주)OO기업" className={inputClass} />
+            </div>
+
+            {/* 문의 내용 */}
+            <div>
+              <label className={labelClass}>문의 내용</label>
+              <textarea rows={4} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} placeholder="입찰 준비 상황, 제안서 관련 질문 등을 자유롭게 작성해주세요." className={inputClass} />
+            </div>
+
+            {/* 첨부파일 (선택) */}
+            <div>
+              <label className={labelClass}>첨부파일 <span className="text-gray-400">(선택, RFP/사업계획서, 10MB 이하)</span></label>
+              <div className="relative">
+                <input type="file" accept=".pdf,.doc,.docx,.hwp,.pptx,.ppt,.xlsx,.xls,.zip" onChange={handleFileChange} className="hidden" id="inquiry-file" />
+                <label htmlFor="inquiry-file" className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-colors">
+                  <Upload className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-500">{file ? file.name : '파일 선택 (PDF, DOC, HWP, PPT, XLS, ZIP)'}</span>
+                </label>
+                {file && (
+                  <button type="button" onClick={() => setFile(null)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+            >
+              {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> 제출 중...</> : '상담 문의하기'}
+            </button>
+          </form>
+        )}
+      </div>
+    </div>
+  )
+}
 
 interface ConsultingPackage {
   slug: string
@@ -42,6 +255,13 @@ function FeatureCell({ value }: { value: boolean | string }) {
 export default function ConsultingPage() {
   const [packages, setPackages] = useState<ConsultingPackage[]>([])
   const [loading, setLoading] = useState(true)
+  const [showInquiry, setShowInquiry] = useState(false)
+  const [inquiryPackage, setInquiryPackage] = useState('spot')
+
+  const openInquiry = (slug: string) => {
+    setInquiryPackage(slug)
+    setShowInquiry(true)
+  }
 
   useEffect(() => {
     const supabase = createClient()
@@ -121,6 +341,7 @@ export default function ConsultingPage() {
                   ))}
                 </ul>
                 <button
+                  onClick={() => openInquiry(pkg.slug)}
                   className={`w-full h-10 rounded-lg font-medium text-sm transition-colors mt-6 ${
                     pkg.is_best
                       ? 'bg-primary text-primary-foreground hover:bg-primary/90'
@@ -184,6 +405,7 @@ export default function ConsultingPage() {
               {[spot, review, project].map((pkg) => (
                 <div key={pkg?.slug || ''} className={`p-4 flex items-center justify-center ${pkg?.slug === 'review' ? 'bg-primary/5 border-x border-primary/20' : ''}`}>
                   <button
+                    onClick={() => pkg?.slug && openInquiry(pkg.slug)}
                     className={`w-full h-9 rounded-lg font-medium text-xs transition-colors ${
                       pkg?.is_best
                         ? 'bg-primary text-primary-foreground hover:bg-primary/90'
@@ -220,6 +442,13 @@ export default function ConsultingPage() {
           ))}
         </div>
       </div>
+
+      {/* Inquiry Modal */}
+      <InquiryModal
+        isOpen={showInquiry}
+        onClose={() => setShowInquiry(false)}
+        initialPackage={inquiryPackage}
+      />
     </div>
   )
 }
