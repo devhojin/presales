@@ -412,11 +412,7 @@ export default function ConsultingPage() {
                 <div key={pkg?.slug || ''} className={`p-4 flex items-center justify-center ${pkg?.slug === 'review' ? 'bg-primary/5 border-x border-primary/20' : ''}`}>
                   <button
                     onClick={() => pkg?.slug && openInquiry(pkg.slug)}
-                    className={`w-full h-9 rounded-lg font-medium text-xs transition-colors cursor-pointer ${
-                      pkg?.is_best
-                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                        : 'border border-border bg-white hover:bg-muted'
-                    }`}
+                    className="w-full h-9 rounded-lg font-medium text-xs transition-all cursor-pointer border border-gray-200 bg-gray-100 text-gray-400 hover:bg-primary hover:text-primary-foreground hover:border-primary hover:shadow-md"
                   >
                     선택하기
                   </button>
@@ -427,25 +423,37 @@ export default function ConsultingPage() {
         </div>
       )}
 
-      {/* Process */}
-      <div className="max-w-3xl mx-auto">
-        <h2 className="text-xl font-bold text-center mb-8">진행 프로세스</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {[
-            { icon: FileText, step: '01', title: '신청', desc: '온라인 폼 작성' },
-            { icon: Clock, step: '02', title: '매칭', desc: '24시간 내 전문가 배정' },
-            { icon: Video, step: '03', title: '컨설팅', desc: '화상/대면 미팅 진행' },
-            { icon: Star, step: '04', title: '완료', desc: '리포트 및 후속 지원' },
-          ].map((item) => (
-            <div key={item.step} className="text-center space-y-3">
-              <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-                <item.icon className="w-5 h-5 text-primary" />
+      {/* Process - Timeline style */}
+      <div className="max-w-4xl mx-auto">
+        <h2 className="text-xl font-bold text-center mb-3">진행 프로세스</h2>
+        <p className="text-sm text-muted-foreground text-center mb-12">신청부터 완료까지 4단계로 진행됩니다</p>
+
+        <div className="relative">
+          {/* Connecting line */}
+          <div className="hidden md:block absolute top-10 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-200 via-blue-400 to-blue-600" />
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {[
+              { icon: FileText, step: '01', title: '상담 신청', desc: '온라인 폼으로 간편하게 신청하세요. 요금 방식을 선택하고 RFP를 첨부할 수 있습니다.', color: 'from-blue-400 to-blue-500' },
+              { icon: Clock, step: '02', title: '전문가 매칭', desc: '24시간 이내 프로젝트에 적합한 전문가를 배정하고 일정을 조율합니다.', color: 'from-blue-500 to-blue-600' },
+              { icon: Video, step: '03', title: '컨설팅 진행', desc: '화상 또는 대면 미팅으로 제안서 리뷰, 전략 수립, 코칭을 진행합니다.', color: 'from-blue-600 to-indigo-600' },
+              { icon: Star, step: '04', title: '리포트 & 지원', desc: '피드백 리포트를 전달하고 후속 질의응답을 지원합니다.', color: 'from-indigo-600 to-indigo-700' },
+            ].map((item, i) => (
+              <div key={item.step} className="relative flex flex-col items-center text-center">
+                {/* Step circle */}
+                <div className={`relative z-10 w-20 h-20 rounded-2xl bg-gradient-to-br ${item.color} shadow-lg flex flex-col items-center justify-center mb-5`}>
+                  <item.icon className="w-6 h-6 text-white mb-1" />
+                  <span className="text-[10px] font-bold text-white/80">STEP {item.step}</span>
+                </div>
+                {/* Arrow between steps (mobile) */}
+                {i < 3 && (
+                  <div className="md:hidden w-0.5 h-6 bg-blue-200 -mt-1 mb-1" />
+                )}
+                <h3 className="font-bold text-base mb-2">{item.title}</h3>
+                <p className="text-xs text-muted-foreground leading-relaxed max-w-[200px]">{item.desc}</p>
               </div>
-              <div className="text-xs text-muted-foreground font-medium">STEP {item.step}</div>
-              <h3 className="font-semibold text-sm">{item.title}</h3>
-              <p className="text-xs text-muted-foreground">{item.desc}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
