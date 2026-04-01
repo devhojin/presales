@@ -78,25 +78,40 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           }
         }
 
-        // Load related: find products with overlapping category_ids
-        const productCatIds = data.category_ids && data.category_ids.length > 0
-          ? data.category_ids
-          : data.category_id ? [data.category_id] : []
+        // Load related: use related_product_ids if set, otherwise fall back to category matching
+        const relatedIds = Array.isArray(data.related_product_ids) && data.related_product_ids.length > 0
+          ? data.related_product_ids
+          : null
 
-        if (productCatIds.length > 0) {
-          const { data: allPublished } = await supabase
+        if (relatedIds) {
+          const { data: relatedData } = await supabase
             .from('products')
             .select('*, categories(id, name, slug)')
+            .in('id', relatedIds)
             .eq('is_published', true)
-            .neq('id', data.id)
+          // Preserve the order from related_product_ids
+          const relatedMap = new Map((relatedData || []).map(p => [p.id, p]))
+          setRelated(relatedIds.map((rid: number) => relatedMap.get(rid)).filter(Boolean) as DbProduct[])
+        } else {
+          const productCatIds = data.category_ids && data.category_ids.length > 0
+            ? data.category_ids
+            : data.category_id ? [data.category_id] : []
 
-          const relatedProducts = (allPublished || []).filter((p) => {
-            const pCatIds = p.category_ids && p.category_ids.length > 0
-              ? p.category_ids
-              : p.category_id ? [p.category_id] : []
-            return pCatIds.some((cid: number) => productCatIds.includes(cid))
-          }).slice(0, 3)
-          setRelated(relatedProducts)
+          if (productCatIds.length > 0) {
+            const { data: allPublished } = await supabase
+              .from('products')
+              .select('*, categories(id, name, slug)')
+              .eq('is_published', true)
+              .neq('id', data.id)
+
+            const relatedProducts = (allPublished || []).filter((p) => {
+              const pCatIds = p.category_ids && p.category_ids.length > 0
+                ? p.category_ids
+                : p.category_id ? [p.category_id] : []
+              return pCatIds.some((cid: number) => productCatIds.includes(cid))
+            }).slice(0, 10)
+            setRelated(relatedProducts)
+          }
         }
       }
       setLoading(false)
@@ -446,7 +461,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       {related.length > 0 && (
         <div className="mt-12">
           <h2 className="text-xl font-bold mb-6">관련 템플릿</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {related.map((p) => (
               <Link key={p.id} href={`/store/${p.id}`} className="group">
                 <div className="border border-border rounded-xl overflow-hidden bg-card hover:shadow-lg transition-all">

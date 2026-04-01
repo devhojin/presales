@@ -60,6 +60,7 @@ interface ProductForm {
   badge_best: boolean
   badge_sale: boolean
   seller: string
+  related_product_ids: number[]
 }
 
 // ===========================
@@ -97,6 +98,7 @@ const EMPTY_FORM: ProductForm = {
   badge_best: false,
   badge_sale: false,
   seller: '프리세일즈',
+  related_product_ids: [],
 }
 
 // ===========================
@@ -255,6 +257,13 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [downloadCount, setDownloadCount] = useState(0)
   const [createdAt, setCreatedAt] = useState('')
 
+  const [relatedProducts, setRelatedProducts] = useState<{ id: number; title: string; price: number; is_free: boolean; thumbnail_url: string | null }[]>([])
+  const [relatedSearch, setRelatedSearch] = useState('')
+  const [relatedSearchResults, setRelatedSearchResults] = useState<{ id: number; title: string; price: number; is_free: boolean; thumbnail_url: string | null }[]>([])
+  const [relatedSearchOpen, setRelatedSearchOpen] = useState(false)
+  const [searchingRelated, setSearchingRelated] = useState(false)
+  const relatedSearchRef = useRef<HTMLDivElement>(null)
+
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const showToast = (message: string) => {
@@ -312,9 +321,20 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           badge_best: p.badge_best ?? false,
           badge_sale: p.badge_sale ?? false,
           seller: p.seller || '프리세일즈',
+          related_product_ids: Array.isArray(p.related_product_ids) ? p.related_product_ids : [],
         })
         setDownloadCount(p.download_count || 0)
         setCreatedAt(p.created_at || '')
+
+        // Load related products details
+        const rpIds = Array.isArray(p.related_product_ids) ? p.related_product_ids : []
+        if (rpIds.length > 0) {
+          const { data: rpData } = await supabase
+            .from('products')
+            .select('id, title, price, is_free, thumbnail_url')
+            .in('id', rpIds)
+          setRelatedProducts(rpData || [])
+        }
       }
       setLoading(false)
     }
@@ -359,6 +379,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         badge_best: form.badge_best,
         badge_sale: form.badge_sale,
         seller: form.seller || null,
+        related_product_ids: form.related_product_ids,
         updated_at: new Date().toISOString(),
       }
 
@@ -436,6 +457,55 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
   const removeTag = (tag: string) => {
     updateField('tags', form.tags.filter(t => t !== tag))
+  }
+
+  // Related products search
+  useEffect(() => {
+    if (!relatedSearch.trim()) {
+      setRelatedSearchResults([])
+      return
+    }
+    const timer = setTimeout(async () => {
+      setSearchingRelated(true)
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('products')
+        .select('id, title, price, is_free, thumbnail_url')
+        .ilike('title', `%${relatedSearch.trim()}%`)
+        .limit(10)
+      const currentId = isNew ? -1 : Number(id)
+      const filtered = (data || []).filter(
+        p => p.id !== currentId && !form.related_product_ids.includes(p.id)
+      )
+      setRelatedSearchResults(filtered)
+      setSearchingRelated(false)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [relatedSearch, form.related_product_ids, id, isNew])
+
+  // Close related search dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (relatedSearchRef.current && !relatedSearchRef.current.contains(e.target as Node)) {
+        setRelatedSearchOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const addRelatedProduct = (product: { id: number; title: string; price: number; is_free: boolean; thumbnail_url: string | null }) => {
+    if (form.related_product_ids.includes(product.id)) return
+    updateField('related_product_ids', [...form.related_product_ids, product.id])
+    setRelatedProducts(prev => [...prev, product])
+    setRelatedSearch('')
+    setRelatedSearchResults([])
+    setRelatedSearchOpen(false)
+  }
+
+  const removeRelatedProduct = (productId: number) => {
+    updateField('related_product_ids', form.related_product_ids.filter(id => id !== productId))
+    setRelatedProducts(prev => prev.filter(p => p.id !== productId))
   }
 
   const discount =
@@ -1034,6 +1104,121 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 <Plus className="w-4 h-4" />
               </button>
             </div>
+          </section>
+
+          {/* ─── 관련 상품 ─── */}
+          <section className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <Tag className="w-4 h-4 text-gray-400" />
+              관련 상품
+            </h2>
+            <p className="text-xs text-gray-400 mb-3">상품 상세 페이지 하단에 표시되는 관련 상품을 직접 지정합니다. 비어있으면 같은 카테고리 상품이 자동 표시됩니다.</p>
+
+            {/* Current related products */}
+            {relatedProducts.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
+                {form.related_product_ids.map(rpId => {
+                  const rp = relatedProducts.find(p => p.id === rpId)
+                  if (!rp) return null
+                  return (
+                    <div key={rp.id} className="relative group border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                      <div className="aspect-[4/3] bg-gray-100 overflow-hidden">
+                        {rp.thumbnail_url ? (
+                          <img src={rp.thumbnail_url} alt={rp.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-2xl bg-gradient-to-br from-blue-900 to-blue-700">📄</div>
+                        )}
+                      </div>
+                      <div className="p-2">
+                        <p className="text-xs font-medium text-gray-900 line-clamp-1">{rp.title}</p>
+                        <p className="text-[11px] text-gray-500 mt-0.5">
+                          {rp.is_free ? '무료' : `${rp.price.toLocaleString()}원`}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeRelatedProduct(rp.id)}
+                        className="absolute top-1 right-1 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {/* Search to add */}
+            <div ref={relatedSearchRef} className="relative">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={relatedSearch}
+                  onChange={e => {
+                    setRelatedSearch(e.target.value)
+                    setRelatedSearchOpen(true)
+                  }}
+                  onFocus={() => {
+                    if (relatedSearch.trim()) setRelatedSearchOpen(true)
+                  }}
+                  placeholder="상품명으로 검색하여 추가..."
+                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (relatedSearch.trim()) setRelatedSearchOpen(true)
+                  }}
+                  className="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Dropdown results */}
+              {relatedSearchOpen && relatedSearch.trim() && (
+                <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                  {searchingRelated ? (
+                    <div className="p-3 text-center text-xs text-gray-400">
+                      <Loader2 className="w-4 h-4 animate-spin inline mr-1" />
+                      검색 중...
+                    </div>
+                  ) : relatedSearchResults.length === 0 ? (
+                    <div className="p-3 text-center text-xs text-gray-400">
+                      검색 결과가 없습니다
+                    </div>
+                  ) : (
+                    relatedSearchResults.map(p => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => addRelatedProduct(p)}
+                        className="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition-colors text-left"
+                      >
+                        <div className="w-10 h-10 rounded overflow-hidden bg-gray-100 shrink-0">
+                          {p.thumbnail_url ? (
+                            <img src={p.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-sm bg-gradient-to-br from-blue-900 to-blue-700">📄</div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-gray-900 truncate">{p.title}</p>
+                          <p className="text-xs text-gray-400">
+                            {p.is_free ? '무료' : `${p.price.toLocaleString()}원`}
+                          </p>
+                        </div>
+                        <Plus className="w-4 h-4 text-gray-300 shrink-0" />
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+
+            {form.related_product_ids.length > 0 && (
+              <p className="text-xs text-gray-400 mt-2">{form.related_product_ids.length}개 상품이 연결되었습니다</p>
+            )}
           </section>
 
         </div>

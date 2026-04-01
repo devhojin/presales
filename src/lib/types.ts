@@ -24,6 +24,7 @@ export interface DbProduct {
   review_avg: number
   created_at: string
   updated_at: string
+  related_product_ids: number[] | null
   categories?: { id: number; name: string; slug: string } | null
 }
 
