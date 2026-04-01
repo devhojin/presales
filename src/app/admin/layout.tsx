@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, ArrowLeft, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { createClient } from '@/lib/supabase'
 
 const adminNav = [
   { href: '/admin', icon: LayoutDashboard, label: '대시보드' },
@@ -15,12 +16,50 @@ const adminNav = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
+  const [authChecked, setAuthChecked] = useState(false)
+  const [authorized, setAuthorized] = useState(false)
 
   useEffect(() => {
     const saved = localStorage.getItem('admin-sidebar-collapsed')
     if (saved === 'true') setCollapsed(true)
   }, [])
+
+  // Auth guard: check if user is admin
+  useEffect(() => {
+    async function checkAuth() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.replace('/auth/login')
+        return
+      }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+      if (profile?.role !== 'admin') {
+        router.replace('/')
+        return
+      }
+      setAuthorized(true)
+      setAuthChecked(true)
+    }
+    checkAuth()
+  }, [router])
+
+  if (!authChecked || !authorized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex items-center gap-3 text-gray-400">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span className="text-sm">권한 확인 중...</span>
+        </div>
+      </div>
+    )
+  }
 
   const toggle = () => {
     const next = !collapsed

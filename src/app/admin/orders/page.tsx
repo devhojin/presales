@@ -7,12 +7,16 @@ import { Badge } from '@/components/ui/badge'
 interface Order {
   id: number
   order_number: string
+  user_id: string
   total_amount: number
   status: string
   payment_method: string | null
   created_at: string
   paid_at: string | null
-  profiles: { name: string; email: string } | null
+}
+
+interface ProfileMap {
+  [userId: string]: { name: string; email: string }
 }
 
 const statusMap: Record<string, { label: string; class: string }> = {
@@ -24,6 +28,7 @@ const statusMap: Record<string, { label: string; class: string }> = {
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([])
+  const [profileMap, setProfileMap] = useState<ProfileMap>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -34,9 +39,27 @@ export default function AdminOrders() {
     const supabase = createClient()
     const { data } = await supabase
       .from('orders')
-      .select('*, profiles(name, email)')
+      .select('*')
       .order('created_at', { ascending: false })
-    setOrders(data || [])
+    const orderList = (data || []) as Order[]
+    setOrders(orderList)
+
+    // Fetch profiles for all user_ids
+    const userIds = [...new Set(orderList.map(o => o.user_id).filter(Boolean))]
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .in('id', userIds)
+      const map: ProfileMap = {}
+      if (profiles) {
+        for (const p of profiles) {
+          map[p.id] = { name: p.name || '-', email: p.email || '-' }
+        }
+      }
+      setProfileMap(map)
+    }
+
     setLoading(false)
   }
 
@@ -79,8 +102,8 @@ export default function AdminOrders() {
                 <tr key={order.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm font-mono">{order.order_number}</td>
                   <td className="px-6 py-4">
-                    <p className="text-sm font-medium">{order.profiles?.name || '-'}</p>
-                    <p className="text-xs text-gray-400">{order.profiles?.email || '-'}</p>
+                    <p className="text-sm font-medium">{profileMap[order.user_id]?.name || '-'}</p>
+                    <p className="text-xs text-gray-400">{profileMap[order.user_id]?.email || '-'}</p>
                   </td>
                   <td className="px-6 py-4 text-sm font-semibold">{formatPrice(order.total_amount)}</td>
                   <td className="px-6 py-4">

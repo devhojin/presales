@@ -1,10 +1,82 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { FileText, Download, MessageSquare, User, Settings } from 'lucide-react'
+import { FileText, Download, MessageSquare, User, Settings, Loader2, Mail, Phone, Building } from 'lucide-react'
+import { createClient } from '@/lib/supabase'
+
+interface Profile {
+  name: string | null
+  email: string
+  phone: string | null
+  company: string | null
+  role: string
+  created_at: string
+}
+
+interface Order {
+  id: number
+  order_number: string
+  total_amount: number
+  status: string
+  created_at: string
+}
+
+const statusMap: Record<string, { label: string; class: string }> = {
+  pending: { label: '대기', class: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+  paid: { label: '결제완료', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  cancelled: { label: '취소', class: 'bg-gray-50 text-gray-500 border-gray-200' },
+  refunded: { label: '환불', class: 'bg-red-50 text-red-700 border-red-200' },
+}
+
+type TabId = 'orders' | 'profile'
 
 export default function MyPage() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [orders, setOrders] = useState<Order[]>([])
+  const [activeTab, setActiveTab] = useState<TabId>('orders')
+
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.replace('/auth/login')
+        return
+      }
+
+      const [{ data: profileData }, { data: ordersData }] = await Promise.all([
+        supabase.from('profiles').select('name, email, phone, company, role, created_at').eq('id', user.id).single(),
+        supabase.from('orders').select('id, order_number, total_amount, status, created_at').eq('user_id', user.id).order('created_at', { ascending: false }),
+      ])
+
+      setProfile(profileData || { name: null, email: user.email || '', phone: null, company: null, role: 'user', created_at: user.created_at || '' })
+      setOrders(ordersData || [])
+      setLoading(false)
+    }
+    load()
+  }, [router])
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  const formatPrice = (price: number) => new Intl.NumberFormat('ko-KR').format(price) + '원'
+  const formatDate = (date: string) => new Date(date).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })
+
+  const tabs = [
+    { id: 'orders' as TabId, icon: FileText, label: '주문 내역' },
+    { id: 'profile' as TabId, icon: User, label: '내 정보' },
+  ]
+
   return (
     <div className="container mx-auto px-4 py-10 max-w-4xl">
       <h1 className="text-2xl font-bold mb-8">마이페이지</h1>
@@ -12,17 +84,12 @@ export default function MyPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* Sidebar */}
         <div className="space-y-1">
-          {[
-            { icon: FileText, label: '주문 내역', active: true },
-            { icon: Download, label: '다운로드', active: false },
-            { icon: MessageSquare, label: '문의 내역', active: false },
-            { icon: User, label: '내 정보 관리', active: false },
-            { icon: Settings, label: '환경설정', active: false },
-          ].map((item) => (
+          {tabs.map((item) => (
             <button
-              key={item.label}
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
               className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                item.active
+                activeTab === item.id
                   ? 'bg-primary/10 text-primary'
                   : 'text-muted-foreground hover:bg-muted'
               }`}
@@ -35,15 +102,77 @@ export default function MyPage() {
 
         {/* Content */}
         <div className="md:col-span-3">
-          <div className="border border-border rounded-xl p-6">
-            <h2 className="font-semibold mb-4">주문 내역</h2>
-            <Separator className="mb-6" />
-            <div className="text-center py-16 text-muted-foreground">
-              <FileText className="w-12 h-12 mx-auto mb-4 opacity-30" />
-              <p className="text-lg font-medium">주문 내역이 없습니다</p>
-              <p className="text-sm mt-2">템플릿을 구매하시면 여기에 표시됩니다.</p>
+          {activeTab === 'orders' && (
+            <div className="border border-border rounded-xl p-6">
+              <h2 className="font-semibold mb-4">주문 내역</h2>
+              <Separator className="mb-6" />
+              {orders.length === 0 ? (
+                <div className="text-center py-16 text-muted-foreground">
+                  <FileText className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                  <p className="text-lg font-medium">주문 내역이 없습니다</p>
+                  <p className="text-sm mt-2">템플릿을 구매하시면 여기에 표시됩니다.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {orders.map((order) => (
+                    <div key={order.id} className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors">
+                      <div>
+                        <p className="text-sm font-mono text-muted-foreground">{order.order_number}</p>
+                        <p className="text-sm font-semibold mt-1">{formatPrice(order.total_amount)}</p>
+                      </div>
+                      <div className="text-right">
+                        <Badge className={`text-xs border ${statusMap[order.status]?.class || 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                          {statusMap[order.status]?.label || order.status}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground mt-1">{formatDate(order.created_at)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
+          )}
+
+          {activeTab === 'profile' && profile && (
+            <div className="border border-border rounded-xl p-6">
+              <h2 className="font-semibold mb-4">내 정보</h2>
+              <Separator className="mb-6" />
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <User className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">이름</p>
+                    <p className="text-sm font-medium">{profile.name || '-'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">이메일</p>
+                    <p className="text-sm font-medium">{profile.email}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Phone className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">연락처</p>
+                    <p className="text-sm font-medium">{profile.phone || '-'}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Building className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">회사명</p>
+                    <p className="text-sm font-medium">{profile.company || '-'}</p>
+                  </div>
+                </div>
+                <Separator />
+                <p className="text-xs text-muted-foreground">
+                  가입일: {formatDate(profile.created_at)}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

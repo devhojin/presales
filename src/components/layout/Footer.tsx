@@ -106,7 +106,7 @@ export function Footer() {
             <p>
               {s.address} | {s.email}
             </p>
-            <p className="mt-4">&copy; {s.copyright}</p>
+            <p className="mt-4">{s.copyright}</p>
           </div>
           <div className="flex gap-4 text-xs font-medium text-muted-foreground">
             <button className="hover:text-primary">이용약관</button>
