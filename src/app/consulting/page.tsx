@@ -22,7 +22,7 @@ const compareFeatures = [
   { label: '사전 공고/자료 검토', spot: true, review: true, project: true },
   { label: '핵심 피드백 요약', spot: true, review: true, project: true },
   { label: '이메일 후속 Q&A', spot: '1회', review: '포함', project: '무제한' },
-  { label: '제안서 전체 리뷰 (50p 이내)', spot: false, review: true, project: true },
+  { label: '제안서 리뷰 (정성적 제안서)', spot: false, review: true, project: true },
   { label: '평가항목별 점수 예측', spot: false, review: true, project: true },
   { label: '수정 방향 리포트 (10p)', spot: false, review: true, project: true },
   { label: '1회 재리뷰', spot: false, review: true, project: true },
@@ -136,7 +136,7 @@ export default function ConsultingPage() {
       {/* Compare Table - Google AI Plans style */}
       {!loading && packages.length >= 3 && (
         <div className="max-w-5xl mx-auto mb-20">
-          <h2 className="text-xl font-bold text-center mb-2">요금제 비교하기</h2>
+          <h2 className="text-xl font-bold text-center mb-2">요금 비교</h2>
           <p className="text-sm text-muted-foreground text-center mb-8">상위 패키지는 하위 패키지의 모든 기능을 포함합니다</p>
 
           <div className="border border-border rounded-2xl overflow-hidden">
