@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, Star, ArrowLeft, ChevronLeft, ChevronRight, Loader2, Download } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, Star, ArrowLeft, ChevronLeft, ChevronRight, Loader2, Download, BarChart3 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
 const adminNav = [
@@ -14,6 +14,7 @@ const adminNav = [
   { href: '/admin/consulting', icon: MessageSquare, label: '컨설팅 신청' },
   { href: '/admin/downloads', icon: Download, label: '다운로드 관리' },
   { href: '/admin/reviews', icon: Star, label: '리뷰 관리' },
+  { href: '/admin/analytics', icon: BarChart3, label: '통계 분석' },
 ]
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
