@@ -160,10 +160,7 @@ export default function Home() {
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">첫 입찰, 어디서부터 시작해야 할지 모르겠다면?</h2>
           <p className="text-blue-100/80 mb-8 max-w-lg mx-auto">무료 입찰 가이드부터 전문가 1:1 컨설팅까지. 프리세일즈가 함께합니다.</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/store" className="inline-flex items-center justify-center h-11 px-6 rounded-lg bg-white text-blue-700 hover:bg-blue-50 font-medium text-sm transition-colors">무료 가이드 받기</Link>
-            <Link href="/consulting" className="inline-flex items-center justify-center h-11 px-6 rounded-lg border border-white/30 text-white hover:bg-white/10 font-medium text-sm transition-colors">컨설팅 상담 신청</Link>
-          </div>
+          <Link href="/consulting" className="inline-flex items-center justify-center h-11 px-8 rounded-lg bg-white text-blue-700 hover:bg-blue-50 font-medium text-sm transition-colors">컨설팅 상담 신청</Link>
         </div>
       </section>
     </div>
