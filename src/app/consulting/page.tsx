@@ -126,7 +126,7 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">문의가 접수되었습니다</h3>
             <p className="text-sm text-gray-500 mb-6">24시간 이내에 담당자가 연락드리겠습니다.</p>
-            <button onClick={onClose} className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90">
+            <button onClick={onClose} className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 cursor-pointer">
               확인
             </button>
           </div>
@@ -165,7 +165,13 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
             {/* 연락처 */}
             <div>
               <label className={labelClass}>연락처 <span className="text-red-500">*</span></label>
-              <input type="tel" required value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="010-0000-0000" className={inputClass} />
+              <input type="tel" required value={form.phone} onChange={e => {
+                const nums = e.target.value.replace(/[^0-9]/g, '').slice(0, 11)
+                let formatted = nums
+                if (nums.length > 3 && nums.length <= 7) formatted = nums.slice(0, 3) + '-' + nums.slice(3)
+                else if (nums.length > 7) formatted = nums.slice(0, 3) + '-' + nums.slice(3, 7) + '-' + nums.slice(7)
+                setForm({ ...form, phone: formatted })
+              }} placeholder="숫자만 입력하세요" className={inputClass} />
             </div>
 
             {/* 이메일 */}
@@ -207,7 +213,7 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
             <button
               type="submit"
               disabled={submitting}
-              className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 cursor-pointer"
             >
               {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> 제출 중...</> : '상담 문의하기'}
             </button>
