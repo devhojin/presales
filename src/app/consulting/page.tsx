@@ -342,7 +342,7 @@ export default function ConsultingPage() {
                 </ul>
                 <button
                   onClick={() => openInquiry(pkg.slug)}
-                  className={`w-full h-10 rounded-lg font-medium text-sm transition-colors mt-6 ${
+                  className={`w-full h-10 rounded-lg font-medium text-sm transition-colors mt-6 cursor-pointer ${
                     pkg.is_best
                       ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                       : 'border border-border hover:bg-muted'
@@ -406,7 +406,7 @@ export default function ConsultingPage() {
                 <div key={pkg?.slug || ''} className={`p-4 flex items-center justify-center ${pkg?.slug === 'review' ? 'bg-primary/5 border-x border-primary/20' : ''}`}>
                   <button
                     onClick={() => pkg?.slug && openInquiry(pkg.slug)}
-                    className={`w-full h-9 rounded-lg font-medium text-xs transition-colors ${
+                    className={`w-full h-9 rounded-lg font-medium text-xs transition-colors cursor-pointer ${
                       pkg?.is_best
                         ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                         : 'border border-border bg-white hover:bg-muted'
