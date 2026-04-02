@@ -795,22 +795,38 @@ export default function AdminOrders() {
   async function loadData() {
     const supabase = createClient()
 
-    const [ordersResult, logsResult] = await Promise.all([
-      supabase
-        .from('orders')
-        .select(
-          `id, order_number, user_id, status, total_amount, payment_method, payment_key, paid_at, cancelled_at, refund_reason, admin_memo, created_at, updated_at,
-           order_items ( id, order_id, product_id, price, products ( title, thumbnail_url ) ),
-           profiles!orders_user_id_fkey ( id, email, name, phone, company, role, created_at )`
-        )
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('download_logs')
-        .select('*')
-        .order('downloaded_at', { ascending: false }),
-    ])
+    // Fetch orders + items (no FK join for profiles)
+    const ordersResult = await supabase
+      .from('orders')
+      .select(
+        `id, order_number, user_id, status, total_amount, payment_method, payment_key, paid_at, cancelled_at, refund_reason, admin_memo, created_at, updated_at,
+         order_items ( id, order_id, product_id, price, products ( title, thumbnail_url ) )`
+      )
+      .order('created_at', { ascending: false })
 
-    setOrders((ordersResult.data as unknown as Order[]) || [])
+    const orderList = (ordersResult.data as unknown as Order[]) || []
+
+    // Fetch profiles separately by user_ids
+    const userIds = [...new Set(orderList.map(o => o.user_id).filter(Boolean))]
+    if (userIds.length > 0) {
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, email, name, phone, company, role, created_at')
+        .in('id', userIds)
+      if (profilesData) {
+        const profileMap = new Map(profilesData.map(p => [p.id, p]))
+        orderList.forEach(o => {
+          (o as any).profiles = profileMap.get(o.user_id) || null
+        })
+      }
+    }
+
+    const logsResult = await supabase
+      .from('download_logs')
+      .select('*')
+      .order('downloaded_at', { ascending: false })
+
+    setOrders(orderList)
     setDownloadLogs((logsResult.data as DownloadLogEntry[]) || [])
     setLoading(false)
   }
