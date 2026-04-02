@@ -746,6 +746,291 @@ function OrderDetailModal({
 }
 
 // ===========================
+// Product Purchase History Modal
+// ===========================
+
+interface PurchaseHistoryEntry {
+  orderer_name: string
+  orderer_email: string
+  ordered_at: string
+  total_amount: number
+  status: string
+}
+
+function ProductPurchaseHistoryModal({
+  productId,
+  productTitle,
+  onClose,
+}: {
+  productId: string
+  productTitle: string
+  onClose: () => void
+}) {
+  const [entries, setEntries] = useState<PurchaseHistoryEntry[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleEsc)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', handleEsc)
+      document.body.style.overflow = ''
+    }
+  }, [onClose])
+
+  useEffect(() => {
+    async function fetchData() {
+      const supabase = createClient()
+      // Get all order_items for this product
+      const { data: items } = await supabase
+        .from('order_items')
+        .select('order_id, price')
+        .eq('product_id', productId)
+
+      if (!items || items.length === 0) {
+        setEntries([])
+        setLoading(false)
+        return
+      }
+
+      const orderIds = [...new Set(items.map((i: any) => i.order_id))]
+      const { data: ordersData } = await supabase
+        .from('orders')
+        .select('id, user_id, status, total_amount, created_at')
+        .in('id', orderIds)
+        .order('created_at', { ascending: false })
+
+      if (!ordersData || ordersData.length === 0) {
+        setEntries([])
+        setLoading(false)
+        return
+      }
+
+      const userIds = [...new Set(ordersData.map((o: any) => o.user_id).filter(Boolean))]
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email, name')
+        .in('id', userIds)
+
+      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]))
+
+      const result: PurchaseHistoryEntry[] = ordersData.map((o: any) => {
+        const p = profileMap.get(o.user_id) as any
+        return {
+          orderer_name: p?.name || '-',
+          orderer_email: p?.email || '-',
+          ordered_at: o.created_at,
+          total_amount: o.total_amount,
+          status: o.status,
+        }
+      })
+
+      setEntries(result)
+      setLoading(false)
+    }
+    fetchData()
+  }, [productId])
+
+  return (
+    <div className="fixed inset-0 z-[65] flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+          <div>
+            <h2 className="text-base font-semibold text-gray-900">구매내역</h2>
+            <p className="text-xs text-gray-500 break-words mt-0.5">{productTitle}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {loading ? (
+            <div className="text-center py-12 text-sm text-gray-400">불러오는 중...</div>
+          ) : entries.length === 0 ? (
+            <div className="text-center py-12">
+              <ShoppingCart className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+              <p className="text-sm text-gray-400">구매 내역이 없습니다</p>
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">주문자</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">이메일</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">주문일</th>
+                  <th className="text-right px-3 py-2 text-xs font-medium text-gray-500">결제금액</th>
+                  <th className="text-center px-3 py-2 text-xs font-medium text-gray-500">결제상태</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {entries.map((entry, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50/50">
+                    <td className="px-3 py-2 text-gray-900">{entry.orderer_name}</td>
+                    <td className="px-3 py-2 text-gray-600">{entry.orderer_email}</td>
+                    <td className="px-3 py-2 text-gray-600">{formatDate(entry.ordered_at)}</td>
+                    <td className="px-3 py-2 text-right text-gray-900 font-medium">{formatWon(entry.total_amount)}</td>
+                    <td className="px-3 py-2 text-center"><StatusBadge status={entry.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ===========================
+// Download History Modal
+// ===========================
+
+interface DownloadHistoryRow {
+  downloaded_at: string
+  user_name: string
+  product_title: string
+  file_name: string
+}
+
+function DownloadHistoryModal({
+  order,
+  onClose,
+}: {
+  order: Order
+  onClose: () => void
+}) {
+  const [rows, setRows] = useState<DownloadHistoryRow[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleEsc)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', handleEsc)
+      document.body.style.overflow = ''
+    }
+  }, [onClose])
+
+  useEffect(() => {
+    async function fetchData() {
+      const supabase = createClient()
+      const productIds = (order.order_items || []).map((item) => Number(item.product_id))
+      if (productIds.length === 0) {
+        setRows([])
+        setLoading(false)
+        return
+      }
+
+      const { data: logs } = await supabase
+        .from('download_logs')
+        .select('*')
+        .in('product_id', productIds)
+        .order('downloaded_at', { ascending: false })
+
+      if (!logs || logs.length === 0) {
+        setRows([])
+        setLoading(false)
+        return
+      }
+
+      // Get user profiles
+      const userIds = [...new Set(logs.map((l: any) => l.user_id).filter(Boolean))]
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, name, email')
+        .in('id', userIds)
+      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]))
+
+      // Get product titles
+      const { data: products } = await supabase
+        .from('products')
+        .select('id, title')
+        .in('id', productIds)
+      const productMap = new Map((products || []).map((p: any) => [p.id, p.title]))
+
+      const result: DownloadHistoryRow[] = logs.map((log: any) => {
+        const profile = profileMap.get(log.user_id) as any
+        return {
+          downloaded_at: log.downloaded_at,
+          user_name: profile?.name || profile?.email || '-',
+          product_title: productMap.get(log.product_id) || '-',
+          file_name: log.file_name || '-',
+        }
+      })
+
+      setRows(result)
+      setLoading(false)
+    }
+    fetchData()
+  }, [order])
+
+  return (
+    <div className="fixed inset-0 z-[65] flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+          <div>
+            <h2 className="text-base font-semibold text-gray-900">다운로드 이력</h2>
+            <p className="text-xs text-gray-500 font-mono mt-0.5">{order.order_number}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {loading ? (
+            <div className="text-center py-12 text-sm text-gray-400">불러오는 중...</div>
+          ) : rows.length === 0 ? (
+            <div className="text-center py-12">
+              <Download className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+              <p className="text-sm text-gray-400">다운로드 기록이 없습니다</p>
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">다운로드 일시</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">사용자</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">상품명</th>
+                  <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">파일명</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {rows.map((row, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50/50">
+                    <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{formatDateTime(row.downloaded_at)}</td>
+                    <td className="px-3 py-2 text-gray-900">{row.user_name}</td>
+                    <td className="px-3 py-2 text-gray-700 break-words">{row.product_title}</td>
+                    <td className="px-3 py-2 text-gray-600 break-all">{row.file_name}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ===========================
 // Main Page
 // ===========================
 
@@ -770,6 +1055,8 @@ export default function AdminOrders() {
   // Modals
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [selectedMember, setSelectedMember] = useState<Profile | null>(null)
+  const [purchaseHistoryProduct, setPurchaseHistoryProduct] = useState<{ id: string; title: string } | null>(null)
+  const [downloadHistoryOrder, setDownloadHistoryOrder] = useState<Order | null>(null)
 
   // Toast
   const [toast, setToast] = useState<string | null>(null)
@@ -1249,23 +1536,38 @@ export default function AdminOrders() {
                         </td>
 
                         {/* 품목 / 가격 */}
-                        <td className="px-4 py-4 align-top min-w-[240px]">
+                        <td className="px-4 py-4 align-top min-w-[300px]">
                           <div className="space-y-2">
                             {order.order_items?.map((item) => (
-                              <div key={item.id} className="flex items-center gap-2">
+                              <div key={item.id} className="flex items-start gap-2">
                                 {item.products?.thumbnail_url ? (
                                   <img
                                     src={item.products.thumbnail_url}
                                     alt=""
-                                    className="w-8 h-8 rounded object-cover bg-gray-100 shrink-0"
+                                    className="w-8 h-8 rounded object-cover bg-gray-100 shrink-0 mt-0.5"
                                   />
                                 ) : (
-                                  <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center shrink-0">
+                                  <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center shrink-0 mt-0.5">
                                     <Package className="w-3.5 h-3.5 text-gray-400" />
                                   </div>
                                 )}
-                                <div className="min-w-0">
-                                  <p className="text-sm text-gray-700 truncate max-w-[180px]">{item.products?.title || '상품명 없음'}</p>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-start gap-1.5">
+                                    <a
+                                      href={`/store/${item.product_id}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-sm text-blue-600 hover:underline break-words"
+                                    >
+                                      {item.products?.title || '상품명 없음'}
+                                    </a>
+                                    <button
+                                      onClick={() => setPurchaseHistoryProduct({ id: item.product_id, title: item.products?.title || '상품명 없음' })}
+                                      className="shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-colors cursor-pointer whitespace-nowrap"
+                                    >
+                                      구매내역
+                                    </button>
+                                  </div>
                                   <p className="text-xs text-gray-400">{formatWon(item.price)}</p>
                                 </div>
                               </div>
@@ -1284,9 +1586,16 @@ export default function AdminOrders() {
 
                         {/* 다운로드 */}
                         <td className="px-4 py-4 align-top text-center">
-                          <span className={`text-sm font-medium ${dlCount > 0 ? 'text-blue-600' : 'text-gray-300'}`}>
-                            {dlCount}회
-                          </span>
+                          {dlCount > 0 ? (
+                            <button
+                              onClick={() => setDownloadHistoryOrder(order)}
+                              className="text-sm font-medium text-blue-600 hover:underline cursor-pointer"
+                            >
+                              {dlCount}회
+                            </button>
+                          ) : (
+                            <span className="text-sm font-medium text-gray-300">0회</span>
+                          )}
                         </td>
                       </tr>
                     )
@@ -1372,6 +1681,23 @@ export default function AdminOrders() {
         <MemberDetailModal
           member={selectedMember}
           onClose={() => setSelectedMember(null)}
+        />
+      )}
+
+      {/* Product Purchase History Modal */}
+      {purchaseHistoryProduct && (
+        <ProductPurchaseHistoryModal
+          productId={purchaseHistoryProduct.id}
+          productTitle={purchaseHistoryProduct.title}
+          onClose={() => setPurchaseHistoryProduct(null)}
+        />
+      )}
+
+      {/* Download History Modal */}
+      {downloadHistoryOrder && (
+        <DownloadHistoryModal
+          order={downloadHistoryOrder}
+          onClose={() => setDownloadHistoryOrder(null)}
         />
       )}
 
