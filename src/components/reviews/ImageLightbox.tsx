@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface ImageLightboxProps {
@@ -11,6 +11,12 @@ interface ImageLightboxProps {
 
 export function ImageLightbox({ images, initialIndex = 0, onClose }: ImageLightboxProps) {
   const [current, setCurrent] = useState(initialIndex)
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [onClose])
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center" onClick={onClose}>

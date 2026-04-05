@@ -215,33 +215,35 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         <ArrowLeft className="w-4 h-4 mr-1" /> 스토어로 돌아가기
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        {/* Image */}
-        <div className="relative rounded-xl overflow-hidden bg-muted flex items-center justify-center" style={{ minHeight: '300px' }}>
-          {product.thumbnail_url ? (
-            <img src={product.thumbnail_url} alt={product.title} className="w-full h-auto object-contain" />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center">
-              <span className="text-6xl">📄</span>
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,5fr)] gap-8 lg:gap-12">
+        {/* Left: Image + Preview */}
+        <div className="space-y-3">
+          <div className="relative rounded-xl overflow-hidden bg-muted flex items-center justify-center border border-gray-100">
+            {product.thumbnail_url ? (
+              <img src={product.thumbnail_url} alt={product.title} className="w-full h-auto object-contain max-h-[500px]" />
+            ) : (
+              <div className="w-full aspect-[4/3] bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center">
+                <span className="text-6xl">📄</span>
+              </div>
+            )}
+            <Badge className={`absolute top-4 left-4 border ${product.is_free ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
+              {product.is_free ? '무료' : '유료'}
+            </Badge>
+          </div>
+
+          {/* PDF Preview Button */}
+          {product.preview_pdf_url && (
+            <button
+              onClick={() => setShowPdfPreview(true)}
+              className="w-full bg-gray-50 border border-gray-200 rounded-lg py-3 hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium text-gray-700"
+            >
+              <BookOpen className="w-4 h-4" />
+              📖 문서 미리보기 ▶️
+            </button>
           )}
-          <Badge className={`absolute top-4 left-4 border ${product.is_free ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
-            {product.is_free ? '무료' : '유료'}
-          </Badge>
         </div>
 
-        {/* PDF Preview Button */}
-        {product.preview_pdf_url && (
-          <button
-            onClick={() => setShowPdfPreview(true)}
-            className="w-full bg-gray-50 border border-gray-200 rounded-lg py-3 hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium text-gray-700 -mt-4 lg:col-span-2 lg:-mt-0"
-          >
-            <BookOpen className="w-4 h-4" />
-            📖 문서 미리보기 ▶️
-          </button>
-        )}
-
-        {/* Info */}
+        {/* Right: Info */}
         <div className="space-y-6">
           <div>
             <div className="flex gap-2 flex-wrap mb-1">

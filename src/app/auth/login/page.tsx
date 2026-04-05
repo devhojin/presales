@@ -1,35 +1,63 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ShieldAlert } from 'lucide-react'
+import { checkLoginLock, recordLoginFailure, resetLoginAttempts } from '@/lib/password-policy'
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const reason = searchParams.get('reason')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState(reason === 'timeout' ? '장시간 미사용으로 자동 로그아웃되었습니다.' : '')
   const [loading, setLoading] = useState(false)
+  const [lockInfo, setLockInfo] = useState<{ locked: boolean; remainingMinutes: number }>({ locked: false, remainingMinutes: 0 })
+
+  useEffect(() => {
+    setLockInfo(checkLoginLock())
+    const interval = setInterval(() => setLockInfo(checkLoginLock()), 30000)
+    return () => clearInterval(interval)
+  }, [])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    // KISA: 5회 실패 시 계정 잠금 확인
+    const lock = checkLoginLock()
+    if (lock.locked) {
+      setLockInfo(lock)
+      setError(`로그인 시도 횟수를 초과했습니다. ${lock.remainingMinutes}분 후에 다시 시도해주세요.`)
+      return
+    }
+
     setLoading(true)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
 
-    if (error) {
-      setError(error.message === 'Invalid login credentials'
-        ? '이메일 또는 비밀번호가 올바르지 않습니다.'
-        : error.message)
+    if (signInError) {
+      const result = recordLoginFailure()
+      setLockInfo(checkLoginLock())
+
+      if (result.locked) {
+        setError('로그인 시도 횟수(5회)를 초과했습니다. 15분 후에 다시 시도해주세요.')
+      } else if (signInError.message === 'Invalid login credentials') {
+        setError(`이메일 또는 비밀번호가 올바르지 않습니다. (남은 시도: ${result.attemptsLeft}회)`)
+      } else {
+        setError(signInError.message)
+      }
       setLoading(false)
       return
     }
 
+    // 성공 시 시도 횟수 초기화
+    resetLoginAttempts()
     router.push('/mypage')
     router.refresh()
   }
@@ -46,7 +74,20 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
-          {error && (
+          {lockInfo.locked && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+              <ShieldAlert className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-red-700">계정 보호 잠금</p>
+                <p className="text-xs text-red-600 mt-1">
+                  로그인 시도 횟수(5회)를 초과하여 계정이 일시 잠금되었습니다.
+                  <br />{lockInfo.remainingMinutes}분 후에 다시 시도해주세요.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {error && !lockInfo.locked && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
               {error}
             </div>
@@ -61,7 +102,7 @@ export default function LoginPage() {
                 required
                 placeholder="name@company.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setError('') }}
                 className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             </div>
@@ -76,7 +117,7 @@ export default function LoginPage() {
                 required
                 placeholder="비밀번호를 입력하세요"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); setError('') }}
                 className="w-full pl-10 pr-10 py-2.5 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
               <button
@@ -91,7 +132,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || lockInfo.locked}
             className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
           >
             {loading ? '로그인 중...' : '로그인'}
@@ -106,5 +147,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   )
 }

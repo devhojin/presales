@@ -1,1 +1,12 @@
 @AGENTS.md
+
+## 활성 스킬 (우선순위)
+이 프로젝트에서 우선적으로 활용할 Claude Skills (`~/.claude/skills/`):
+- **nextjs-developer** — Next.js 16 App Router, Server Components, API Routes
+- **react-expert** — React 19 컴포넌트, 커스텀 훅, Zustand 상태관리
+- **typescript-pro** — 타입 안전성, 유틸리티 타입
+- **postgres-pro** — Supabase PostgreSQL 최적화, RLS
+- **api-designer** — REST API 설계, Supabase 클라이언트 패턴
+- **secure-code-guardian** — 인증/인가, 입력 검증
+- **code-reviewer** — 코드 리뷰, 품질 개선
+- **debugging-wizard** — 에러 분석, 근본 원인 추적

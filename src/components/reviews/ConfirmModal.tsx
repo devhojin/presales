@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { X } from 'lucide-react'
 
 interface ConfirmModalProps {
@@ -23,6 +24,13 @@ export function ConfirmModal({
   onCancel,
   variant = 'default',
 }: ConfirmModalProps) {
+  useEffect(() => {
+    if (!isOpen) return
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [isOpen, onCancel])
+
   if (!isOpen) return null
 
   return (

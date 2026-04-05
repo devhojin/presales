@@ -56,6 +56,12 @@ interface OrderItem {
   products: Product | null
 }
 
+interface MemoEntry {
+  text: string
+  author: string
+  created_at: string
+}
+
 interface Order {
   id: number
   order_number: string
@@ -72,6 +78,22 @@ interface Order {
   updated_at: string | null
   order_items: OrderItem[]
   profiles: Profile | null
+}
+
+function parseMemos(raw: string | null): MemoEntry[] {
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) return parsed
+  } catch {
+    // Legacy plain text memo → convert
+    if (raw.trim()) return [{ text: raw, author: '관리자', created_at: new Date().toISOString() }]
+  }
+  return []
+}
+
+function stringifyMemos(memos: MemoEntry[]): string {
+  return JSON.stringify(memos)
 }
 
 interface DownloadLogEntry {
@@ -463,9 +485,9 @@ function OrderDetailModal({
   onStatusChange: (orderId: number, status: string) => Promise<void>
   onMemoSave: (orderId: number, memo: string) => Promise<void>
 }) {
-  const [memo, setMemo] = useState(order.admin_memo || '')
+  const [memos, setMemos] = useState<MemoEntry[]>(parseMemos(order.admin_memo))
+  const [newMemo, setNewMemo] = useState('')
   const [memoSaving, setMemoSaving] = useState(false)
-  const [memoSaved, setMemoSaved] = useState(false)
   const [confirmAction, setConfirmAction] = useState<{ status: string; label: string; color: string } | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
 
@@ -494,12 +516,25 @@ function OrderDetailModal({
     }
   }, [onClose, confirmAction])
 
-  const handleMemoSave = async () => {
+  const handleMemoAdd = async () => {
+    if (!newMemo.trim()) return
     setMemoSaving(true)
-    await onMemoSave(order.id, memo)
+    const entry: MemoEntry = {
+      text: newMemo.trim(),
+      author: '관리자',
+      created_at: new Date().toISOString(),
+    }
+    const updated = [...memos, entry]
+    await onMemoSave(order.id, stringifyMemos(updated))
+    setMemos(updated)
+    setNewMemo('')
     setMemoSaving(false)
-    setMemoSaved(true)
-    setTimeout(() => setMemoSaved(false), 2000)
+  }
+
+  const handleMemoDelete = async (index: number) => {
+    const updated = memos.filter((_, i) => i !== index)
+    await onMemoSave(order.id, stringifyMemos(updated))
+    setMemos(updated)
   }
 
   const handleStatusConfirm = async () => {
@@ -666,27 +701,66 @@ function OrderDetailModal({
             </div>
           </div>
 
-          {/* 관리자 메모 */}
+          {/* 관리자 메모 (댓글형) */}
           <div>
             <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">관리자 메모</h3>
-            <div className="bg-gray-50 rounded-xl p-4">
-              <textarea
-                value={memo}
-                onChange={(e) => setMemo(e.target.value)}
-                placeholder="이 주문에 대한 메모를 남겨주세요..."
-                rows={3}
-                className="w-full text-sm text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-gray-400"
-              />
-              <div className="flex items-center justify-end mt-2 gap-2">
-                {memoSaved && <span className="text-xs text-green-600">저장됨</span>}
+            <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+              {/* 기존 메모 목록 */}
+              {memos.length > 0 ? (
+                <div className="space-y-2">
+                  {memos.map((entry, idx) => (
+                    <div key={idx} className="bg-white border border-gray-200 rounded-lg px-3 py-2.5 group">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-gray-700">{entry.author}</span>
+                          <span className="text-[11px] text-gray-400">
+                            {new Date(entry.created_at).toLocaleString('ko-KR', {
+                              year: 'numeric', month: '2-digit', day: '2-digit',
+                              hour: '2-digit', minute: '2-digit', second: '2-digit',
+                              hour12: false,
+                            })}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleMemoDelete(idx)}
+                          className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all cursor-pointer"
+                          title="삭제"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{entry.text}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 text-center py-2">메모가 없습니다</p>
+              )}
+
+              {/* 새 메모 입력 */}
+              <div className="flex gap-2">
+                <textarea
+                  value={newMemo}
+                  onChange={(e) => setNewMemo(e.target.value)}
+                  placeholder="메모를 입력하세요..."
+                  rows={2}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                      e.preventDefault()
+                      handleMemoAdd()
+                    }
+                  }}
+                  className="flex-1 text-sm text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-gray-400"
+                />
                 <button
-                  onClick={handleMemoSave}
-                  disabled={memoSaving}
-                  className="px-3 py-1.5 text-xs font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 cursor-pointer"
+                  onClick={handleMemoAdd}
+                  disabled={memoSaving || !newMemo.trim()}
+                  className="self-end px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 cursor-pointer shrink-0"
                 >
-                  {memoSaving ? '저장 중...' : '메모 저장'}
+                  {memoSaving ? '저장...' : '등록'}
                 </button>
               </div>
+              <p className="text-[11px] text-gray-400">Ctrl+Enter로 빠른 등록</p>
             </div>
           </div>
 
@@ -936,6 +1010,7 @@ function DownloadHistoryModal({
       const { data: logs } = await supabase
         .from('download_logs')
         .select('*')
+        .eq('user_id', order.user_id)
         .in('product_id', productIds)
         .order('downloaded_at', { ascending: false })
 

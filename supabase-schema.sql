@@ -55,10 +55,10 @@ CREATE TABLE product_files (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. 주문
+-- 5. 주문 (주문번호: YYYYMMDD + 6자리 순번, 예: 20260403000001)
 CREATE TABLE orders (
   id SERIAL PRIMARY KEY,
-  order_number TEXT NOT NULL UNIQUE,
+  order_number TEXT NOT NULL UNIQUE, -- 트리거 generate_order_number()로 자동생성
   user_id UUID NOT NULL REFERENCES auth.users(id),
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'cancelled', 'refunded')),
   total_amount INT NOT NULL DEFAULT 0,

@@ -46,6 +46,12 @@ export default function AdminReviewsPage() {
   const [selectedReview, setSelectedReview] = useState<DbReview | null>(null)
   const [toggling, setToggling] = useState(false)
 
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape' && selectedReview) setSelectedReview(null) }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [selectedReview])
+
   const loadReviews = useCallback(async () => {
     setLoading(true)
     const supabase = createClient()
