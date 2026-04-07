@@ -163,9 +163,20 @@ export default function StorePage() {
     async function load() {
       const supabase = createClient()
       const [prodRes, catRes] = await Promise.all([
-        supabase.from('products').select('*, categories(id, name, slug)').eq('is_published', true).order('created_at', { ascending: false }),
+        supabase
+          .from('products')
+          .select('*, categories!products_category_id_fkey(id, name, slug)')
+          .eq('is_published', true)
+          .order('sort_order', { ascending: true, nullsFirst: false })
+          .order('created_at', { ascending: false }),
         supabase.from('categories').select('*').order('sort_order'),
       ])
+      if (prodRes.error) {
+        console.error('[Store] products 조회 에러:', prodRes.error)
+      }
+      if (catRes.error) {
+        console.error('[Store] categories 조회 에러:', catRes.error)
+      }
       setProducts(prodRes.data || [])
       setCategories(catRes.data || [])
       setLoading(false)
