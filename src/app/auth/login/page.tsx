@@ -133,15 +133,21 @@ function LoginForm() {
           <button
             type="submit"
             disabled={loading || lockInfo.locked}
-            className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors cursor-pointer"
           >
             {loading ? '로그인 중...' : '로그인'}
           </button>
+
+          <div className="text-center">
+            <Link href="/auth/forgot-password" className="text-sm text-muted-foreground hover:text-primary hover:underline cursor-pointer transition-colors">
+              비밀번호를 잊으셨나요?
+            </Link>
+          </div>
         </form>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           아직 계정이 없으신가요?{' '}
-          <Link href="/auth/signup" className="text-primary font-medium hover:underline">
+          <Link href="/auth/signup" className="text-primary font-medium hover:underline cursor-pointer">
             회원가입
           </Link>
         </p>
