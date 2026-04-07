@@ -157,6 +157,7 @@ export default function StorePage() {
   const [selectedPriceType, setSelectedPriceType] = useState<string | null>(null)
   const [selectedFileType, setSelectedFileType] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [sortOrder, setSortOrder] = useState<'recommended' | 'price_asc' | 'price_desc' | 'newest'>('recommended')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -205,7 +206,7 @@ export default function StorePage() {
   }
 
   const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
+    const filtered = products.filter((p) => {
       if (selectedCategories.size > 0) {
         const productCatIds = p.category_ids && p.category_ids.length > 0
           ? p.category_ids
@@ -231,7 +232,20 @@ export default function StorePage() {
       }
       return true
     })
-  }, [products, selectedCategories, selectedPriceType, selectedFileType, searchQuery, categoryMap])
+
+    // 정렬 적용
+    if (sortOrder === 'price_asc') {
+      return [...filtered].sort((a, b) => a.price - b.price)
+    } else if (sortOrder === 'price_desc') {
+      return [...filtered].sort((a, b) => b.price - a.price)
+    } else if (sortOrder === 'newest') {
+      return [...filtered].sort((a, b) =>
+        new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
+      )
+    }
+    // 'recommended' — 기본 sort_order 유지 (서버에서 이미 정렬됨)
+    return filtered
+  }, [products, selectedCategories, selectedPriceType, selectedFileType, searchQuery, sortOrder, categoryMap])
 
   const handleFileTypeClick = (type: string) => {
     setSelectedFileType(selectedFileType === type ? null : type)
@@ -310,10 +324,22 @@ export default function StorePage() {
         </div>
       </div>
 
-      <p className="text-sm text-muted-foreground mb-4">
-        {filteredProducts.length}개 상품
-        {selectedFileType && <span className="ml-2 text-xs">· 파일형태: {selectedFileType}</span>}
-      </p>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-sm text-muted-foreground">
+          {filteredProducts.length}개 상품
+          {selectedFileType && <span className="ml-2 text-xs">· 파일형태: {selectedFileType}</span>}
+        </p>
+        <select
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
+          className="text-xs border border-border rounded-lg px-3 py-1.5 bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer"
+        >
+          <option value="recommended">추천순</option>
+          <option value="price_asc">가격 낮은순</option>
+          <option value="price_desc">가격 높은순</option>
+          <option value="newest">최신순</option>
+        </select>
+      </div>
 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
