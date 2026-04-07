@@ -68,10 +68,6 @@ function generateHTML(p) {
     return `<span style="display:inline-block;background:${color};color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;margin-right:4px;">${f}</span>`
   }).join('')
 
-  const priceLabel = p.free
-    ? '<span style="color:#10b981;font-size:28px;font-weight:800;">무료</span>'
-    : `<span style="color:#fff;font-size:28px;font-weight:800;">${p.price}<span style="font-size:14px;font-weight:400;opacity:0.7;">원</span></span>`
-
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
     * { margin:0; padding:0; box-sizing:border-box; }
     body { width:750px; height:750px; display:flex; align-items:center; justify-content:center; background:${p.color}; font-family:-apple-system,'Malgun Gothic',sans-serif; overflow:hidden; }
@@ -81,19 +77,15 @@ function generateHTML(p) {
     .category { display:inline-block; background:rgba(255,255,255,0.15); color:rgba(255,255,255,0.9); font-size:13px; font-weight:600; padding:6px 16px; border-radius:20px; margin-bottom:20px; position:relative; z-index:1; letter-spacing:0.5px; }
     .title { color:#fff; font-size:36px; font-weight:800; line-height:1.3; margin-bottom:24px; position:relative; z-index:1; white-space:pre-line; text-shadow:0 2px 4px rgba(0,0,0,0.2); }
     .formats { margin-bottom:20px; position:relative; z-index:1; }
-    .price { position:relative; z-index:1; margin-bottom:16px; }
     .brand { position:absolute; bottom:30px; left:0; right:0; text-align:center; z-index:1; }
     .brand-text { color:rgba(255,255,255,0.4); font-size:13px; font-weight:600; letter-spacing:2px; }
-    ${p.free ? '.free-badge { position:absolute; top:30px; right:30px; background:#10b981; color:#fff; font-size:16px; font-weight:800; padding:8px 20px; border-radius:8px; z-index:2; }' : ''}
   </style></head><body>
   <div class="card">
     <div class="pattern"></div>
-    ${p.free ? '<div class="free-badge">FREE</div>' : ''}
     <div class="icon">${p.icon}</div>
     <div class="category">${p.category}</div>
     <div class="title">${p.title}</div>
     <div class="formats">${formatBadges}</div>
-    <div class="price">${priceLabel}</div>
     <div class="brand"><span class="brand-text">PRESALES DOCUMENTO</span></div>
   </div>
   </body></html>`
