@@ -1,13 +1,20 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useCartStore } from '@/stores/cart-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ShoppingCart, Trash2, X, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase'
 
 export default function CartPage() {
   const { items, removeItem, clearCart, getTotal, getDiscountTotal } = useCartStore()
+  const [processing, setProcessing] = useState(false)
+  const router = useRouter()
+
+  const allFree = items.length > 0 && items.every((item) => item.price === 0)
 
   const formatPrice = (price: number) => {
     if (price === 0) return '무료'
@@ -103,9 +110,53 @@ export default function CartPage() {
                 비우기
               </button>
               <button
-                className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                onClick={async () => {
+                  if (allFree) {
+                    setProcessing(true)
+                    try {
+                      const supabase = createClient()
+                      const { data: { user } } = await supabase.auth.getUser()
+                      if (!user) {
+                        router.push('/auth/login?redirect=/cart')
+                        return
+                      }
+                      const { data: order, error: orderError } = await supabase
+                        .from('orders')
+                        .insert({
+                          user_id: user.id,
+                          total_amount: 0,
+                          status: 'paid',
+                          payment_method: 'free',
+                          paid_at: new Date().toISOString(),
+                        })
+                        .select('id')
+                        .single()
+                      if (orderError || !order) {
+                        alert('주문 생성에 실패했습니다. 다시 시도해주세요.')
+                        return
+                      }
+                      const orderItems = items.map((item) => ({
+                        order_id: order.id,
+                        product_id: item.productId,
+                        price: 0,
+                      }))
+                      await supabase.from('order_items').insert(orderItems)
+                      clearCart()
+                      router.push('/mypage')
+                      router.refresh()
+                    } catch {
+                      alert('주문 처리 중 오류가 발생했습니다.')
+                    } finally {
+                      setProcessing(false)
+                    }
+                  } else {
+                    alert('결제 기능을 준비 중입니다. 빠른 시일 내에 제공하겠습니다.')
+                  }
+                }}
+                disabled={processing}
+                className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50"
               >
-                결제하기 ({formatPrice(getTotal())})
+                {processing ? '처리 중...' : allFree ? '무료 다운로드' : `결제하기 (${formatPrice(getTotal())})`}
               </button>
             </div>
 

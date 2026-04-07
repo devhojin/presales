@@ -11,6 +11,7 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const reason = searchParams.get('reason')
+  const redirectTo = searchParams.get('redirect')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -58,7 +59,9 @@ function LoginForm() {
 
     // 성공 시 시도 횟수 초기화
     resetLoginAttempts()
-    router.push('/mypage')
+    // redirect 파라미터가 있으면 해당 경로로, 없으면 /mypage로 이동
+    const destination = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/mypage'
+    router.push(destination)
     router.refresh()
   }
 

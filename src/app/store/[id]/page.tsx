@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useMemo } from 'react'
+import DOMPurify from 'dompurify'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 import { type DbProduct, type DbCategory, formatPrice } from '@/lib/types'
@@ -315,7 +316,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               </button>
             ) : !isLoggedIn && product.is_free ? (
               <Link
-                href="/auth/login"
+                href={`/auth/login?redirect=/store/${id}`}
                 className="flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors bg-emerald-600 text-white hover:bg-emerald-700"
               >
                 <Download className="w-4 h-4" />
@@ -401,7 +402,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               {product.description_html ? (
                 <div
                   className="product-description text-[15px]"
-                  dangerouslySetInnerHTML={{ __html: product.description_html }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.description_html) }}
                 />
               ) : product.description ? (
                 <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>

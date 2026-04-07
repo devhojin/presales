@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Menu, X, User, LogOut, Settings } from 'lucide-react'
@@ -19,6 +19,7 @@ export function Header() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [profileMenu, setProfileMenu] = useState(false)
   const [profile, setProfile] = useState<{ name: string; role: string } | null>(null)
+  const profileRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
   const router = useRouter()
 
@@ -44,6 +45,19 @@ export function Header() {
 
     return () => subscription.unsubscribe()
   }, [])
+
+  // 프로필 드롭다운 외부 클릭 시 닫기
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileMenu(false)
+      }
+    }
+    if (profileMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [profileMenu])
 
   async function handleLogout() {
     const supabase = createClient()
@@ -92,10 +106,10 @@ export function Header() {
         <div className="hidden md:flex items-center gap-2">
           <CartDrawer />
           {user ? (
-            <div className="relative">
+            <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setProfileMenu(!profileMenu)}
-                className="flex items-center gap-2 h-8 px-3 rounded-lg hover:bg-muted transition-colors"
+                className="flex items-center gap-2 h-8 px-3 rounded-lg hover:bg-muted transition-colors cursor-pointer"
               >
                 <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
                   <User className="w-3.5 h-3.5 text-primary" />

@@ -30,11 +30,12 @@ export async function proxy(req: NextRequest) {
     },
   )
 
+  // Supabase 공식 권장: getUser()로 JWT 서버사이드 검증 (getSession은 토큰 무결성 미검증)
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  const hasSession = !!session
+  const hasSession = !!user
 
   // ── KISA: 세션 타임아웃 (30분 미사용 시 자동 로그아웃) ──
   if (hasSession) {
@@ -47,6 +48,7 @@ export async function proxy(req: NextRequest) {
         const url = req.nextUrl.clone()
         url.pathname = '/auth/login'
         url.searchParams.set('reason', 'timeout')
+        url.searchParams.set('redirect', path)
         const response = NextResponse.redirect(url)
         const allCookies = req.cookies.getAll()
         for (const cookie of allCookies) {
@@ -78,6 +80,18 @@ export async function proxy(req: NextRequest) {
     url.pathname = '/auth/login'
     url.searchParams.set('redirect', path)
     return NextResponse.redirect(url)
+  }
+
+  // /admin 경로: role='admin' 체크
+  if (path.startsWith('/admin') && hasSession) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user!.id)
+      .single()
+    if (profile?.role !== 'admin') {
+      return NextResponse.redirect(new URL('/mypage', req.url))
+    }
   }
 
   // 로그인 상태에서 로그인/회원가입 접근 시 리다이렉트

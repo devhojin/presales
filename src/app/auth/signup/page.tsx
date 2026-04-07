@@ -12,6 +12,8 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [agreeTerms, setAgreeTerms] = useState(false)
+  const [agreePrivacy, setAgreePrivacy] = useState(false)
   const [form, setForm] = useState({
     email: '',
     password: '',
@@ -183,10 +185,36 @@ export default function SignupPage() {
             </div>
           </div>
 
+          {/* 약관 동의 */}
+          <div className="space-y-3 pt-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreeTerms}
+                onChange={(e) => setAgreeTerms(e.target.checked)}
+                className="w-4 h-4 rounded border-border cursor-pointer"
+              />
+              <span className="text-sm text-muted-foreground">
+                <Link href="/terms" target="_blank" className="text-primary hover:underline">이용약관</Link>에 동의합니다 (필수)
+              </span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={agreePrivacy}
+                onChange={(e) => setAgreePrivacy(e.target.checked)}
+                className="w-4 h-4 rounded border-border cursor-pointer"
+              />
+              <span className="text-sm text-muted-foreground">
+                <Link href="/privacy" target="_blank" className="text-primary hover:underline">개인정보처리방침</Link>에 동의합니다 (필수)
+              </span>
+            </label>
+          </div>
+
           <button
             type="submit"
-            disabled={loading}
-            className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            disabled={loading || !agreeTerms || !agreePrivacy}
+            className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors cursor-pointer"
           >
             {loading ? '가입 중...' : '회원가입'}
           </button>

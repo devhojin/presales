@@ -42,13 +42,23 @@ SMTP_HOST=mail.mailplug.co.kr
 SMTP_PORT=465
 SMTP_USER=...
 SMTP_PASS=...
+NEXT_PUBLIC_GA_MEASUREMENT_ID=... (GA4 설정 시)
 ```
 
+## 완료된 인프라
+- Vercel 프로덕션 배포 파이프라인
+- Supabase 연동 (DB + Auth + Storage)
+- SUPABASE_SERVICE_ROLE_KEY (Vercel 환경변수 등록 완료)
+- GA4 컴포넌트/gtag 유틸리티 (측정 ID 등록 시 자동 활성화)
+- SEO (sitemap.ts, robots.ts)
+
 ## 미완료 작업
-1. **presales.co.kr 도메인** — Vercel 커스텀 도메인 연결
-2. **Google Analytics** — GA4 태그 삽입 + 이벤트 추적
-3. **성능 최적화** — 번들 분석, 이미지 최적화, 캐싱
-4. **모니터링** — 에러 추적, 가동시간 체크
+| 우선순위 | 작업 | 상태 |
+|----------|------|------|
+| 🔴 | presales.co.kr 도메인 연결 | Vercel 커스텀 도메인 설정 필요 |
+| 🟡 | GA4 측정 ID 등록 | NEXT_PUBLIC_GA_MEASUREMENT_ID 설정 |
+| 🟡 | 성능 최적화 | 번들 분석, 이미지 최적화, 캐싱 |
+| 🟢 | 모니터링 | 에러 추적, 가동시간 체크 |
 
 ## Git 브랜치 전략
 - `main` — 프로덕션 (직접 푸시)

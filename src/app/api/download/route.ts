@@ -146,10 +146,15 @@ export async function POST(request: NextRequest) {
     downloaded_at: new Date().toISOString(),
   })
 
-  // 8. products의 download_count 증가
+  // 8. products의 download_count를 download_logs 기반으로 동기화 (race condition 방지)
+  const { count: logCount } = await supabase
+    .from('download_logs')
+    .select('*', { count: 'exact', head: true })
+    .eq('product_id', productId)
+
   await supabase
     .from('products')
-    .update({ download_count: (product.download_count || 0) + 1 })
+    .update({ download_count: logCount ?? (product.download_count || 0) + 1 })
     .eq('id', productId)
 
   // 9. 서명 URL 반환
