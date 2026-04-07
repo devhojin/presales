@@ -77,17 +77,31 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
         ? `${form.message}\n\n[첨부파일] ${fileUrl}`
         : form.message
 
-      const { error: insertErr } = await supabase.from('consulting_requests').insert({
-        name: form.name,
-        phone: form.phone,
-        email: form.email,
-        company: form.company || null,
-        package_type: form.package_type,
-        message: messageWithFile || null,
-        status: 'pending',
-      })
+      const { data: insertedRows, error: insertErr } = await supabase
+        .from('consulting_requests')
+        .insert({
+          name: form.name,
+          phone: form.phone,
+          email: form.email,
+          company: form.company || null,
+          package_type: form.package_type,
+          message: messageWithFile || null,
+          status: 'pending',
+        })
+        .select('id')
 
       if (insertErr) throw insertErr
+
+      // 이메일 알림 발송 (비동기, 실패해도 제출 성공으로 처리)
+      const newId = insertedRows?.[0]?.id
+      if (newId) {
+        fetch('/api/email/consulting', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ consultingRequestId: newId }),
+        }).catch(() => { /* 이메일 실패는 무시 */ })
+      }
+
       setSubmitted(true)
     } catch (err: any) {
       setError('제출 실패: ' + (err.message || '오류가 발생했습니다.'))
