@@ -380,7 +380,8 @@ export default function ConsultingPage() {
           <h2 className="text-xl font-bold text-center mb-2">요금 비교</h2>
           <p className="text-sm text-muted-foreground text-center mb-8">상위 패키지는 하위 패키지의 모든 기능을 포함합니다</p>
 
-          <div className="border border-border rounded-2xl overflow-hidden">
+          {/* Desktop: Table View */}
+          <div className="hidden md:block border border-border rounded-2xl overflow-hidden">
             {/* Header */}
             <div className="grid grid-cols-4 bg-muted/50">
               <div className="p-4 border-r border-border">
@@ -433,6 +434,55 @@ export default function ConsultingPage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Mobile: Card View */}
+          <div className="md:hidden space-y-6">
+            {[spot, review, project].map((pkg) => {
+              if (!pkg) return null
+              const slugKey = pkg.slug as 'spot' | 'review' | 'project'
+              return (
+                <div
+                  key={pkg.slug}
+                  className={`rounded-xl border p-5 ${pkg.is_best ? 'border-primary shadow-md ring-1 ring-primary' : 'border-border'}`}
+                >
+                  <div className="text-center mb-4">
+                    {pkg.is_best && (
+                      <Badge className="bg-primary text-primary-foreground text-[10px] mb-2">BEST</Badge>
+                    )}
+                    <p className="font-bold text-base">{pkg.name}</p>
+                    <p className="text-primary font-bold text-xl mt-1">{pkg.price}</p>
+                    <p className="text-xs text-muted-foreground">{pkg.price_unit}</p>
+                  </div>
+                  <div className="space-y-2.5">
+                    {compareFeatures.map((feat) => {
+                      const val = feat[slugKey]
+                      if (val === false) return null
+                      return (
+                        <div key={feat.label} className="flex items-center gap-2.5 text-sm">
+                          {val === true ? (
+                            <Check className="w-4 h-4 text-blue-600 shrink-0" />
+                          ) : (
+                            <span className="text-xs font-medium text-blue-600 shrink-0 min-w-[40px]">{val}</span>
+                          )}
+                          <span className="text-gray-700">{feat.label}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <button
+                    onClick={() => openInquiry(pkg.slug)}
+                    className={`w-full h-11 rounded-lg font-medium text-sm transition-colors mt-5 cursor-pointer ${
+                      pkg.is_best
+                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                        : 'border border-border hover:bg-muted'
+                    }`}
+                  >
+                    선택하기
+                  </button>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

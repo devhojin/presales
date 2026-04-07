@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { ToastContainer } from "@/components/Toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -56,6 +57,7 @@ export default function RootLayout({
         <PageViewTracker />
         <main className="flex-1">{children}</main>
         <Footer />
+        <ToastContainer />
       </body>
     </html>
   );

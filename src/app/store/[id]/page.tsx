@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 import { type DbProduct, type DbCategory, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
+import { useToastStore } from '@/stores/toast-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, ArrowRight, ShoppingCart, Check, Download, Play, BookOpen, FileDown } from 'lucide-react'
@@ -36,6 +37,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [productFiles, setProductFiles] = useState<ProductFile[]>([])
   const [downloading, setDownloading] = useState(false)
   const { toggleItem, isInCart } = useCartStore()
+  const { addToast } = useToastStore()
 
   useEffect(() => {
     async function load() {
@@ -304,7 +306,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </div>
           )}
 
-          <div className="flex gap-3">
+          {/* Desktop CTA */}
+          <div className="hidden sm:flex gap-3">
             {canDownload ? (
               <button
                 onClick={() => handleDownload(productFiles[0]?.id)}
@@ -324,14 +327,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               </Link>
             ) : (
               <button
-                onClick={() => toggleItem({
-                  productId: product.id,
-                  title: product.title,
-                  price: product.price,
-                  originalPrice: product.original_price,
-                  thumbnail: product.thumbnail_url || '',
-                  format: product.format || '',
-                })}
+                onClick={() => {
+                  const wasInCart = inCart
+                  toggleItem({
+                    productId: product.id,
+                    title: product.title,
+                    price: product.price,
+                    originalPrice: product.original_price,
+                    thumbnail: product.thumbnail_url || '',
+                    format: product.format || '',
+                  })
+                  addToast(wasInCart ? '장바구니에서 제거되었습니다' : '장바구니에 추가되었습니다', wasInCart ? 'info' : 'success')
+                }}
                 className={`flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors ${
                   inCart
                     ? 'bg-muted text-muted-foreground border border-border'
@@ -342,7 +349,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <><ShoppingCart className="w-4 h-4" /> 구매하기</>}
               </button>
             )}
-            {/* 위시리스트 기능 준비 중 — 버튼 숨김 */}
+
           </div>
 
           {/* Product Files List */}
@@ -382,7 +389,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-3 text-sm transition-colors border-b-2 ${
+                className={`px-4 sm:px-6 py-3 min-h-[44px] text-sm transition-colors border-b-2 ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600 font-semibold'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -504,6 +511,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           price={product.price}
           onPurchaseClick={() => {
             setShowPdfPreview(false)
+            const wasInCart = isInCart(product.id)
             toggleItem({
               productId: product.id,
               title: product.title,
@@ -512,9 +520,59 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               thumbnail: product.thumbnail_url || '',
               format: product.format || '',
             })
+            addToast(wasInCart ? '장바구니에서 제거되었습니다' : '장바구니에 추가되었습니다', wasInCart ? 'info' : 'success')
           }}
         />
       )}
+
+      {/* Mobile Sticky CTA */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border p-3 safe-area-pb">
+        <div className="flex gap-2">
+          {canDownload ? (
+            <button
+              onClick={() => handleDownload(productFiles[0]?.id)}
+              disabled={downloading}
+              className="flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+            >
+              <Download className="w-4 h-4" />
+              {downloading ? '다운로드 중...' : '다운로드'}
+            </button>
+          ) : !isLoggedIn && product.is_free ? (
+            <Link
+              href={`/auth/login?redirect=/store/${id}`}
+              className="flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              <Download className="w-4 h-4" />
+              로그인 후 무료 다운로드
+            </Link>
+          ) : (
+            <button
+              onClick={() => {
+                const wasInCart = inCart
+                toggleItem({
+                  productId: product.id,
+                  title: product.title,
+                  price: product.price,
+                  originalPrice: product.original_price,
+                  thumbnail: product.thumbnail_url || '',
+                  format: product.format || '',
+                })
+                addToast(wasInCart ? '장바구니에서 제거되었습니다' : '장바구니에 추가되었습니다', wasInCart ? 'info' : 'success')
+              }}
+              className={`flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors ${
+                inCart
+                  ? 'bg-muted text-muted-foreground border border-border'
+                  : 'bg-primary text-primary-foreground hover:bg-primary/90'
+              }`}
+            >
+              {inCart ? <><Check className="w-4 h-4" /> 장바구니에 담김</> :
+                <><ShoppingCart className="w-4 h-4" /> {product.is_free ? '무료 받기' : `${formatPrice(product.price)} 구매`}</>}
+            </button>
+          )}
+        </div>
+      </div>
+      {/* Spacer for mobile sticky CTA */}
+      <div className="sm:hidden h-20" />
     </div>
   )
 }

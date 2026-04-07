@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { FileText, Download, MessageSquare, User, Settings, Loader2, Mail, Phone, Building, Pencil, Save, X, Lock, Eye, EyeOff } from 'lucide-react'
+import { FileText, Download, MessageSquare, User, Settings, Loader2, Mail, Phone, Building, Pencil, Save, X, Lock, Eye, EyeOff, ChevronDown, ShoppingBag } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { validatePassword } from '@/lib/password-policy'
 
@@ -17,12 +18,20 @@ interface Profile {
   created_at: string
 }
 
+interface OrderItem {
+  id: number
+  quantity: number
+  unit_price: number
+  products: { id: number; title: string; price: number } | { id: number; title: string; price: number }[] | null
+}
+
 interface Order {
   id: number
   order_number: string
   total_amount: number
   status: string
   created_at: string
+  order_items?: OrderItem[]
 }
 
 interface PurchasedProduct {
@@ -45,8 +54,9 @@ interface DownloadLog {
 const statusMap: Record<string, { label: string; class: string }> = {
   pending: { label: '대기', class: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
   paid: { label: '결제완료', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  cancelled: { label: '취소', class: 'bg-gray-50 text-gray-500 border-gray-200' },
-  refunded: { label: '환불', class: 'bg-red-50 text-red-700 border-red-200' },
+  completed: { label: '완료', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  cancelled: { label: '취소', class: 'bg-red-50 text-red-700 border-red-200' },
+  refunded: { label: '환불', class: 'bg-gray-50 text-gray-500 border-gray-200' },
 }
 
 type TabId = 'orders' | 'downloads' | 'profile'
@@ -63,6 +73,7 @@ export default function MyPage() {
   const [profileForm, setProfileForm] = useState({ name: '', phone: '', company: '' })
   const [profileSaving, setProfileSaving] = useState(false)
   const [profileMsg, setProfileMsg] = useState('')
+  const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null)
   // Password change state
   const [showPasswordSection, setShowPasswordSection] = useState(false)
   const [newPassword, setNewPassword] = useState('')
@@ -84,7 +95,7 @@ export default function MyPage() {
 
       const [{ data: profileData }, { data: ordersData }, { data: logsData }] = await Promise.all([
         supabase.from('profiles').select('name, email, phone, company, role, created_at').eq('id', user.id).single(),
-        supabase.from('orders').select('id, order_number, total_amount, status, created_at').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('orders').select('id, order_number, total_amount, status, created_at, order_items(id, quantity, unit_price, products(id, title, price))').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(title)').eq('user_id', user.id).order('downloaded_at', { ascending: false }).limit(50),
       ])
 
@@ -197,26 +208,83 @@ export default function MyPage() {
               <Separator className="mb-6" />
               {orders.length === 0 ? (
                 <div className="text-center py-16 text-muted-foreground">
-                  <FileText className="w-12 h-12 mx-auto mb-4 opacity-30" />
-                  <p className="text-lg font-medium">주문 내역이 없습니다</p>
-                  <p className="text-sm mt-2">템플릿을 구매하시면 여기에 표시됩니다.</p>
+                  <ShoppingBag className="w-12 h-12 mx-auto mb-4 opacity-30" />
+                  <p className="text-lg font-medium">아직 주문 내역이 없습니다</p>
+                  <p className="text-sm mt-2">스토어에서 제안서를 둘러보세요!</p>
+                  <Link
+                    href="/store"
+                    className="inline-block mt-4 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    스토어 바로가기
+                  </Link>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {orders.map((order) => (
-                    <div key={order.id} className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors">
-                      <div>
-                        <p className="text-sm font-mono text-muted-foreground">{order.order_number}</p>
-                        <p className="text-sm font-semibold mt-1">{formatPrice(order.total_amount)}</p>
+                  {orders.map((order) => {
+                    const isExpanded = expandedOrderId === order.id
+                    const items = (order.order_items || []) as OrderItem[]
+                    const statusInfo = statusMap[order.status] || { label: order.status, class: 'bg-gray-50 text-gray-500 border-gray-200' }
+                    return (
+                      <div key={order.id} className="rounded-lg border border-border overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
+                          className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors cursor-pointer text-left"
+                        >
+                          <div>
+                            <p className="text-sm font-mono text-muted-foreground">{order.order_number}</p>
+                            <p className="text-sm font-semibold mt-1">{formatPrice(order.total_amount)}</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <Badge className={`text-xs border ${statusInfo.class}`}>
+                                {statusInfo.label}
+                              </Badge>
+                              <p className="text-xs text-muted-foreground mt-1">{formatDate(order.created_at)}</p>
+                            </div>
+                            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          </div>
+                        </button>
+
+                        {isExpanded && (
+                          <div className="border-t border-border bg-muted/20 px-4 py-4 space-y-3">
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                              <span>주문일시: {new Date(order.created_at).toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+                              <span className="mx-1">|</span>
+                              <span>상태: </span>
+                              <Badge className={`text-[10px] border ${statusInfo.class}`}>{statusInfo.label}</Badge>
+                            </div>
+
+                            {items.length === 0 ? (
+                              <p className="text-sm text-muted-foreground py-2">상품 정보가 없습니다.</p>
+                            ) : (
+                              <div className="space-y-2">
+                                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">포함 상품</p>
+                                {items.map((item) => {
+                                  const prod = Array.isArray(item.products) ? item.products[0] : item.products
+                                  return (
+                                    <div key={item.id} className="flex items-center justify-between py-2 px-3 rounded-md bg-background border border-border">
+                                      <div className="min-w-0">
+                                        <p className="text-sm font-medium truncate">{prod?.title || '-'}</p>
+                                        {item.quantity > 1 && (
+                                          <p className="text-xs text-muted-foreground">x{item.quantity}</p>
+                                        )}
+                                      </div>
+                                      <p className="text-sm font-medium shrink-0 ml-3">{formatPrice(item.unit_price)}</p>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )}
+
+                            <div className="flex justify-end pt-2 border-t border-border">
+                              <p className="text-sm font-semibold">합계: {formatPrice(order.total_amount)}</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="text-right">
-                        <Badge className={`text-xs border ${statusMap[order.status]?.class || 'bg-gray-50 text-gray-500 border-gray-200'}`}>
-                          {statusMap[order.status]?.label || order.status}
-                        </Badge>
-                        <p className="text-xs text-muted-foreground mt-1">{formatDate(order.created_at)}</p>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </div>

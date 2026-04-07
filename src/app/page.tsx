@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { type DbProduct, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
+import { useToastStore } from '@/stores/toast-store'
 import { FileText, Download, Globe, Handshake, ArrowRight, ShoppingCart, Check, Star, Quote } from 'lucide-react'
 
 // 추천 상품 ID (주력 유료 상품)
@@ -51,6 +52,7 @@ const TESTIMONIALS = [
 function FeaturedCard({ product, categoryNames }: { product: DbProduct; categoryNames: string[] }) {
   const discount = product.original_price > 0 ? Math.round((1 - product.price / product.original_price) * 100) : 0
   const { toggleItem, isInCart } = useCartStore()
+  const { addToast } = useToastStore()
   const inCart = isInCart(product.id)
 
   return (
@@ -67,7 +69,7 @@ function FeaturedCard({ product, categoryNames }: { product: DbProduct; category
           </Badge>
           {!product.is_free && discount > 0 && <Badge className="absolute top-3 right-3 bg-red-500 text-white border-0 text-xs">-{discount}%</Badge>}
           <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleItem({ productId: product.id, title: product.title, price: product.price, originalPrice: product.original_price, thumbnail: product.thumbnail_url || '', format: product.format || '' }) }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); const wasInCart = inCart; toggleItem({ productId: product.id, title: product.title, price: product.price, originalPrice: product.original_price, thumbnail: product.thumbnail_url || '', format: product.format || '' }); addToast(wasInCart ? '장바구니에서 제거되었습니다' : '장바구니에 추가되었습니다', wasInCart ? 'info' : 'success') }}
             className={`absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md ${inCart ? 'bg-primary text-primary-foreground' : 'bg-white/90 text-gray-600 hover:bg-white hover:text-primary'}`}
           >
             {inCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
@@ -241,7 +243,7 @@ export default function Home() {
               </div>
               <p className="text-muted-foreground">전문가가 엄선한 공공조달 핵심 문서 템플릿</p>
             </div>
-            <Link href="/store" className="inline-flex items-center h-9 px-4 rounded-lg border border-border bg-background hover:bg-muted text-sm font-medium transition-colors">
+            <Link href="/store" className="inline-flex items-center h-10 min-h-[44px] px-4 rounded-lg border border-border bg-background hover:bg-muted text-sm font-medium transition-colors">
               전체보기 <ArrowRight className="ml-1 w-4 h-4" />
             </Link>
           </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import { formatPrice } from '@/lib/types'
 import Link from 'next/link'
@@ -15,6 +15,8 @@ import {
   MessageSquare,
   Star,
   ArrowUpRight,
+  Bell,
+  X,
 } from 'lucide-react'
 
 // ===========================
@@ -85,6 +87,14 @@ interface ProfileMap {
 
 interface ProductMap {
   [id: number]: string
+}
+
+interface Notification {
+  id: string
+  type: 'order' | 'consulting'
+  title: string
+  message: string
+  timestamp: Date
 }
 
 // ===========================
@@ -249,6 +259,53 @@ export default function AdminDashboard() {
   const [downloadProfiles, setDownloadProfiles] = useState<ProfileMap>({})
   const [downloadProducts, setDownloadProducts] = useState<ProductMap>({})
 
+  // Realtime notifications
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [showNotifications, setShowNotifications] = useState(false)
+  const notificationTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+
+  const addNotification = useCallback((title: string, message: string, type: 'order' | 'consulting') => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    const notification: Notification = { id, type, title, message, timestamp: new Date() }
+    setNotifications((prev) => [notification, ...prev].slice(0, 5))
+
+    // Auto-dismiss after 10 seconds
+    const timer = setTimeout(() => {
+      setNotifications((prev) => prev.filter((n) => n.id !== id))
+      notificationTimers.current.delete(id)
+    }, 10000)
+    notificationTimers.current.set(id, timer)
+  }, [])
+
+  const dismissNotification = useCallback((id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id))
+    const timer = notificationTimers.current.get(id)
+    if (timer) {
+      clearTimeout(timer)
+      notificationTimers.current.delete(id)
+    }
+  }, [])
+
+  // Subscribe to realtime events
+  useEffect(() => {
+    const supabase = createClient()
+    const channel = supabase.channel('admin-notifications')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
+        const orderNumber = (payload.new as Record<string, unknown>).order_number as string || '알 수 없음'
+        addNotification('새 주문', `주문번호: ${orderNumber}`, 'order')
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'consulting_requests' }, (payload) => {
+        const name = (payload.new as Record<string, unknown>).name as string || '알 수 없음'
+        addNotification('새 컨설팅 문의', `${name}님의 문의`, 'consulting')
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+      notificationTimers.current.forEach((timer) => clearTimeout(timer))
+    }
+  }, [addNotification])
+
   useEffect(() => {
     loadDashboard()
   }, [])
@@ -275,12 +332,12 @@ export default function AdminDashboard() {
     ] = await Promise.all([
       supabase.from('products').select('id', { count: 'exact', head: true }),
       supabase.from('orders').select('id', { count: 'exact', head: true }),
-      supabase.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'paid'),
+      supabase.from('orders').select('id', { count: 'exact', head: true }).in('status', ['paid', 'completed']),
       supabase.from('profiles').select('id', { count: 'exact', head: true }),
       supabase.from('consulting_requests').select('id', { count: 'exact', head: true }),
       supabase.from('reviews').select('id', { count: 'exact', head: true }),
       supabase.from('download_logs').select('id', { count: 'exact', head: true }),
-      supabase.from('orders').select('total_amount').eq('status', 'paid'),
+      supabase.from('orders').select('total_amount').in('status', ['paid', 'completed']),
       supabase.from('orders').select('id, order_number, user_id, total_amount, status, created_at').order('created_at', { ascending: false }).limit(5),
       supabase.from('products').select('id, title, download_count, price').order('download_count', { ascending: false }).limit(5),
       supabase.from('profiles').select('id, name, email, created_at').order('created_at', { ascending: false }).limit(5),
@@ -379,7 +436,69 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">관리자 대시보드</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">관리자 대시보드</h1>
+
+        {/* Notification Bell */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+            aria-label="알림"
+          >
+            <Bell className="w-5 h-5 text-gray-600" />
+            {notifications.length > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {notifications.length}
+              </span>
+            )}
+          </button>
+
+          {/* Notification dropdown */}
+          {showNotifications && (
+            <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl border border-gray-200 shadow-lg z-50">
+              <div className="p-3 border-b border-gray-100">
+                <p className="text-sm font-semibold text-gray-900">실시간 알림</p>
+              </div>
+              {notifications.length === 0 ? (
+                <div className="p-6 text-center text-sm text-gray-400">새 알림이 없습니다</div>
+              ) : (
+                <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+                  {notifications.map((n) => (
+                    <div key={n.id} className="p-3 hover:bg-gray-50 flex items-start gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                        n.type === 'order' ? 'bg-emerald-100' : 'bg-amber-100'
+                      }`}>
+                        {n.type === 'order' ? (
+                          <ShoppingCart className="w-4 h-4 text-emerald-600" />
+                        ) : (
+                          <MessageSquare className="w-4 h-4 text-amber-600" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">{n.title}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">{n.message}</p>
+                        <p className="text-[10px] text-gray-300 mt-1">
+                          {n.timestamp.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); dismissNotification(n.id) }}
+                        className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600 shrink-0 cursor-pointer"
+                        title="알림 닫기"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* KPI Cards */}
       {loading ? (

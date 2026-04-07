@@ -8,9 +8,11 @@ import { Separator } from '@/components/ui/separator'
 import { ShoppingCart, Trash2, X, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
+import { useToastStore } from '@/stores/toast-store'
 
 export default function CartPage() {
   const { items, removeItem, clearCart, getTotal, getDiscountTotal } = useCartStore()
+  const { addToast } = useToastStore()
   const [processing, setProcessing] = useState(false)
   const router = useRouter()
 
@@ -132,7 +134,7 @@ export default function CartPage() {
                         .select('id')
                         .single()
                       if (orderError || !order) {
-                        alert('주문 생성에 실패했습니다. 다시 시도해주세요.')
+                        addToast('주문 생성에 실패했습니다. 다시 시도해주세요.', 'error')
                         return
                       }
                       const orderItems = items.map((item) => ({
@@ -142,15 +144,16 @@ export default function CartPage() {
                       }))
                       await supabase.from('order_items').insert(orderItems)
                       clearCart()
+                      addToast('주문이 완료되었습니다! 마이페이지에서 다운로드하세요.', 'success')
                       router.push('/mypage')
                       router.refresh()
                     } catch {
-                      alert('주문 처리 중 오류가 발생했습니다.')
+                      addToast('주문 처리 중 오류가 발생했습니다.', 'error')
                     } finally {
                       setProcessing(false)
                     }
                   } else {
-                    alert('결제 기능을 준비 중입니다. 빠른 시일 내에 제공하겠습니다.')
+                    addToast('결제 기능을 준비 중입니다. 빠른 시일 내에 제공하겠습니다.', 'info')
                   }
                 }}
                 disabled={processing}

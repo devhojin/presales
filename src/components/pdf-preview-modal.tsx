@@ -132,13 +132,13 @@ export function PdfPreviewModal({
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl max-w-4xl mx-auto my-8 max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="relative bg-white rounded-2xl w-[calc(100%-1rem)] sm:w-auto max-w-4xl mx-auto my-2 sm:my-8 max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">📖</span>
-            <h2 className="text-base font-semibold text-gray-900">문서 미리보기</h2>
-            <span className="text-xs text-gray-400 ml-2">{productTitle}</span>
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-lg shrink-0">📖</span>
+            <h2 className="text-base font-semibold text-gray-900 shrink-0">미리보기</h2>
+            <span className="text-xs text-gray-400 ml-1 truncate hidden sm:inline">{productTitle}</span>
           </div>
           <button
             onClick={onClose}
@@ -167,7 +167,7 @@ export function PdfPreviewModal({
               <button
                 onClick={() => currentPage > 1 && setCurrentPage((p) => p - 1)}
                 disabled={currentPage <= 1}
-                className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-md flex items-center justify-center text-gray-600 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                className="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 z-10 w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-white/90 shadow-md flex items-center justify-center text-gray-600 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
@@ -215,7 +215,7 @@ export function PdfPreviewModal({
                   currentPage < totalPreviewPages && setCurrentPage((p) => p + 1)
                 }
                 disabled={currentPage >= totalPreviewPages}
-                className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/90 shadow-md flex items-center justify-center text-gray-600 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-10 w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-white/90 shadow-md flex items-center justify-center text-gray-600 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -224,17 +224,17 @@ export function PdfPreviewModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50">
+        <div className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-3 gap-2 border-t border-gray-200 bg-gray-50">
           <p className="text-sm text-gray-500">
             페이지 {currentPage} / {totalPreviewPages}{' '}
             <span className="text-xs text-gray-400">(미리보기)</span>
           </p>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             {Array.from({ length: totalPreviewPages }).map((_, i) => (
               <button
                 key={i}
                 onClick={() => setCurrentPage(i + 1)}
-                className={`w-2 h-2 rounded-full transition-colors ${
+                className={`w-3 h-3 sm:w-2 sm:h-2 rounded-full transition-colors ${
                   currentPage === i + 1
                     ? 'bg-blue-500'
                     : i < clearPages
@@ -244,7 +244,7 @@ export function PdfPreviewModal({
               />
             ))}
           </div>
-          <p className="text-xs text-gray-400">
+          <p className="hidden sm:block text-xs text-gray-400">
             ← → 키로 넘기기 · ESC로 닫기
           </p>
         </div>

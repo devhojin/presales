@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Badge } from '@/components/ui/badge'
 import { Search, ShoppingCart, Check, Star } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
+import { useToastStore } from '@/stores/toast-store'
 import Link from 'next/link'
 import { type DbProduct, type DbCategory, formatPrice, priceTypes } from '@/lib/types'
 
@@ -55,16 +56,29 @@ function FileTypeBadges({ format, onClick }: { format: string | null; onClick?: 
   )
 }
 
-function ProductCard({ product, onFileTypeClick, categoryNames }: { product: DbProduct; onFileTypeClick: (type: string) => void; categoryNames: string[] }) {
+function highlightText(text: string, query: string): ReactNode {
+  if (!query.trim()) return text
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const regex = new RegExp(`(${escaped})`, 'gi')
+  const parts = text.split(regex)
+  if (parts.length === 1) return text
+  return parts.map((part, i) =>
+    regex.test(part) ? <mark key={i} className="bg-yellow-200 px-0.5 rounded">{part}</mark> : part
+  )
+}
+
+function ProductCard({ product, onFileTypeClick, categoryNames, searchQuery }: { product: DbProduct; onFileTypeClick: (type: string) => void; categoryNames: string[]; searchQuery?: string }) {
   const discount = product.original_price > 0
     ? Math.round((1 - product.price / product.original_price) * 100)
     : 0
   const { toggleItem, isInCart } = useCartStore()
+  const { addToast } = useToastStore()
   const inCart = isInCart(product.id)
 
   const handleCartToggle = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    const wasInCart = inCart
     toggleItem({
       productId: product.id,
       title: product.title,
@@ -73,6 +87,7 @@ function ProductCard({ product, onFileTypeClick, categoryNames }: { product: DbP
       thumbnail: product.thumbnail_url || '',
       format: product.format || '',
     })
+    addToast(wasInCart ? '장바구니에서 제거되었습니다' : '장바구니에 추가되었습니다', wasInCart ? 'info' : 'success')
   }
 
   return (
@@ -111,7 +126,7 @@ function ProductCard({ product, onFileTypeClick, categoryNames }: { product: DbP
             <FileTypeBadges format={product.format} onClick={onFileTypeClick} />
           </div>
           <h3 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">
-            {product.title}
+            {searchQuery ? highlightText(product.title, searchQuery) : product.title}
           </h3>
           <div className="flex items-center gap-2">
             {product.is_free ? (
@@ -281,7 +296,7 @@ export default function StorePage() {
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setSelectedCategories(new Set())}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+            className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-medium border transition-colors ${
               selectedCategories.size === 0 ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-muted'
             }`}
           >
@@ -291,7 +306,7 @@ export default function StorePage() {
             <button
               key={cat.id}
               onClick={() => toggleCategory(cat.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+              className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-medium border transition-colors ${
                 selectedCategories.has(cat.id) ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-muted'
               }`}
             >
@@ -306,7 +321,7 @@ export default function StorePage() {
             <button
               key={ft.id}
               onClick={() => setSelectedFileType(selectedFileType === ft.id ? null : ft.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${
+              className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-bold border transition-colors ${
                 selectedFileType === ft.id ? ft.color : 'border-border hover:bg-muted text-muted-foreground'
               }`}
             >
@@ -321,7 +336,7 @@ export default function StorePage() {
             <button
               key={pt.id}
               onClick={() => setSelectedPriceType(selectedPriceType === pt.id ? null : pt.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+              className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-medium border transition-colors ${
                 selectedPriceType === pt.id ? pt.color : 'border-border hover:bg-muted'
               }`}
             >
@@ -364,7 +379,7 @@ export default function StorePage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} onFileTypeClick={handleFileTypeClick} categoryNames={getCategoryNames(product)} />
+            <ProductCard key={product.id} product={product} onFileTypeClick={handleFileTypeClick} categoryNames={getCategoryNames(product)} searchQuery={searchQuery} />
           ))}
         </div>
       )}

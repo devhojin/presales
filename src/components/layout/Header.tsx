@@ -161,10 +161,10 @@ export function Header() {
           )}
         </div>
 
-        <div className="md:hidden flex items-center gap-2">
+        <div className="md:hidden flex items-center gap-1">
           <CartDrawer />
           <button
-            className="p-2 text-muted-foreground"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -180,7 +180,7 @@ export function Header() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`text-left text-base font-medium py-2 ${
+                className={`text-left text-base font-medium min-h-[44px] flex items-center ${
                   pathname === link.href ? 'text-primary' : 'text-muted-foreground'
                 }`}
               >

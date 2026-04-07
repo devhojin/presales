@@ -13,7 +13,7 @@ export function CartDrawer() {
 
   return (
     <Sheet>
-      <SheetTrigger className="relative p-2 text-muted-foreground hover:text-primary transition-colors">
+      <SheetTrigger className="relative min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-primary transition-colors">
           <ShoppingCart className="w-5 h-5" />
           {items.length > 0 && (
             <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center bg-red-500 text-white text-[10px] border-0 rounded-full">

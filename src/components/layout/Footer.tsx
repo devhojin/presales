@@ -98,13 +98,19 @@ export function Footer() {
         <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="text-xs text-muted-foreground space-y-2">
             <p>
-              <span className="font-semibold text-foreground mr-2">
+              <span className="font-semibold text-foreground block sm:inline sm:mr-2 mb-1 sm:mb-0">
                 {s.company_name}
               </span>
-              대표: {s.ceo_name} | 사업자등록번호: {s.business_number} | 통신판매업신고: {s.commerce_number}
+              <span className="block sm:inline">대표: {s.ceo_name}</span>
+              <span className="hidden sm:inline"> | </span>
+              <span className="block sm:inline">사업자등록번호: {s.business_number}</span>
+              <span className="hidden sm:inline"> | </span>
+              <span className="block sm:inline">통신판매업신고: {s.commerce_number}</span>
             </p>
             <p>
-              {s.address} | {s.email}
+              <span className="block sm:inline">{s.address}</span>
+              <span className="hidden sm:inline"> | </span>
+              <span className="block sm:inline">{s.email}</span>
             </p>
             <p className="mt-4">{s.copyright}</p>
           </div>
