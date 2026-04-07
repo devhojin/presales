@@ -171,12 +171,8 @@ export default function StorePage() {
           .order('created_at', { ascending: false }),
         supabase.from('categories').select('*').order('sort_order'),
       ])
-      if (prodRes.error) {
-        console.error('[Store] products 조회 에러:', prodRes.error)
-      }
-      if (catRes.error) {
-        console.error('[Store] categories 조회 에러:', catRes.error)
-      }
+      if (prodRes.error) console.error('[Store] products error:', prodRes.error.message)
+      if (catRes.error) console.error('[Store] categories error:', catRes.error.message)
       setProducts(prodRes.data || [])
       setCategories(catRes.data || [])
       setLoading(false)
