@@ -165,7 +165,7 @@ export default function StorePage() {
       const [prodRes, catRes] = await Promise.all([
         supabase
           .from('products')
-          .select('*, categories!products_category_id_fkey(id, name, slug)')
+          .select('*')
           .eq('is_published', true)
           .order('sort_order', { ascending: true, nullsFirst: false })
           .order('created_at', { ascending: false }),
