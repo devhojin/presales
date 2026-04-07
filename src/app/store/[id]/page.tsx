@@ -7,7 +7,7 @@ import { type DbProduct, type DbCategory, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, ShoppingCart, Check, Download, Play, BookOpen, FileDown } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ShoppingCart, Check, Download, Play, BookOpen, FileDown } from 'lucide-react'
 import { PdfPreviewModal } from '@/components/pdf-preview-modal'
 import { ProductReviews } from '@/components/reviews/ProductReviews'
 
@@ -444,12 +444,28 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
+      {/* 컨설팅 업셀 CTA 배너 — 유료 상품에만 표시 */}
+      {product && !product.is_free && (
+        <div className="mt-10 rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex-1">
+            <p className="font-semibold text-blue-900 mb-1">💡 이 문서만으로 부족하신가요?</p>
+            <p className="text-sm text-blue-800/70">전문 컨설턴트가 귀사에 맞는 맞춤 제안서를 함께 만들어 드립니다.</p>
+          </div>
+          <Link
+            href="/consulting"
+            className="shrink-0 inline-flex items-center justify-center h-10 px-5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            컨설팅 문의하기 <ArrowRight className="ml-1.5 w-4 h-4" />
+          </Link>
+        </div>
+      )}
+
       {/* Related */}
       {related.length > 0 && (
         <div className="mt-12">
-          <h2 className="text-xl font-bold mb-6">관련 템플릿</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {related.map((p) => (
+          <h2 className="text-xl font-bold mb-6">함께 보면 좋은 상품</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {related.slice(0, 4).map((p) => (
               <Link key={p.id} href={`/store/${p.id}`} className="group">
                 <div className="border border-border rounded-xl overflow-hidden bg-card hover:shadow-lg transition-all">
                   <div className="aspect-[4/3] overflow-hidden bg-muted">
