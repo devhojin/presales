@@ -55,6 +55,7 @@ interface Product {
   download_count: number
   created_at: string
   category_id: number | null
+  category_ids: number[] | null
   format: string | null
   sort_order: number | null
   categories: { name: string }[] | { name: string } | null
@@ -444,7 +445,12 @@ export default function AdminProducts() {
     let list = products
     if (statusFilter === 'published') list = list.filter((p) => p.is_published)
     if (statusFilter === 'unpublished') list = list.filter((p) => !p.is_published)
-    if (categoryFilter !== null) list = list.filter((p) => p.category_id === categoryFilter)
+    if (categoryFilter !== null) list = list.filter((p) => {
+      const ids = Array.isArray(p.category_ids) && p.category_ids.length > 0
+        ? p.category_ids
+        : p.category_id ? [p.category_id] : []
+      return ids.includes(categoryFilter)
+    })
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       list = list.filter((p) => p.title.toLowerCase().includes(q))

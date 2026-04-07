@@ -42,8 +42,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       const [{ data }, { data: catData }] = await Promise.all([
         supabase
           .from('products')
-          .select('*, categories(id, name, slug)')
+          .select('*, categories!products_category_id_fkey(id, name, slug)')
           .eq('id', Number(id))
+          .eq('is_published', true)
           .single(),
         supabase.from('categories').select('*').order('sort_order'),
       ])
