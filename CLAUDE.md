@@ -1,7 +1,7 @@
 @AGENTS.md
 
 ## 에이전트 팀 운영 모드
-이 프로젝트는 **6인 자율 에이전트 팀**으로 운영됩니다.
+이 프로젝트는 **9인 자율 에이전트 팀**으로 운영됩니다.
 - 에이전트 정의: `agents/` 디렉토리 참조
 - 작업 요청 → Orchestrator가 분석 → 적절한 에이전트에 분배 → QA 검증 → 배포
 - 병렬 처리 가능한 작업은 동시 실행 (Agent tool 병렬 호출)
@@ -23,6 +23,9 @@
 | DevOps | 배포/Git/도메인/모니터링 | haiku | `agents/devops.md` |
 | QA | 빌드검증/보안/코드리뷰 | sonnet | `agents/qa.md` |
 | Growth | SEO/콘텐츠/마케팅 | haiku | `agents/growth.md` |
+| Scenario Writer | 시나리오/유즈케이스 설계 | sonnet | `agents/scenario-writer.md` |
+| Docs Writer | 상품설명/기술문서/가이드 | sonnet | `agents/docs-writer.md` |
+| Marketer | 마케팅전략/프로모션/캠페인 | sonnet | `agents/marketer.md` |
 
 ## 활성 스킬 (우선순위)
 이 프로젝트에서 우선적으로 활용할 Claude Skills (`~/.claude/skills/`):

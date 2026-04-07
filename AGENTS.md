@@ -6,22 +6,27 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # PRESALES 자율 에이전트 팀 (Harness v1.0)
 
-> 문서관련 쇼핑몰 presales.co.kr 자율 구축/운영을 위한 6인 에이전트 팀
+> 문서관련 쇼핑몰 presales.co.kr 자율 구축/운영을 위한 9인 에이전트 팀
 
 ## 팀 구성도
 
 ```
-                    ┌─────────────────┐
-                    │   Orchestrator  │
-                    │   (팀장/PM)      │
-                    └────────┬────────┘
-                             │
-          ┌──────────┬───────┼───────┬──────────┐
-          │          │       │       │          │
-    ┌─────┴─────┐ ┌─┴───┐ ┌─┴───┐ ┌─┴────┐ ┌──┴───┐
-    │ Frontend  │ │Back │ │DevOps│ │  QA  │ │Growth│
-    │ Developer │ │end  │ │Infra │ │Test  │ │SEO   │
-    └───────────┘ └─────┘ └─────┘ └──────┘ └──────┘
+                         ┌─────────────────┐
+                         │   Orchestrator  │
+                         │   (팀장/PM)      │
+                         └────────┬────────┘
+                                  │
+     ┌──────────┬──────────┬──────┼──────┬──────────┬──────────┐
+     │          │          │      │      │          │          │
+┌────┴────┐ ┌──┴──┐ ┌─────┴┐ ┌───┴──┐ ┌─┴────┐ ┌──┴───┐ ┌───┴────┐
+│Frontend │ │Back │ │DevOps│ │  QA  │ │Growth│ │Docs  │ │Market │
+│Developer│ │end  │ │Infra │ │Test  │ │SEO   │ │Writer│ │  er   │
+└─────────┘ └─────┘ └──────┘ └──────┘ └──────┘ └──────┘ └───────┘
+                                                    │
+                                              ┌─────┴──────┐
+                                              │ Scenario   │
+                                              │ Writer     │
+                                              └────────────┘
 ```
 
 ## 에이전트 역할 정의
@@ -92,6 +97,37 @@ This version has breaking changes — APIs, conventions, and file structure may 
   - Google Search Console 연동
   - 시장동향 뉴스 자동화 관리
 
+### 7. 🎬 Scenario Writer — `agents/scenario-writer.md`
+- **역할**: 사용자 시나리오, 테스트 시나리오, 유즈케이스 설계
+- **담당 범위**:
+  - 사용자 여정(User Journey) 설계
+  - 구매 플로우 시나리오 (비회원→가입→탐색→구매→다운로드)
+  - 예외/에러 시나리오 도출
+  - E2E 테스트 시나리오 작성
+  - A/B 테스트 시나리오 기획
+  - 온보딩 플로우 최적화
+
+### 8. 📝 Docs Writer — `agents/docs-writer.md`
+- **역할**: 상품 설명, 기술 문서, 운영 가이드 작성
+- **담당 범위**:
+  - 상품 상세 설명(description_html) 작성/최적화
+  - 상품 태그/키워드 선정
+  - SEO 최적화된 콘텐츠 작성
+  - 이용약관, 개인정보처리방침
+  - FAQ, 도움말 콘텐츠
+  - API 문서, 운영 매뉴얼
+
+### 9. 📣 Marketer — `agents/marketer.md`
+- **역할**: 마케팅 전략, 프로모션, 고객 확보
+- **담당 범위**:
+  - 마케팅 전략 수립 및 캠페인 기획
+  - 이메일 마케팅 (메일플러그 SMTP)
+  - 프로모션/이벤트 기획
+  - 고객 세분화 및 타겟팅
+  - 전환율 최적화 (CRO)
+  - 경쟁 분석, 시장 조사
+  - 랜딩 페이지 기획
+
 ---
 
 ## 작업 흐름 (Workflow)
@@ -111,8 +147,26 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ### 콘텐츠 업데이트
 ```
-요청 → Orchestrator → Growth(콘텐츠) → Frontend(UI반영)
-  → QA(확인) → DevOps(배포)
+요청 → Orchestrator → DocsWriter(콘텐츠 작성) → Growth(SEO 최적화)
+  → Frontend(UI반영) → QA(확인) → DevOps(배포)
+```
+
+### 상품 등록/설명 개선
+```
+요청 → Orchestrator → DocsWriter(설명 작성) → Growth(SEO/태그)
+  → Backend(DB등록) → QA(확인) → DevOps(배포)
+```
+
+### 마케팅 캠페인
+```
+요청 → Orchestrator → Marketer(전략/기획)
+  → DocsWriter(콘텐츠) → Frontend(랜딩페이지) → DevOps(배포)
+```
+
+### 시나리오 기반 테스트
+```
+요청 → Orchestrator → ScenarioWriter(시나리오 설계)
+  → QA(테스트 실행) → 담당 에이전트(수정) → DevOps(배포)
 ```
 
 ---
