@@ -16,8 +16,25 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "프리세일즈 | 공공조달 제안서 전문 마켓플레이스",
-  description: "나라장터·조달청 입찰에 최적화된 기술제안서, 가격제안서, 발표PT 템플릿과 전문가 컨설팅을 제공합니다.",
+  title: {
+    default: "PRESALES - 공공조달 제안서 마켓플레이스",
+    template: "%s | PRESALES",
+  },
+  description: "공공조달 기술제안서, 입찰가이드, 발표자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",
+  metadataBase: new URL("https://presales-zeta.vercel.app"),
+  openGraph: {
+    title: "PRESALES - 공공조달 제안서 마켓플레이스",
+    description: "공공조달 기술제안서, 입찰가이드, 발표자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",
+    type: "website",
+    url: "https://presales-zeta.vercel.app",
+    siteName: "PRESALES by AMARANS Partners",
+    locale: "ko_KR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PRESALES - 공공조달 제안서 마켓플레이스",
+    description: "공공조달 기술제안서, 입찰가이드, 발표자료 등 전문 문서 다운로드 플랫폼.",
+  },
 };
 
 export default function RootLayout({

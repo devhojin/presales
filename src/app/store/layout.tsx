@@ -1,0 +1,15 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "스토어",
+  description: "공공조달 기술제안서, 입찰가이드, 발표자료 등 46종 전문 문서를 다운로드하세요. 나라장터·조달청 입찰 전문 문서 마켓플레이스.",
+  openGraph: {
+    title: "스토어 | PRESALES",
+    description: "공공조달 기술제안서, 입찰가이드, 발표자료 등 46종 전문 문서를 다운로드하세요.",
+    url: "https://presales-zeta.vercel.app/store",
+  },
+};
+
+export default function StoreLayout({ children }: { children: React.ReactNode }) {
+  return children;
+}
