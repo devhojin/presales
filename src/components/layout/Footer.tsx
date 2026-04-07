@@ -82,14 +82,14 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <button className="hover:text-primary transition-colors">
+                <Link href="/faq" className="hover:text-primary transition-colors">
                   자주 묻는 질문
-                </button>
+                </Link>
               </li>
               <li>
-                <button className="hover:text-primary transition-colors">
+                <Link href="/consulting" className="hover:text-primary transition-colors">
                   문의하기
-                </button>
+                </Link>
               </li>
             </ul>
           </div>
@@ -109,9 +109,9 @@ export function Footer() {
             <p className="mt-4">{s.copyright}</p>
           </div>
           <div className="flex gap-4 text-xs font-medium text-muted-foreground">
-            <button className="hover:text-primary">이용약관</button>
-            <button className="text-foreground hover:text-primary">개인정보처리방침</button>
-            <button className="hover:text-primary">환불정책</button>
+            <Link href="/terms" className="hover:text-primary transition-colors">이용약관</Link>
+            <Link href="/privacy" className="text-foreground hover:text-primary transition-colors">개인정보처리방침</Link>
+            <Link href="/refund" className="hover:text-primary transition-colors">환불정책</Link>
           </div>
         </div>
       </div>

@@ -7,7 +7,7 @@ import { type DbProduct, type DbCategory, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, ShoppingCart, Heart, Check, Download, Play, BookOpen, FileDown } from 'lucide-react'
+import { ArrowLeft, ShoppingCart, Check, Download, Play, BookOpen, FileDown } from 'lucide-react'
 import { PdfPreviewModal } from '@/components/pdf-preview-modal'
 import { ProductReviews } from '@/components/reviews/ProductReviews'
 
@@ -341,9 +341,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <><ShoppingCart className="w-4 h-4" /> 구매하기</>}
               </button>
             )}
-            <button className="h-12 px-4 rounded-lg border border-border hover:bg-muted transition-colors flex items-center justify-center">
-              <Heart className="w-5 h-5" />
-            </button>
+            {/* 위시리스트 기능 준비 중 — 버튼 숨김 */}
           </div>
 
           {/* Product Files List */}
