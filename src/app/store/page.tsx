@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Badge } from '@/components/ui/badge'
-import { Search, ShoppingCart, Check } from 'lucide-react'
+import { Search, ShoppingCart, Check, Star } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
 import Link from 'next/link'
 import { type DbProduct, type DbCategory, formatPrice, priceTypes } from '@/lib/types'
@@ -125,6 +125,13 @@ function ProductCard({ product, onFileTypeClick, categoryNames }: { product: DbP
               </>
             )}
           </div>
+          {product.review_count > 0 && (
+            <div className="flex items-center gap-1 text-xs">
+              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              <span className="font-medium text-foreground">{product.review_avg.toFixed(1)}</span>
+              <span className="text-muted-foreground">({product.review_count})</span>
+            </div>
+          )}
           {product.tags && product.tags.length > 0 && (
             <div className="flex gap-1 flex-wrap">
               {product.tags.slice(0, 3).map((tag) => (

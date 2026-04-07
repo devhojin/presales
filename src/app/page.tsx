@@ -88,6 +88,13 @@ function FeaturedCard({ product, categoryNames }: { product: DbProduct; category
               </>
             )}
           </div>
+          {product.review_count > 0 && (
+            <div className="flex items-center gap-1 text-xs">
+              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              <span className="font-medium text-foreground">{product.review_avg.toFixed(1)}</span>
+              <span className="text-muted-foreground">({product.review_count})</span>
+            </div>
+          )}
         </div>
       </div>
     </Link>
