@@ -13,6 +13,7 @@ interface PdfPreviewModalProps {
   productTitle: string
   price: number
   onPurchaseClick: () => void
+  purchaseLabel?: string
 }
 
 function formatPrice(price: number) {
@@ -30,6 +31,7 @@ export function PdfPreviewModal({
   productTitle,
   price,
   onPurchaseClick,
+  purchaseLabel,
 }: PdfPreviewModalProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [pdfDoc, setPdfDoc] = useState<any>(null)
@@ -127,7 +129,7 @@ export function PdfPreviewModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
@@ -202,7 +204,7 @@ export function PdfPreviewModal({
                         className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-medium text-sm hover:bg-blue-700 transition-colors"
                       >
                         <ShoppingCart className="w-4 h-4" />
-                        구매하기 {formatPrice(price)}
+                        {purchaseLabel || `구매하기 ${formatPrice(price)}`}
                       </button>
                     </div>
                   </div>

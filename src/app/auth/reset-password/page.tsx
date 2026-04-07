@@ -4,17 +4,18 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
-import { Lock, Eye, EyeOff, ShieldCheck, CheckCircle } from 'lucide-react'
+import { Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import { validatePassword } from '@/lib/password-policy'
+import { useToastStore } from '@/stores/toast-store'
 
 function ResetPasswordForm() {
   const router = useRouter()
+  const { addToast } = useToastStore()
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
   const [sessionReady, setSessionReady] = useState(false)
 
   const passwordCheck = validatePassword(password)
@@ -64,43 +65,10 @@ function ResetPasswordForm() {
       return
     }
 
-    setSuccess(true)
     setLoading(false)
-
-    // 3초 후 로그인 페이지로 이동
-    setTimeout(() => {
-      router.push('/auth/login')
-    }, 3000)
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center px-4">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <div className="w-12 h-12 rounded-xl bg-[#0B1629] flex items-center justify-center mx-auto mb-4">
-              <span className="text-white text-sm font-bold">PS</span>
-            </div>
-            <h1 className="text-2xl font-bold">비밀번호 재설정 완료</h1>
-          </div>
-          <div className="p-5 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3 mb-6">
-            <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-green-700">비밀번호가 변경되었습니다</p>
-              <p className="text-xs text-green-600 mt-1">
-                새 비밀번호로 로그인할 수 있습니다. 잠시 후 로그인 페이지로 이동합니다.
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/auth/login"
-            className="flex items-center justify-center w-full h-11 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors cursor-pointer"
-          >
-            지금 로그인하기
-          </Link>
-        </div>
-      </div>
-    )
+    addToast('비밀번호가 변경되었습니다', 'success')
+    router.push('/mypage')
+    router.refresh()
   }
 
   if (!sessionReady) {

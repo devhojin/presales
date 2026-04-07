@@ -40,15 +40,16 @@ export default function AnalyticsPage() {
   const [monthlyData, setMonthlyData] = useState<Record<string, Record<number, { pv: number; uv: number }>>>({})
   const [viewMode, setViewMode] = useState<'visitors' | 'pageviews'>('visitors')
   const [loading, setLoading] = useState(true)
+  const [periodDays, setPeriodDays] = useState(7)
 
   useEffect(() => {
     fetchAll()
-  }, [])
+  }, [periodDays])
 
   async function fetchAll() {
     const supabase = createClient()
     const today = startOfDay(new Date())
-    const sevenAgo = addDays(today, -6)
+    const sevenAgo = addDays(today, -(periodDays - 1))
     const rangeStart = isoDate(sevenAgo)
     const rangeEnd = isoDate(addDays(today, 1))
 
@@ -89,7 +90,7 @@ export default function AnalyticsPage() {
 
     // Build daily stats
     const stats: DayStat[] = []
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < periodDays; i++) {
       const d = addDays(sevenAgo, i)
       const dateStr = isoDate(d)
       const dayPvs = (pvRows || []).filter(r => r.created_at?.startsWith(dateStr))
@@ -167,8 +168,9 @@ export default function AnalyticsPage() {
   const plotW = W - PAD * 2
   const plotH = H - 40
 
+  const lastIdx = Math.max(dailyStats.length - 1, 1)
   function toX(i: number) {
-    return PAD + (i / 6) * plotW
+    return PAD + (i / lastIdx) * plotW
   }
   function toY(v: number) {
     return H - 20 - (v / chartMax) * plotH
@@ -176,7 +178,7 @@ export default function AnalyticsPage() {
 
   const pvPoints = dailyStats.map((s, i) => `${toX(i)},${toY(s.pageViews)}`).join(' ')
   const uvPoints = dailyStats.map((s, i) => `${toX(i)},${toY(s.visitors)}`).join(' ')
-  const areaPoints = `${toX(0)},${H - 20} ${pvPoints} ${toX(6)},${H - 20}`
+  const areaPoints = `${toX(0)},${H - 20} ${pvPoints} ${toX(lastIdx)},${H - 20}`
 
   // Monthly/Yearly table
   const years = Object.keys(monthlyData).sort()
@@ -210,11 +212,29 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">통계 분석</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-gray-900">통계 분석</h1>
+        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+          {([7, 30, 90] as const).map((days) => (
+            <button
+              key={days}
+              type="button"
+              onClick={() => setPeriodDays(days)}
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                periodDays === days
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {days}일
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* ── 방문자 차트 ── */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">방문자 추이 (최근 7일)</h2>
+        <h2 className="text-sm font-semibold text-gray-700 mb-4">방문자 추이 (최근 {periodDays}일)</h2>
         <div className="flex items-center gap-6 mb-3 text-xs text-gray-500">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'rgba(147,197,253,0.5)' }} />
@@ -260,7 +280,7 @@ export default function AnalyticsPage() {
       {/* ── 기간별 분석 ── */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-gray-700">기간별 분석 (최근 7일)</h2>
+          <h2 className="text-sm font-semibold text-gray-700">기간별 분석 (최근 {periodDays}일)</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

@@ -5,9 +5,10 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { FileText, Download, MessageSquare, User, Settings, Loader2, Mail, Phone, Building, Pencil, Save, X, Lock, Eye, EyeOff, ChevronDown, ShoppingBag } from 'lucide-react'
+import { FileText, Download, MessageSquare, User, Settings, Loader2, Mail, Phone, Building, Pencil, Save, X, Lock, Eye, EyeOff, ChevronDown, ShoppingBag, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { validatePassword } from '@/lib/password-policy'
+import { useToastStore } from '@/stores/toast-store'
 
 interface Profile {
   name: string | null
@@ -63,6 +64,7 @@ type TabId = 'orders' | 'downloads' | 'profile'
 
 export default function MyPage() {
   const router = useRouter()
+  const { addToast } = useToastStore()
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
@@ -82,6 +84,8 @@ export default function MyPage() {
   const [showConfirmPw, setShowConfirmPw] = useState(false)
   const [pwSaving, setPwSaving] = useState(false)
   const [pwMsg, setPwMsg] = useState('')
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
   const pwCheck = validatePassword(newPassword)
 
   useEffect(() => {
@@ -137,13 +141,13 @@ export default function MyPage() {
       })
       if (!res.ok) {
         const data = await res.json()
-        alert(data.error || '다운로드 실패')
+        addToast(data.error || '다운로드 실패', 'error')
         return
       }
       const { url } = await res.json()
       window.open(url, '_blank')
     } catch {
-      alert('다운로드 중 오류가 발생했습니다')
+      addToast('다운로드 중 오류가 발생했습니다', 'error')
       return
     }
 
@@ -270,7 +274,22 @@ export default function MyPage() {
                                           <p className="text-xs text-muted-foreground">x{item.quantity}</p>
                                         )}
                                       </div>
-                                      <p className="text-sm font-medium shrink-0 ml-3">{formatPrice(item.unit_price)}</p>
+                                      <div className="flex items-center gap-2 shrink-0 ml-3">
+                                        <p className="text-sm font-medium">{formatPrice(item.unit_price)}</p>
+                                        {(order.status === 'paid' || order.status === 'completed') && prod && (
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation()
+                                              handleProductDownload(prod.id, prod.title)
+                                            }}
+                                            className="px-3 py-1 rounded-md bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 transition-colors flex items-center gap-1 cursor-pointer"
+                                          >
+                                            <Download className="w-3 h-3" />
+                                            다운로드
+                                          </button>
+                                        )}
+                                      </div>
                                     </div>
                                   )
                                 })}
@@ -643,10 +662,85 @@ export default function MyPage() {
                   </div>
                 )}
               </div>
+
+              {/* 회원 탈퇴 */}
+              <div className="border border-red-200 rounded-xl p-6">
+                <h2 className="font-semibold text-red-600 flex items-center gap-2 mb-4">
+                  <AlertTriangle className="w-4 h-4" /> 회원 탈퇴
+                </h2>
+                <Separator className="mb-4" />
+                <p className="text-sm text-muted-foreground mb-4">
+                  탈퇴하시면 주문 내역과 다운로드 이력이 삭제되며 복구할 수 없습니다.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteAccount(true)}
+                  className="h-10 px-5 rounded-lg border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50 transition-colors cursor-pointer"
+                >
+                  회원 탈퇴
+                </button>
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* 회원 탈퇴 확인 모달 */}
+      {showDeleteAccount && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => setShowDeleteAccount(false)}
+          onKeyDown={(e) => { if (e.key === 'Escape') setShowDeleteAccount(false) }}
+        >
+          <div
+            className="bg-background rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+              <h3 className="text-lg font-semibold">회원 탈퇴</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">
+              탈퇴하면 주문 내역과 다운로드 이력이 삭제됩니다. 정말 탈퇴하시겠습니까?
+            </p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteAccount(false)}
+                className="flex-1 h-10 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={deletingAccount}
+                onClick={async () => {
+                  setDeletingAccount(true)
+                  try {
+                    const supabase = createClient()
+                    const { data: { user } } = await supabase.auth.getUser()
+                    if (user) {
+                      await supabase.from('profiles').delete().eq('id', user.id)
+                    }
+                    await supabase.auth.signOut()
+                    addToast('회원 탈퇴가 완료되었습니다', 'info')
+                    router.push('/')
+                    router.refresh()
+                  } catch {
+                    addToast('탈퇴 처리 중 오류가 발생했습니다', 'error')
+                  } finally {
+                    setDeletingAccount(false)
+                    setShowDeleteAccount(false)
+                  }
+                }}
+                className="flex-1 h-10 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {deletingAccount ? '처리 중...' : '탈퇴하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

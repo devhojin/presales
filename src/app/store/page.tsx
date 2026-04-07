@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useMemo, type ReactNode } from 'react'
+import { useState, useEffect, useMemo, useCallback, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Badge } from '@/components/ui/badge'
-import { Search, ShoppingCart, Check, Star } from 'lucide-react'
+import { Search, ShoppingCart, Check, Star, RotateCcw } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
 import Link from 'next/link'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { type DbProduct, type DbCategory, formatPrice, priceTypes } from '@/lib/types'
 
 const fileTypeColors: Record<string, string> = {
@@ -28,7 +29,6 @@ function extractFileTypes(format: string | null): string[] {
   for (const ft of ['PPTX', 'PPT', 'PDF', 'XLSX', 'XLS', 'DOCX', 'DOC', 'HWP', 'ZIP']) {
     if (upper.includes(ft)) types.add(ft)
   }
-  // Normalize: PPTX -> PPT, XLSX -> XLS, DOCX -> DOC for display
   const normalized = new Set<string>()
   for (const t of types) {
     if (t === 'PPTX') normalized.add('PPT')
@@ -109,6 +109,7 @@ function ProductCard({ product, onFileTypeClick, categoryNames, searchQuery }: {
           )}
           <button
             onClick={handleCartToggle}
+            aria-label={inCart ? '장바구니에서 빼기' : '장바구니에 담기'}
             className={`absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md ${
               inCart ? 'bg-primary text-primary-foreground' : 'bg-white/90 text-gray-600 hover:bg-white hover:text-primary'
             }`}
@@ -173,6 +174,8 @@ const allFileTypes = [
 ]
 
 export default function StorePage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [products, setProducts] = useState<DbProduct[]>([])
   const [categories, setCategories] = useState<DbCategory[]>([])
   const [selectedCategories, setSelectedCategories] = useState<Set<number>>(new Set())
@@ -181,6 +184,35 @@ export default function StorePage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState<'recommended' | 'price_asc' | 'price_desc' | 'newest'>('recommended')
   const [loading, setLoading] = useState(true)
+  const [popularProducts, setPopularProducts] = useState<DbProduct[]>([])
+
+  // Initialize from URL params
+  useEffect(() => {
+    const catParam = searchParams.get('category')
+    if (catParam) {
+      const catIds = catParam.split(',').map(Number).filter(Boolean)
+      if (catIds.length > 0) setSelectedCategories(new Set(catIds))
+    }
+    const priceParam = searchParams.get('price')
+    if (priceParam === 'free' || priceParam === 'paid') setSelectedPriceType(priceParam)
+    const searchParam = searchParams.get('q')
+    if (searchParam) setSearchQuery(searchParam)
+    const sortParam = searchParams.get('sort')
+    if (sortParam && ['recommended', 'price_asc', 'price_desc', 'newest'].includes(sortParam)) {
+      setSortOrder(sortParam as typeof sortOrder)
+    }
+  }, [searchParams])
+
+  // Sync state to URL
+  const updateURL = useCallback((cats: Set<number>, price: string | null, query: string, sort: string) => {
+    const params = new URLSearchParams()
+    if (cats.size > 0) params.set('category', Array.from(cats).join(','))
+    if (price) params.set('price', price)
+    if (query) params.set('q', query)
+    if (sort !== 'recommended') params.set('sort', sort)
+    const qs = params.toString()
+    router.replace(qs ? `/store?${qs}` : '/store', { scroll: false })
+  }, [router])
 
   useEffect(() => {
     async function load() {
@@ -196,14 +228,19 @@ export default function StorePage() {
       ])
       if (prodRes.error) console.error('[Store] products error:', prodRes.error.message)
       if (catRes.error) console.error('[Store] categories error:', catRes.error.message)
-      setProducts(prodRes.data || [])
+      const allProducts = prodRes.data || []
+      setProducts(allProducts)
       setCategories(catRes.data || [])
+      // Popular products for empty state
+      const popular = [...allProducts]
+        .sort((a, b) => (b.download_count || 0) - (a.download_count || 0))
+        .slice(0, 4)
+      setPopularProducts(popular)
       setLoading(false)
     }
     load()
   }, [])
 
-  // Build category id->name map for displaying multiple categories
   const categoryMap = useMemo(() => {
     const map = new Map<number, string>()
     categories.forEach((c) => map.set(c.id, c.name))
@@ -223,8 +260,20 @@ export default function StorePage() {
       const next = new Set(prev)
       if (next.has(catId)) next.delete(catId)
       else next.add(catId)
+      updateURL(next, selectedPriceType, searchQuery, sortOrder)
       return next
     })
+  }
+
+  const hasActiveFilters = selectedCategories.size > 0 || selectedPriceType !== null || selectedFileType !== null || searchQuery !== ''
+
+  const resetFilters = () => {
+    setSelectedCategories(new Set())
+    setSelectedPriceType(null)
+    setSelectedFileType(null)
+    setSearchQuery('')
+    setSortOrder('recommended')
+    router.replace('/store', { scroll: false })
   }
 
   const filteredProducts = useMemo(() => {
@@ -255,7 +304,6 @@ export default function StorePage() {
       return true
     })
 
-    // 정렬 적용
     if (sortOrder === 'price_asc') {
       return [...filtered].sort((a, b) => a.price - b.price)
     } else if (sortOrder === 'price_desc') {
@@ -265,7 +313,6 @@ export default function StorePage() {
         new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
       )
     }
-    // 'recommended' — 기본 sort_order 유지 (서버에서 이미 정렬됨)
     return filtered
   }, [products, selectedCategories, selectedPriceType, selectedFileType, searchQuery, sortOrder, categoryMap])
 
@@ -286,7 +333,10 @@ export default function StorePage() {
           type="text"
           placeholder="템플릿 검색 (예: 기술제안서, IoT, 스마트시티...)"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            setSearchQuery(e.target.value)
+            updateURL(selectedCategories, selectedPriceType, e.target.value, sortOrder)
+          }}
           className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
         />
       </div>
@@ -295,7 +345,10 @@ export default function StorePage() {
         {/* 카테고리 필터 */}
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => setSelectedCategories(new Set())}
+            onClick={() => {
+              setSelectedCategories(new Set())
+              updateURL(new Set(), selectedPriceType, searchQuery, sortOrder)
+            }}
             className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-medium border transition-colors ${
               selectedCategories.size === 0 ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-muted'
             }`}
@@ -335,7 +388,11 @@ export default function StorePage() {
           {priceTypes.map((pt) => (
             <button
               key={pt.id}
-              onClick={() => setSelectedPriceType(selectedPriceType === pt.id ? null : pt.id)}
+              onClick={() => {
+                const newPrice = selectedPriceType === pt.id ? null : pt.id
+                setSelectedPriceType(newPrice)
+                updateURL(selectedCategories, newPrice, searchQuery, sortOrder)
+              }}
               className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-medium border transition-colors ${
                 selectedPriceType === pt.id ? pt.color : 'border-border hover:bg-muted'
               }`}
@@ -347,16 +404,33 @@ export default function StorePage() {
       </div>
 
       <div className="flex items-center justify-between mb-4">
-        <p className="text-sm text-muted-foreground">
-          {filteredProducts.length}개 상품
-          {selectedFileType && <span className="ml-2 text-xs">· 파일형태: {selectedFileType}</span>}
-        </p>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-muted-foreground">
+            {filteredProducts.length}개 상품
+            {selectedFileType && <span className="ml-2 text-xs">· 파일형태: {selectedFileType}</span>}
+          </p>
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border border-border hover:bg-muted transition-colors cursor-pointer"
+            >
+              <RotateCcw className="w-3 h-3" />
+              필터 초기화
+            </button>
+          )}
+        </div>
         <select
           value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
+          title="정렬 기준"
+          aria-label="정렬 기준"
+          onChange={(e) => {
+            const newSort = e.target.value as typeof sortOrder
+            setSortOrder(newSort)
+            updateURL(selectedCategories, selectedPriceType, searchQuery, newSort)
+          }}
           className="text-xs border border-border rounded-lg px-3 py-1.5 bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer"
         >
-          <option value="recommended">추천순</option>
+          <option value="recommended">기본순</option>
           <option value="price_asc">가격 낮은순</option>
           <option value="price_desc">가격 높은순</option>
           <option value="newest">최신순</option>
@@ -385,9 +459,34 @@ export default function StorePage() {
       )}
 
       {!loading && filteredProducts.length === 0 && (
-        <div className="text-center py-20 text-muted-foreground">
-          <p className="text-lg">검색 결과가 없습니다</p>
-          <p className="text-sm mt-2">다른 키워드로 검색해보세요</p>
+        <div className="text-center py-16">
+          <p className="text-lg text-muted-foreground mb-2">검색 결과가 없습니다</p>
+          <p className="text-sm text-muted-foreground mb-6">다른 키워드로 검색하거나 필터를 초기화해보세요</p>
+          <div className="flex items-center justify-center gap-3 mb-10">
+            <button
+              onClick={resetFilters}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border hover:bg-muted text-sm font-medium transition-colors cursor-pointer"
+            >
+              <RotateCcw className="w-4 h-4" />
+              필터 초기화
+            </button>
+            <Link
+              href="/consulting"
+              className="inline-flex items-center px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              원하는 문서를 찾지 못하셨나요? 컨설팅 문의
+            </Link>
+          </div>
+          {popularProducts.length > 0 && (
+            <div>
+              <p className="text-sm font-semibold text-muted-foreground mb-4">인기 상품을 확인해보세요</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+                {popularProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} onFileTypeClick={handleFileTypeClick} categoryNames={getCategoryNames(product)} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

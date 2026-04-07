@@ -66,7 +66,7 @@ export default function AboutPage() {
       {/* Hero */}
       <div className="text-center mb-16">
         <Badge className="bg-blue-500/10 text-blue-700 border-blue-200 mb-4">
-          팀 소개
+          회사소개
         </Badge>
         <h1 className="text-2xl md:text-3xl font-bold mb-3">
           공공조달의 복잡함을 문서로 단순하게

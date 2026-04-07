@@ -11,7 +11,8 @@ import type { User as SupabaseUser } from '@supabase/supabase-js'
 const navLinks = [
   { href: '/store', label: '템플릿 스토어' },
   { href: '/consulting', label: '컨설팅 패키지' },
-  { href: '/about', label: '팀 소개' },
+  { href: '/about', label: '회사소개' },
+  { href: '/faq', label: '고객지원' },
 ]
 
 export function Header() {
@@ -152,10 +153,16 @@ export function Header() {
                 로그인
               </Link>
               <Link
-                href="/store"
+                href="/auth/signup"
+                className="inline-flex items-center h-7 px-2.5 rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+              >
+                회원가입
+              </Link>
+              <Link
+                href="/store?price=free"
                 className="inline-flex items-center h-7 px-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/80 transition-colors"
               >
-                무료 가이드 받기
+                무료 템플릿 보기
               </Link>
             </>
           )}

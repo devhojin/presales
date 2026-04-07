@@ -6,14 +6,17 @@ import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 import { Mail, Lock, User, Building, Phone, Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import { validatePassword } from '@/lib/password-policy'
+import { useToastStore } from '@/stores/toast-store'
 
 export default function SignupPage() {
   const router = useRouter()
+  const { addToast } = useToastStore()
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [agreePrivacy, setAgreePrivacy] = useState(false)
+  const [termsError, setTermsError] = useState('')
   const [form, setForm] = useState({
     email: '',
     password: '',
@@ -25,9 +28,22 @@ export default function SignupPage() {
 
   const passwordCheck = validatePassword(form.password, form.email)
 
+  function formatPhoneNumber(value: string) {
+    const nums = value.replace(/\D/g, '').slice(0, 11)
+    if (nums.length > 3 && nums.length <= 7) return nums.slice(0, 3) + '-' + nums.slice(3)
+    if (nums.length > 7) return nums.slice(0, 3) + '-' + nums.slice(3, 7) + '-' + nums.slice(7)
+    return nums
+  }
+
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setTermsError('')
+
+    if (!agreeTerms || !agreePrivacy) {
+      setTermsError('이용약관과 개인정보처리방침에 동의해주세요')
+      return
+    }
 
     // KISA 비밀번호 정책
     if (!passwordCheck.valid) {
@@ -73,6 +89,7 @@ export default function SignupPage() {
       }).eq('id', user.id)
     }
 
+    addToast('환영합니다! 무료 템플릿을 다운로드해보세요', 'success')
     router.push('/mypage')
     router.refresh()
   }
@@ -181,7 +198,10 @@ export default function SignupPage() {
             <div className="relative">
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input type="tel" placeholder="010-0000-0000" value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })} className={inputClass} />
+                onChange={(e) => {
+                  const formatted = formatPhoneNumber(e.target.value)
+                  setForm({ ...form, phone: formatted })
+                }} className={inputClass} />
             </div>
           </div>
 
@@ -213,11 +233,15 @@ export default function SignupPage() {
 
           <button
             type="submit"
-            disabled={loading || !agreeTerms || !agreePrivacy}
+            disabled={loading}
             className="w-full h-11 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors cursor-pointer"
           >
             {loading ? '가입 중...' : '회원가입'}
           </button>
+
+          {termsError && (
+            <p className="text-sm text-red-600 text-center">{termsError}</p>
+          )}
         </form>
 
         <p className="text-center text-sm text-muted-foreground mt-6">

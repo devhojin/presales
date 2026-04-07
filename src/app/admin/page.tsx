@@ -515,6 +515,7 @@ export default function AdminDashboard() {
                   <span className="text-sm text-gray-500 group-hover:text-gray-700">{card.label}</span>
                 </div>
                 <p className="text-xl font-bold text-gray-900">{card.value}</p>
+                <p className="text-xs text-gray-400 mt-1">전체 기간</p>
               </Link>
             ))}
           </div>
@@ -528,6 +529,7 @@ export default function AdminDashboard() {
                   <span className="text-sm text-gray-500 group-hover:text-gray-700">{card.label}</span>
                 </div>
                 <p className="text-xl font-bold text-gray-900">{card.value}</p>
+                <p className="text-xs text-gray-400 mt-1">전체 기간</p>
               </Link>
             ))}
           </div>

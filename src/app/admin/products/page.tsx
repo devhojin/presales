@@ -99,9 +99,11 @@ function Toast({ message, onClose }: { message: string; onClose: () => void }) {
 // ===========================
 
 function DeleteModal({
+  productName,
   onConfirm,
   onCancel,
 }: {
+  productName: string
   onConfirm: () => void
   onCancel: () => void
 }) {
@@ -117,6 +119,8 @@ function DeleteModal({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
       onClick={onCancel}
+      role="dialog"
+      aria-modal="true"
     >
       <div
         className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6"
@@ -128,7 +132,7 @@ function DeleteModal({
           </div>
           <h3 className="text-lg font-bold text-gray-900">상품 삭제</h3>
         </div>
-        <p className="text-sm text-gray-600 mb-6">삭제하시겠습니까?</p>
+        <p className="text-sm text-gray-600 mb-6">&apos;{productName}&apos;을 삭제하시겠습니까?</p>
         <div className="flex justify-end gap-2">
           <button
             onClick={onCancel}
@@ -505,22 +509,30 @@ export default function AdminProducts() {
           >
             전체
           </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => {
-                setCategoryFilter(cat.id)
-                setPage(1)
-              }}
-              className={`px-4 py-2 text-sm font-medium rounded-full transition ${
-                categoryFilter === cat.id
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              {cat.name}
-            </button>
-          ))}
+          {categories.map((cat) => {
+            const catCount = products.filter((p) => {
+              const ids = Array.isArray(p.category_ids) && p.category_ids.length > 0
+                ? p.category_ids
+                : p.category_id ? [p.category_id] : []
+              return ids.includes(cat.id)
+            }).length
+            return (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  setCategoryFilter(cat.id)
+                  setPage(1)
+                }}
+                className={`px-4 py-2 text-sm font-medium rounded-full transition ${
+                  categoryFilter === cat.id
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                {cat.name} ({catCount})
+              </button>
+            )
+          })}
         </div>
 
         {/* Status Tabs + Search + Page Size */}
@@ -598,11 +610,15 @@ export default function AdminProducts() {
         </div>
 
         {/* Drag hint */}
-        {isDragEnabled && (
+        {isDragEnabled ? (
           <p className="text-xs text-gray-400 flex items-center gap-1">
             <GripVertical className="w-3.5 h-3.5" />
             좌측 핸들을 드래그하여 순서 변경 (위쪽 = 스토어 상단 노출)
             {saving && <span className="ml-2 text-blue-500">저장 중...</span>}
+          </p>
+        ) : (statusFilter !== 'all' || categoryFilter !== null || search.trim()) && (
+          <p className="text-xs text-amber-600 flex items-center gap-1">
+            필터를 해제하면 순서를 변경할 수 있습니다
           </p>
         )}
 
@@ -741,6 +757,7 @@ export default function AdminProducts() {
         {/* Delete Confirm Modal */}
         {deleteConfirmId !== null && (
           <DeleteModal
+            productName={products.find((p) => p.id === deleteConfirmId)?.title || ''}
             onConfirm={handleDeleteConfirm}
             onCancel={() => setDeleteConfirmId(null)}
           />

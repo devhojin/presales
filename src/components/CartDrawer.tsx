@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useCartStore } from '@/stores/cart-store'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
@@ -8,11 +9,12 @@ import Link from 'next/link'
 
 export function CartDrawer() {
   const { items, removeItem, clearCart, getTotal, getDiscountTotal } = useCartStore()
+  const [open, setOpen] = useState(false)
 
-  const formatPrice = (price: number) => new Intl.NumberFormat('ko-KR').format(price) + '원'
+  const formatPrice = (price: number) => price === 0 ? '무료' : new Intl.NumberFormat('ko-KR').format(price) + '원'
 
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger className="relative min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-primary transition-colors">
           <ShoppingCart className="w-5 h-5" />
           {items.length > 0 && (
@@ -94,6 +96,7 @@ export function CartDrawer() {
                 </button>
                 <Link
                   href="/cart"
+                  onClick={() => setOpen(false)}
                   className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors flex items-center justify-center"
                 >
                   주문하기 ({formatPrice(getTotal())})

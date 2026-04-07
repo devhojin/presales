@@ -626,11 +626,17 @@ export default function AdminConsulting() {
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500 hidden lg:table-cell">
-                          {req.email}
+                        <td className="px-6 py-4 text-sm hidden lg:table-cell">
+                          <a href={`mailto:${req.email}`} className="text-blue-600 hover:underline" onClick={(e) => e.stopPropagation()}>
+                            {req.email}
+                          </a>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500 hidden xl:table-cell">
-                          {req.phone || '-'}
+                        <td className="px-6 py-4 text-sm hidden xl:table-cell">
+                          {req.phone ? (
+                            <a href={`tel:${req.phone}`} className="text-blue-600 hover:underline" onClick={(e) => e.stopPropagation()}>
+                              {req.phone}
+                            </a>
+                          ) : '-'}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500 hidden md:table-cell">
                           {req.company || '-'}

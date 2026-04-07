@@ -50,8 +50,10 @@ function LoginForm() {
         setError('로그인 시도 횟수(5회)를 초과했습니다. 15분 후에 다시 시도해주세요.')
       } else if (signInError.message === 'Invalid login credentials') {
         setError(`이메일 또는 비밀번호가 올바르지 않습니다. (남은 시도: ${result.attemptsLeft}회)`)
+      } else if (signInError.message === 'Email not confirmed') {
+        setError('이메일 인증이 완료되지 않았습니다')
       } else {
-        setError(signInError.message)
+        setError('로그인 중 오류가 발생했습니다. 다시 시도해주세요.')
       }
       setLoading(false)
       return

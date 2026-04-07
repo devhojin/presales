@@ -28,7 +28,7 @@ function ToastItem({ id, message, type = 'success' }: { id: string; message: str
 
   useEffect(() => {
     requestAnimationFrame(() => setVisible(true))
-    const timer = setTimeout(() => setVisible(false), 2700)
+    const timer = setTimeout(() => setVisible(false), 3700)
     return () => clearTimeout(timer)
   }, [])
 

@@ -56,6 +56,10 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
       setError('이름, 연락처, 이메일은 필수입니다.')
       return
     }
+    if (!form.message.trim()) {
+      setError('문의 내용을 입력해주세요.')
+      return
+    }
     setSubmitting(true)
     setError('')
 
@@ -66,9 +70,9 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
       let fileUrl = ''
       if (file) {
         const fileName = `inquiry-${Date.now()}-${file.name}`
-        const { error: uploadErr } = await supabase.storage.from('product-previews').upload(fileName, file)
+        const { error: uploadErr } = await supabase.storage.from('product-files').upload(fileName, file)
         if (!uploadErr) {
-          const { data: urlData } = supabase.storage.from('product-previews').getPublicUrl(fileName)
+          const { data: urlData } = supabase.storage.from('product-files').getPublicUrl(fileName)
           fileUrl = urlData.publicUrl
         }
       }
@@ -122,12 +126,12 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
   const labelClass = "block text-xs font-medium text-gray-600 mb-1.5"
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[5vh]">
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[5vh]" role="dialog" aria-modal="true" aria-labelledby="consulting-modal-title">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
-          <h2 className="text-lg font-bold text-gray-900">컨설팅 문의</h2>
+          <h2 id="consulting-modal-title" className="text-lg font-bold text-gray-900">컨설팅 문의</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600">
             <X className="w-5 h-5" />
           </button>
@@ -202,8 +206,8 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
 
             {/* 문의 내용 */}
             <div>
-              <label className={labelClass}>문의 내용</label>
-              <textarea rows={4} value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} placeholder="입찰 준비 상황, 제안서 관련 질문 등을 자유롭게 작성해주세요." className={inputClass} />
+              <label className={labelClass}>문의 내용 <span className="text-red-500">*</span></label>
+              <textarea rows={4} required value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} placeholder="입찰 준비 상황, 제안서 관련 질문 등을 자유롭게 작성해주세요." className={inputClass} />
             </div>
 
             {/* 첨부파일 (선택) */}

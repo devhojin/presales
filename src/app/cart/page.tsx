@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCartStore } from '@/stores/cart-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ShoppingCart, Trash2, X, ArrowLeft } from 'lucide-react'
+import { ShoppingCart, Trash2, X, ArrowLeft, AlertTriangle, Gift } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { useToastStore } from '@/stores/toast-store'
@@ -14,9 +14,66 @@ export default function CartPage() {
   const { items, removeItem, clearCart, getTotal, getDiscountTotal } = useCartStore()
   const { addToast } = useToastStore()
   const [processing, setProcessing] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
   const router = useRouter()
 
   const allFree = items.length > 0 && items.every((item) => item.price === 0)
+  const hasPaidItems = items.some((item) => item.price > 0)
+  const freeItems = items.filter((item) => item.price === 0)
+  const hasFreeItems = freeItems.length > 0
+
+  // ESC key to close modal
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') setShowClearConfirm(false)
+  }, [])
+  useEffect(() => {
+    if (showClearConfirm) {
+      document.addEventListener('keydown', handleKeyDown)
+      return () => document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [showClearConfirm, handleKeyDown])
+
+  async function handleFreeItemsOnly() {
+    setProcessing(true)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.push('/auth/login?redirect=/cart')
+        return
+      }
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          user_id: user.id,
+          total_amount: 0,
+          status: 'paid',
+          payment_method: 'free',
+          paid_at: new Date().toISOString(),
+        })
+        .select('id')
+        .single()
+      if (orderError || !order) {
+        addToast('주문 생성에 실패했습니다. 다시 시도해주세요.', 'error')
+        return
+      }
+      const orderItems = freeItems.map((item) => ({
+        order_id: order.id,
+        product_id: item.productId,
+        price: 0,
+      }))
+      await supabase.from('order_items').insert(orderItems)
+      // Remove only free items from cart
+      freeItems.forEach((item) => removeItem(item.productId))
+      addToast('무료 상품이 처리되었습니다! 마이페이지에서 다운로드하세요.', 'success')
+      router.push('/mypage')
+      router.refresh()
+    } catch {
+      addToast('주문 처리 중 오류가 발생했습니다.', 'error')
+    } finally {
+      setProcessing(false)
+    }
+  }
 
   const formatPrice = (price: number) => {
     if (price === 0) return '무료'
@@ -49,6 +106,16 @@ export default function CartPage() {
         </div>
       ) : (
         <div className="space-y-8">
+          {/* Paid items banner */}
+          {hasPaidItems && (
+            <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-800">
+                현재 유료 상품 결제 기능을 준비 중입니다. 무료 상품은 바로 다운로드 가능합니다.
+              </p>
+            </div>
+          )}
+
           {/* Cart Items */}
           <div className="space-y-4">
             {items.map((item) => (
@@ -103,69 +170,118 @@ export default function CartPage() {
               </div>
             </div>
 
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={clearCart}
-                className="h-11 px-4 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                비우기
-              </button>
-              <button
-                onClick={async () => {
-                  if (allFree) {
-                    setProcessing(true)
-                    try {
-                      const supabase = createClient()
-                      const { data: { user } } = await supabase.auth.getUser()
-                      if (!user) {
-                        router.push('/auth/login?redirect=/cart')
-                        return
+            <div className="flex flex-col gap-3 pt-2">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowClearConfirm(true)}
+                  className="h-11 px-4 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2 cursor-pointer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  비우기
+                </button>
+                <button
+                  onClick={async () => {
+                    if (allFree) {
+                      setProcessing(true)
+                      try {
+                        const supabase = createClient()
+                        const { data: { user } } = await supabase.auth.getUser()
+                        if (!user) {
+                          router.push('/auth/login?redirect=/cart')
+                          return
+                        }
+                        const { data: order, error: orderError } = await supabase
+                          .from('orders')
+                          .insert({
+                            user_id: user.id,
+                            total_amount: 0,
+                            status: 'paid',
+                            payment_method: 'free',
+                            paid_at: new Date().toISOString(),
+                          })
+                          .select('id')
+                          .single()
+                        if (orderError || !order) {
+                          addToast('주문 생성에 실패했습니다. 다시 시도해주세요.', 'error')
+                          return
+                        }
+                        const orderItems = items.map((item) => ({
+                          order_id: order.id,
+                          product_id: item.productId,
+                          price: 0,
+                        }))
+                        await supabase.from('order_items').insert(orderItems)
+                        clearCart()
+                        addToast('주문이 완료되었습니다! 마이페이지에서 다운로드하세요.', 'success')
+                        router.push('/mypage')
+                        router.refresh()
+                      } catch {
+                        addToast('주문 처리 중 오류가 발생했습니다.', 'error')
+                      } finally {
+                        setProcessing(false)
                       }
-                      const { data: order, error: orderError } = await supabase
-                        .from('orders')
-                        .insert({
-                          user_id: user.id,
-                          total_amount: 0,
-                          status: 'paid',
-                          payment_method: 'free',
-                          paid_at: new Date().toISOString(),
-                        })
-                        .select('id')
-                        .single()
-                      if (orderError || !order) {
-                        addToast('주문 생성에 실패했습니다. 다시 시도해주세요.', 'error')
-                        return
-                      }
-                      const orderItems = items.map((item) => ({
-                        order_id: order.id,
-                        product_id: item.productId,
-                        price: 0,
-                      }))
-                      await supabase.from('order_items').insert(orderItems)
-                      clearCart()
-                      addToast('주문이 완료되었습니다! 마이페이지에서 다운로드하세요.', 'success')
-                      router.push('/mypage')
-                      router.refresh()
-                    } catch {
-                      addToast('주문 처리 중 오류가 발생했습니다.', 'error')
-                    } finally {
-                      setProcessing(false)
+                    } else {
+                      addToast('결제 기능을 준비 중입니다. 빠른 시일 내에 제공하겠습니다.', 'info')
                     }
-                  } else {
-                    addToast('결제 기능을 준비 중입니다. 빠른 시일 내에 제공하겠습니다.', 'info')
-                  }
-                }}
-                disabled={processing}
-                className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50"
-              >
-                {processing ? '처리 중...' : allFree ? '무료 다운로드' : `결제하기 (${formatPrice(getTotal())})`}
-              </button>
+                  }}
+                  disabled={processing}
+                  className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {processing ? '처리 중...' : allFree ? '무료 다운로드' : `결제하기 (${formatPrice(getTotal())})`}
+                </button>
+              </div>
+
+              {/* 무료 상품만 먼저 받기 */}
+              {!allFree && hasFreeItems && (
+                <button
+                  onClick={handleFreeItemsOnly}
+                  disabled={processing}
+                  className="w-full h-11 rounded-lg border-2 border-emerald-500 text-emerald-700 text-sm font-medium hover:bg-emerald-50 transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <Gift className="w-4 h-4" />
+                  {processing ? '처리 중...' : `무료 상품만 먼저 받기 (${freeItems.length}개)`}
+                </button>
+              )}
             </div>
 
             <p className="text-[11px] text-muted-foreground text-center">
               디지털 콘텐츠 특성상 다운로드 후 환불이 제한될 수 있습니다
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Clear Cart Confirm Modal */}
+      {showClearConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => setShowClearConfirm(false)}
+        >
+          <div
+            className="bg-background rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold mb-2">장바구니 비우기</h3>
+            <p className="text-sm text-muted-foreground mb-6">장바구니를 비우시겠습니까?</p>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowClearConfirm(false)}
+                className="flex-1 h-10 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  clearCart()
+                  setShowClearConfirm(false)
+                }}
+                className="flex-1 h-10 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors cursor-pointer"
+              >
+                비우기
+              </button>
+            </div>
           </div>
         </div>
       )}

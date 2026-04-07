@@ -7,11 +7,11 @@ import { createClient } from '@/lib/supabase'
 const FALLBACK = {
   company_name: 'AMARANS Partners',
   ceo_name: '채호진',
-  business_number: '확인 필요',
-  commerce_number: '준비 중',
-  address: '서울특별시 강남구 테헤란로 123',
+  business_number: '테스트 중',
+  commerce_number: '테스트 중',
+  address: '테스트 중',
   email: 'contact@presales.co.kr',
-  copyright: '2025 AMARANS Partners. All rights reserved.',
+  copyright: `${new Date().getFullYear()} AMARANS Partners. All rights reserved.`,
 }
 
 export function Footer() {
@@ -66,7 +66,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/store" className="hover:text-primary transition-colors">
+                <Link href="/store?price=free" className="hover:text-primary transition-colors">
                   무료 입찰 가이드
                 </Link>
               </li>
@@ -112,7 +112,7 @@ export function Footer() {
               <span className="hidden sm:inline"> | </span>
               <span className="block sm:inline">{s.email}</span>
             </p>
-            <p className="mt-4">{s.copyright}</p>
+            <p className="mt-4">&copy; {new Date().getFullYear()} AMARANS Partners. All rights reserved.</p>
           </div>
           <div className="flex gap-4 text-xs font-medium text-muted-foreground">
             <Link href="/terms" className="hover:text-primary transition-colors">이용약관</Link>

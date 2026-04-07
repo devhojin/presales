@@ -20,7 +20,7 @@ export const useToastStore = create<ToastState>((set, get) => ({
     set({ toasts: [...get().toasts, { id, message, type }] })
     setTimeout(() => {
       get().removeToast(id)
-    }, 3000)
+    }, 4000)
   },
 
   removeToast: (id) => {

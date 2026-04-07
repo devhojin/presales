@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, use, useMemo } from 'react'
+import { useState, useEffect, use } from 'react'
+import { useRouter } from 'next/navigation'
 import DOMPurify from 'dompurify'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
@@ -26,6 +27,7 @@ interface ProductFile {
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
+  const router = useRouter()
   const [product, setProduct] = useState<DbProduct | null>(null)
   const [categories, setCategories] = useState<DbCategory[]>([])
   const [loading, setLoading] = useState(true)
@@ -136,7 +138,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       })
       if (!res.ok) {
         const data = await res.json()
-        alert(data.error || '다운로드 실패')
+        addToast(data.error || '다운로드 실패', 'error')
         return
       }
       const { url } = await res.json()
@@ -144,7 +146,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       // 로컬 다운로드 카운트 반영 (서버에서 실제 증가 처리됨)
       setProduct(prev => prev ? { ...prev, download_count: (prev.download_count || 0) + 1 } : prev)
     } catch {
-      alert('다운로드 중 오류가 발생했습니다')
+      addToast('다운로드 중 오류가 발생했습니다', 'error')
     } finally {
       setDownloading(false)
     }
@@ -195,7 +197,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   const tabs: { id: TabId; label: string }[] = [
     { id: 'info', label: '상품정보' },
-    { id: 'video', label: '동영상 보기' },
+    ...(product.youtube_id ? [{ id: 'video' as TabId, label: '동영상 보기' }] : []),
     { id: 'review', label: '리뷰' },
   ]
 
@@ -345,11 +347,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     : 'bg-primary text-primary-foreground hover:bg-primary/90'
                 }`}
               >
-                {inCart ? <><Check className="w-4 h-4" /> 장바구니에 담김</> :
-                  <><ShoppingCart className="w-4 h-4" /> 구매하기</>}
+                {inCart ? <><Check className="w-4 h-4" /> 장바구니에서 빼기</> :
+                  <><ShoppingCart className="w-4 h-4" /> 장바구니 담기</>}
               </button>
             )}
-
+            {!isLoggedIn && !product.is_free && (
+              <p className="text-xs text-muted-foreground mt-1">
+                <Link href={`/auth/login?redirect=/store/${id}`} className="text-primary hover:underline">로그인</Link> 후 구매 가능합니다
+              </p>
+            )}
           </div>
 
           {/* Product Files List */}
@@ -509,18 +515,22 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           previewBlurPages={product.preview_blur_pages || 2}
           productTitle={product.title}
           price={product.price}
+          purchaseLabel={inCart ? '장바구니로 이동' : `장바구니 담기 ${formatPrice(product.price)}`}
           onPurchaseClick={() => {
             setShowPdfPreview(false)
-            const wasInCart = isInCart(product.id)
-            toggleItem({
-              productId: product.id,
-              title: product.title,
-              price: product.price,
-              originalPrice: product.original_price,
-              thumbnail: product.thumbnail_url || '',
-              format: product.format || '',
-            })
-            addToast(wasInCart ? '장바구니에서 제거되었습니다' : '장바구니에 추가되었습니다', wasInCart ? 'info' : 'success')
+            if (inCart) {
+              router.push('/cart')
+            } else {
+              toggleItem({
+                productId: product.id,
+                title: product.title,
+                price: product.price,
+                originalPrice: product.original_price,
+                thumbnail: product.thumbnail_url || '',
+                format: product.format || '',
+              })
+              addToast('장바구니에 추가되었습니다', 'success')
+            }
           }}
         />
       )}
@@ -565,8 +575,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   : 'bg-primary text-primary-foreground hover:bg-primary/90'
               }`}
             >
-              {inCart ? <><Check className="w-4 h-4" /> 장바구니에 담김</> :
-                <><ShoppingCart className="w-4 h-4" /> {product.is_free ? '무료 받기' : `${formatPrice(product.price)} 구매`}</>}
+              {inCart ? <><Check className="w-4 h-4" /> 장바구니에서 빼기</> :
+                <><ShoppingCart className="w-4 h-4" /> {product.is_free ? '무료 받기' : `장바구니 담기`}</>}
             </button>
           )}
         </div>
