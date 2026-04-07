@@ -48,8 +48,7 @@ interface DownloadLog {
   product_id: number
   file_name: string
   downloaded_at: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  products?: any
+  products?: { title: string } | { title: string }[] | null
 }
 
 const statusMap: Record<string, { label: string; class: string }> = {
@@ -112,8 +111,7 @@ export default function MyPage() {
       const productsMap = new Map<number, PurchasedProduct>()
       if (paidOrders) {
         for (const order of paidOrders) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const items = (order as any).order_items || []
+          const items = (order.order_items || []) as { product_id: number; products: PurchasedProduct | PurchasedProduct[] | null }[]
           for (const item of items) {
             const prod = Array.isArray(item.products) ? item.products[0] : item.products
             if (prod) {
@@ -205,7 +203,7 @@ export default function MyPage() {
         </div>
 
         {/* Content */}
-        <div className="md:col-span-3">
+        <div>
           {activeTab === 'orders' && (
             <div className="border border-border rounded-xl p-6">
               <h2 className="font-semibold mb-4">주문 내역</h2>

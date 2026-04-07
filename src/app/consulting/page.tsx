@@ -107,8 +107,9 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
       }
 
       setSubmitted(true)
-    } catch (err: any) {
-      setError('제출 실패: ' + (err.message || '오류가 발생했습니다.'))
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '알 수 없는 오류'
+      setError('제출 실패: ' + message)
     } finally {
       setSubmitting(false)
     }

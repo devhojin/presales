@@ -870,7 +870,7 @@ function ProductPurchaseHistoryModal({
         return
       }
 
-      const orderIds = [...new Set(items.map((i: any) => i.order_id))]
+      const orderIds = [...new Set(items.map((i) => i.order_id))]
       const { data: ordersData } = await supabase
         .from('orders')
         .select('id, user_id, status, total_amount, created_at')
@@ -883,16 +883,16 @@ function ProductPurchaseHistoryModal({
         return
       }
 
-      const userIds = [...new Set(ordersData.map((o: any) => o.user_id).filter(Boolean))]
+      const userIds = [...new Set(ordersData.map((o) => o.user_id).filter(Boolean))]
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, email, name')
         .in('id', userIds)
 
-      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]))
+      const profileMap = new Map((profiles || []).map((p) => [p.id, p]))
 
-      const result: PurchaseHistoryEntry[] = ordersData.map((o: any) => {
-        const p = profileMap.get(o.user_id) as any
+      const result: PurchaseHistoryEntry[] = ordersData.map((o) => {
+        const p = profileMap.get(o.user_id)
         return {
           orderer_name: p?.name || '-',
           orderer_email: p?.email || '-',
@@ -1021,22 +1021,22 @@ function DownloadHistoryModal({
       }
 
       // Get user profiles
-      const userIds = [...new Set(logs.map((l: any) => l.user_id).filter(Boolean))]
+      const userIds = [...new Set(logs.map((l) => l.user_id).filter(Boolean))]
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, name, email')
         .in('id', userIds)
-      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]))
+      const profileMap = new Map((profiles || []).map((p) => [p.id, p]))
 
       // Get product titles
       const { data: products } = await supabase
         .from('products')
         .select('id, title')
         .in('id', productIds)
-      const productMap = new Map((products || []).map((p: any) => [p.id, p.title]))
+      const productMap = new Map((products || []).map((p) => [p.id, p.title]))
 
-      const result: DownloadHistoryRow[] = logs.map((log: any) => {
-        const profile = profileMap.get(log.user_id) as any
+      const result: DownloadHistoryRow[] = logs.map((log) => {
+        const profile = profileMap.get(log.user_id)
         return {
           downloaded_at: log.downloaded_at,
           user_name: profile?.name || profile?.email || '-',
@@ -1178,7 +1178,7 @@ export default function AdminOrders() {
       if (profilesData) {
         const profileMap = new Map(profilesData.map(p => [p.id, p]))
         orderList.forEach(o => {
-          (o as any).profiles = profileMap.get(o.user_id) || null
+          o.profiles = (profileMap.get(o.user_id) as Profile | undefined) || null
         })
       }
     }
