@@ -121,40 +121,26 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   const canDownload = hasPurchased // 무료든 유료든 로그인+조건 충족 시 true
 
-  async function handleDownload(fileUrl?: string, fileName?: string) {
+  async function handleDownload(fileId?: number) {
     if (!product) return
     setDownloading(true)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-
-      // Log the download
-      if (user) {
-        await supabase.from('download_logs').insert({
-          user_id: user.id,
-          product_id: product.id,
-          file_name: fileName || product.title,
-        })
+      const res = await fetch('/api/download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: product.id, fileId }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        alert(data.error || '다운로드 실패')
+        return
       }
-
-      // Increment download count
-      await supabase
-        .from('products')
-        .update({ download_count: (product.download_count || 0) + 1 })
-        .eq('id', product.id)
-      setProduct(prev => prev ? { ...prev, download_count: prev.download_count + 1 } : prev)
-
-      // Trigger file download
-      const url = fileUrl || productFiles[0]?.file_url
-      if (url) {
-        const a = document.createElement('a')
-        a.href = url
-        a.download = fileName || ''
-        a.target = '_blank'
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-      }
+      const { url } = await res.json()
+      window.open(url, '_blank')
+      // 로컬 다운로드 카운트 반영 (서버에서 실제 증가 처리됨)
+      setProduct(prev => prev ? { ...prev, download_count: (prev.download_count || 0) + 1 } : prev)
+    } catch {
+      alert('다운로드 중 오류가 발생했습니다')
     } finally {
       setDownloading(false)
     }
@@ -319,7 +305,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <div className="flex gap-3">
             {canDownload ? (
               <button
-                onClick={() => handleDownload()}
+                onClick={() => handleDownload(productFiles[0]?.id)}
                 disabled={downloading}
                 className="flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
               >
@@ -371,7 +357,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     {file.file_size && <span className="text-xs text-muted-foreground shrink-0">({file.file_size})</span>}
                   </div>
                   <button
-                    onClick={() => handleDownload(file.file_url, file.file_name)}
+                    onClick={() => handleDownload(file.id)}
                     disabled={downloading}
                     className="text-xs px-3 py-1.5 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors shrink-0 ml-2"
                   >
