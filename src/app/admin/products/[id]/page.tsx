@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase'
 import {
   ArrowLeft, Save, Eye, EyeOff, Trash2, Play, Plus, X,
   ImageIcon, FileText, Tag, Upload, Loader2, Code, Monitor,
-  FileType, User, Check
+  FileType, User, Check, Download, AlertCircle
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
@@ -24,6 +24,15 @@ const RichTextEditor = dynamic(
 interface Category {
   id: number
   name: string
+}
+
+interface ProductFile {
+  id: string
+  product_id: number
+  file_name: string
+  file_url: string
+  file_size: number
+  created_at: string
 }
 
 interface SpecItem {
@@ -264,6 +273,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   const [searchingRelated, setSearchingRelated] = useState(false)
   const relatedSearchRef = useRef<HTMLDivElement>(null)
 
+  // Download file management
+  const [productFiles, setProductFiles] = useState<ProductFile[]>([])
+  const [fileUploading, setFileUploading] = useState(false)
+  const [fileUploadProgress, setFileUploadProgress] = useState(0)
+  const [deleteConfirmFile, setDeleteConfirmFile] = useState<ProductFile | null>(null)
+  const [deletingFile, setDeletingFile] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
+  const downloadFileInputRef = useRef<HTMLInputElement>(null)
+
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const showToast = (message: string) => {
@@ -273,6 +291,91 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
   const updateField = <K extends keyof ProductForm>(key: K, value: ProductForm[K]) => {
     setForm(prev => ({ ...prev, [key]: value }))
+  }
+
+  // Load product files
+  const loadProductFiles = async () => {
+    if (isNew) return
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('product_files')
+      .select('*')
+      .eq('product_id', Number(id))
+      .order('created_at', { ascending: false })
+    setProductFiles(data || [])
+  }
+
+  // Upload download file
+  const handleDownloadFileUpload = async (file: File) => {
+    if (isNew) {
+      showToast('상품을 먼저 저장한 후 파일을 업로드해주세요.')
+      return
+    }
+    setFileUploading(true)
+    setFileUploadProgress(0)
+    try {
+      const supabase = createClient()
+      const filePath = `products/${id}/${file.name}`
+      const { error: uploadError } = await supabase.storage
+        .from('product-files')
+        .upload(filePath, file, { upsert: true })
+      if (uploadError) throw uploadError
+
+      setFileUploadProgress(70)
+
+      const { data: urlData } = supabase.storage
+        .from('product-files')
+        .getPublicUrl(filePath)
+
+      const { error: insertError } = await supabase
+        .from('product_files')
+        .insert({
+          product_id: Number(id),
+          file_name: file.name,
+          file_url: urlData.publicUrl,
+          file_size: file.size,
+        })
+      if (insertError) throw insertError
+
+      setFileUploadProgress(100)
+      await loadProductFiles()
+      showToast('파일이 업로드되었습니다.')
+    } catch (err) {
+      showToast(`업로드 오류: ${err instanceof Error ? err.message : '알 수 없는 오류'}`)
+    } finally {
+      setFileUploading(false)
+      setFileUploadProgress(0)
+      if (downloadFileInputRef.current) downloadFileInputRef.current.value = ''
+    }
+  }
+
+  // Delete download file
+  const handleDeleteFile = async (file: ProductFile) => {
+    setDeletingFile(true)
+    try {
+      const supabase = createClient()
+      const filePath = `products/${id}/${file.file_name}`
+      await supabase.storage.from('product-files').remove([filePath])
+      const { error } = await supabase
+        .from('product_files')
+        .delete()
+        .eq('id', file.id)
+      if (error) throw error
+      setDeleteConfirmFile(null)
+      await loadProductFiles()
+      showToast('파일이 삭제되었습니다.')
+    } catch (err) {
+      showToast(`삭제 오류: ${err instanceof Error ? err.message : '알 수 없는 오류'}`)
+    } finally {
+      setDeletingFile(false)
+    }
+  }
+
+  // Format file size
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
   // Load data
@@ -335,6 +438,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             .in('id', rpIds)
           setRelatedProducts(rpData || [])
         }
+
+        // Load product files
+        const { data: filesData } = await supabase
+          .from('product_files')
+          .select('*')
+          .eq('product_id', Number(id))
+          .order('created_at', { ascending: false })
+        setProductFiles(filesData || [])
       }
       setLoading(false)
     }
@@ -531,6 +642,63 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       {toast && (
         <div className="fixed top-6 right-6 z-50 px-4 py-3 bg-gray-900 text-white text-sm rounded-xl shadow-lg animate-in fade-in slide-in-from-top-2">
           {toast}
+        </div>
+      )}
+
+      {/* Delete File Confirm Modal */}
+      {deleteConfirmFile && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => setDeleteConfirmFile(null)}
+          onKeyDown={e => { if (e.key === 'Escape') setDeleteConfirmFile(null) }}
+          tabIndex={-1}
+        >
+          <div
+            className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setDeleteConfirmFile(null)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-900">파일 삭제</h3>
+                <p className="text-xs text-gray-400 mt-0.5">이 작업은 되돌릴 수 없습니다</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 mb-5">
+              <span className="font-medium text-gray-900">{deleteConfirmFile.file_name}</span>을 삭제하시겠습니까?
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmFile(null)}
+                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDeleteFile(deleteConfirmFile)}
+                disabled={deletingFile}
+                className="flex-1 px-4 py-2.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-xl transition-colors disabled:opacity-50 cursor-pointer"
+              >
+                {deletingFile ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    삭제 중...
+                  </span>
+                ) : '삭제'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1218,6 +1386,115 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
             {form.related_product_ids.length > 0 && (
               <p className="text-xs text-gray-400 mt-2">{form.related_product_ids.length}개 상품이 연결되었습니다</p>
+            )}
+          </section>
+
+          {/* ─── 다운로드 파일 관리 ─── */}
+          <section className="bg-white rounded-xl border border-gray-200 p-5">
+            <h2 className="text-sm font-bold text-gray-900 mb-1 flex items-center gap-2">
+              <Download className="w-4 h-4 text-gray-400" />
+              다운로드 파일 관리
+            </h2>
+            <p className="text-xs text-gray-400 mb-4">구매자가 다운로드할 실제 파일입니다. product-files 버킷에 저장됩니다.</p>
+
+            {isNew ? (
+              <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                상품을 먼저 저장한 후 파일을 업로드할 수 있습니다.
+              </div>
+            ) : (
+              <>
+                {/* Upload area */}
+                <input
+                  ref={downloadFileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0]
+                    if (file) handleDownloadFileUpload(file)
+                  }}
+                />
+                <div
+                  className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
+                    dragOver
+                      ? 'border-blue-400 bg-blue-50/50'
+                      : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/20'
+                  }`}
+                  onClick={() => !fileUploading && downloadFileInputRef.current?.click()}
+                  onDragOver={e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setDragOver(true)
+                  }}
+                  onDragLeave={e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setDragOver(false)
+                  }}
+                  onDrop={e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setDragOver(false)
+                    const file = e.dataTransfer.files?.[0]
+                    if (file) handleDownloadFileUpload(file)
+                  }}
+                >
+                  {fileUploading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                      <p className="text-xs text-blue-600 font-medium">업로드 중...</p>
+                      {fileUploadProgress > 0 && (
+                        <div className="w-full max-w-[200px] bg-gray-200 rounded-full h-1.5 mt-1">
+                          <div
+                            className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                            style={{ width: `${fileUploadProgress}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <Upload className="w-8 h-8 text-gray-300" />
+                      <p className="text-sm text-gray-600 font-medium">파일을 드래그하거나 클릭하여 업로드</p>
+                      <p className="text-xs text-gray-400">PPT, PDF, HWP, XLS, ZIP 등 모든 파일 형식</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* File list */}
+                {productFiles.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-xs font-medium text-gray-500">{productFiles.length}개 파일 등록됨</p>
+                    <div className="divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden">
+                      {productFiles.map(file => (
+                        <div key={file.id} className="flex items-center gap-3 px-4 py-3 bg-white hover:bg-gray-50 transition-colors group">
+                          <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
+                            <FileText className="w-4 h-4 text-blue-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{file.file_name}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {formatFileSize(file.file_size)} · {new Date(file.created_at).toLocaleDateString('ko-KR')}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteConfirmFile(file)}
+                            className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
+                            title="삭제"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {productFiles.length === 0 && !fileUploading && (
+                  <p className="text-center text-xs text-gray-400 mt-3">등록된 파일이 없습니다</p>
+                )}
+              </>
             )}
           </section>
 
