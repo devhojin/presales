@@ -8,6 +8,7 @@ import { Mail, Lock, User, Building, Phone, Eye, EyeOff, ShieldCheck } from 'luc
 import { validatePassword } from '@/lib/password-policy'
 import { useToastStore } from '@/stores/toast-store'
 
+// Tailwind safelist: bg-red-500 bg-orange-500 bg-yellow-500 bg-blue-500 bg-green-500
 export default function SignupPage() {
   const router = useRouter()
   const { addToast } = useToastStore()
@@ -100,7 +101,7 @@ export default function SignupPage() {
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-[#0B1629] flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 rounded-lg bg-brand-dark flex items-center justify-center mx-auto mb-4">
             <span className="text-white text-sm font-bold">PS</span>
           </div>
           <h1 className="text-2xl font-bold">회원가입</h1>
@@ -206,7 +207,7 @@ export default function SignupPage() {
           </div>
 
           {/* 약관 동의 */}
-          <div className="space-y-3 pt-2">
+          <div className="space-y-3 pt-4 border-t border-border">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"

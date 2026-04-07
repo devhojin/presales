@@ -122,8 +122,8 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
     { value: 'project', label: '프로젝트 컨설팅 (3,000,000원~ / 프로젝트)' },
   ]
 
-  const inputClass = "w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-  const labelClass = "block text-xs font-medium text-gray-600 mb-1.5"
+  const inputClass = "w-full px-3 py-2.5 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+  const labelClass = "block text-xs font-medium text-muted-foreground mb-1.5"
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[5vh]" role="dialog" aria-modal="true" aria-labelledby="consulting-modal-title">
@@ -431,7 +431,7 @@ export default function ConsultingPage() {
                 <div key={pkg?.slug || ''} className={`p-4 flex items-center justify-center ${pkg?.slug === 'review' ? 'bg-primary/5 border-x border-primary/20' : ''}`}>
                   <button
                     onClick={() => pkg?.slug && openInquiry(pkg.slug)}
-                    className="w-full h-9 rounded-lg font-medium text-xs transition-all cursor-pointer border border-gray-200 bg-gray-100 text-gray-400 hover:bg-primary hover:text-primary-foreground hover:border-primary hover:shadow-md"
+                    className="w-full h-9 rounded-lg font-medium text-xs transition-all cursor-pointer border border-primary/30 bg-white text-primary hover:bg-primary hover:text-primary-foreground hover:border-primary hover:shadow-md"
                   >
                     선택하기
                   </button>
@@ -498,7 +498,7 @@ export default function ConsultingPage() {
 
         <div className="relative">
           {/* Connecting line */}
-          <div className="hidden md:block absolute top-10 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-200 via-blue-400 to-blue-600" />
+          <div className="hidden md:block absolute top-10 left-[12.5%] right-[12.5%] h-0.5 bg-gradient-to-r from-blue-200 via-blue-400 to-blue-600" />
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {[

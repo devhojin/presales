@@ -60,7 +60,7 @@ function FeaturedCard({ product, categoryNames }: { product: DbProduct; category
 
   return (
     <Link href={`/store/${product.id}`} className="group">
-      <div className="border border-border rounded-xl overflow-hidden bg-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+      <div className="border border-border rounded-xl overflow-hidden bg-card hover:shadow-md transition-all duration-300 hover:-translate-y-1">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {product.thumbnail_url ? (
             <img src={product.thumbnail_url} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -261,14 +261,14 @@ export default function Home() {
 
         {/* 실적 카운터 */}
         {statsDisplay.length > 0 && (
-          <div className="relative z-10 border-t border-blue-500/20 bg-white/5 backdrop-blur-sm">
+          <div className="relative z-10 bg-white shadow-sm">
             <div className="container mx-auto px-4 py-6">
-              <div className={`grid grid-cols-2 md:grid-cols-${statsDisplay.length} gap-6 md:gap-0 md:divide-x md:divide-blue-500/20`}>
+              <div className={`grid grid-cols-2 ${statsDisplay.length <= 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-6 md:gap-0 md:divide-x md:divide-gray-200`}>
                 {statsDisplay.map((stat) => (
                   <div key={stat.label} className="flex flex-col items-center text-center py-2">
                     <span className="text-2xl mb-1">{stat.emoji}</span>
-                    <span className="text-2xl font-bold text-white">{stat.value}</span>
-                    <span className="text-xs text-blue-200/70 mt-0.5">{stat.label}</span>
+                    <span className="text-2xl font-bold text-gray-900">{stat.value}</span>
+                    <span className="text-xs text-gray-500 mt-0.5">{stat.label}</span>
                   </div>
                 ))}
               </div>
@@ -278,7 +278,7 @@ export default function Home() {
       </section>
 
       {/* Value Props */}
-      <section className="py-16 bg-muted/30">
+      <section className="py-20 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {[
@@ -300,11 +300,11 @@ export default function Home() {
       </section>
 
       {/* 카테고리 쇼케이스 */}
-      <section className="py-16">
+      <section className="py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-10">
-            <h2 className="text-2xl font-bold">카테고리별 탐색</h2>
-            <p className="text-muted-foreground mt-1">필요한 문서 유형을 빠르게 찾아보세요</p>
+            <h2 className="text-2xl font-bold mb-2">카테고리별 탐색</h2>
+            <p className="text-muted-foreground">필요한 문서 유형을 빠르게 찾아보세요</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             {categoryCounts.map((cat) => (
@@ -327,7 +327,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between mb-10">
             <div>
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-2 mb-2">
                 <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-xs">BEST</Badge>
                 <h2 className="text-2xl font-bold">인기 상품</h2>
               </div>
@@ -352,9 +352,9 @@ export default function Home() {
       {reviews.length > 0 && (
         <section className="py-20">
           <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-2xl font-bold">고객 후기</h2>
-              <p className="text-muted-foreground mt-1">실제 고객들의 성공 경험을 확인하세요</p>
+            <div className="text-center mb-10">
+              <h2 className="text-2xl font-bold mb-2">고객 후기</h2>
+              <p className="text-muted-foreground">실제 고객들의 성공 경험을 확인하세요</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {reviews.map((t, i) => (
@@ -385,7 +385,7 @@ export default function Home() {
       {/* CTA */}
       <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">첫 입찰, 어디서부터 시작해야 할지 모르겠다면?</h2>
+          <h2 className="text-2xl md:text-3xl font-bold mb-2">첫 입찰, 어디서부터 시작해야 할지 모르겠다면?</h2>
           <p className="text-blue-100/80 mb-8 max-w-lg mx-auto">무료 입찰 가이드부터 전문가 1:1 컨설팅까지. 프리세일즈가 함께합니다.</p>
           <Link href="/consulting" className="inline-flex items-center justify-center h-11 px-8 rounded-lg bg-white text-blue-700 hover:bg-blue-50 font-medium text-sm transition-colors">컨설팅 상담 신청</Link>
         </div>

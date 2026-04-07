@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Badge } from '@/components/ui/badge'
-import { Search, ShoppingCart, Check, Star, RotateCcw } from 'lucide-react'
+import { Search, ShoppingCart, Check, Star, RotateCcw, ChevronDown } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
 import Link from 'next/link'
@@ -63,7 +63,7 @@ function highlightText(text: string, query: string): ReactNode {
   const parts = text.split(regex)
   if (parts.length === 1) return text
   return parts.map((part, i) =>
-    regex.test(part) ? <mark key={i} className="bg-yellow-200 px-0.5 rounded">{part}</mark> : part
+    regex.test(part) ? <mark key={i} className="bg-yellow-200 dark:bg-yellow-800 dark:text-yellow-100 px-0.5 rounded">{part}</mark> : part
   )
 }
 
@@ -92,7 +92,7 @@ function ProductCard({ product, onFileTypeClick, categoryNames, searchQuery }: {
 
   return (
     <Link href={`/store/${product.id}`} className="group">
-      <div className="border border-border rounded-xl overflow-hidden bg-card hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+      <div className="border border-border rounded-xl overflow-hidden bg-card hover:shadow-md transition-all duration-300 hover:-translate-y-1">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {product.thumbnail_url ? (
             <img src={product.thumbnail_url} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -185,6 +185,7 @@ export default function StorePage() {
   const [sortOrder, setSortOrder] = useState<'recommended' | 'price_asc' | 'price_desc' | 'newest'>('recommended')
   const [loading, setLoading] = useState(true)
   const [popularProducts, setPopularProducts] = useState<DbProduct[]>([])
+  const [showDetailFilter, setShowDetailFilter] = useState(false)
 
   // Initialize from URL params
   useEffect(() => {
@@ -368,39 +369,52 @@ export default function StorePage() {
           ))}
         </div>
 
-        {/* 파일 형태 필터 */}
-        <div className="flex flex-wrap gap-2">
-          {allFileTypes.map((ft) => (
-            <button
-              key={ft.id}
-              onClick={() => setSelectedFileType(selectedFileType === ft.id ? null : ft.id)}
-              className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-bold border transition-colors ${
-                selectedFileType === ft.id ? ft.color : 'border-border hover:bg-muted text-muted-foreground'
-              }`}
-            >
-              {ft.label}
-            </button>
-          ))}
-        </div>
+        {/* 상세 필터 토글 */}
+        <button
+          onClick={() => setShowDetailFilter(!showDetailFilter)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-muted transition-colors cursor-pointer"
+        >
+          상세 필터{(selectedFileType || selectedPriceType) ? ' (적용 중)' : ''}
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showDetailFilter ? 'rotate-180' : ''}`} />
+        </button>
 
-        {/* 무료/유료 필터 */}
-        <div className="flex flex-wrap gap-2">
-          {priceTypes.map((pt) => (
-            <button
-              key={pt.id}
-              onClick={() => {
-                const newPrice = selectedPriceType === pt.id ? null : pt.id
-                setSelectedPriceType(newPrice)
-                updateURL(selectedCategories, newPrice, searchQuery, sortOrder)
-              }}
-              className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-medium border transition-colors ${
-                selectedPriceType === pt.id ? pt.color : 'border-border hover:bg-muted'
-              }`}
-            >
-              {pt.label}
-            </button>
-          ))}
-        </div>
+        {showDetailFilter && (
+          <div className="space-y-3">
+            {/* 파일 형태 필터 */}
+            <div className="flex flex-wrap gap-2">
+              {allFileTypes.map((ft) => (
+                <button
+                  key={ft.id}
+                  onClick={() => setSelectedFileType(selectedFileType === ft.id ? null : ft.id)}
+                  className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-bold border transition-colors ${
+                    selectedFileType === ft.id ? ft.color : 'border-border hover:bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {ft.label}
+                </button>
+              ))}
+            </div>
+
+            {/* 무료/유료 필터 */}
+            <div className="flex flex-wrap gap-2">
+              {priceTypes.map((pt) => (
+                <button
+                  key={pt.id}
+                  onClick={() => {
+                    const newPrice = selectedPriceType === pt.id ? null : pt.id
+                    setSelectedPriceType(newPrice)
+                    updateURL(selectedCategories, newPrice, searchQuery, sortOrder)
+                  }}
+                  className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-medium border transition-colors ${
+                    selectedPriceType === pt.id ? pt.color : 'border-border hover:bg-muted'
+                  }`}
+                >
+                  {pt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-between mb-4">
@@ -480,7 +494,7 @@ export default function StorePage() {
           {popularProducts.length > 0 && (
             <div>
               <p className="text-sm font-semibold text-muted-foreground mb-4">인기 상품을 확인해보세요</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {popularProducts.map((product) => (
                   <ProductCard key={product.id} product={product} onFileTypeClick={handleFileTypeClick} categoryNames={getCategoryNames(product)} />
                 ))}

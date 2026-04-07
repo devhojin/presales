@@ -71,7 +71,7 @@ function LoginForm() {
     <div className="min-h-[80vh] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-[#0B1629] flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 rounded-lg bg-brand-dark flex items-center justify-center mx-auto mb-4">
             <span className="text-white text-sm font-bold">PS</span>
           </div>
           <h1 className="text-2xl font-bold">로그인</h1>
@@ -143,7 +143,7 @@ function LoginForm() {
             {loading ? '로그인 중...' : '로그인'}
           </button>
 
-          <div className="text-center">
+          <div className="text-right">
             <Link href="/auth/forgot-password" className="text-sm text-muted-foreground hover:text-primary hover:underline cursor-pointer transition-colors">
               비밀번호를 잊으셨나요?
             </Link>

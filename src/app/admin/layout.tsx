@@ -117,7 +117,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               title={!isMobile && collapsed ? item.label : undefined}
               className={`flex items-center ${!isMobile && collapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-blue-600/20 text-blue-300'
+                  ? `bg-blue-600/20 text-blue-300${!isMobile && collapsed ? ' border-l-[3px] border-blue-400' : ''}`
                   : 'text-gray-400 hover:bg-white/5 hover:text-gray-200'
               }`}
             >
@@ -142,7 +142,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <div className="min-h-screen flex">
       {/* Mobile top bar */}
-      <div className="fixed top-0 left-0 right-0 h-14 bg-[#0B1629] text-white flex items-center px-4 z-40 md:hidden">
+      <div className="fixed top-0 left-0 right-0 h-14 bg-brand-dark text-white flex items-center px-4 z-40 md:hidden">
         <button type="button" title="메뉴 열기" onClick={() => setMobileOpen(true)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
           <Menu className="w-5 h-5" />
         </button>
@@ -164,7 +164,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Mobile sidebar (overlay) */}
       <aside
-        className={`fixed inset-y-0 left-0 w-64 bg-[#0B1629] text-white flex flex-col z-50 transform transition-transform duration-300 md:hidden ${
+        className={`fixed inset-y-0 left-0 w-64 bg-brand-dark text-white flex flex-col z-50 transform transition-transform duration-300 md:hidden ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -172,13 +172,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       {/* Desktop sidebar */}
-      <aside className={`${collapsed ? 'w-16' : 'w-64'} bg-[#0B1629] text-white hidden md:flex flex-col shrink-0 transition-all duration-300 relative`}>
+      <aside className={`${collapsed ? 'w-16' : 'w-64'} bg-brand-dark text-white hidden md:flex flex-col shrink-0 transition-all duration-300 relative`}>
         {/* Toggle button */}
         <button
           type="button"
           title={collapsed ? '사이드바 펼치기' : '사이드바 접기'}
           onClick={toggle}
-          className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-[#0B1629] border-2 border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-blue-500 transition-colors z-10"
+          className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-brand-dark border-2 border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-blue-500 transition-colors z-10"
         >
           {collapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
         </button>

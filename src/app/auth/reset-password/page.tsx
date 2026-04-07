@@ -75,7 +75,7 @@ function ResetPasswordForm() {
     return (
       <div className="min-h-[80vh] flex items-center justify-center px-4">
         <div className="w-full max-w-md text-center">
-          <div className="w-12 h-12 rounded-xl bg-[#0B1629] flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 rounded-lg bg-brand-dark flex items-center justify-center mx-auto mb-4">
             <span className="text-white text-sm font-bold">PS</span>
           </div>
           <h1 className="text-2xl font-bold mb-2">비밀번호 재설정</h1>
@@ -98,7 +98,7 @@ function ResetPasswordForm() {
     <div className="min-h-[80vh] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-[#0B1629] flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 rounded-lg bg-brand-dark flex items-center justify-center mx-auto mb-4">
             <span className="text-white text-sm font-bold">PS</span>
           </div>
           <h1 className="text-2xl font-bold">새 비밀번호 설정</h1>

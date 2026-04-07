@@ -185,7 +185,7 @@ export default function MyPage() {
     <div className="container mx-auto px-4 py-10 max-w-4xl">
       <h1 className="text-2xl font-bold mb-8">마이페이지</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-8">
         {/* Sidebar */}
         <div className="space-y-1">
           {tabs.map((item) => (
@@ -688,7 +688,7 @@ export default function MyPage() {
       {/* 회원 탈퇴 확인 모달 */}
       {showDeleteAccount && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
           onClick={() => setShowDeleteAccount(false)}
           onKeyDown={(e) => { if (e.key === 'Escape') setShowDeleteAccount(false) }}
         >

@@ -11,9 +11,9 @@ const iconMap = {
 }
 
 const colorMap = {
-  success: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+  success: 'bg-emerald-50 border-emerald-200 text-emerald-700',
   info: 'bg-blue-50 border-blue-200 text-blue-800',
-  error: 'bg-red-50 border-red-200 text-red-800',
+  error: 'bg-red-50 border-red-200 text-red-700',
 }
 
 const iconColorMap = {
@@ -55,7 +55,7 @@ export function ToastContainer() {
   if (toasts.length === 0) return null
 
   return (
-    <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
+    <div className="fixed top-20 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
       {toasts.map((toast) => (
         <div key={toast.id} className="pointer-events-auto">
           <ToastItem id={toast.id} message={toast.message} type={toast.type} />

@@ -94,7 +94,7 @@ export default function CartPage() {
 
       {items.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">
-          <ShoppingCart className="w-16 h-16 mx-auto mb-4 opacity-20" />
+          <ShoppingCart className="w-16 h-16 mx-auto mb-4 opacity-30" />
           <p className="text-lg font-medium">장바구니가 비어있습니다</p>
           <p className="text-sm mt-2 mb-6">마음에 드는 템플릿을 담아보세요</p>
           <Link
@@ -254,7 +254,7 @@ export default function CartPage() {
       {/* Clear Cart Confirm Modal */}
       {showClearConfirm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
           onClick={() => setShowClearConfirm(false)}
         >
           <div

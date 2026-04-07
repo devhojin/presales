@@ -10,7 +10,7 @@ export default function Error({
 }) {
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center px-4 py-20">
-      <div className="w-12 h-12 rounded-xl bg-[#0B1629] flex items-center justify-center mb-6">
+      <div className="w-12 h-12 rounded-xl bg-brand-dark flex items-center justify-center mb-6">
         <span className="text-white text-sm font-bold">PS</span>
       </div>
       <h1 className="text-2xl font-bold text-foreground mb-2">오류가 발생했습니다</h1>

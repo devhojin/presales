@@ -75,7 +75,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#0B1629] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-brand-dark flex items-center justify-center">
             <span className="text-white text-xs font-bold">PS</span>
           </div>
           <div className="flex flex-col">
@@ -118,7 +118,7 @@ export function Header() {
                 <span className="text-sm font-medium">{profile?.name || '사용자'}</span>
               </button>
               {profileMenu && (
-                <div className="absolute right-0 top-full mt-1 w-48 bg-background border border-border rounded-lg shadow-lg py-1 z-50">
+                <div className="absolute right-0 top-full mt-1 w-48 bg-background border border-border rounded-lg shadow-lg py-1 z-50 animate-in fade-in-0 zoom-in-95 duration-200">
                   <Link
                     href="/mypage"
                     onClick={() => setProfileMenu(false)}
@@ -148,19 +148,19 @@ export function Header() {
             <>
               <Link
                 href="/auth/login"
-                className="inline-flex items-center h-7 px-2.5 rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+                className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 로그인
               </Link>
               <Link
                 href="/auth/signup"
-                className="inline-flex items-center h-7 px-2.5 rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+                className="inline-flex items-center h-9 px-3 rounded-lg text-sm border border-border hover:bg-accent transition-colors"
               >
                 회원가입
               </Link>
               <Link
                 href="/store?price=free"
-                className="inline-flex items-center h-7 px-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/80 transition-colors"
+                className="inline-flex items-center h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/80 transition-colors"
               >
                 무료 템플릿 보기
               </Link>
@@ -179,8 +179,7 @@ export function Header() {
         </div>
       </div>
 
-      {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-border bg-background">
+      <div className={`md:hidden border-t border-border bg-background overflow-hidden transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'max-h-[500px]' : 'max-h-0 border-t-0'}`}>
           <div className="flex flex-col px-4 py-4 space-y-4">
             {navLinks.map((link) => (
               <Link
@@ -241,7 +240,6 @@ export function Header() {
             </div>
           </div>
         </div>
-      )}
     </header>
   )
 }

@@ -207,7 +207,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         <ArrowLeft className="w-4 h-4 mr-1" /> 스토어로 돌아가기
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,5fr)] gap-8 lg:gap-12">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-8 lg:gap-12">
         {/* Left: Image + Preview */}
         <div className="space-y-3">
           <div className="relative rounded-xl overflow-hidden bg-muted flex items-center justify-center border border-gray-100">
@@ -397,8 +397,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-4 sm:px-6 py-3 min-h-[44px] text-sm transition-colors border-b-2 ${
                   activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600 font-semibold'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                    ? 'border-primary text-primary font-semibold'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {tab.label}
@@ -481,7 +481,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {related.slice(0, 4).map((p) => (
               <Link key={p.id} href={`/store/${p.id}`} className="group">
-                <div className="border border-border rounded-xl overflow-hidden bg-card hover:shadow-lg transition-all">
+                <div className="border border-border rounded-xl overflow-hidden bg-card hover:shadow-md hover:-translate-y-1 transition-all">
                   <div className="aspect-[4/3] overflow-hidden bg-muted">
                     {p.thumbnail_url ? (
                       <img src={p.thumbnail_url} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />

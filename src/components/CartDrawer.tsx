@@ -88,7 +88,7 @@ export function CartDrawer() {
 
               <div className="flex gap-2">
                 <button
-                  onClick={clearCart}
+                  onClick={() => { if (window.confirm('장바구니를 비우시겠습니까?')) clearCart() }}
                   className="h-11 px-4 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors flex items-center gap-1"
                 >
                   <Trash2 className="w-4 h-4" />

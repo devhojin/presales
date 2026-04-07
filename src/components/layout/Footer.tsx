@@ -39,8 +39,8 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-7 h-7 rounded-md bg-[#0B1629] flex items-center justify-center">
-                <span className="text-white text-[10px] font-bold">PS</span>
+              <div className="w-8 h-8 rounded-lg bg-brand-dark flex items-center justify-center">
+                <span className="text-white text-xs font-bold">PS</span>
               </div>
               <h3 className="text-xl font-bold text-primary">프리세일즈</h3>
             </div>

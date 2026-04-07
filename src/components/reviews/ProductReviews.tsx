@@ -375,7 +375,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
               {review.pros && (
                 <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-2">
                   <p className="text-xs font-medium text-emerald-700 mb-1">좋은점</p>
-                  <p className="text-sm text-emerald-800">{review.pros}</p>
+                  <p className="text-sm text-emerald-700">{review.pros}</p>
                 </div>
               )}
 

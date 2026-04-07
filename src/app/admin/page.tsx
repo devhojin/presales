@@ -417,17 +417,17 @@ export default function AdminDashboard() {
   // ===========================
 
   const kpiRow1 = [
-    { icon: Package, label: '등록상품', value: `${kpi.products}개`, color: 'bg-blue-500', href: '/admin/products' },
-    { icon: ShoppingCart, label: '총 주문', value: `${kpi.orders}건`, color: 'bg-emerald-500', href: '/admin/orders' },
-    { icon: CreditCard, label: '결제완료', value: `${kpi.paidOrders}건`, color: 'bg-teal-500', href: '/admin/orders' },
-    { icon: Users, label: '가입회원', value: `${kpi.members}명`, color: 'bg-purple-500', href: '/admin/members' },
+    { icon: Package, label: '등록상품', value: `${kpi.products}개`, color: 'bg-blue-500', href: '/admin/products', emphasis: false },
+    { icon: ShoppingCart, label: '총 주문', value: `${kpi.orders}건`, color: 'bg-emerald-500', href: '/admin/orders', emphasis: false },
+    { icon: CreditCard, label: '결제완료', value: `${kpi.paidOrders}건`, color: 'bg-teal-500', href: '/admin/orders', emphasis: true },
+    { icon: Users, label: '가입회원', value: `${kpi.members}명`, color: 'bg-purple-500', href: '/admin/members', emphasis: false },
   ]
 
   const kpiRow2 = [
-    { icon: TrendingUp, label: '총 매출', value: `${formatAmount(kpi.revenue)}원`, color: 'bg-red-500', href: '/admin/orders' },
-    { icon: Download, label: '총 다운로드', value: `${kpi.downloads}건`, color: 'bg-cyan-500', href: '/admin/downloads' },
-    { icon: MessageSquare, label: '컨설팅신청', value: `${kpi.consulting}건`, color: 'bg-amber-500', href: '/admin/consulting' },
-    { icon: Star, label: '리뷰', value: `${kpi.reviews}건`, color: 'bg-yellow-500', href: '/admin/reviews' },
+    { icon: TrendingUp, label: '총 매출', value: `${formatAmount(kpi.revenue)}원`, color: 'bg-red-500', href: '/admin/orders', emphasis: true },
+    { icon: Download, label: '총 다운로드', value: `${kpi.downloads}건`, color: 'bg-cyan-500', href: '/admin/downloads', emphasis: false },
+    { icon: MessageSquare, label: '컨설팅신청', value: `${kpi.consulting}건`, color: 'bg-amber-500', href: '/admin/consulting', emphasis: false },
+    { icon: Star, label: '리뷰', value: `${kpi.reviews}건`, color: 'bg-yellow-500', href: '/admin/reviews', emphasis: false },
   ]
 
   // ===========================
@@ -507,7 +507,7 @@ export default function AdminDashboard() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {kpiRow1.map((card) => (
-              <Link key={card.label} href={card.href} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md hover:border-gray-300 transition-all group">
+              <Link key={card.label} href={card.href} className={`rounded-xl p-5 hover:shadow-md transition-all group ${card.emphasis ? 'bg-blue-50 border-2 border-blue-200 ring-2 ring-primary/20' : 'bg-white border border-gray-200 hover:border-gray-300'}`}>
                 <div className="flex items-center gap-3 mb-2">
                   <div className={`w-9 h-9 rounded-lg ${card.color} flex items-center justify-center`}>
                     <card.icon className="w-4.5 h-4.5 text-white" />
@@ -521,7 +521,7 @@ export default function AdminDashboard() {
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {kpiRow2.map((card) => (
-              <Link key={card.label} href={card.href} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md hover:border-gray-300 transition-all group">
+              <Link key={card.label} href={card.href} className={`rounded-xl p-5 hover:shadow-md transition-all group ${card.emphasis ? 'bg-blue-50 border-2 border-blue-200 ring-2 ring-primary/20' : 'bg-white border border-gray-200 hover:border-gray-300'}`}>
                 <div className="flex items-center gap-3 mb-2">
                   <div className={`w-9 h-9 rounded-lg ${card.color} flex items-center justify-center`}>
                     <card.icon className="w-4.5 h-4.5 text-white" />

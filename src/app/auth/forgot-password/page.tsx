@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-[80vh] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl bg-[#0B1629] flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 rounded-lg bg-brand-dark flex items-center justify-center mx-auto mb-4">
             <span className="text-white text-sm font-bold">PS</span>
           </div>
           <h1 className="text-2xl font-bold">비밀번호 찾기</h1>
