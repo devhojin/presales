@@ -1,0 +1,178 @@
+{
+  "bodyClasses": "doz_sys  _body_menu_m20230310312aee0e321eb  shop_view  fixed-menu-on new_fixed_menu_on new_header_site",
+  "mainContent": " \t\t \t                               \t\t\t \t\t\t \t\t<div doz_type=\"inside\" class=\"inside\"><div doz_type=\"row\" doz_grid=\"12\" class=\"doz_row\"><div doz_type=\"grid\" doz_grid=\"12\" class=\"col-dz col-dz-12\"><div doz_type=\"widget\" id=\"w2023031133c00a91d485f\"><div class=\"_widget_data _ds_animated_except\" data-widget-name=\"여백\" data-widget-type=\"padding\" data-widget-parent-is-mobile=\"N\"><div class=\"widget padding\" data-height=\"30\" style=\"margin-top:px; margin-bottom:px;\">\n\t<div id=\"padding_w2023031133c00a91d485f\" style=\"width:100%; min-height:1px; height:30px; \"></div>\n</div>\n</div></div></div></div><div doz_type=\"row\" doz_grid=\"12\" class=\"doz_row\"><div doz_type=\"grid\" doz_grid=\"12\" class=\"col-dz col-dz-12\"><div doz_type=\"widget\" id=\"w2023031054536e0a1523d\"><div class=\"_widget_data _ds_animated_except\" data-widget-name=\"쇼핑 상품 뷰\" data-widget-type=\"shop_view\" data-widget-parent-is-mobile=\"N\">\t<div class=\"shop-content shop-style-a    \" id=\"prod_detail\"><!--모바일에서 open class 삽입시 하단에 구매상품 상세정보 노출됨 -->\n\t\t<div class=\"clearfix\">\n\t\t\t\t\t\t\t<div class=\"shop_sub_depth hidden-xs hidden-sm\" style=\"display: block;\">\n\t\t\t\t\t<ul class=\"sub_depth\">\n\t\t\t\t\t\t\t\t\t\t\t\t\t<li>\n\t\t\t\t\t\t\t\t<a href=\"/\" data-catecnt=\"2\">Home</a>\n\t\t\t\t\t\t\t\t<span class=\"icon-arrow-right\" data-cnt=\"\"></span>\t\t\t\t\t\t\t</li>\n\t\t\t\t\t\t\t<li><a href=\"/shop\" class=\" \">기획서</a><span class=\"icon-arrow-right\"></span></li><li><a href=\"/42\" class=\"active \">제안서&nbsp;사본</a></li>\t\t\t\t\t</ul>\n\t\t\t\t</div>\n\t\t\t\t\t\t<!-- BrandScope 상품 Page View 이벤트 전송 -->\n\t\t\t\t\t\t<div class=\"row goods_wrapper\">\n\t\t\t\t<div class=\"col-md-6 col-sm-12 col-xs-12 goods_thumbs_wrap\">\n\t\t\t\t\t<div class=\"goods_thumbs tw-relative\" id=\"prod_image_list\">\n\t\t\t\t\t\t<div class=\"_carousel_count_numbering carousel-count-numbering\"><span class=\"_numbering_variable\">1</span> <span class=\"_numbering_total\">/ 2</span></div>\n\t\t\t\t\t\t\t\t\t\t\t\t\t<section class=\"social-sticker\">\n\t\t\t\t\t\t\t\t<script type=\"module\">\n\t\t\t\t\t\t\t\t\timport('https://static.imweb.me/design-system/magnet/magnet-shell.js')\n\t\t\t\t\t\t\t\t\t.then((module) => typeof customElements.get('magnet-shell') === 'undefined' && customElements.define('magnet-shell', module.MagnetShell))\n\t\t\t\t\t\t\t\t\t.catch(console.warn);\n\t\t\t\t\t\t\t\t</script>\n\t\t\t\t\t\t\t\t<magnet-shell data-manifest-url=\"/_/fo-product-detail/pages/social-sticker/index.magnet.json\">\n\t\t\t\t\t\t\t\t\t\n\n<social-sticker id=\"social-sticker\" data-clay-theme=\"light-only\" data-shadow-host=\"\"></social-sticker>\n\t\t\t\t\t\t\t\t</magnet-shell>\n\t\t\t\t\t\t\t</section>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<div class=\"holder image-loaded\">\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t<div class=\"owl-carousel prod-owl-list paging_type_big_dot owl-theme owl-loaded\">\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t<div class=\"owl-stage-outer\"><div class=\"owl-stage\" style=\"transform: translate3d(0px, 0px, 0px); transition: all; width: 1822px;\"><div class=\"owl-item active\" style=\"width: 911px; margin-right: 0px;\"><div class=\"item _item\"><img id=\"main-image\" fetchpriority=\"high\" style=\"\" src=\"https://cdn-optimized.imweb.me/thumbnail/20251118/8cafcfa2fcaf0.png?w=750\" alt=\"\"><!-- 상단 배지 -->\n<div id=\"product_top_badge_container\" style=\"position: absolute; border-radius: 3px; top: 3.714px; left: 3.714px; padding: 6px; color: rgb(255, 255, 255); vertical-align: middle; display: inline-flex; align-items: center; justify-content: center; background-color: rgb(26, 109, 255); z-index: 10; font-size: 13px;\" data-badge-color=\"#1A6DFF\" data-badge-position=\"left_top\">\n추천 상품\n</div><!-- 하단 배지 -->\n<div id=\"product_bottom_badge_container\" style=\"position: absolute; left: 0px; bottom: 0px; width: 100%; padding: 8px; color: rgb(255, 255, 255); vertical-align: middle; display: inline-flex; align-items: center; justify-content: center; background-color: rgba(33, 33, 33, 0.64); z-index: 10; font-size: 14px;\" data-badge-color=\"rgba(33, 33, 33, 0.64)\" data-badge-position=\"bottom\">\n공공기관 수주 제안서\n</div></div></div><div class=\"owl-item\" style=\"width: 911px; margin-right: 0px;\"><div class=\"item _item\"><img style=\"\" src=\"https://cdn-optimized.imweb.me/thumbnail/20240708/13de2ad40e543.png?w=750\" alt=\"\"></div></div></div></div><div class=\"owl-controls\"><div class=\"owl-nav\"><div class=\"owl-prev\" style=\"display: none;\">prev</div><div class=\"owl-next\" style=\"display: none;\">next</div></div><div class=\"owl-dots\" style=\"\"><div class=\"owl-dot active\"><span></span></div><div class=\"owl-dot\"><span></span></div></div></div></div>\n\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t</div>\n\t\t\t\t\t\t\t<div class=\"shop_goods_img\" style=\"display:  \">\n\t\t\t\t\t\t\t\t<ul class=\"clearfix\">\n\t\t\t\t\t\t\t\t\t<li class=\"owl-dot\" id=\"btn_owl_1\"> <a href=\"javascript:;\" onmouseover=\"SITE_SHOP_DETAIL.changeProdImageRolling(0)\" onclick=\"SITE_SHOP_DETAIL.changeProdImageRolling(0)\" style=\"background: url('https://cdn.imweb.me/thumbnail/20251118/8cafcfa2fcaf0.png') no-repeat center;\"><span class=\"sr-only\">상품 이미지</span></a> </li><li class=\"owl-dot\" id=\"btn_owl_1\"> <a href=\"javascript:;\" onmouseover=\"SITE_SHOP_DETAIL.changeProdImageRolling(1)\" onclick=\"SITE_SHOP_DETAIL.changeProdImageRolling(1)\" style=\"background: url('https://cdn.imweb.me/thumbnail/20240708/13de2ad40e543.png') no-repeat center;\"><s",
+  "h1s": [
+    "프리세일즈 도큐멘토 나라장터 입찰 제안서 다운로드 제공, 공공기관 제안서, 시스템 구축 제안서 판매",
+    "(세로형) 고퀄 45억 규모-공공 제안서-시스템 구축부문 (pdf)",
+    "IoT활용 에너지 효율 관리 시스템 구축 제안서"
+  ],
+  "h2s": [
+    "나라장터(조달청) \"시스템 구축 부문\" 제안서 (구축 완료된 사업)",
+    "IoT 시스템 구축 제안서는 '일반 SI'와 다릅니다",
+    "주요 내용 요약",
+    "방법론 및 기술 체계",
+    "삭제 사항",
+    "제안서 목차",
+    "▶ 동영상 미리보기",
+    "(가로형) 45억 규모-공공 제안서-시스템 구축부문 PPT",
+    "(가로형) 45억 규모-공공 제안서-시스템 구축부문 PPT",
+    "(가로형) 고퀄 45억 규모-공공 제안서-시스템 구축부문 (pdf)",
+    "(가로형) 고퀄 45억 규모-공공 제안서-시스템 구축부문 (pdf)",
+    "(세로형) 45억 규모-공공 제안서-시스템 구축부문 PPT",
+    "(세로형) 45억 규모-공공 제안서-시스템 구축부문 PPT",
+    "(가로형) 45억 규모-공공 제안서-시스템 구축부문 PPT",
+    "(가로형) 45억 규모-공공 제안서-시스템 구축부문 PPT",
+    "(가로형) 고퀄 45억 규모-공공 제안서-시스템 구축부문 (pdf)",
+    "(가로형) 고퀄 45억 규모-공공 제안서-시스템 구축부문 (pdf)",
+    "(세로형) 45억 규모-공공 제안서-시스템 구축부문 PPT",
+    "(세로형) 45억 규모-공공 제안서-시스템 구축부문 PPT",
+    "(가로형) 45억 규모-공공 제안서-시스템 구축부문 PPT",
+    "(가로형) 45억 규모-공공 제안서-시스템 구축부문 PPT",
+    "제안서 목차 , 제안 일정 (2024)",
+    "제안서 목차 , 제안 일정 (2024)",
+    "우선협상대상자 기술협상 문서",
+    "우선협상대상자 기술협상 문서",
+    "예비창업패키지 - 한의학 헬스케어 사업계획서",
+    "예비창업패키지 - 한의학 헬스케어 사업계획서",
+    "ISP 제안서, 통합전산망구축 정보화전략계획 제안서-PPT",
+    "ISP 제안서, 통합전산망구축 정보화전략계획 제안서-PPT",
+    "(세로형) 45억 규모-공공 제안서-시스템 구축부문 PPT",
+    "(세로형) 45억 규모-공공 제안서-시스템 구축부문 PPT",
+    "30억 규모 나라장터 입찰 제안서-시스템 구축부문",
+    "30억 규모 나라장터 입찰 제안서-시스템 구축부문",
+    "청해시 홈페이지 통합 유지보수 및 고도화 사업 제안서",
+    "청해시 홈페이지 통합 유지보수 및 고도화 사업 제안서",
+    "(가로형) 45억 규모-공공 제안서-시스템 구축부문 PPT",
+    "(가로형) 45억 규모-공공 제안서-시스템 구축부문 PPT",
+    "공공정보화 사업유형별 제안요청서 작성가이드(일부수정본)",
+    "공공정보화 사업유형별 제안요청서 작성가이드(일부수정본)",
+    "(세로형) 고퀄 45억 규모-공공 제안서-시스템 구축부문 (pdf)",
+    "(세로형) 고퀄 45억 규모-공공 제안서-시스템 구축부문 (pdf)",
+    "제안서 목차 , 제안 일정 (2024)",
+    "제안서 목차 , 제안 일정 (2024)",
+    "우선협상대상자 기술협상 문서",
+    "우선협상대상자 기술협상 문서",
+    "예비창업패키지 - 한의학 헬스케어 사업계획서",
+    "예비창업패키지 - 한의학 헬스케어 사업계획서",
+    "ISP 제안서, 통합전산망구축 정보화전략계획 제안서-PPT",
+    "ISP 제안서, 통합전산망구축 정보화전략계획 제안서-PPT"
+  ],
+  "h3s": [
+    "\"현장 설비에서 데이터를 어떻게 가져올 것인가\"",
+    "\"수집한 데이터를 어떻게 보여줄 것인가\"",
+    "\"데이터의 안전과 품질을 어떻게 보장할 것인가\"",
+    "\"시스템 완성 후 품질과 운영을 어떻게 보증할 것인가\""
+  ],
+  "allImgSrcs": [
+    {
+      "src": "https://www.documento.co.kr/common/img/default_profile.png",
+      "alt": "프로필 정보수정",
+      "cls": "img-circle dropdown-avatar-big _profile_img"
+    },
+    {
+      "src": "https://cdn.imweb.me/thumbnail/20240418/ded4ebffcc114.png",
+      "alt": "프리세일즈 도큐멘토",
+      "cls": "normal_logo _front_img"
+    },
+    {
+      "src": "https://cdn.imweb.me/thumbnail/20240418/ded4ebffcc114.png",
+      "alt": "프리세일즈 도큐멘토",
+      "cls": "scroll_logo fixed_transform"
+    },
+    {
+      "src": "https://cdn.imweb.me/thumbnail/20240418/9f8c07397e1e5.gif",
+      "alt": "프리세일즈 도큐멘토",
+      "cls": "normal_logo _front_img"
+    },
+    {
+      "src": "https://cdn.imweb.me/thumbnail/20240418/9f8c07397e1e5.gif",
+      "alt": "프리세일즈 도큐멘토",
+      "cls": "scroll_logo fixed_transform"
+    },
+    {
+      "src": "https://cdn.imweb.me/thumbnail/20230812/f740fddb6d9d0.gif",
+      "alt": "프리세일즈 도큐멘토",
+      "cls": "normal_logo _front_img"
+    },
+    {
+      "src": "https://cdn.imweb.me/thumbnail/20230812/f740fddb6d9d0.gif",
+      "alt": "프리세일즈 도큐멘토",
+      "cls": "scroll_logo fixed_transform"
+    },
+    {
+      "src": "https://cdn-optimized.imweb.me/thumbnail/20251118/8cafcfa2fcaf0.png?w=750",
+      "alt": "",
+      "cls": ""
+    },
+    {
+      "src": "https://cdn-optimized.imweb.me/thumbnail/20240708/13de2ad40e543.png?w=750",
+      "alt": "",
+      "cls": ""
+    },
+    {
+      "src": "https://vendor-cdn.imweb.me/images/kakao_pay_logo.png",
+      "alt": "",
+      "cls": ""
+    },
+    {
+      "src": "https://cdn-optimized.imweb.me/upload/S2023031028f124868148d/6d24c343b82d4.png",
+      "alt": "",
+      "cls": ""
+    },
+    {
+      "src": "https://vendor-cdn.imweb.me/images/kakao_pay_logo.png",
+      "alt": "",
+      "cls": ""
+    },
+    {
+      "src": "https://cdn.imweb.me/upload/S2023031028f124868148d/44be6b66e26ce.png",
+      "alt": "",
+      "cls": "fr-dib"
+    },
+    {
+      "src": "https://cdn.imweb.me/upload/S2023031028f124868148d/0f16a2977e0f4.png",
+      "alt": "",
+      "cls": "fr-fil fr-dib"
+    },
+    {
+      "src": "https://cdn.imweb.me/upload/S2023031028f124868148d/cf105a4c492c0.png",
+      "alt": "",
+      "cls": "fr-fil fr-dib"
+    },
+    {
+      "src": "https://cdn.imweb.me/upload/S2023031028f124868148d/dd49472bab1e6.png",
+      "alt": "",
+      "cls": "fr-fil fr-dib"
+    },
+    {
+      "src": "https://cdn.imweb.me/upload/S2023031028f124868148d/63823b6030478.png",
+      "alt": "",
+      "cls": "fr-fil fr-dib"
+    },
+    {
+      "src": "https://cdn.imweb.me/upload/S2023031028f124868148d/a5a9fa764b095.png",
+      "alt": "",
+      "cls": "fr-fil fr-dib"
+    },
+    {
+      "src": "https://cdn-optimized.imweb.me/upload/S2023031028f124868148d/6d24c343b82d4.png",
+      "alt": "",
+      "cls": ""
+    },
+    {
+      "src": "https://cdn-optimized.imweb.me/thumbnail/20251118/ea029c7bc1814.png?w=500",
+      "alt": "기획전 이미지",
+      "cls": "_org_img org_img owl-lazy"
+    }
+  ],
+  "priceTexts": [
+    {
+      "cls": "real_price inline-blocked",
+      "text": "45,000원"
+    },
+    {
+      "cls": "total_price ",
+      "text": "45,000원"
+    }
+  ]
+}

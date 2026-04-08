@@ -1,0 +1,602 @@
+[
+  {
+    "tag": "html",
+    "cls": " js cssanimations",
+    "id": "",
+    "text": "제안서 | 나라장터 입찰 프리세일즈 제안서 | 시스템 구축 부문 | 도큐멘토\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n:root{--safe-bottom:"
+  },
+  {
+    "tag": "body",
+    "cls": "doz_sys  _body_menu_m20230310312aee0e321eb  shop_view  fixed-menu-on new_fixed_menu_on new_header_si",
+    "id": "doz_body",
+    "text": "프리세일즈 도큐멘토 나라장터 입찰 제안서 다운로드 제공, 공공기관 제안서, 시스템 구축 제안서 판매\n\n\n\n/* 모바일 메뉴버튼 메뉴 펼치기 */"
+  },
+  {
+    "tag": "h1",
+    "cls": "a11y",
+    "id": "",
+    "text": "프리세일즈 도큐멘토 나라장터 입찰 제안서 다운로드 제공, 공공기관 제안서, 시스템 구축 제안서 판매"
+  },
+  {
+    "tag": "div",
+    "cls": "notification-canvas-container",
+    "id": "site_alarm_slidemenu_container",
+    "text": "알림\n\t\t\t\t\t\t\t\t\t\t뒤로\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t알림 설정\n\t\t\t\t\t뒤로\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\n\t\t\t\t\t\n\n\t\t\t\t\t\n\t\t\t\t\t"
+  },
+  {
+    "tag": "div",
+    "cls": "notification-canvas alarm-pane alarm_slide",
+    "id": "site_alarm_slidemenu",
+    "text": "알림\n\t\t\t\t\t\t\t\t\t\t뒤로\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t알림 설정\n\t\t\t\t\t뒤로\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\n\t\t\t\t\t\n\n\t\t\t\t\t\n\t\t\t\t\t"
+  },
+  {
+    "tag": "div",
+    "cls": "tse-scrollable _scroll_wrap",
+    "id": "",
+    "text": "알림\n\t\t\t\t\t\t\t\t\t\t뒤로\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t알림 설정\n\t\t\t\t\t뒤로\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\n\t\t\t\t\t\n\n\t\t\t\t\t\n\t\t\t\t\t"
+  },
+  {
+    "tag": "div",
+    "cls": "tse-content tab-content _is_tse_content",
+    "id": "",
+    "text": "알림\n\t\t\t\t\t\t\t\t\t\t뒤로\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t알림 설정\n\t\t\t\t\t뒤로\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\n\t\t\t\t\t\n\n\t\t\t\t\t\n\t\t\t\t\t"
+  },
+  {
+    "tag": "div",
+    "cls": "site-alarm-head _alarm_header",
+    "id": "",
+    "text": "알림\n\t\t\t\t\t\t\t\t\t\t뒤로"
+  },
+  {
+    "tag": "div",
+    "cls": "site-alarm-head _setting_header",
+    "id": "",
+    "text": "알림 설정\n\t\t\t\t\t뒤로"
+  },
+  {
+    "tag": "header",
+    "cls": "",
+    "id": "site_alarm_title_setting",
+    "text": "알림 설정"
+  },
+  {
+    "tag": "div",
+    "cls": "site_alarm_setting_wrap",
+    "id": "site_alarm_setting_wrap",
+    "text": "게시물 알림\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\t내 글 반응\t\t\t\t\t\t\t\t\t\t\t\t\t내가 작성"
+  },
+  {
+    "tag": "div",
+    "cls": "offcanvas-block alarm-setting",
+    "id": "",
+    "text": "게시물 알림\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\t내 글 반응\t\t\t\t\t\t\t\t\t\t\t\t\t내가 작성"
+  },
+  {
+    "tag": "div",
+    "cls": "_scroll_wrap",
+    "id": "site_alarm_menu_tap_wrap",
+    "text": "게시물 알림\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\t내 글 반응\t\t\t\t\t\t\t\t\t\t\t\t\t내가 작성"
+  },
+  {
+    "tag": "div",
+    "cls": "tab-content",
+    "id": "",
+    "text": "게시물 알림\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\t내 글 반응\t\t\t\t\t\t\t\t\t\t\t\t\t내가 작성"
+  },
+  {
+    "tag": "div",
+    "cls": "tab-pane active",
+    "id": "",
+    "text": "게시물 알림\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\t내 글 반응\t\t\t\t\t\t\t\t\t\t\t\t\t내가 작성"
+  },
+  {
+    "tag": "div",
+    "cls": "notify-body",
+    "id": "",
+    "text": "게시물 알림\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t\t\t\t내 글 반응\t\t\t\t\t\t\t\t\t\t\t\t\t내가 작성"
+  },
+  {
+    "tag": "a",
+    "cls": "board-alaram tile",
+    "id": "",
+    "text": "게시물 알림"
+  },
+  {
+    "tag": "a",
+    "cls": "tile",
+    "id": "",
+    "text": "내 글 반응\t\t\t\t\t\t\t\t\t\t\t\t\t내가 작성한 게시물이나 댓글에 다른 사람이 댓글이나 답글을 작성하면 알려줍니다."
+  },
+  {
+    "tag": "div",
+    "cls": "tile-content",
+    "id": "",
+    "text": "내 글 반응\t\t\t\t\t\t\t\t\t\t\t\t\t내가 작성한 게시물이나 댓글에 다른 사람이 댓글이나 답글을 작성하면 알려줍니다."
+  },
+  {
+    "tag": "div",
+    "cls": "tile-text",
+    "id": "",
+    "text": "내 글 반응\t\t\t\t\t\t\t\t\t\t\t\t\t내가 작성한 게시물이나 댓글에 다른 사람이 댓글이나 답글을 작성하면 알려줍니다."
+  },
+  {
+    "tag": "div",
+    "cls": "text-sm text-gray-bright",
+    "id": "",
+    "text": "내가 작성한 게시물이나 댓글에 다른 사람이 댓글이나 답글을 작성하면 알려줍니다."
+  },
+  {
+    "tag": "ul",
+    "cls": "dropdown-menu animation-dock member_profile",
+    "id": "member_profile",
+    "text": "Alarm\n\t\t\n\t\t\t\n\t\t\t\t\n\t\t\t\n\t\t\t\n\t\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\n\t\n\t\n\t\t마이페이지\n\t\t\t\t로그아웃"
+  },
+  {
+    "tag": "li",
+    "cls": "dropdown-profile text-center",
+    "id": "",
+    "text": "Alarm"
+  },
+  {
+    "tag": "a",
+    "cls": "nav-btn-icon profile alarm-toggle _show_alarm",
+    "id": "slide-alarm",
+    "text": "Alarm"
+  },
+  {
+    "tag": "span",
+    "cls": "sr-only",
+    "id": "",
+    "text": "Alarm"
+  },
+  {
+    "tag": "li",
+    "cls": "profile-footer btn-group-justified",
+    "id": "",
+    "text": "마이페이지\n\t\t\t\t로그아웃"
+  },
+  {
+    "tag": "a",
+    "cls": "btn btn-flat",
+    "id": "",
+    "text": "마이페이지"
+  },
+  {
+    "tag": "a",
+    "cls": "btn btn-flat right",
+    "id": "",
+    "text": "로그아웃"
+  },
+  {
+    "tag": "div",
+    "cls": "mobile_slide_menu_container",
+    "id": "mobile_slide_menu_wrap",
+    "text": "로그인이 필요합니다.\n\t\t\t\t\t\t\t\t\t로그인\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\n\t\t\t\t\t\t"
+  },
+  {
+    "tag": "div",
+    "cls": "mobile_slide_menu slide_menu _slide_menu",
+    "id": "mobile_slide_menu",
+    "text": "로그인이 필요합니다.\n\t\t\t\t\t\t\t\t\t로그인\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\n\t\t\t\t\t\t"
+  },
+  {
+    "tag": "ul",
+    "cls": "nav navbar-nav navbar-right",
+    "id": "",
+    "text": "로그인이 필요합니다.\n\t\t\t\t\t\t\t\t\t로그인\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\n\t\t\t\t\t\t"
+  },
+  {
+    "tag": "div",
+    "cls": "viewport-nav mobile _menu_wrap ",
+    "id": "",
+    "text": "로그인이 필요합니다.\n\t\t\t\t\t\t\t\t\t로그인\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\n\t\t\t\t\t\t"
+  },
+  {
+    "tag": "div",
+    "cls": "profile-area",
+    "id": "",
+    "text": "로그인이 필요합니다.\n\t\t\t\t\t\t\t\t\t로그인"
+  },
+  {
+    "tag": "a",
+    "cls": "btn nav-btn-icon profile no-padding btn-flat full-width",
+    "id": "",
+    "text": "로그인이 필요합니다.\n\t\t\t\t\t\t\t\t\t로그인"
+  },
+  {
+    "tag": "div",
+    "cls": "member-info guest full-width",
+    "id": "",
+    "text": "로그인이 필요합니다.\n\t\t\t\t\t\t\t\t\t로그인"
+  },
+  {
+    "tag": "li",
+    "cls": "depth-01  ",
+    "id": "",
+    "text": "기획서,제안서\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\n\t\t\t\t\t\t\t\t\t\t전"
+  },
+  {
+    "tag": "a",
+    "cls": "has_child",
+    "id": "",
+    "text": "기획서,제안서"
+  },
+  {
+    "tag": "span",
+    "cls": "plain_name",
+    "id": "",
+    "text": "기획서,제안서"
+  },
+  {
+    "tag": "li",
+    "cls": "depth-02  ",
+    "id": "",
+    "text": "전체보기"
+  },
+  {
+    "tag": "a",
+    "cls": " ",
+    "id": "",
+    "text": "전체보기"
+  },
+  {
+    "tag": "li",
+    "cls": "depth-01 use_sub_name ",
+    "id": "",
+    "text": "씽크탱크"
+  },
+  {
+    "tag": "div",
+    "cls": "",
+    "id": "doz_header",
+    "text": "기획서,제안서\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t"
+  },
+  {
+    "tag": "div",
+    "cls": "new_fixed_header _new_fixed_header",
+    "id": "",
+    "text": "기획서,제안서\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t"
+  },
+  {
+    "tag": "div",
+    "cls": "extend  inline-section-wrap fixed_transform",
+    "id": "s20230418a5c304513f4b0",
+    "text": "기획서,제안서\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t"
+  },
+  {
+    "tag": "div",
+    "cls": "inline-inside _inline-inside",
+    "id": "",
+    "text": "기획서,제안서\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t"
+  },
+  {
+    "tag": "div",
+    "cls": "inline-section",
+    "id": "",
+    "text": "기획서,제안서\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t"
+  },
+  {
+    "tag": "div",
+    "cls": "inline-col-group inline-col-group-center",
+    "id": "",
+    "text": "기획서,제안서\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t"
+  },
+  {
+    "tag": "div",
+    "cls": "inline-col",
+    "id": "",
+    "text": "기획서,제안서\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t"
+  },
+  {
+    "tag": "div",
+    "cls": "inline-widget",
+    "id": "w2023041830423cee979d1",
+    "text": "기획서,제안서\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t"
+  },
+  {
+    "tag": "div",
+    "cls": "_widget_data",
+    "id": "",
+    "text": "기획서,제안서\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t"
+  },
+  {
+    "tag": "ul",
+    "cls": "nav navbar-nav _inline_menu_container ",
+    "id": "",
+    "text": "기획서,제안서\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t"
+  },
+  {
+    "tag": "div",
+    "cls": "viewport-nav desktop _main_menu",
+    "id": "",
+    "text": "기획서,제안서\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t"
+  },
+  {
+    "tag": "li",
+    "cls": "dropdown _more_menu",
+    "id": "",
+    "text": "기획서,제안서\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t"
+  },
+  {
+    "tag": "ul",
+    "cls": "dropdown-menu more_list _more_list",
+    "id": "",
+    "text": "기획서,제안서\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t"
+  },
+  {
+    "tag": "li",
+    "cls": "_show_m20230310e78ab39e9f05a dropdown-submenu sub-active",
+    "id": "dropdown_m20230310e78ab39e9f05a",
+    "text": "기획서,제안서\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t"
+  },
+  {
+    "tag": "a",
+    "cls": "fixed_transform dropdown-toggle disabled _header_dropdown   _fade_link ",
+    "id": "",
+    "text": "기획서,제안서"
+  },
+  {
+    "tag": "span",
+    "cls": "_txt_m20230310e78ab39e9f05a plain_name",
+    "id": "",
+    "text": "기획서,제안서"
+  },
+  {
+    "tag": "ul",
+    "cls": "dropdown-menu",
+    "id": "",
+    "text": "전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t제안서 사본\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t제안서 원본"
+  },
+  {
+    "tag": "li",
+    "cls": "dropdown-submenu _show_m202405301adec7b957e88   ",
+    "id": "",
+    "text": "전체보기"
+  },
+  {
+    "tag": "a",
+    "cls": "_txt_m202405301adec7b957e88   _fade_link ",
+    "id": "",
+    "text": "전체보기"
+  },
+  {
+    "tag": "li",
+    "cls": "dropdown-submenu _show_m202306036374e03c4e6fc   ",
+    "id": "",
+    "text": "제안서 사본"
+  },
+  {
+    "tag": "a",
+    "cls": "_txt_m202306036374e03c4e6fc   _fade_link ",
+    "id": "",
+    "text": "제안서 사본"
+  },
+  {
+    "tag": "li",
+    "cls": "dropdown-submenu _show_m20230527df7cbcd2b62ff   ",
+    "id": "",
+    "text": "제안서 원본"
+  },
+  {
+    "tag": "a",
+    "cls": "_txt_m20230527df7cbcd2b62ff   _fade_link ",
+    "id": "",
+    "text": "제안서 원본"
+  },
+  {
+    "tag": "li",
+    "cls": "dropdown-submenu _show_m20230418602eb4b1dfe8d   ",
+    "id": "",
+    "text": "사업 운영 단계"
+  },
+  {
+    "tag": "a",
+    "cls": "_txt_m20230418602eb4b1dfe8d   _fade_link ",
+    "id": "",
+    "text": "사업 운영 단계"
+  },
+  {
+    "tag": "li",
+    "cls": "dropdown-submenu _show_m2023052796c17d7a8e8e4   ",
+    "id": "",
+    "text": "무료 상품"
+  },
+  {
+    "tag": "a",
+    "cls": "_txt_m2023052796c17d7a8e8e4   _fade_link ",
+    "id": "",
+    "text": "무료 상품"
+  },
+  {
+    "tag": "li",
+    "cls": "_show_m20230310686afc616fc87 dropdown-submenu",
+    "id": "dropdown_m20230310686afc616fc87",
+    "text": "기획 인사이트"
+  },
+  {
+    "tag": "span",
+    "cls": "_txt_m20230310686afc616fc87 plain_name",
+    "id": "",
+    "text": "기획 인사이트"
+  },
+  {
+    "tag": "li",
+    "cls": "_show_m20240817cb5c9d5870f77 dropdown-submenu",
+    "id": "dropdown_m20240817cb5c9d5870f77",
+    "text": "정부사업"
+  },
+  {
+    "tag": "span",
+    "cls": "_txt_m20240817cb5c9d5870f77 plain_name",
+    "id": "",
+    "text": "정부사업"
+  },
+  {
+    "tag": "li",
+    "cls": "_show_m20240530644c0bc0db959 dropdown-submenu",
+    "id": "dropdown_m20240530644c0bc0db959",
+    "text": "제안서 작성법"
+  },
+  {
+    "tag": "span",
+    "cls": "_txt_m20240530644c0bc0db959 plain_name",
+    "id": "",
+    "text": "제안서 작성법"
+  },
+  {
+    "tag": "li",
+    "cls": "_show_m20230418f9c6fd31f6207  use_sub_name dropdown-submenu",
+    "id": "dropdown_m20230418f9c6fd31f6207",
+    "text": "씽크탱크"
+  },
+  {
+    "tag": "span",
+    "cls": "_txt_m20230418f9c6fd31f6207 plain_name",
+    "id": "",
+    "text": "씽크탱크"
+  },
+  {
+    "tag": "li",
+    "cls": "_show_m202602199b99fbf2b658b  use_sub_name dropdown-submenu sub-active",
+    "id": "dropdown_m202602199b99fbf2b658b",
+    "text": "같이쓰시죠\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t창업패키지\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t"
+  },
+  {
+    "tag": "span",
+    "cls": "_txt_m202602199b99fbf2b658b plain_name",
+    "id": "",
+    "text": "같이쓰시죠"
+  },
+  {
+    "tag": "li",
+    "cls": "dropdown-submenu _show_m20260218153d1baa9c9ce   ",
+    "id": "",
+    "text": "창업패키지"
+  },
+  {
+    "tag": "a",
+    "cls": "_txt_m20260218153d1baa9c9ce   _fade_link ",
+    "id": "",
+    "text": "창업패키지"
+  },
+  {
+    "tag": "li",
+    "cls": "dropdown-submenu _show_m20260219d988ec9b0c46b   ",
+    "id": "",
+    "text": "제안서 도움"
+  },
+  {
+    "tag": "a",
+    "cls": "_txt_m20260219d988ec9b0c46b   _fade_link ",
+    "id": "",
+    "text": "제안서 도움"
+  },
+  {
+    "tag": "li",
+    "cls": "_show_m202307106c774250beeef  use_sub_name dropdown-submenu",
+    "id": "dropdown_m202307106c774250beeef",
+    "text": "풀케어 파트너"
+  },
+  {
+    "tag": "span",
+    "cls": "_txt_m202307106c774250beeef plain_name",
+    "id": "",
+    "text": "풀케어 파트너"
+  },
+  {
+    "tag": "div",
+    "cls": "_main_clone_menu_wrap",
+    "id": "",
+    "text": "기획서,제안서\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t"
+  },
+  {
+    "tag": "div",
+    "cls": "viewport-nav desktop _main_clone_menu main_clone_menu",
+    "id": "",
+    "text": "기획서,제안서\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t"
+  },
+  {
+    "tag": "li",
+    "cls": "dropdown _show_m20230310e78ab39e9f05a   ",
+    "id": "dropdown_m20230310e78ab39e9f05a",
+    "text": "기획서,제안서\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t전체보기\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t"
+  },
+  {
+    "tag": "li",
+    "cls": "dropdown _show_m20230310686afc616fc87   ",
+    "id": "dropdown_m20230310686afc616fc87",
+    "text": "기획 인사이트"
+  },
+  {
+    "tag": "li",
+    "cls": "dropdown _show_m20240817cb5c9d5870f77   ",
+    "id": "dropdown_m20240817cb5c9d5870f77",
+    "text": "정부사업"
+  },
+  {
+    "tag": "li",
+    "cls": "dropdown _show_m20240530644c0bc0db959   ",
+    "id": "dropdown_m20240530644c0bc0db959",
+    "text": "제안서 작성법"
+  },
+  {
+    "tag": "li",
+    "cls": "dropdown _show_m20230418f9c6fd31f6207  use_sub_name ",
+    "id": "dropdown_m20230418f9c6fd31f6207",
+    "text": "씽크탱크"
+  },
+  {
+    "tag": "li",
+    "cls": "dropdown _show_m202602199b99fbf2b658b  use_sub_name ",
+    "id": "dropdown_m202602199b99fbf2b658b",
+    "text": "같이쓰시죠\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\t창업패키지\n\t\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t\n\t\t\t\t\t"
+  },
+  {
+    "tag": "li",
+    "cls": "dropdown _show_m202307106c774250beeef  use_sub_name ",
+    "id": "dropdown_m202307106c774250beeef",
+    "text": "풀케어 파트너"
+  },
+  {
+    "tag": "div",
+    "cls": "new_org_header _new_org_header",
+    "id": "",
+    "text": "[공지] 아는 사람만 아는 '프리세일즈 도큐멘토'\t\t\t\t\t\n\t\n\n\n\t\t\t\n\t\t\t프리세일즈 도큐멘토\t\t\t\n\t\t\t\n\t\t\t\n\t\t\n\t\t\n\n\n\n\t\t\t\n\t"
+  },
+  {
+    "tag": "div",
+    "cls": "  inline-section-wrap fixed_transform",
+    "id": "s2023032914dd8abde7b11",
+    "text": "[공지] 아는 사람만 아는 '프리세일즈 도큐멘토'\t\t\t\t\t\n\t\n\n\n\t\t\t\n\t\t\t프리세일즈 도큐멘토\t\t\t\n\t\t\t\n\t\t\t\n\t\t\n\t\t\n\n\n\n\t\t\t\n\t"
+  },
+  {
+    "tag": "div",
+    "cls": "inline-col-group inline-col-group-left",
+    "id": "",
+    "text": "[공지] 아는 사람만 아는 '프리세일즈 도큐멘토'"
+  },
+  {
+    "tag": "div",
+    "cls": "widget inline_widget _text_wrap widget_text_wrap fr-view   default_padding ",
+    "id": "text_w202307107042b50b28c2b",
+    "text": "[공지] 아는 사람만 아는 '프리세일즈 도큐멘토'"
+  },
+  {
+    "tag": "div",
+    "cls": "text-table _text_table",
+    "id": "",
+    "text": "[공지] 아는 사람만 아는 '프리세일즈 도큐멘토'"
+  },
+  {
+    "tag": "div",
+    "cls": "text-table-cell fixed_transform _text_preview",
+    "id": "",
+    "text": "[공지] 아는 사람만 아는 '프리세일즈 도큐멘토'"
+  },
+  {
+    "tag": "div",
+    "cls": "widget inline_widget logo  text_inline",
+    "id": "logo_w20230813551fe51a22c4a",
+    "text": "프리세일즈 도큐멘토"
+  }
+]
