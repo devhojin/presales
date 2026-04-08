@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
@@ -63,7 +64,7 @@ function FeaturedCard({ product, categoryNames }: { product: DbProduct; category
       <div className="border border-border rounded-xl overflow-hidden bg-card hover:shadow-md transition-all duration-300 hover:-translate-y-1">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {product.thumbnail_url ? (
-            <img src={product.thumbnail_url} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <Image src={product.thumbnail_url} alt={product.title} width={400} height={300} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center"><span className="text-4xl">📄</span></div>
           )}

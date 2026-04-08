@@ -44,7 +44,10 @@ export async function proxy(req: NextRequest) {
 
     if (lastActivity) {
       const elapsed = now - parseInt(lastActivity, 10)
-      if (elapsed > SESSION_TIMEOUT_MS) {
+      // 결제 페이지에서는 세션 타임아웃 연장 (60분)
+      const CHECKOUT_TIMEOUT_MS = 60 * 60 * 1000
+      const effectiveTimeout = path.startsWith('/checkout') ? CHECKOUT_TIMEOUT_MS : SESSION_TIMEOUT_MS
+      if (elapsed > effectiveTimeout) {
         const url = req.nextUrl.clone()
         url.pathname = '/auth/login'
         url.searchParams.set('reason', 'timeout')

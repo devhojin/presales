@@ -88,6 +88,8 @@ export default function MyPage() {
   const [pwMsg, setPwMsg] = useState('')
   const [showDeleteAccount, setShowDeleteAccount] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
+  const [deleteAccountPassword, setDeleteAccountPassword] = useState('')
+  const [showDeleteAccountPw, setShowDeleteAccountPw] = useState(false)
   const pwCheck = validatePassword(newPassword)
   // Refund modal state
   const [refundOrderId, setRefundOrderId] = useState<number | null>(null)
@@ -836,24 +838,51 @@ export default function MyPage() {
               <AlertTriangle className="w-5 h-5 text-red-500" />
               <h3 className="text-lg font-semibold">회원 탈퇴</h3>
             </div>
-            <p className="text-sm text-muted-foreground mb-6">
+            <p className="text-sm text-muted-foreground mb-4">
               탈퇴하면 주문 내역과 다운로드 이력이 삭제됩니다. 정말 탈퇴하시겠습니까?
             </p>
+            <div className="mb-4">
+              <label className="text-sm font-medium mb-2 block">비밀번호 확인</label>
+              <div className="relative">
+                <input
+                  type={showDeleteAccountPw ? 'text' : 'password'}
+                  placeholder="비밀번호 입력"
+                  value={deleteAccountPassword}
+                  onChange={(e) => setDeleteAccountPassword(e.target.value)}
+                  className="w-full h-10 px-3 rounded-lg border border-border bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteAccountPw(!showDeleteAccountPw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                >
+                  {showDeleteAccountPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
             <div className="flex gap-3">
               <button
                 type="button"
-                onClick={() => setShowDeleteAccount(false)}
+                onClick={() => {
+                  setShowDeleteAccount(false)
+                  setDeleteAccountPassword('')
+                  setShowDeleteAccountPw(false)
+                }}
                 className="flex-1 h-10 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
               >
                 취소
               </button>
               <button
                 type="button"
-                disabled={deletingAccount}
+                disabled={deletingAccount || !deleteAccountPassword.trim()}
                 onClick={async () => {
                   setDeletingAccount(true)
                   try {
-                    const res = await fetch('/api/auth/delete-account', { method: 'DELETE' })
+                    const res = await fetch('/api/auth/delete-account', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ password: deleteAccountPassword }),
+                    })
                     if (!res.ok) {
                       const data = await res.json()
                       addToast(data.error || '탈퇴 처리 중 오류가 발생했습니다', 'error')
@@ -869,9 +898,11 @@ export default function MyPage() {
                   } finally {
                     setDeletingAccount(false)
                     setShowDeleteAccount(false)
+                    setDeleteAccountPassword('')
+                    setShowDeleteAccountPw(false)
                   }
                 }}
-                className="flex-1 h-10 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50"
+                className="flex-1 h-10 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {deletingAccount ? '처리 중...' : '탈퇴하기'}
               </button>

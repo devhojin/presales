@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import DOMPurify from 'dompurify'
 import { createClient } from '@/lib/supabase'
@@ -219,7 +220,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         <div className="space-y-3">
           <div className="relative rounded-xl overflow-hidden bg-muted flex items-center justify-center border border-gray-100">
             {product.thumbnail_url ? (
-              <img src={product.thumbnail_url} alt={product.title} className="w-full h-auto object-contain max-h-[500px]" />
+              <Image src={product.thumbnail_url} alt={product.title} width={400} height={300} className="w-full h-auto object-contain max-h-[500px]" />
             ) : (
               <div className="w-full aspect-[4/3] bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center">
                 <span className="text-6xl">📄</span>
@@ -334,6 +335,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 <Download className="w-4 h-4" />
                 로그인 후 무료 다운로드
               </Link>
+            ) : !isLoggedIn && !product.is_free ? (
+              <Link
+                href={`/auth/login?redirect=/store/${id}`}
+                className="flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <ShoppingCart className="w-4 h-4" />
+                로그인 후 구매하기
+              </Link>
             ) : (
               <button
                 onClick={() => {
@@ -357,11 +366,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 {inCart ? <><Check className="w-4 h-4" /> 장바구니에서 빼기</> :
                   <><ShoppingCart className="w-4 h-4" /> 장바구니 담기</>}
               </button>
-            )}
-            {!isLoggedIn && !product.is_free && (
-              <p className="text-xs text-muted-foreground mt-1">
-                <Link href={`/auth/login?redirect=/store/${id}`} className="text-primary hover:underline">로그인</Link> 후 구매 가능합니다
-              </p>
             )}
           </div>
 
@@ -532,7 +536,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 <div className="border border-border rounded-xl overflow-hidden bg-card hover:shadow-md hover:-translate-y-1 transition-all">
                   <div className="aspect-[4/3] overflow-hidden bg-muted">
                     {p.thumbnail_url ? (
-                      <img src={p.thumbnail_url} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <Image src={p.thumbnail_url} alt={p.title} width={400} height={300} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center">
                         <span className="text-4xl">📄</span>

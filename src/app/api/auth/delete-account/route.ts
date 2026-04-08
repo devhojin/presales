@@ -1,10 +1,18 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-export async function DELETE() {
+export async function POST(request: NextRequest) {
   try {
+    // Request body에서 password 받기
+    const body = await request.json()
+    const { password } = body
+
+    if (!password || typeof password !== 'string') {
+      return NextResponse.json({ error: '비밀번호가 필요합니다' }, { status: 400 })
+    }
+
     // 인증 확인 (서버사이드 쿠키)
     const cookieStore = await cookies()
     const supabaseAuth = createServerClient(
@@ -31,6 +39,21 @@ export async function DELETE() {
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser()
     if (authError || !user) {
       return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
+    }
+
+    // 비밀번호 검증
+    const userEmail = user.email
+    if (!userEmail) {
+      return NextResponse.json({ error: '사용자 이메일을 찾을 수 없습니다' }, { status: 400 })
+    }
+
+    const { error: signInError } = await supabaseAuth.auth.signInWithPassword({
+      email: userEmail,
+      password,
+    })
+
+    if (signInError) {
+      return NextResponse.json({ error: '비밀번호가 올바르지 않습니다' }, { status: 403 })
     }
 
     // Service Role 클라이언트로 auth.users 삭제

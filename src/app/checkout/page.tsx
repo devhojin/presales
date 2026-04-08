@@ -20,6 +20,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [dbOrderId, setDbOrderId] = useState<number | null>(null)
+  const [paying, setPaying] = useState(false)
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null)
 
   const paidItems = items.filter((item) => item.price > 0)
@@ -152,6 +153,7 @@ export default function CheckoutPage() {
   async function handlePayment() {
     if (!widgetsRef.current || !orderId) return
 
+    setPaying(true)
     try {
       await widgetsRef.current.requestPayment({
         orderId,
@@ -163,7 +165,10 @@ export default function CheckoutPage() {
       })
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string }
-      if (error.code === 'USER_CANCEL') return
+      if (error.code === 'USER_CANCEL') {
+        setPaying(false)
+        return
+      }
       console.error('[결제 요청 실패]', error)
       addToast(error.message || '결제 요청에 실패했습니다.', 'error')
 
@@ -172,6 +177,7 @@ export default function CheckoutPage() {
         const supabase = createClient()
         await supabase.from('orders').update({ status: 'cancelled' }).eq('id', dbOrderId)
       }
+      setPaying(false)
     }
   }
 
@@ -223,10 +229,20 @@ export default function CheckoutPage() {
       {ready && (
         <button
           onClick={handlePayment}
-          className="w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors cursor-pointer flex items-center justify-center gap-2"
+          disabled={paying}
+          className="w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <ShieldCheck className="w-5 h-5" />
-          {formatPrice(totalAmount)} 결제하기
+          {paying ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              결제 처리 중...
+            </>
+          ) : (
+            <>
+              <ShieldCheck className="w-5 h-5" />
+              {formatPrice(totalAmount)} 결제하기
+            </>
+          )}
         </button>
       )}
 

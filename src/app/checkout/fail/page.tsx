@@ -1,13 +1,31 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { XCircle } from 'lucide-react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase'
 
 export default function CheckoutFailPage() {
   const searchParams = useSearchParams()
   const code = searchParams.get('code')
   const message = searchParams.get('message')
+
+  useEffect(() => {
+    async function cleanupOrder() {
+      const orderId = searchParams.get('orderId')
+      if (!orderId) return
+      const dbOrderId = orderId.split('_')[1]
+      if (!dbOrderId) return
+      const supabase = createClient()
+      await supabase
+        .from('orders')
+        .update({ status: 'cancelled' })
+        .eq('id', parseInt(dbOrderId, 10))
+        .eq('status', 'pending')
+    }
+    cleanupOrder()
+  }, [searchParams])
 
   return (
     <div className="container mx-auto px-4 py-20 max-w-lg text-center">

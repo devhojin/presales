@@ -1,9 +1,14 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://presales-zeta.vercel.app'
+
 export const metadata: Metadata = {
   title: '이용약관 | PRESALES by AMARANS Partners',
   description: 'PRESALES 서비스 이용약관 — 전자상거래법 기반 이용약관 전문',
+  alternates: {
+    canonical: `${SITE_URL}/terms`,
+  },
 }
 
 const sections = [

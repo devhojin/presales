@@ -7,6 +7,9 @@ export const metadata: Metadata = {
   title: '자주 묻는 질문 (FAQ) | 프리세일즈',
   description:
     '구매/결제, 다운로드, 상품, 컨설팅, 환불 등 프리세일즈 이용에 관한 자주 묻는 질문을 확인하세요.',
+  alternates: {
+    canonical: `${SITE_URL}/faq`,
+  },
   openGraph: {
     title: '자주 묻는 질문 (FAQ) | 프리세일즈',
     description: '구매/결제, 다운로드, 상품, 컨설팅, 환불 등 자주 묻는 질문',
