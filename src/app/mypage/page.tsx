@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { FileText, Download, MessageSquare, User, Loader2, Mail, Phone, Building, Pencil, Save, X, Lock, Eye, EyeOff, ChevronDown, ShoppingBag, AlertTriangle } from 'lucide-react'
+import { FileText, Download, MessageSquare, User, Loader2, Mail, Phone, Building, Pencil, Save, X, Lock, Eye, EyeOff, ChevronDown, ShoppingBag, AlertTriangle, Heart, Clock } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { validatePassword } from '@/lib/password-policy'
 import { useToastStore } from '@/stores/toast-store'
@@ -32,6 +32,7 @@ interface Order {
   total_amount: number
   status: string
   created_at: string
+  refund_reason?: string | null
   order_items?: OrderItem[]
 }
 
@@ -40,6 +41,7 @@ interface PurchasedProduct {
   title: string
   thumbnail_url: string | null
   format: string | null
+  file_size: string | null
   is_free: boolean
 }
 
@@ -57,6 +59,7 @@ const statusMap: Record<string, { label: string; class: string }> = {
   completed: { label: '완료', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   cancelled: { label: '취소', class: 'bg-red-50 text-red-700 border-red-200' },
   refunded: { label: '환불', class: 'bg-gray-50 text-gray-500 border-gray-200' },
+  pending_refund: { label: '환불문의', class: 'bg-orange-50 text-orange-700 border-orange-200' },
 }
 
 type TabId = 'orders' | 'downloads' | 'profile'
@@ -86,6 +89,12 @@ export default function MyPage() {
   const [showDeleteAccount, setShowDeleteAccount] = useState(false)
   const [deletingAccount, setDeletingAccount] = useState(false)
   const pwCheck = validatePassword(newPassword)
+  // Refund modal state
+  const [refundOrderId, setRefundOrderId] = useState<number | null>(null)
+  const [refundReason, setRefundReason] = useState('')
+  const [refundSubmitting, setRefundSubmitting] = useState(false)
+  // Download history collapsible
+  const [showDownloadHistory, setShowDownloadHistory] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -98,16 +107,16 @@ export default function MyPage() {
 
       const [{ data: profileData }, { data: ordersData }, { data: logsData }] = await Promise.all([
         supabase.from('profiles').select('name, email, phone, company, role, created_at').eq('id', user.id).single(),
-        supabase.from('orders').select('id, order_number, total_amount, status, created_at, order_items(id, quantity, unit_price, products(id, title, price))').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('orders').select('id, order_number, total_amount, status, created_at, refund_reason, order_items(id, quantity, unit_price, products(id, title, price))').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(title)').eq('user_id', user.id).order('downloaded_at', { ascending: false }).limit(50),
       ])
 
       // Load purchased products (from paid orders)
       const { data: paidOrders } = await supabase
         .from('orders')
-        .select('id, order_items(product_id, products(id, title, thumbnail_url, format, is_free))')
+        .select('id, order_items(product_id, products(id, title, thumbnail_url, format, file_size, is_free))')
         .eq('user_id', user.id)
-        .eq('status', 'paid')
+        .in('status', ['paid', 'completed'])
       const productsMap = new Map<number, PurchasedProduct>()
       if (paidOrders) {
         for (const order of paidOrders) {
@@ -160,6 +169,34 @@ export default function MyPage() {
       .order('downloaded_at', { ascending: false })
       .limit(50)
     setDownloadLogs((newLogs || []) as DownloadLog[])
+
+    // Review CTA toast after successful download
+    setTimeout(() => {
+      addToast('이 상품이 도움이 되셨나요? 상품 페이지에서 리뷰를 작성해주세요!', 'info')
+    }, 1500)
+  }
+
+  async function handleRefundRequest(orderId: number, reason: string) {
+    setRefundSubmitting(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase
+        .from('orders')
+        .update({ refund_reason: reason })
+        .eq('id', orderId)
+      if (error) {
+        addToast('환불 문의 접수에 실패했습니다: ' + error.message, 'error')
+      } else {
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, refund_reason: reason } : o))
+        setRefundOrderId(null)
+        setRefundReason('')
+        addToast('환불 문의가 접수되었습니다. 관리자 검토 후 처리됩니다.', 'success')
+      }
+    } catch {
+      addToast('환불 문의 접수 중 오류가 발생했습니다', 'error')
+    } finally {
+      setRefundSubmitting(false)
+    }
   }
 
   if (loading) {
@@ -294,7 +331,21 @@ export default function MyPage() {
                               </div>
                             )}
 
-                            <div className="flex justify-end pt-2 border-t border-border">
+                            <div className="flex items-center justify-between pt-2 border-t border-border">
+                              <div>
+                                {order.status === 'paid' && !order.refund_reason && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); setRefundOrderId(order.id); setRefundReason('') }}
+                                    className="px-3 py-1.5 rounded-lg border border-orange-300 text-orange-600 text-xs font-medium hover:bg-orange-50 transition-colors cursor-pointer"
+                                  >
+                                    환불 문의
+                                  </button>
+                                )}
+                                {order.refund_reason && (
+                                  <p className="text-xs text-orange-600">환불 문의 접수됨</p>
+                                )}
+                              </div>
                               <p className="text-sm font-semibold">합계: {formatPrice(order.total_amount)}</p>
                             </div>
                           </div>
@@ -311,66 +362,101 @@ export default function MyPage() {
             <div className="space-y-6">
               {/* Purchased products with download buttons */}
               <div className="border border-border rounded-xl p-6">
-                <h2 className="font-semibold mb-4">구매한 상품</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-semibold">다운로드 가능한 파일</h2>
+                  <span className="text-xs text-muted-foreground">{purchasedProducts.length}개 상품</span>
+                </div>
                 <Separator className="mb-6" />
                 {purchasedProducts.length === 0 ? (
                   <div className="text-center py-16 text-muted-foreground">
                     <Download className="w-12 h-12 mx-auto mb-4 opacity-30" />
                     <p className="text-lg font-medium">구매한 상품이 없습니다</p>
                     <p className="text-sm mt-2">상품을 구매하시면 여기에서 다운로드할 수 있습니다.</p>
+                    <Link
+                      href="/store"
+                      className="inline-block mt-4 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                    >
+                      스토어 바로가기
+                    </Link>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {purchasedProducts.map((p) => (
-                      <div key={p.id} className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors">
-                        <div className="flex items-center gap-3 min-w-0">
+                    {purchasedProducts.map((p) => {
+                      const lastLog = downloadLogs.find(l => l.product_id === p.id)
+                      return (
+                        <div key={p.id} className="flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors">
                           {p.thumbnail_url ? (
                             <img src={p.thumbnail_url} alt={p.title} className="w-12 h-12 rounded-lg object-cover shrink-0" />
                           ) : (
                             <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center shrink-0">
-                              <span className="text-lg">📄</span>
+                              <FileText className="w-5 h-5 text-white/70" />
                             </div>
                           )}
-                          <div className="min-w-0">
+                          <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold truncate">{p.title}</p>
-                            {p.format && <p className="text-xs text-muted-foreground">{p.format}</p>}
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              {p.format && (
+                                <Badge className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-200 border">
+                                  {p.format}
+                                </Badge>
+                              )}
+                              {p.file_size && (
+                                <span className="text-xs text-muted-foreground">{p.file_size}</span>
+                              )}
+                              {lastLog && (
+                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  최근 {formatDate(lastLog.downloaded_at)}
+                                </span>
+                              )}
+                            </div>
                           </div>
+                          <button
+                            type="button"
+                            onClick={() => handleProductDownload(p.id, p.title)}
+                            className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            다운로드
+                          </button>
                         </div>
-                        <button
-                          onClick={() => handleProductDownload(p.id, p.title)}
-                          className="ml-3 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors flex items-center gap-1.5 shrink-0"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          다운로드
-                        </button>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>
 
-              {/* Download history */}
-              <div className="border border-border rounded-xl p-6">
-                <h2 className="font-semibold mb-4">다운로드 내역</h2>
-                <Separator className="mb-6" />
-                {downloadLogs.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <p className="text-sm">다운로드 내역이 없습니다.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {downloadLogs.map((log) => (
-                      <div key={log.id} className="flex items-center justify-between py-3 px-4 rounded-lg hover:bg-muted/30 transition-colors">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{(Array.isArray(log.products) ? log.products[0]?.title : log.products?.title) || '-'}</p>
-                          <p className="text-xs text-muted-foreground">{log.file_name}</p>
-                        </div>
-                        <p className="text-xs text-muted-foreground shrink-0 ml-3">{formatDate(log.downloaded_at)}</p>
+              {/* Download history — collapsible */}
+              {downloadLogs.length > 0 && (
+                <div className="border border-border rounded-xl overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowDownloadHistory(prev => !prev)}
+                    className="w-full flex items-center justify-between px-6 py-4 hover:bg-muted/30 transition-colors cursor-pointer text-left"
+                  >
+                    <h2 className="font-semibold text-sm">최근 다운로드 이력</h2>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">{downloadLogs.length}건</span>
+                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showDownloadHistory ? 'rotate-180' : ''}`} />
+                    </div>
+                  </button>
+                  {showDownloadHistory && (
+                    <div className="border-t border-border px-6 py-4">
+                      <div className="space-y-2">
+                        {downloadLogs.map((log) => (
+                          <div key={log.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/30 transition-colors">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{(Array.isArray(log.products) ? log.products[0]?.title : log.products?.title) || '-'}</p>
+                              <p className="text-xs text-muted-foreground">{log.file_name}</p>
+                            </div>
+                            <p className="text-xs text-muted-foreground shrink-0 ml-3">{formatDate(log.downloaded_at)}</p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -682,6 +768,58 @@ export default function MyPage() {
           )}
         </div>
       </div>
+
+      {/* 환불 문의 모달 */}
+      {refundOrderId !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+          onClick={() => { setRefundOrderId(null); setRefundReason('') }}
+          onKeyDown={(e) => { if (e.key === 'Escape') { setRefundOrderId(null); setRefundReason('') } }}
+        >
+          <div
+            className="bg-background rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">환불 문의</h3>
+              <button
+                type="button"
+                onClick={() => { setRefundOrderId(null); setRefundReason('') }}
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              환불 사유를 입력해주세요. 관리자 검토 후 순차적으로 처리됩니다.
+            </p>
+            <textarea
+              value={refundReason}
+              onChange={(e) => setRefundReason(e.target.value)}
+              rows={4}
+              placeholder="환불 사유를 상세히 입력해주세요..."
+              className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none mb-4"
+            />
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => { setRefundOrderId(null); setRefundReason('') }}
+                className="flex-1 h-10 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={refundSubmitting || !refundReason.trim()}
+                onClick={() => handleRefundRequest(refundOrderId, refundReason.trim())}
+                className="flex-1 h-10 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {refundSubmitting ? '접수 중...' : '문의 접수'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 회원 탈퇴 확인 모달 */}
       {showDeleteAccount && (
