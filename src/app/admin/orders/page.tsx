@@ -1545,7 +1545,7 @@ export default function AdminOrders() {
                     주문정보
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    품목 / 가격
+                    품목·가격·수량
                   </th>
                   <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     결제 정보
@@ -1553,12 +1553,15 @@ export default function AdminOrders() {
                   <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     다운로드
                   </th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    수령인 정보·메모
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-16 text-center">
+                    <td colSpan={6} className="px-6 py-16 text-center">
                       <div className="flex flex-col items-center gap-3">
                         <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
                         <p className="text-sm text-gray-400">주문 목록을 불러오는 중...</p>
@@ -1567,7 +1570,7 @@ export default function AdminOrders() {
                   </tr>
                 ) : paged.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-16 text-center">
+                    <td colSpan={6} className="px-6 py-16 text-center">
                       <ShoppingCart className="w-10 h-10 text-gray-200 mx-auto mb-3" />
                       <p className="text-sm text-gray-400">
                         {search || dateFrom || dateTo ? '검색 결과가 없습니다' : '주문 내역이 없습니다'}
@@ -1655,11 +1658,20 @@ export default function AdminOrders() {
 
                         {/* 결제 정보 */}
                         <td className="px-4 py-4 align-top min-w-[160px]">
-                          <p className="text-sm font-semibold text-gray-900 mb-1">{formatWon(order.total_amount)}</p>
-                          <p className="text-xs text-gray-400 mb-2">
+                          <StatusBadge status={order.status} />
+                          <div className="mt-2 space-y-0.5">
+                            <div className="flex justify-between text-xs text-gray-400">
+                              <span>상품 금액</span>
+                              <span>{formatWon(order.order_items?.reduce((sum, i) => sum + i.price, 0) || 0)}</span>
+                            </div>
+                            <div className="flex justify-between text-sm font-semibold text-gray-900 pt-1 border-t border-gray-100 mt-1">
+                              <span>총 결제 금액</span>
+                              <span>{formatWon(order.total_amount)}</span>
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-gray-400 mt-1">
                             {PAYMENT_METHOD_LABEL[order.payment_method || ''] || order.payment_method || '-'}
                           </p>
-                          <StatusBadge status={order.status} />
                         </td>
 
                         {/* 다운로드 */}
@@ -1672,8 +1684,51 @@ export default function AdminOrders() {
                               {dlCount}회
                             </button>
                           ) : (
-                            <span className="text-sm font-medium text-gray-300">0회</span>
+                            <span className="text-sm font-medium text-gray-300">-</span>
                           )}
+                        </td>
+
+                        {/* 수령인 정보·메모 */}
+                        <td className="px-4 py-4 align-top min-w-[220px]">
+                          <p className="text-sm font-medium text-gray-900">{profile?.name || '-'}</p>
+                          <p className="text-xs text-gray-400 mb-2">{profile?.phone || '-'}</p>
+                          {/* 기존 메모 표시 (최근 2개) */}
+                          {(() => {
+                            const memos = parseMemos(order.admin_memo)
+                            return memos.slice(-2).map((m, idx) => (
+                              <div key={idx} className="bg-gray-50 rounded px-2 py-1 mb-1">
+                                <p className="text-[11px] text-gray-500 line-clamp-2">{m.text}</p>
+                                <p className="text-[10px] text-gray-400">{m.author} · {formatDate(m.created_at)}</p>
+                              </div>
+                            ))
+                          })()}
+                          {/* 인라인 메모 입력 */}
+                          <div className="flex gap-1 mt-1">
+                            <input
+                              type="text"
+                              placeholder="메모 입력"
+                              className="flex-1 text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-blue-400"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && (e.target as HTMLInputElement).value.trim()) {
+                                  const input = e.target as HTMLInputElement
+                                  handleMemoSave(order.id, input.value.trim())
+                                  input.value = ''
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={(e) => {
+                                const input = (e.target as HTMLElement).previousElementSibling as HTMLInputElement
+                                if (input?.value.trim()) {
+                                  handleMemoSave(order.id, input.value.trim())
+                                  input.value = ''
+                                }
+                              }}
+                              className="text-[11px] px-2 py-1 bg-gray-100 text-gray-600 rounded hover:bg-gray-200 cursor-pointer shrink-0"
+                            >
+                              등록
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )
