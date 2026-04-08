@@ -32,6 +32,7 @@ interface Order {
   total_amount: number
   status: string
   created_at: string
+  paid_at?: string | null
   refund_reason?: string | null
   order_items?: OrderItem[]
 }
@@ -109,7 +110,7 @@ export default function MyPage() {
 
       const [{ data: profileData }, { data: ordersData }, { data: logsData }] = await Promise.all([
         supabase.from('profiles').select('name, email, phone, company, role, created_at').eq('id', user.id).single(),
-        supabase.from('orders').select('id, order_number, total_amount, status, created_at, refund_reason, order_items(id, quantity, unit_price, products(id, title, price))').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('orders').select('id, order_number, total_amount, status, created_at, paid_at, refund_reason, order_items(id, quantity, unit_price, products(id, title, price))').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(title)').eq('user_id', user.id).order('downloaded_at', { ascending: false }).limit(50),
       ])
 
@@ -199,6 +200,97 @@ export default function MyPage() {
     } finally {
       setRefundSubmitting(false)
     }
+  }
+
+  function printReceipt(order: Order) {
+    const printWindow = window.open('', '_blank', 'width=600,height=800')
+    if (!printWindow) return
+
+    const receiptDate = order.paid_at ? new Date(order.paid_at).toLocaleDateString('ko-KR') : new Date(order.created_at).toLocaleDateString('ko-KR')
+    const orderItems = order.order_items || []
+
+    const itemsHtml = orderItems.map((item) => {
+      const prod = Array.isArray(item.products) ? item.products[0] : item.products
+      const productTitle = prod?.title || '상품'
+      const quantity = item.quantity > 1 ? `x${item.quantity}` : ''
+      const totalPrice = (item.unit_price * item.quantity).toLocaleString()
+      return `<tr><td>${productTitle}${quantity ? ' ' + quantity : ''}</td><td style="text-align:right">${totalPrice}원</td></tr>`
+    }).join('')
+
+    const htmlContent = `
+    <html>
+    <head>
+      <meta charset="UTF-8" />
+      <title>거래 영수증</title>
+      <style>
+        body { font-family: 'Malgun Gothic', sans-serif; padding: 40px; max-width: 500px; margin: 0 auto; color: #333; }
+        h1 { text-align: center; font-size: 24px; border-bottom: 2px solid #333; padding-bottom: 16px; margin: 0 0 24px 0; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        th, td { padding: 8px; border-bottom: 1px solid #ddd; text-align: left; font-size: 14px; }
+        th { background: #f5f5f5; font-weight: 600; }
+        td { padding: 10px 8px; }
+        .total { font-weight: bold; font-size: 18px; text-align: right; padding-top: 16px; border-top: 2px solid #333; }
+        .footer { margin-top: 40px; text-align: center; color: #666; font-size: 12px; }
+        .info { margin: 16px 0; }
+        .info dt { color: #999; font-size: 12px; margin: 8px 0 4px 0; }
+        .info dd { margin: 0 0 12px 0; font-weight: 500; font-size: 14px; }
+        .company-info { margin-top: 32px; padding: 16px; background: #fafafa; border-radius: 4px; font-size: 13px; }
+        hr { margin: 20px 0; border: none; border-top: 1px solid #ddd; }
+        .footer p { margin: 8px 0; }
+        @media print {
+          body { padding: 0; }
+        }
+      </style>
+    </head>
+    <body>
+      <h1>거래 영수증</h1>
+
+      <dl class="info">
+        <dt>주문번호</dt>
+        <dd>${order.order_number || order.id}</dd>
+        <dt>발행일</dt>
+        <dd>${receiptDate}</dd>
+      </dl>
+
+      <table>
+        <thead>
+          <tr>
+            <th>상품명</th>
+            <th style="text-align:right">금액</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHtml || '<tr><td colspan="2">상품 정보가 없습니다.</td></tr>'}
+        </tbody>
+      </table>
+
+      <p class="total">합계: ${order.total_amount?.toLocaleString()}원</p>
+
+      <hr />
+
+      <div class="company-info">
+        <dl class="info">
+          <dt>공급자</dt>
+          <dd>주식회사 아마란스</dd>
+          <dt>대표</dt>
+          <dd>채호진</dd>
+          <dt>사업자등록번호</dt>
+          <dd>000-00-00000</dd>
+          <dt>이메일</dt>
+          <dd>hojin@amarans.co.kr</dd>
+        </dl>
+      </div>
+
+      <div class="footer">
+        <p>이 영수증은 전자상거래 거래증빙용입니다.</p>
+        <button onclick="window.print()" style="margin-top: 16px; padding: 8px 24px; cursor: pointer; border: 1px solid #999; background: #fff; border-radius: 4px; font-size: 14px;">인쇄</button>
+      </div>
+    </body>
+    </html>
+    `
+
+    printWindow.document.write(htmlContent)
+    printWindow.document.close()
   }
 
   if (loading) {
@@ -334,7 +426,16 @@ export default function MyPage() {
                             )}
 
                             <div className="flex items-center justify-between pt-2 border-t border-border">
-                              <div>
+                              <div className="flex items-center gap-2">
+                                {(order.status === 'paid' || order.status === 'completed') && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); printReceipt(order) }}
+                                    className="px-3 py-1.5 rounded-lg border border-blue-300 text-blue-600 text-xs font-medium hover:bg-blue-50 transition-colors cursor-pointer"
+                                  >
+                                    영수증
+                                  </button>
+                                )}
                                 {order.status === 'paid' && !order.refund_reason && (
                                   <button
                                     type="button"
