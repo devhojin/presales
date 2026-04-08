@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useCartStore } from '@/stores/cart-store'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
@@ -11,6 +11,7 @@ export function CartDrawer() {
   const { items, removeItem, clearCart, getTotal, getDiscountTotal } = useCartStore()
   const [open, setOpen] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const cancelButtonRef = useRef<HTMLButtonElement>(null)
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') setShowClearConfirm(false)
@@ -21,6 +22,12 @@ export function CartDrawer() {
       return () => document.removeEventListener('keydown', handleKeyDown)
     }
   }, [showClearConfirm, handleKeyDown])
+
+  useEffect(() => {
+    if (showClearConfirm && cancelButtonRef.current) {
+      cancelButtonRef.current.focus()
+    }
+  }, [showClearConfirm])
 
   const formatPrice = (price: number) => price === 0 ? '무료' : new Intl.NumberFormat('ko-KR').format(price) + '원'
 
@@ -138,6 +145,7 @@ export function CartDrawer() {
           <p className="text-sm text-muted-foreground mb-6">장바구니를 비우시겠습니까?</p>
           <div className="flex gap-3">
             <button
+              ref={cancelButtonRef}
               type="button"
               onClick={() => setShowClearConfirm(false)}
               className="flex-1 h-10 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors cursor-pointer"

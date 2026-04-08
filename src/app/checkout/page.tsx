@@ -44,6 +44,31 @@ export default function CheckoutPage() {
           return
         }
 
+        // 1.5. 장바구니 상품 유효성 검증
+        const productIds = paidItems.map(item => item.productId)
+        const { data: validProducts } = await supabase
+          .from('products')
+          .select('id, price, is_published')
+          .in('id', productIds)
+          .eq('is_published', true)
+
+        if (!validProducts || validProducts.length !== paidItems.length) {
+          addToast('일부 상품이 판매 중지되었습니다. 장바구니를 확인해주세요.', 'error')
+          router.replace('/cart')
+          return
+        }
+
+        // 가격 변동 확인
+        const priceChanged = paidItems.some(item => {
+          const dbProduct = validProducts.find(p => p.id === item.productId)
+          return !dbProduct || dbProduct.price !== item.price
+        })
+        if (priceChanged) {
+          addToast('상품 가격이 변경되었습니다. 장바구니를 확인해주세요.', 'error')
+          router.replace('/cart')
+          return
+        }
+
         // 2. 주문 생성 또는 재사용 (pending 상태)
         // 기존 pending 주문 확인
         const { data: existingOrder } = await supabase
