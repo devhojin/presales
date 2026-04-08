@@ -70,9 +70,9 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
       let fileUrl = ''
       if (file) {
         const fileName = `inquiry-${Date.now()}-${file.name}`
-        const { error: uploadErr } = await supabase.storage.from('product-files').upload(fileName, file)
+        const { error: uploadErr } = await supabase.storage.from('consulting-files').upload(fileName, file)
         if (!uploadErr) {
-          const { data: urlData } = supabase.storage.from('product-files').getPublicUrl(fileName)
+          const { data: urlData } = supabase.storage.from('consulting-files').getPublicUrl(fileName)
           fileUrl = urlData.publicUrl
         }
       }

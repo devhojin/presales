@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { createServerClient } from "@supabase/ssr";
 
-const BASE_URL = "https://presales-zeta.vercel.app";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://presales-zeta.vercel.app";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // 정적 페이지

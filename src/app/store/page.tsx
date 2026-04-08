@@ -181,6 +181,7 @@ export default function StorePage() {
   const [selectedCategories, setSelectedCategories] = useState<Set<number>>(new Set())
   const [selectedPriceType, setSelectedPriceType] = useState<string | null>(null)
   const [selectedFileType, setSelectedFileType] = useState<string | null>(null)
+  const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [sortOrder, setSortOrder] = useState<'recommended' | 'price_asc' | 'price_desc' | 'newest'>('recommended')
   const [loading, setLoading] = useState(true)
@@ -202,15 +203,20 @@ export default function StorePage() {
     if (sortParam && ['recommended', 'price_asc', 'price_desc', 'newest'].includes(sortParam)) {
       setSortOrder(sortParam as typeof sortOrder)
     }
+    const fileTypeParam = searchParams.get('fileType')
+    if (fileTypeParam && ['PPT', 'PDF', 'XLS', 'DOC', 'HWP', 'ZIP'].includes(fileTypeParam)) {
+      setSelectedFileType(fileTypeParam)
+    }
   }, [searchParams])
 
   // Sync state to URL
-  const updateURL = useCallback((cats: Set<number>, price: string | null, query: string, sort: string) => {
+  const updateURL = useCallback((cats: Set<number>, price: string | null, query: string, sort: string, fileType?: string | null) => {
     const params = new URLSearchParams()
     if (cats.size > 0) params.set('category', Array.from(cats).join(','))
     if (price) params.set('price', price)
     if (query) params.set('q', query)
     if (sort !== 'recommended') params.set('sort', sort)
+    if (fileType) params.set('fileType', fileType)
     const qs = params.toString()
     router.replace(qs ? `/store?${qs}` : '/store', { scroll: false })
   }, [router])
@@ -261,17 +267,21 @@ export default function StorePage() {
       const next = new Set(prev)
       if (next.has(catId)) next.delete(catId)
       else next.add(catId)
-      updateURL(next, selectedPriceType, searchQuery, sortOrder)
+      updateURL(next, selectedPriceType, searchQuery, sortOrder, selectedFileType)
       return next
     })
   }
 
-  const hasActiveFilters = selectedCategories.size > 0 || selectedPriceType !== null || selectedFileType !== null || searchQuery !== ''
+  const hasActiveFilters = selectedCategories.size > 0 || selectedPriceType !== null || selectedFileType !== null || selectedPriceRange !== null || searchQuery !== ''
+
+  // Count detail filters (file type + price type + price range) for badge
+  const detailFilterCount = (selectedFileType ? 1 : 0) + (selectedPriceType ? 1 : 0) + (selectedPriceRange ? 1 : 0)
 
   const resetFilters = () => {
     setSelectedCategories(new Set())
     setSelectedPriceType(null)
     setSelectedFileType(null)
+    setSelectedPriceRange(null)
     setSearchQuery('')
     setSortOrder('recommended')
     router.replace('/store', { scroll: false })
@@ -288,6 +298,12 @@ export default function StorePage() {
       }
       if (selectedPriceType === 'free' && !p.is_free) return false
       if (selectedPriceType === 'paid' && p.is_free) return false
+      if (selectedPriceRange) {
+        if (selectedPriceRange === 'free' && !p.is_free) return false
+        if (selectedPriceRange === 'under50k' && (p.is_free || p.price > 50000)) return false
+        if (selectedPriceRange === '50k_100k' && (p.price <= 50000 || p.price > 100000)) return false
+        if (selectedPriceRange === 'over100k' && p.price <= 100000) return false
+      }
       if (selectedFileType) {
         const types = extractFileTypes(p.format)
         if (!types.includes(selectedFileType)) return false
@@ -315,10 +331,12 @@ export default function StorePage() {
       )
     }
     return filtered
-  }, [products, selectedCategories, selectedPriceType, selectedFileType, searchQuery, sortOrder, categoryMap])
+  }, [products, selectedCategories, selectedPriceType, selectedFileType, selectedPriceRange, searchQuery, sortOrder, categoryMap])
 
   const handleFileTypeClick = (type: string) => {
-    setSelectedFileType(selectedFileType === type ? null : type)
+    const newFileType = selectedFileType === type ? null : type
+    setSelectedFileType(newFileType)
+    updateURL(selectedCategories, selectedPriceType, searchQuery, sortOrder, newFileType)
   }
 
   return (
@@ -374,7 +392,12 @@ export default function StorePage() {
           onClick={() => setShowDetailFilter(!showDetailFilter)}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-muted transition-colors cursor-pointer"
         >
-          상세 필터{(selectedFileType || selectedPriceType) ? ' (적용 중)' : ''}
+          상세 필터
+          {detailFilterCount > 0 && (
+            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none">
+              {detailFilterCount}
+            </span>
+          )}
           <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showDetailFilter ? 'rotate-180' : ''}`} />
         </button>
 
@@ -385,12 +408,42 @@ export default function StorePage() {
               {allFileTypes.map((ft) => (
                 <button
                   key={ft.id}
-                  onClick={() => setSelectedFileType(selectedFileType === ft.id ? null : ft.id)}
+                  onClick={() => {
+                    const newFileType = selectedFileType === ft.id ? null : ft.id
+                    setSelectedFileType(newFileType)
+                    updateURL(selectedCategories, selectedPriceType, searchQuery, sortOrder, newFileType)
+                  }}
                   className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-bold border transition-colors ${
                     selectedFileType === ft.id ? ft.color : 'border-border hover:bg-muted text-muted-foreground'
                   }`}
                 >
                   {ft.label}
+                </button>
+              ))}
+            </div>
+
+            {/* 가격대 필터 */}
+            <div className="flex flex-wrap gap-2">
+              {[
+                { id: null, label: '전체' },
+                { id: 'free', label: '무료' },
+                { id: 'under50k', label: '5만원 이하' },
+                { id: '50k_100k', label: '5~10만원' },
+                { id: 'over100k', label: '10만원 이상' },
+              ].map((pr) => (
+                <button
+                  key={pr.id ?? 'all'}
+                  onClick={() => {
+                    const newRange = selectedPriceRange === pr.id ? null : pr.id
+                    setSelectedPriceRange(newRange)
+                  }}
+                  className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-medium border transition-colors ${
+                    selectedPriceRange === pr.id
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'border-border hover:bg-muted'
+                  }`}
+                >
+                  {pr.label}
                 </button>
               ))}
             </div>
@@ -403,7 +456,7 @@ export default function StorePage() {
                   onClick={() => {
                     const newPrice = selectedPriceType === pt.id ? null : pt.id
                     setSelectedPriceType(newPrice)
-                    updateURL(selectedCategories, newPrice, searchQuery, sortOrder)
+                    updateURL(selectedCategories, newPrice, searchQuery, sortOrder, selectedFileType)
                   }}
                   className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-medium border transition-colors ${
                     selectedPriceType === pt.id ? pt.color : 'border-border hover:bg-muted'

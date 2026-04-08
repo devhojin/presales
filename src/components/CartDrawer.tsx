@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useCartStore } from '@/stores/cart-store'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
@@ -10,10 +10,22 @@ import Link from 'next/link'
 export function CartDrawer() {
   const { items, removeItem, clearCart, getTotal, getDiscountTotal } = useCartStore()
   const [open, setOpen] = useState(false)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') setShowClearConfirm(false)
+  }, [])
+  useEffect(() => {
+    if (showClearConfirm) {
+      document.addEventListener('keydown', handleKeyDown)
+      return () => document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [showClearConfirm, handleKeyDown])
 
   const formatPrice = (price: number) => price === 0 ? '무료' : new Intl.NumberFormat('ko-KR').format(price) + '원'
 
   return (
+    <>
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger className="relative min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-primary transition-colors">
           <ShoppingCart className="w-5 h-5" />
@@ -88,7 +100,7 @@ export function CartDrawer() {
 
               <div className="flex gap-2">
                 <button
-                  onClick={() => { if (window.confirm('장바구니를 비우시겠습니까?')) clearCart() }}
+                  onClick={() => setShowClearConfirm(true)}
                   className="h-11 px-4 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors flex items-center gap-1"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -111,5 +123,41 @@ export function CartDrawer() {
         )}
       </SheetContent>
     </Sheet>
+
+    {/* Clear Cart Confirm Modal */}
+    {showClearConfirm && (
+      <div
+        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        onClick={() => setShowClearConfirm(false)}
+      >
+        <div
+          className="bg-background rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <h3 className="text-lg font-semibold mb-2">장바구니 비우기</h3>
+          <p className="text-sm text-muted-foreground mb-6">장바구니를 비우시겠습니까?</p>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setShowClearConfirm(false)}
+              className="flex-1 h-10 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                clearCart()
+                setShowClearConfirm(false)
+              }}
+              className="flex-1 h-10 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors cursor-pointer"
+            >
+              비우기
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }

@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     template: "%s | PRESALES",
   },
   description: "공공조달 기술제안서, 입찰가이드, 발표자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",
-  metadataBase: new URL("https://presales-zeta.vercel.app"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://presales-zeta.vercel.app"),
   openGraph: {
     title: "PRESALES - 공공조달 제안서 마켓플레이스",
     description: "공공조달 기술제안서, 입찰가이드, 발표자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",
@@ -45,6 +45,18 @@ export const metadata: Metadata = {
   },
 };
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://presales-zeta.vercel.app";
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "PRESALES by AMARANS Partners",
+  url: SITE_URL,
+  description:
+    "공공조달 기술제안서, 입찰가이드, 발표자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",
+  sameAs: [],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -57,6 +69,10 @@ export default function RootLayout({
     >
       <head>
         <GoogleAnalytics />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
       </head>
       <body className="min-h-full flex flex-col">
         <Header />

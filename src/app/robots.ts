@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/admin", "/mypage", "/cart", "/auth"],
       },
     ],
-    sitemap: "https://presales-zeta.vercel.app/sitemap.xml",
+    sitemap: `${process.env.NEXT_PUBLIC_SITE_URL || "https://presales-zeta.vercel.app"}/sitemap.xml`,
   };
 }

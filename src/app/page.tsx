@@ -229,7 +229,7 @@ export default function Home() {
     statsDisplay.push({ emoji: '📄', value: `${stats.productCount}종`, label: '전문 템플릿' })
     statsDisplay.push({ emoji: '📥', value: stats.downloadCount > 0 ? `${stats.downloadCount.toLocaleString()}+` : '0', label: '누적 다운로드' })
     if (stats.reviewAvg !== null) {
-      statsDisplay.push({ emoji: '⭐', value: `${(stats.reviewAvg * 20).toFixed(0)}%`, label: '고객 만족도' })
+      statsDisplay.push({ emoji: '⭐', value: `${stats.reviewAvg.toFixed(1)} / 5.0`, label: '고객 만족도' })
     }
     statsDisplay.push({ emoji: '🏛️', value: '17년', label: '공공조달 전문' })
   }
@@ -345,6 +345,21 @@ export default function Home() {
                 ))
             }
           </div>
+          {/* 무료→유료 업셀 배너 */}
+          {!loadingProducts && (
+            <div className="mt-8 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 flex flex-col sm:flex-row sm:items-center gap-4 text-white">
+              <div className="flex-1">
+                <p className="font-bold text-lg mb-1">프리미엄 버전으로 낙찰률을 높이세요</p>
+                <p className="text-blue-100/80 text-sm">무료 템플릿으로 시작했다면, 이제 실전 수주 경험이 담긴 유료 버전으로 업그레이드하세요.</p>
+              </div>
+              <Link
+                href="/store?price=paid"
+                className="shrink-0 inline-flex items-center justify-center h-10 px-5 rounded-lg bg-white text-blue-700 text-sm font-semibold hover:bg-blue-50 transition-colors"
+              >
+                유료 템플릿 보기 <ArrowRight className="ml-1.5 w-4 h-4" />
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
