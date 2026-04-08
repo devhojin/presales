@@ -621,7 +621,7 @@ export default function AdminDashboard() {
         members: prevMembersCount.count || 0,
         revenue:
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          prevPaidAmountData.data?.reduce((s: number, o: any) => s + (o.total_amount || 0), 0) || 0,
+          prevPaidAmountData.data?.reduce((s: number, o: { total_amount?: number }) => s + (o.total_amount || 0), 0) || 0,
         downloads: prevDownloadsCount.count || 0,
         consulting: prevConsultingCount.count || 0,
         reviews: prevReviewsCount.count || 0,
@@ -632,7 +632,7 @@ export default function AdminDashboard() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const revenue =
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      paidOrdersData.data?.reduce((sum: number, o: any) => sum + (o.total_amount || 0), 0) || 0
+      paidOrdersData.data?.reduce((sum: number, o: { total_amount?: number }) => sum + (o.total_amount || 0), 0) || 0
     const currentKpi = {
       products: productsCount.count || 0,
       orders: ordersCount.count || 0,

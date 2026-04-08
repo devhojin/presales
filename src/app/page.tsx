@@ -246,7 +246,7 @@ export default function Home() {
             <h1 className="text-3xl md:text-5xl font-bold leading-tight mb-6">
               공공조달의 복잡함을<br /><span className="text-blue-400">문서로 단순하게</span>
             </h1>
-            <p className="text-lg text-blue-100/80 mb-8 max-w-xl leading-relaxed">
+            <p className="text-lg text-blue-100 mb-8 max-w-xl leading-relaxed">
               나라장터·조달청 입찰에 최적화된 기술제안서, 가격제안서, 발표PT 템플릿. 실전 경험이 녹아든 문서로 수주 확률을 높이세요.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
@@ -312,6 +312,7 @@ export default function Home() {
               <Link
                 key={cat.id}
                 href={`/store?category=${cat.id}`}
+                aria-label={`${cat.name} 카테고리 보기`}
                 className="group flex flex-col items-center justify-center p-5 rounded-2xl border border-border bg-card hover:border-primary/40 hover:bg-primary/5 hover:shadow-md transition-all duration-200 text-center cursor-pointer"
               >
                 <span className="text-3xl mb-2">{cat.emoji}</span>
@@ -351,7 +352,7 @@ export default function Home() {
             <div className="mt-8 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 flex flex-col sm:flex-row sm:items-center gap-4 text-white">
               <div className="flex-1">
                 <p className="font-bold text-lg mb-1">프리미엄 버전으로 낙찰률을 높이세요</p>
-                <p className="text-blue-100/80 text-sm">무료 템플릿으로 시작했다면, 이제 실전 수주 경험이 담긴 유료 버전으로 업그레이드하세요.</p>
+                <p className="text-blue-100 text-sm">무료 템플릿으로 시작했다면, 이제 실전 수주 경험이 담긴 유료 버전으로 업그레이드하세요.</p>
               </div>
               <Link
                 href="/store?price=paid"
@@ -376,7 +377,7 @@ export default function Home() {
               {reviews.map((t, i) => (
                 <div key={i} className="relative bg-card border border-border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
                   <Quote className="w-8 h-8 text-primary/20 mb-4" />
-                  <p className="text-sm leading-relaxed text-foreground/80 mb-5">{t.text}</p>
+                  <p className="text-sm leading-relaxed text-foreground mb-5">{t.text}</p>
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
                       {t.author[0]}
@@ -402,7 +403,7 @@ export default function Home() {
       <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-2xl md:text-3xl font-bold mb-2">첫 입찰, 어디서부터 시작해야 할지 모르겠다면?</h2>
-          <p className="text-blue-100/80 mb-8 max-w-lg mx-auto">무료 입찰 가이드부터 전문가 1:1 컨설팅까지. 프리세일즈가 함께합니다.</p>
+          <p className="text-blue-100 mb-8 max-w-lg mx-auto">무료 입찰 가이드부터 전문가 1:1 컨설팅까지. 프리세일즈가 함께합니다.</p>
           <Link href="/consulting" className="inline-flex items-center justify-center h-11 px-8 rounded-lg bg-white text-blue-700 hover:bg-blue-50 font-medium text-sm transition-colors">컨설팅 상담 신청</Link>
         </div>
       </section>

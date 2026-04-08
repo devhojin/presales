@@ -529,7 +529,6 @@ export default function AdminProducts() {
     if (!product) return
     const { data: full } = await supabase.from('products').select('*').eq('id', id).single()
     if (!full) return
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { id: _id, created_at: _ca, updated_at: _ua, ...rest } = full as Record<string, unknown>
     const clone = {
       ...rest,
