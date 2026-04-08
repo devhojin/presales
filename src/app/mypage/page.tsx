@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { FileText, Download, MessageSquare, User, Settings, Loader2, Mail, Phone, Building, Pencil, Save, X, Lock, Eye, EyeOff, ChevronDown, ShoppingBag, AlertTriangle } from 'lucide-react'
+import { FileText, Download, MessageSquare, User, Loader2, Mail, Phone, Building, Pencil, Save, X, Lock, Eye, EyeOff, ChevronDown, ShoppingBag, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { validatePassword } from '@/lib/password-policy'
 import { useToastStore } from '@/stores/toast-store'
@@ -584,7 +584,7 @@ export default function MyPage() {
                             {[0, 1, 2, 3].map((i) => (
                               <div
                                 key={i}
-                                className={`h-1.5 flex-1 rounded-full transition-colors ${i <= pwCheck.score - 1 ? pwCheck.color : 'bg-gray-200'}`}
+                                className={`h-1.5 flex-1 rounded-full transition-colors ${i <= pwCheck.score ? pwCheck.color : 'bg-gray-200'}`}
                               />
                             ))}
                           </div>
@@ -715,11 +715,13 @@ export default function MyPage() {
                 onClick={async () => {
                   setDeletingAccount(true)
                   try {
-                    const supabase = createClient()
-                    const { data: { user } } = await supabase.auth.getUser()
-                    if (user) {
-                      await supabase.from('profiles').delete().eq('id', user.id)
+                    const res = await fetch('/api/auth/delete-account', { method: 'DELETE' })
+                    if (!res.ok) {
+                      const data = await res.json()
+                      addToast(data.error || '탈퇴 처리 중 오류가 발생했습니다', 'error')
+                      return
                     }
+                    const supabase = createClient()
                     await supabase.auth.signOut()
                     addToast('회원 탈퇴가 완료되었습니다', 'info')
                     router.push('/')

@@ -7,9 +7,9 @@ import { createClient } from '@/lib/supabase'
 const FALLBACK = {
   company_name: 'AMARANS Partners',
   ceo_name: '채호진',
-  business_number: '테스트 중',
-  commerce_number: '테스트 중',
-  address: '테스트 중',
+  business_number: '',
+  commerce_number: '',
+  address: '',
   email: 'contact@presales.co.kr',
   copyright: `${new Date().getFullYear()} AMARANS Partners. All rights reserved.`,
 }
@@ -102,14 +102,26 @@ export function Footer() {
                 {s.company_name}
               </span>
               <span className="block sm:inline">대표: {s.ceo_name}</span>
-              <span className="hidden sm:inline"> | </span>
-              <span className="block sm:inline">사업자등록번호: {s.business_number}</span>
-              <span className="hidden sm:inline"> | </span>
-              <span className="block sm:inline">통신판매업신고: {s.commerce_number}</span>
+              {s.business_number && (
+                <>
+                  <span className="hidden sm:inline"> | </span>
+                  <span className="block sm:inline">사업자등록번호: {s.business_number}</span>
+                </>
+              )}
+              {s.commerce_number && (
+                <>
+                  <span className="hidden sm:inline"> | </span>
+                  <span className="block sm:inline">통신판매업신고: {s.commerce_number}</span>
+                </>
+              )}
             </p>
             <p>
-              <span className="block sm:inline">{s.address}</span>
-              <span className="hidden sm:inline"> | </span>
+              {s.address && (
+                <>
+                  <span className="block sm:inline">{s.address}</span>
+                  <span className="hidden sm:inline"> | </span>
+                </>
+              )}
               <span className="block sm:inline">{s.email}</span>
             </p>
             <p className="mt-4">&copy; {new Date().getFullYear()} AMARANS Partners. All rights reserved.</p>

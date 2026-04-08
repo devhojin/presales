@@ -88,6 +88,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '주문을 찾을 수 없습니다.' }, { status: 404 })
     }
 
+    // 소유권 확인: 본인 주문 또는 관리자만 허용
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('role, user_id:id')
+      .eq('id', user.id)
+      .single()
+    const isAdmin = userProfile?.role === 'admin'
+    const { data: orderOwner } = await supabase
+      .from('orders')
+      .select('user_id')
+      .eq('id', orderId)
+      .single()
+    if (!isAdmin && orderOwner?.user_id !== user.id) {
+      return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
+    }
+
     const profile = order.profiles as unknown as { name: string | null; email: string } | null
     if (!profile?.email) {
       return NextResponse.json({ error: '주문자 이메일이 없습니다.' }, { status: 400 })

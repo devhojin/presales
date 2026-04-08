@@ -77,6 +77,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '문의를 찾을 수 없습니다.' }, { status: 404 })
     }
 
+    // 소유권 확인: 본인 문의 또는 관리자만 허용
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+    const isAdmin = userProfile?.role === 'admin'
+    const { data: reqOwner } = await supabase
+      .from('consulting_requests')
+      .select('user_id')
+      .eq('id', consultingRequestId)
+      .single()
+    if (!isAdmin && reqOwner?.user_id !== user.id) {
+      return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
+    }
+
     if (!req.email) {
       return NextResponse.json({ error: '신청자 이메일이 없습니다.' }, { status: 400 })
     }
