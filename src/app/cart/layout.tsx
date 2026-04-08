@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://presales-zeta.vercel.app";
+import { SITE_URL } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "장바구니",

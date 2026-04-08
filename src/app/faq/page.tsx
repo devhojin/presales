@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { FaqClient } from './FaqClient'
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://presales-zeta.vercel.app'
+import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
   title: '자주 묻는 질문 (FAQ) | 프리세일즈',

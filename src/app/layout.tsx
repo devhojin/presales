@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { ToastContainer } from "@/components/Toast";
+import { SITE_URL } from "@/lib/constants";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,12 +30,12 @@ export const metadata: Metadata = {
     template: "%s | PRESALES",
   },
   description: "공공조달 기술제안서, 입찰가이드, 발표자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://presales-zeta.vercel.app"),
+  metadataBase: new URL(SITE_URL),
   openGraph: {
     title: "PRESALES - 공공조달 제안서 마켓플레이스",
     description: "공공조달 기술제안서, 입찰가이드, 발표자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",
     type: "website",
-    url: "https://presales-zeta.vercel.app",
+    url: SITE_URL,
     siteName: "PRESALES by AMARANS Partners",
     locale: "ko_KR",
   },
@@ -44,8 +45,6 @@ export const metadata: Metadata = {
     description: "공공조달 기술제안서, 입찰가이드, 발표자료 등 전문 문서 다운로드 플랫폼.",
   },
 };
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://presales-zeta.vercel.app";
 
 const organizationJsonLd = {
   "@context": "https://schema.org",

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { logger } from '@/lib/logger'
 
 const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY!
 const TOSS_CONFIRM_URL = 'https://api.tosspayments.com/v1/payments/confirm'
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
     const tossData = await tossRes.json()
 
     if (!tossRes.ok) {
-      console.error('[토스 결제 승인 실패]', tossData)
+      logger.error('토스 결제 승인 실패', 'payment/confirm', tossData)
       return NextResponse.json(
         { error: tossData.message || '결제 승인에 실패했습니다' },
         { status: 400 }
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     // C-5: 토스페이먼츠 응답 금액 검증
     if (tossData.totalAmount !== amount) {
-      console.error('[금액 불일치]', { requestAmount: amount, tossAmount: tossData.totalAmount })
+      logger.error('금액 불일치', 'payment/confirm', { requestAmount: amount, tossAmount: tossData.totalAmount })
       return NextResponse.json(
         { error: '결제 금액이 불일치합니다. 다시 시도해주세요.' },
         { status: 400 }
@@ -121,13 +122,13 @@ export async function POST(request: NextRequest) {
       .select('id')
 
     if (updateError) {
-      console.error('[주문 업데이트 실패]', updateError)
+      logger.error('주문 업데이트 실패', 'payment/confirm', { error: updateError.message })
       return NextResponse.json({ error: '주문 상태 업데이트에 실패했습니다' }, { status: 500 })
     }
 
     // 업데이트된 행이 없으면 주문이 이미 처리됨 또는 상태가 변경됨
     if (!updatedOrders || updatedOrders.length === 0) {
-      console.error('[주문 상태 변경 불가]', { orderId: dbOrderId, currentStatus: order.status })
+      logger.error('주문 상태 변경 불가', 'payment/confirm', { orderId: dbOrderId, currentStatus: order.status })
       return NextResponse.json({ error: '주문이 이미 처리되었거나 상태가 변경되었습니다' }, { status: 409 })
     }
 
@@ -143,13 +144,14 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({ orderId: dbOrderId }),
       })
     } catch (emailErr) {
-      console.error('[주문 확인 이메일 발송 실패]', emailErr)
+      const message = emailErr instanceof Error ? emailErr.message : '알 수 없는 오류'
+      logger.error('주문 확인 이메일 발송 실패', 'payment/confirm', { error: message })
     }
 
     return NextResponse.json({ success: true, orderId: dbOrderId })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '알 수 없는 오류'
-    console.error('[payment confirm error]', message)
+    logger.error('결제 확인 API 오류', 'payment/confirm', { error: message })
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

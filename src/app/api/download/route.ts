@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   // 1. Supabase Auth로 로그인 유저 확인
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
   // Service Role Key로 서버 전용 클라이언트 생성 (클라이언트에 절대 노출 금지)
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!serviceRoleKey) {
-    console.error('[download] SUPABASE_SERVICE_ROLE_KEY 환경변수가 설정되지 않았습니다')
+    logger.error('SUPABASE_SERVICE_ROLE_KEY 환경변수가 설정되지 않았습니다', 'download')
     return NextResponse.json({ error: '서버 설정 오류입니다' }, { status: 500 })
   }
 

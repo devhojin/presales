@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://presales-zeta.vercel.app";
+import { SITE_URL } from "@/lib/constants";
 
 interface Props {
   params: Promise<{ id: string }>;

@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   try {
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, message: '계정이 삭제되었습니다.' })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '알 수 없는 오류'
-    console.error('[delete-account]', message)
+    logger.error('계정 삭제 오류', 'auth/delete-account', { error: message })
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

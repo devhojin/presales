@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
+import { logger } from '@/lib/logger'
 
 const ADMIN_EMAIL = 'admin@amarans.co.kr'
 
@@ -242,7 +243,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, message: '이메일 발송 완료' })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '알 수 없는 오류'
-    console.error('[order-confirm email]', message)
+    logger.error('주문 확인 이메일 발송 오류', 'email/order-confirm', { error: message })
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

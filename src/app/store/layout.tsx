@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/constants";
 
 export const metadata: Metadata = {
   title: "스토어",
@@ -6,7 +7,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "스토어 | PRESALES",
     description: "공공조달 기술제안서, 입찰가이드, 발표자료 등 다양한 공공조달 전문 문서를 다운로드하세요.",
-    url: "https://presales-zeta.vercel.app/store",
+    url: `${SITE_URL}/store`,
   },
 };
 
