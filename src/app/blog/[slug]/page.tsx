@@ -37,7 +37,8 @@ function formatDate(dateString: string): string {
 }
 
 export default function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params)
+  const { slug: rawSlug } = use(params)
+  const slug = decodeURIComponent(rawSlug)
   const [post, setPost] = useState<BlogPost | null>(null)
   const [allPosts, setAllPosts] = useState<BlogPostSummary[]>([])
   const [loading, setLoading] = useState(true)
