@@ -109,33 +109,32 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-[1400px] mx-auto px-4 py-12">
-        {/* Back Link */}
-        <Link href="/blog" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-8 group">
-          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          블로그로 돌아가기
-        </Link>
+      {/* Header — 리스트 페이지와 동일 */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="max-w-[1400px] mx-auto px-4 py-12">
+          <Link href="/blog" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 group text-sm">
+            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            블로그로 돌아가기
+          </Link>
+          <div className="text-sm text-gray-500 font-medium mb-2">{post.category}</div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4 leading-tight">{post.title}</h1>
+          <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+            <span>{post.author}</span>
+            <span>·</span>
+            <span>{formatDate(post.published_at)}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {post.tags?.map((tag) => (
+              <span key={tag} className="text-xs text-gray-500">#{tag}</span>
+            ))}
+          </div>
+        </div>
+      </div>
 
+      <div className="max-w-[1400px] mx-auto px-4 py-12">
         <div className="flex gap-8">
           {/* Main Content */}
           <div className="flex-1 max-w-[800px]">
-            {/* Header */}
-            <div className="mb-8">
-              <div className="text-sm text-gray-500 font-medium mb-2">{post.category}</div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-4 leading-tight">{post.title}</h1>
-              <div className="flex items-center gap-4 text-sm text-gray-600 mb-6">
-                <span>{post.author}</span>
-                <span>·</span>
-                <span>{formatDate(post.published_at)}</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {post.tags?.map((tag) => (
-                  <span key={tag} className="text-xs text-gray-500">#{tag}</span>
-                ))}
-              </div>
-            </div>
-
-            <div className="border-t border-gray-100 my-8" />
 
             {/* Content */}
             <div className="prose prose-sm max-w-none prose-headings:font-bold prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3 prose-h4:text-base prose-h4:mt-4 prose-h4:mb-2 prose-p:text-gray-700 prose-p:leading-relaxed prose-li:text-gray-700 prose-strong:text-gray-900 prose-ul:my-4 prose-li:my-1 prose-table:border-collapse prose-th:bg-gray-50 prose-th:p-3 prose-th:text-left prose-th:border prose-th:border-gray-200 prose-td:p-3 prose-td:border prose-td:border-gray-200">
