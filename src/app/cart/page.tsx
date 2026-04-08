@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useCartStore } from '@/stores/cart-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ShoppingCart, Trash2, X, ArrowLeft, AlertTriangle, Gift } from 'lucide-react'
+import { ShoppingCart, Trash2, X, ArrowLeft, Gift } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { useToastStore } from '@/stores/toast-store'
@@ -109,15 +109,7 @@ export default function CartPage() {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* Paid items banner */}
-          {hasPaidItems && (
-            <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-              <p className="text-sm text-amber-800">
-                현재 유료 상품 결제 기능을 준비 중입니다. 무료 상품은 바로 다운로드 가능합니다.
-              </p>
-            </div>
-          )}
+          {/* Paid items banner removed - 결제 기능 활성화됨 */}
 
           {/* Cart Items */}
           <div className="space-y-4">
@@ -226,7 +218,7 @@ export default function CartPage() {
                         setProcessing(false)
                       }
                     } else {
-                      addToast('결제 기능을 준비 중입니다. 빠른 시일 내에 제공하겠습니다.', 'info')
+                      router.push('/checkout')
                     }
                   }}
                   disabled={processing}
