@@ -607,6 +607,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <Download className="w-4 h-4" />
               로그인 후 무료 다운로드
             </Link>
+          ) : !isLoggedIn && !product.is_free ? (
+            <Link
+              href={`/auth/login?redirect=/store/${id}`}
+              className="flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              로그인 후 구매하기
+            </Link>
           ) : (
             <button
               onClick={() => {
