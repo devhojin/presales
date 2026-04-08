@@ -16,6 +16,8 @@ import {
   ChevronLeft,
   ChevronRight,
   CheckCircle,
+  Copy,
+  Download,
 } from 'lucide-react'
 import {
   DndContext,
@@ -153,6 +155,64 @@ function DeleteModal({
 }
 
 // ===========================
+// Bulk Delete Confirm Modal
+// ===========================
+
+function BulkDeleteModal({
+  count,
+  onConfirm,
+  onCancel,
+}: {
+  count: number
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel()
+    }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onCancel])
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={onCancel}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+            <Trash2 className="w-5 h-5 text-red-600" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900">일괄 삭제</h3>
+        </div>
+        <p className="text-sm text-gray-600 mb-6">선택한 {count}개 상품을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            취소
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+          >
+            삭제
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ===========================
 // Sortable Row
 // ===========================
 
@@ -160,10 +220,16 @@ function SortableProductRow({
   product,
   onTogglePublish,
   onDelete,
+  onClone,
+  selected,
+  onSelect,
 }: {
   product: Product
   onTogglePublish: (id: number, current: boolean) => void
   onDelete: (id: number) => void
+  onClone: (id: number) => void
+  selected: boolean
+  onSelect: (id: number) => void
 }) {
   const {
     attributes,
@@ -187,8 +253,18 @@ function SortableProductRow({
     <tr
       ref={setNodeRef}
       style={style}
-      className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors"
+      className={`border-b border-gray-100 hover:bg-gray-50/50 transition-colors ${selected ? 'bg-blue-50/40' : ''}`}
     >
+      {/* Checkbox */}
+      <td className="px-2 py-3 w-9">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={() => onSelect(product.id)}
+          className="w-4 h-4 rounded border-gray-300 text-blue-600 cursor-pointer"
+          onClick={(e) => e.stopPropagation()}
+        />
+      </td>
       {/* Drag handle */}
       <td className="px-2 py-3 w-10">
         <button
@@ -204,6 +280,7 @@ function SortableProductRow({
         product={product}
         onTogglePublish={onTogglePublish}
         onDelete={onDelete}
+        onClone={onClone}
       />
     </tr>
   )
@@ -217,10 +294,12 @@ function ProductRowCells({
   product,
   onTogglePublish,
   onDelete,
+  onClone,
 }: {
   product: Product
   onTogglePublish: (id: number, current: boolean) => void
   onDelete: (id: number) => void
+  onClone: (id: number) => void
 }) {
   return (
     <>
@@ -306,6 +385,13 @@ function ProductRowCells({
             <Pencil className="w-4 h-4" />
           </Link>
           <button
+            onClick={() => onClone(product.id)}
+            className="p-1.5 rounded-md hover:bg-purple-50 text-gray-400 hover:text-purple-600 transition-colors"
+            title="상품 복제"
+          >
+            <Copy className="w-4 h-4" />
+          </button>
+          <button
             onClick={() => onTogglePublish(product.id, product.is_published)}
             className="p-1.5 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
             title={product.is_published ? '비공개로 변경' : '공개로 변경'}
@@ -345,6 +431,8 @@ export default function AdminProducts() {
   const [toast, setToast] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
 
   const supabase = useMemo(() => createClient(), [])
 
@@ -431,6 +519,74 @@ export default function AdminProducts() {
     setDeleteConfirmId(null)
     await supabase.from('products').delete().eq('id', id)
     setToast('상품이 삭제되었습니다')
+    setSelectedIds((prev) => { const next = new Set(prev); next.delete(id); return next })
+    loadProducts()
+  }
+
+  // Clone product
+  const handleClone = async (id: number) => {
+    const product = products.find((p) => p.id === id)
+    if (!product) return
+    const { data: full } = await supabase.from('products').select('*').eq('id', id).single()
+    if (!full) return
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id: _id, created_at: _ca, updated_at: _ua, ...rest } = full as Record<string, unknown>
+    const clone = {
+      ...rest,
+      title: `${full.title} (복제)`,
+      download_count: 0,
+      is_published: false,
+      sort_order: null,
+    }
+    await supabase.from('products').insert(clone)
+    setToast('상품이 복제되었습니다')
+    loadProducts()
+  }
+
+  // Selection helpers — these are called at render time so they
+  // will correctly capture the paginated slice via closure
+  const toggleSelectAll = (currentPaginated: Product[]) => {
+    if (currentPaginated.every((p) => selectedIds.has(p.id))) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        currentPaginated.forEach((p) => next.delete(p.id))
+        return next
+      })
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        currentPaginated.forEach((p) => next.add(p.id))
+        return next
+      })
+    }
+  }
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  // Bulk publish/unpublish
+  const handleBulkPublish = async (publish: boolean) => {
+    if (selectedIds.size === 0) return
+    const ids = Array.from(selectedIds)
+    await Promise.all(ids.map((id) => supabase.from('products').update({ is_published: publish }).eq('id', id)))
+    setToast(publish ? `${ids.length}개 상품이 공개되었습니다` : `${ids.length}개 상품이 비공개되었습니다`)
+    setSelectedIds(new Set())
+    loadProducts()
+  }
+
+  // Bulk delete
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedIds)
+    await Promise.all(ids.map((id) => supabase.from('products').delete().eq('id', id)))
+    setToast(`${ids.length}개 상품이 삭제되었습니다`)
+    setSelectedIds(new Set())
+    setBulkDeleteConfirm(false)
     loadProducts()
   }
 
@@ -462,6 +618,35 @@ export default function AdminProducts() {
     return list
   }, [products, statusFilter, categoryFilter, search])
 
+  // CSV export (must be after `filtered`)
+  const handleCSVExport = useCallback(() => {
+    const target = selectedIds.size > 0
+      ? filtered.filter((p) => selectedIds.has(p.id))
+      : filtered
+    const header = '상품명,카테고리,가격,상태,다운로드수,등록일'
+    const rows = target.map((p) => {
+      const catName = Array.isArray(p.categories)
+        ? (p.categories[0]?.name || '')
+        : (p.categories?.name || '')
+      return [
+        `"${p.title}"`,
+        catName,
+        p.is_free ? 0 : p.price,
+        p.is_published ? '공개' : '비공개',
+        p.download_count,
+        formatDate(p.created_at),
+      ].join(',')
+    })
+    const csv = '\uFEFF' + header + '\n' + rows.join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `products_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [filtered, selectedIds])
+
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const paginated = filtered.slice((page - 1) * pageSize, page * pageSize)
   const isDragEnabled =
@@ -485,13 +670,23 @@ export default function AdminProducts() {
             <h1 className="text-xl font-bold text-gray-900">상품 관리</h1>
             <p className="text-sm text-gray-500 mt-1">전체 {products.length}개 상품</p>
           </div>
-          <Link
-            href="/admin/products/new"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-xl transition-colors shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            상품 등록
-          </Link>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleCSVExport}
+              className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-xl transition-colors"
+              title="CSV 내보내기"
+            >
+              <Download className="w-4 h-4" />
+              CSV
+            </button>
+            <Link
+              href="/admin/products/new"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold rounded-xl transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              상품 등록
+            </Link>
+          </div>
         </div>
 
         {/* Category Filter Tabs */}
@@ -622,12 +817,53 @@ export default function AdminProducts() {
           </p>
         )}
 
+        {/* Bulk Action Bar */}
+        {selectedIds.size > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-center justify-between">
+            <span className="text-sm font-medium text-blue-700">선택 {selectedIds.size}개</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => handleBulkPublish(true)}
+                className="px-3 py-1.5 text-xs font-medium text-emerald-700 bg-white border border-emerald-200 rounded-lg hover:bg-emerald-50 transition-colors"
+              >
+                일괄 공개
+              </button>
+              <button
+                onClick={() => handleBulkPublish(false)}
+                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                일괄 비공개
+              </button>
+              <button
+                onClick={() => setBulkDeleteConfirm(true)}
+                className="px-3 py-1.5 text-xs font-medium text-red-700 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+              >
+                일괄 삭제
+              </button>
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                className="px-2 py-1.5 text-xs text-blue-500 hover:text-blue-700"
+              >
+                선택 해제
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Table Card */}
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
+                  <th className="px-2 py-3 w-9">
+                    <input
+                      type="checkbox"
+                      checked={paginated.length > 0 && paginated.every((p) => selectedIds.has(p.id))}
+                      onChange={() => toggleSelectAll(paginated)}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 cursor-pointer"
+                    />
+                  </th>
                   <th className="w-10" />
                   <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 min-w-[260px]">
                     상품명
@@ -658,13 +894,13 @@ export default function AdminProducts() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-16 text-gray-400 text-sm">
+                    <td colSpan={10} className="text-center py-16 text-gray-400 text-sm">
                       로딩 중...
                     </td>
                   </tr>
                 ) : paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="text-center py-16 text-gray-400 text-sm">
+                    <td colSpan={10} className="text-center py-16 text-gray-400 text-sm">
                       {search ? '검색 결과가 없습니다' : '등록된 상품이 없습니다'}
                     </td>
                   </tr>
@@ -684,6 +920,9 @@ export default function AdminProducts() {
                           product={product}
                           onTogglePublish={handleTogglePublish}
                           onDelete={handleDelete}
+                          onClone={handleClone}
+                          selected={selectedIds.has(product.id)}
+                          onSelect={toggleSelect}
                         />
                       ))}
                     </SortableContext>
@@ -692,8 +931,16 @@ export default function AdminProducts() {
                   paginated.map((product) => (
                     <tr
                       key={product.id}
-                      className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors"
+                      className={`border-b border-gray-100 hover:bg-gray-50/50 transition-colors ${selectedIds.has(product.id) ? 'bg-blue-50/40' : ''}`}
                     >
+                      <td className="px-2 py-3 w-9">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(product.id)}
+                          onChange={() => toggleSelect(product.id)}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-600 cursor-pointer"
+                        />
+                      </td>
                       <td className="px-2 py-3 w-10">
                         <div className="flex items-center justify-center w-7 h-7">
                           <GripVertical className="w-4 h-4 text-gray-200" />
@@ -703,6 +950,7 @@ export default function AdminProducts() {
                         product={product}
                         onTogglePublish={handleTogglePublish}
                         onDelete={handleDelete}
+                        onClone={handleClone}
                       />
                     </tr>
                   ))
@@ -760,6 +1008,15 @@ export default function AdminProducts() {
             productName={products.find((p) => p.id === deleteConfirmId)?.title || ''}
             onConfirm={handleDeleteConfirm}
             onCancel={() => setDeleteConfirmId(null)}
+          />
+        )}
+
+        {/* Bulk Delete Confirm Modal */}
+        {bulkDeleteConfirm && (
+          <BulkDeleteModal
+            count={selectedIds.size}
+            onConfirm={handleBulkDelete}
+            onCancel={() => setBulkDeleteConfirm(false)}
           />
         )}
 

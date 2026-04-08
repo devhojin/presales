@@ -34,6 +34,132 @@ interface DayStat {
   reviews: number
 }
 
+interface ReferrerStat {
+  referrer: string
+  count: number
+}
+
+// ── Referrer normalizer ───────────────────────────────────────────────
+function normalizeReferrer(raw: string | null | undefined): string {
+  if (!raw || raw.trim() === '' || raw === 'direct') return '직접 유입'
+  try {
+    const url = new URL(raw)
+    const host = url.hostname.replace(/^www\./, '')
+    if (host.includes('google')) return 'Google'
+    if (host.includes('naver')) return 'Naver'
+    if (host.includes('daum') || host.includes('kakao')) return 'Kakao/Daum'
+    if (host.includes('facebook') || host.includes('fb.com')) return 'Facebook'
+    if (host.includes('instagram')) return 'Instagram'
+    if (host.includes('twitter') || host.includes('t.co')) return 'Twitter/X'
+    if (host.includes('youtube')) return 'YouTube'
+    if (host.includes('linkedin')) return 'LinkedIn'
+    return host
+  } catch {
+    return raw.length > 40 ? raw.slice(0, 40) + '…' : raw
+  }
+}
+
+// ── SVG line chart (shared) ───────────────────────────────────────────
+
+interface LineChartSeries {
+  points: { x: number; y: number }[]
+  stroke: string
+  fill?: string
+  strokeWidth?: number
+}
+
+function LineChart({
+  series,
+  xLabels,
+  yMax,
+  height = 180,
+}: {
+  series: LineChartSeries[]
+  xLabels: string[]
+  yMax: number
+  height?: number
+}) {
+  const W = 700
+  const H = height
+  const PAD_X = 50
+  const PAD_Y = 16
+  const BOTTOM = 24
+  const plotW = W - PAD_X * 2
+  const plotH = H - PAD_Y - BOTTOM
+  const lastIdx = Math.max(xLabels.length - 1, 1)
+
+  function toX(i: number) {
+    return PAD_X + (i / lastIdx) * plotW
+  }
+  function toY(v: number) {
+    return PAD_Y + plotH - (v / Math.max(yMax, 1)) * plotH
+  }
+
+  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((r) => ({
+    y: toY(yMax * r),
+    label:
+      yMax * r >= 1_000_000
+        ? `${Math.round((yMax * r) / 10000)}만`
+        : yMax * r >= 1000
+        ? `${Math.round((yMax * r) / 1000)}천`
+        : String(Math.round(yMax * r)),
+  }))
+
+  // X: show at most 7 evenly-spaced labels to avoid overlap
+  const step = Math.max(1, Math.ceil(xLabels.length / 7))
+  const xIndices = xLabels
+    .map((_, i) => i)
+    .filter((i) => i % step === 0 || i === xLabels.length - 1)
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height }}>
+      {/* Grid + Y labels */}
+      {yTicks.map(({ y, label }) => (
+        <g key={label}>
+          <line x1={PAD_X} y1={y} x2={W - PAD_X} y2={y} stroke="#e5e7eb" strokeWidth="1" />
+          <text x={PAD_X - 6} y={y + 4} textAnchor="end" fontSize="10" fill="#9ca3af">
+            {label}
+          </text>
+        </g>
+      ))}
+
+      {/* Series */}
+      {series.map((s, si) => {
+        const pts = s.points.map((p) => `${toX(p.x)},${toY(p.y)}`).join(' ')
+        const areaStart = `${toX(s.points[0]?.x ?? 0)},${PAD_Y + plotH}`
+        const areaEnd = `${toX(s.points[s.points.length - 1]?.x ?? lastIdx)},${PAD_Y + plotH}`
+        return (
+          <g key={si}>
+            {s.fill && (
+              <polygon
+                points={`${areaStart} ${pts} ${areaEnd}`}
+                fill={s.fill}
+              />
+            )}
+            <polyline
+              points={pts}
+              fill="none"
+              stroke={s.stroke}
+              strokeWidth={s.strokeWidth ?? 2}
+              strokeLinejoin="round"
+            />
+            {s.points.map((p, i) => (
+              <circle key={i} cx={toX(p.x)} cy={toY(p.y)} r="3" fill={s.stroke} />
+            ))}
+          </g>
+        )
+      })}
+
+      {/* X labels */}
+      {xIndices.map((i) => (
+        <text key={i} x={toX(i)} y={H - 4} textAnchor="middle" fontSize="10" fill="#6b7280">
+          {xLabels[i]}
+        </text>
+      ))}
+    </svg>
+  )
+}
+
 // ── component ────────────────────────────────────────────────────────
 export default function AnalyticsPage() {
   const [dailyStats, setDailyStats] = useState<DayStat[]>([])
@@ -42,46 +168,59 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true)
   const [periodDays, setPeriodDays] = useState(7)
 
+  // Funnel data
+  const [funnelData, setFunnelData] = useState({
+    visitors: 0,
+    storeViews: 0,
+    orders: 0,
+    completed: 0,
+  })
+
+  // Referrer data
+  const [referrers, setReferrers] = useState<ReferrerStat[]>([])
+  const [totalRefs, setTotalRefs] = useState(0)
+
   useEffect(() => {
     fetchAll()
   }, [periodDays])
 
   async function fetchAll() {
+    setLoading(true)
     const supabase = createClient()
     const today = startOfDay(new Date())
     const sevenAgo = addDays(today, -(periodDays - 1))
     const rangeStart = isoDate(sevenAgo)
     const rangeEnd = isoDate(addDays(today, 1))
 
-    // Fetch page_views for the last 7 days
+    // page_views for the selected period (date-filtered — no more all-rows fetch)
     const { data: pvRows } = await supabase
       .from('page_views')
-      .select('created_at, session_id')
+      .select('created_at, session_id, path, referrer')
       .gte('created_at', rangeStart)
       .lt('created_at', rangeEnd)
 
-    // Fetch orders
+    // orders for the period
     const { data: orderRows } = await supabase
       .from('orders')
       .select('created_at, total_amount, status')
       .gte('created_at', rangeStart)
       .lt('created_at', rangeEnd)
 
-    // Fetch profiles (signups)
+    // profiles (signups)
     const { data: profileRows } = await supabase
       .from('profiles')
       .select('created_at')
       .gte('created_at', rangeStart)
       .lt('created_at', rangeEnd)
 
-    // Fetch consulting_requests
+    // consulting_requests
     const { data: consultingRows } = await supabase
       .from('consulting_requests')
       .select('created_at')
       .gte('created_at', rangeStart)
       .lt('created_at', rangeEnd)
 
-    // Fetch reviews
+    // reviews
     const { data: reviewRows } = await supabase
       .from('reviews')
       .select('created_at')
@@ -93,12 +232,16 @@ export default function AnalyticsPage() {
     for (let i = 0; i < periodDays; i++) {
       const d = addDays(sevenAgo, i)
       const dateStr = isoDate(d)
-      const dayPvs = (pvRows || []).filter(r => r.created_at?.startsWith(dateStr))
-      const daySessions = new Set(dayPvs.map(r => r.session_id))
-      const dayOrders = (orderRows || []).filter(r => r.created_at?.startsWith(dateStr) && r.status === 'paid')
-      const daySignups = (profileRows || []).filter(r => r.created_at?.startsWith(dateStr))
-      const dayConsulting = (consultingRows || []).filter(r => r.created_at?.startsWith(dateStr))
-      const dayReviews = (reviewRows || []).filter(r => r.created_at?.startsWith(dateStr))
+      const dayPvs = (pvRows || []).filter((r) => r.created_at?.startsWith(dateStr))
+      const daySessions = new Set(dayPvs.map((r) => r.session_id))
+      const dayOrders = (orderRows || []).filter(
+        (r) => r.created_at?.startsWith(dateStr) && r.status === 'paid'
+      )
+      const daySignups = (profileRows || []).filter((r) => r.created_at?.startsWith(dateStr))
+      const dayConsulting = (consultingRows || []).filter((r) =>
+        r.created_at?.startsWith(dateStr)
+      )
+      const dayReviews = (reviewRows || []).filter((r) => r.created_at?.startsWith(dateStr))
 
       stats.push({
         date: dateStr,
@@ -113,13 +256,46 @@ export default function AnalyticsPage() {
     }
     setDailyStats(stats)
 
-    // Fetch ALL page_views for monthly/yearly
+    // ── Funnel ───────────────────────────────────────────────────────
+    const allSessions = new Set((pvRows || []).map((r) => r.session_id))
+    const storeSessions = new Set(
+      (pvRows || []).filter((r) => r.path?.startsWith('/store/')).map((r) => r.session_id)
+    )
+    const allOrders = (orderRows || []).length
+    const completedOrders = (orderRows || []).filter((r) =>
+      ['paid', 'completed'].includes(r.status)
+    ).length
+
+    setFunnelData({
+      visitors: allSessions.size,
+      storeViews: storeSessions.size,
+      orders: allOrders,
+      completed: completedOrders,
+    })
+
+    // ── Referrer analysis ─────────────────────────────────────────────
+    const refMap: Record<string, number> = {}
+    for (const row of pvRows || []) {
+      const key = normalizeReferrer(row.referrer)
+      refMap[key] = (refMap[key] || 0) + 1
+    }
+    const sorted = Object.entries(refMap)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .map(([referrer, count]) => ({ referrer, count }))
+    setReferrers(sorted)
+    setTotalRefs((pvRows || []).length)
+
+    // ── Monthly/Yearly — fetch ALL page_views (count only per month) ──
+    // Still need all-time data for the monthly table; we fetch only session_id + created_at
     const { data: allPv } = await supabase
       .from('page_views')
       .select('created_at, session_id')
       .order('created_at', { ascending: true })
 
     const monthly: Record<string, Record<number, { pv: number; uv: number }>> = {}
+    const sessionsByMonth: Record<string, Record<number, Set<string>>> = {}
+
     for (const row of allPv || []) {
       const d = new Date(row.created_at)
       const y = String(d.getFullYear())
@@ -127,13 +303,7 @@ export default function AnalyticsPage() {
       if (!monthly[y]) monthly[y] = {}
       if (!monthly[y][m]) monthly[y][m] = { pv: 0, uv: 0 }
       monthly[y][m].pv += 1
-    }
-    // Count unique sessions per month
-    const sessionsByMonth: Record<string, Record<number, Set<string>>> = {}
-    for (const row of allPv || []) {
-      const d = new Date(row.created_at)
-      const y = String(d.getFullYear())
-      const m = d.getMonth() + 1
+
       if (!sessionsByMonth[y]) sessionsByMonth[y] = {}
       if (!sessionsByMonth[y][m]) sessionsByMonth[y][m] = new Set()
       sessionsByMonth[y][m].add(row.session_id)
@@ -157,30 +327,33 @@ export default function AnalyticsPage() {
     )
   }
 
-  const maxPv = Math.max(...dailyStats.map(s => s.pageViews), 1)
-  const maxUv = Math.max(...dailyStats.map(s => s.visitors), 1)
-  const chartMax = Math.max(maxPv, maxUv, 1)
+  // ── Chart data ────────────────────────────────────────────────────────
+  const maxPv = Math.max(...dailyStats.map((s) => s.pageViews), 1)
+  const maxUv = Math.max(...dailyStats.map((s) => s.visitors), 1)
+  const pvuvMax = Math.max(maxPv, maxUv, 1)
+  const maxRevenue = Math.max(...dailyStats.map((s) => s.revenue), 1)
 
-  // Chart dimensions
-  const W = 700
-  const H = 200
-  const PAD = 40
-  const plotW = W - PAD * 2
-  const plotH = H - 40
-
-  const lastIdx = Math.max(dailyStats.length - 1, 1)
-  function toX(i: number) {
-    return PAD + (i / lastIdx) * plotW
+  const pvSeries: LineChartSeries = {
+    points: dailyStats.map((s, i) => ({ x: i, y: s.pageViews })),
+    stroke: 'rgba(147,197,253,0.8)',
+    fill: 'rgba(147,197,253,0.2)',
+    strokeWidth: 2,
   }
-  function toY(v: number) {
-    return H - 20 - (v / chartMax) * plotH
+  const uvSeries: LineChartSeries = {
+    points: dailyStats.map((s, i) => ({ x: i, y: s.visitors })),
+    stroke: '#2563eb',
+    strokeWidth: 2.5,
+  }
+  const revSeries: LineChartSeries = {
+    points: dailyStats.map((s, i) => ({ x: i, y: s.revenue })),
+    stroke: '#ef4444',
+    fill: 'rgba(239,68,68,0.08)',
+    strokeWidth: 2.5,
   }
 
-  const pvPoints = dailyStats.map((s, i) => `${toX(i)},${toY(s.pageViews)}`).join(' ')
-  const uvPoints = dailyStats.map((s, i) => `${toX(i)},${toY(s.visitors)}`).join(' ')
-  const areaPoints = `${toX(0)},${H - 20} ${pvPoints} ${toX(lastIdx)},${H - 20}`
+  const xLabels = dailyStats.map((s) => fmt(new Date(s.date)))
 
-  // Monthly/Yearly table
+  // Monthly/Yearly
   const years = Object.keys(monthlyData).sort()
   if (years.length === 0) {
     const curYear = String(new Date().getFullYear())
@@ -189,7 +362,6 @@ export default function AnalyticsPage() {
 
   // Weekly calendar (last 4 weeks)
   const todayDate = startOfDay(new Date())
-  // Find last Sunday
   const todayDow = todayDate.getDay()
   const lastSunday = addDays(todayDate, -todayDow)
   const weeks: { start: Date; days: (DayStat | null)[] }[] = []
@@ -199,16 +371,24 @@ export default function AnalyticsPage() {
     for (let d = 0; d < 7; d++) {
       const date = addDays(weekStart, d)
       const ds = isoDate(date)
-      const match = dailyStats.find(s => s.date === ds)
+      const match = dailyStats.find((s) => s.date === ds)
       days.push(match || null)
     }
     weeks.push({ start: weekStart, days })
   }
 
-  // Daily average per month
   function daysInMonth(year: number, month: number) {
     return new Date(year, month, 0).getDate()
   }
+
+  // ── Funnel bars ───────────────────────────────────────────────────────
+  const funnelSteps = [
+    { label: '방문자 수', value: funnelData.visitors, color: 'bg-blue-500' },
+    { label: '상품 조회 (/store/)', value: funnelData.storeViews, color: 'bg-indigo-500' },
+    { label: '장바구니 (주문 생성)', value: funnelData.orders, color: 'bg-amber-500' },
+    { label: '구매 완료', value: funnelData.completed, color: 'bg-emerald-500' },
+  ]
+  const funnelMax = Math.max(funnelData.visitors, 1)
 
   return (
     <div className="space-y-6">
@@ -220,7 +400,7 @@ export default function AnalyticsPage() {
               key={days}
               type="button"
               onClick={() => setPeriodDays(days)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                 periodDays === days
                   ? 'bg-white text-gray-900 shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
@@ -234,7 +414,9 @@ export default function AnalyticsPage() {
 
       {/* ── 방문자 차트 ── */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">방문자 추이 (최근 {periodDays}일)</h2>
+        <h2 className="text-sm font-semibold text-gray-700 mb-4">
+          방문자 추이 (최근 {periodDays}일)
+        </h2>
         <div className="flex items-center gap-6 mb-3 text-xs text-gray-500">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'rgba(147,197,253,0.5)' }} />
@@ -245,36 +427,113 @@ export default function AnalyticsPage() {
             방문자
           </span>
         </div>
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full max-w-3xl" style={{ height: 220 }}>
-          {/* Grid lines */}
-          {[0, 0.25, 0.5, 0.75, 1].map(r => {
-            const y = H - 20 - r * plotH
+        <LineChart
+          series={[pvSeries, uvSeries]}
+          xLabels={xLabels}
+          yMax={pvuvMax}
+          height={200}
+        />
+      </div>
+
+      {/* ── 매출 추이 차트 ── */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="text-sm font-semibold text-gray-700 mb-4">
+          매출 추이 (최근 {periodDays}일, 결제완료 기준)
+        </h2>
+        <div className="flex items-center gap-6 mb-3 text-xs text-gray-500">
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-sm bg-red-500" />
+            일별 매출
+          </span>
+          <span className="text-gray-400 ml-auto font-medium">
+            기간 합계: {dailyStats.reduce((a, s) => a + s.revenue, 0).toLocaleString()}원
+          </span>
+        </div>
+        <LineChart series={[revSeries]} xLabels={xLabels} yMax={maxRevenue} height={200} />
+      </div>
+
+      {/* ── 전환 퍼널 ── */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="text-sm font-semibold text-gray-700 mb-5">
+          전환 퍼널 (최근 {periodDays}일)
+        </h2>
+        <div className="space-y-4">
+          {funnelSteps.map((step, i) => {
+            const pct = funnelMax > 0 ? Math.round((step.value / funnelMax) * 100) : 0
+            const prevValue = i > 0 ? funnelSteps[i - 1].value : step.value
+            const dropPct =
+              i > 0 && prevValue > 0
+                ? Math.round((step.value / prevValue) * 100)
+                : null
+
             return (
-              <g key={r}>
-                <line x1={PAD} y1={y} x2={W - PAD} y2={y} stroke="#e5e7eb" strokeWidth="1" />
-                <text x={PAD - 6} y={y + 4} textAnchor="end" fontSize="10" fill="#9ca3af">
-                  {Math.round(chartMax * r)}
-                </text>
-              </g>
+              <div key={step.label}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-700 font-medium">{step.label}</span>
+                    {dropPct !== null && (
+                      <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                        전단계 대비 {dropPct}%
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900">
+                    {step.value.toLocaleString()}
+                    <span className="text-xs text-gray-400 font-normal ml-1">({pct}%)</span>
+                  </span>
+                </div>
+                <div className="h-7 w-full bg-gray-100 rounded-lg overflow-hidden">
+                  <div
+                    className={`h-full ${step.color} rounded-lg transition-all duration-500 flex items-center justify-end pr-2`}
+                    style={{ width: `${Math.max(pct, pct > 0 ? 2 : 0)}%` }}
+                  >
+                    {pct >= 8 && (
+                      <span className="text-white text-xs font-medium">{pct}%</span>
+                    )}
+                  </div>
+                </div>
+              </div>
             )
           })}
-          {/* Area fill for page views */}
-          <polygon points={areaPoints} fill="rgba(147,197,253,0.3)" />
-          {/* PV line */}
-          <polyline points={pvPoints} fill="none" stroke="rgba(147,197,253,0.8)" strokeWidth="2" />
-          {/* UV line */}
-          <polyline points={uvPoints} fill="none" stroke="#2563eb" strokeWidth="2.5" />
-          {/* Dots + labels */}
-          {dailyStats.map((s, i) => (
-            <g key={i}>
-              <circle cx={toX(i)} cy={toY(s.pageViews)} r="3" fill="rgba(147,197,253,0.8)" />
-              <circle cx={toX(i)} cy={toY(s.visitors)} r="3.5" fill="#2563eb" />
-              <text x={toX(i)} y={H - 4} textAnchor="middle" fontSize="10" fill="#6b7280">
-                {fmt(new Date(s.date))}
-              </text>
-            </g>
-          ))}
-        </svg>
+        </div>
+        {funnelData.visitors === 0 && (
+          <p className="text-xs text-gray-400 mt-4 text-center">이 기간의 방문 데이터가 없습니다</p>
+        )}
+      </div>
+
+      {/* ── 유입 경로 (레퍼러) ── */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h2 className="text-sm font-semibold text-gray-700 mb-5">
+          유입 경로 (최근 {periodDays}일)
+        </h2>
+        {referrers.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-4">유입 데이터가 없습니다</p>
+        ) : (
+          <div className="space-y-3">
+            {referrers.map((ref) => {
+              const pct = totalRefs > 0 ? Math.round((ref.count / totalRefs) * 100) : 0
+              return (
+                <div key={ref.referrer}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm text-gray-700 font-medium truncate max-w-[60%]">
+                      {ref.referrer}
+                    </span>
+                    <span className="text-sm text-gray-500 shrink-0 ml-2">
+                      {ref.count.toLocaleString()}건{' '}
+                      <span className="text-gray-400 text-xs">({pct}%)</span>
+                    </span>
+                  </div>
+                  <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.max(pct, pct > 0 ? 1 : 0)}%` }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── 기간별 분석 ── */}
@@ -312,10 +571,16 @@ export default function AnalyticsPage() {
               <tr className="border-t border-gray-200 font-medium text-gray-800 bg-gray-50">
                 <td className="py-2 pr-4">합계</td>
                 <td className="py-2 px-3 text-right">{dailyStats.reduce((a, s) => a + s.orders, 0)}</td>
-                <td className="py-2 px-3 text-right">{dailyStats.reduce((a, s) => a + s.revenue, 0).toLocaleString()}원</td>
-                <td className="py-2 px-3 text-right text-blue-600">{dailyStats.reduce((a, s) => a + s.visitors, 0)}</td>
+                <td className="py-2 px-3 text-right">
+                  {dailyStats.reduce((a, s) => a + s.revenue, 0).toLocaleString()}원
+                </td>
+                <td className="py-2 px-3 text-right text-blue-600">
+                  {dailyStats.reduce((a, s) => a + s.visitors, 0)}
+                </td>
                 <td className="py-2 px-3 text-right">{dailyStats.reduce((a, s) => a + s.signups, 0)}</td>
-                <td className="py-2 px-3 text-right">{dailyStats.reduce((a, s) => a + s.consulting, 0)}</td>
+                <td className="py-2 px-3 text-right">
+                  {dailyStats.reduce((a, s) => a + s.consulting, 0)}
+                </td>
                 <td className="py-2 px-3 text-right">{dailyStats.reduce((a, s) => a + s.reviews, 0)}</td>
               </tr>
             </tfoot>
@@ -330,13 +595,21 @@ export default function AnalyticsPage() {
           <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
             <button
               onClick={() => setViewMode('visitors')}
-              className={`px-3 py-1.5 ${viewMode === 'visitors' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+              className={`px-3 py-1.5 cursor-pointer ${
+                viewMode === 'visitors'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-50'
+              }`}
             >
               방문자
             </button>
             <button
               onClick={() => setViewMode('pageviews')}
-              className={`px-3 py-1.5 ${viewMode === 'pageviews' ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'}`}
+              className={`px-3 py-1.5 cursor-pointer ${
+                viewMode === 'pageviews'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-gray-600 hover:bg-gray-50'
+              }`}
             >
               페이지뷰
             </button>
@@ -348,7 +621,9 @@ export default function AnalyticsPage() {
               <tr className="border-b border-gray-200 text-gray-500 text-xs">
                 <th className="text-left py-2 pr-4 font-medium">연도</th>
                 {Array.from({ length: 12 }, (_, i) => (
-                  <th key={i} className="text-right py-2 px-2 font-medium">{i + 1}월</th>
+                  <th key={i} className="text-right py-2 px-2 font-medium">
+                    {i + 1}월
+                  </th>
                 ))}
                 <th className="text-right py-2 pl-3 font-medium">합계</th>
               </tr>
@@ -362,7 +637,9 @@ export default function AnalyticsPage() {
                     {Array.from({ length: 12 }, (_, i) => {
                       const m = i + 1
                       const val = monthlyData[y]?.[m]
-                        ? viewMode === 'visitors' ? monthlyData[y][m].uv : monthlyData[y][m].pv
+                        ? viewMode === 'visitors'
+                          ? monthlyData[y][m].uv
+                          : monthlyData[y][m].pv
                         : 0
                       total += val
                       return (
@@ -371,7 +648,9 @@ export default function AnalyticsPage() {
                         </td>
                       )
                     })}
-                    <td className="py-2 pl-3 text-right font-medium text-blue-600">{total > 0 ? total.toLocaleString() : '-'}</td>
+                    <td className="py-2 pl-3 text-right font-medium text-blue-600">
+                      {total > 0 ? total.toLocaleString() : '-'}
+                    </td>
                   </tr>
                 )
               })}
@@ -389,7 +668,9 @@ export default function AnalyticsPage() {
               <tr className="border-b border-gray-200 text-gray-500 text-xs">
                 <th className="text-left py-2 pr-4 font-medium">연도</th>
                 {Array.from({ length: 12 }, (_, i) => (
-                  <th key={i} className="text-right py-2 px-2 font-medium">{i + 1}월</th>
+                  <th key={i} className="text-right py-2 px-2 font-medium">
+                    {i + 1}월
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -403,7 +684,9 @@ export default function AnalyticsPage() {
                     const days = daysInMonth(+y, m)
                     const avg = uv > 0 ? (uv / days).toFixed(1) : '-'
                     return (
-                      <td key={m} className="py-2 px-2 text-right text-gray-600">{avg}</td>
+                      <td key={m} className="py-2 px-2 text-right text-gray-600">
+                        {avg}
+                      </td>
                     )
                   })}
                 </tr>
@@ -421,8 +704,10 @@ export default function AnalyticsPage() {
             <thead>
               <tr className="border-b border-gray-200 text-gray-500 text-xs">
                 <th className="text-left py-2 pr-4 font-medium">주</th>
-                {DAY_LABELS.map(d => (
-                  <th key={d} className="text-center py-2 px-3 font-medium">{d}</th>
+                {DAY_LABELS.map((d) => (
+                  <th key={d} className="text-center py-2 px-3 font-medium">
+                    {d}
+                  </th>
                 ))}
                 <th className="text-right py-2 pl-3 font-medium">합계</th>
               </tr>
@@ -439,7 +724,16 @@ export default function AnalyticsPage() {
                       const dateObj = addDays(week.start, di)
                       const isFuture = dateObj > todayDate
                       return (
-                        <td key={di} className={`py-2 px-3 text-center ${isFuture ? 'text-gray-300' : d ? 'text-gray-700' : 'text-gray-400'}`}>
+                        <td
+                          key={di}
+                          className={`py-2 px-3 text-center ${
+                            isFuture
+                              ? 'text-gray-300'
+                              : d
+                              ? 'text-gray-700'
+                              : 'text-gray-400'
+                          }`}
+                        >
                           {isFuture ? '' : d ? d.visitors : 0}
                         </td>
                       )
