@@ -324,7 +324,7 @@ export default function StorePage() {
   return (
     <div className="container mx-auto px-4 py-10">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold">템플릿 스토어</h1>
+        <h1 className="text-2xl font-bold">문서 스토어</h1>
         <p className="text-muted-foreground mt-1">공공조달 입찰에 필요한 모든 문서 템플릿</p>
       </div>
 

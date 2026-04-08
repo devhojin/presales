@@ -250,7 +250,7 @@ export default function Home() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/store" className="inline-flex items-center justify-center h-11 px-6 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium text-sm transition-colors">
-                템플릿 스토어 둘러보기 <ArrowRight className="ml-2 w-4 h-4" />
+                문서 스토어 둘러보기 <ArrowRight className="ml-2 w-4 h-4" />
               </Link>
               <Link href="/consulting" className="inline-flex items-center justify-center h-11 px-6 rounded-lg border border-blue-400/30 text-blue-200 hover:bg-blue-500/10 font-medium text-sm transition-colors">
                 전문가 컨설팅 알아보기

@@ -101,7 +101,7 @@ export default function CartPage() {
             href="/store"
             className="inline-flex items-center h-10 px-6 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
           >
-            템플릿 스토어 둘러보기
+            문서 스토어 둘러보기
           </Link>
         </div>
       ) : (

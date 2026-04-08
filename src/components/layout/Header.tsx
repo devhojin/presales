@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 const navLinks = [
-  { href: '/store', label: '템플릿 스토어' },
+  { href: '/store', label: '문서 스토어' },
   { href: '/consulting', label: '컨설팅 패키지' },
   { href: '/about', label: '회사소개' },
   { href: '/faq', label: '고객지원' },

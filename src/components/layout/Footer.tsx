@@ -57,7 +57,7 @@ export function Footer() {
             <ul className="space-y-3 text-sm text-muted-foreground">
               <li>
                 <Link href="/store" className="hover:text-primary transition-colors">
-                  템플릿 스토어
+                  문서 스토어
                 </Link>
               </li>
               <li>
