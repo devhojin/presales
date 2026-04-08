@@ -43,17 +43,51 @@ export default function CheckoutPage() {
           return
         }
 
-        // 2. 주문 생성 (pending 상태)
-        const { data: order, error: orderError } = await supabase
+        // 2. 주문 생성 또는 재사용 (pending 상태)
+        // 기존 pending 주문 확인
+        const { data: existingOrder } = await supabase
           .from('orders')
-          .insert({
-            user_id: user.id,
-            total_amount: totalAmount,
-            status: 'pending',
-            payment_method: 'card',
-          })
           .select('id')
+          .eq('user_id', user.id)
+          .eq('status', 'pending')
           .single()
+
+        let order
+        let orderError
+
+        if (existingOrder) {
+          // 기존 pending 주문 재사용: total_amount 업데이트 및 order_items 재생성
+          const { error: updateError } = await supabase
+            .from('orders')
+            .update({ total_amount: totalAmount })
+            .eq('id', existingOrder.id)
+
+          if (updateError) {
+            addToast('주문 금액 업데이트에 실패했습니다.', 'error')
+            router.replace('/cart')
+            return
+          }
+
+          // 기존 order_items 삭제 후 재생성
+          await supabase.from('order_items').delete().eq('order_id', existingOrder.id)
+          order = existingOrder
+          orderError = null
+        } else {
+          // 새 pending 주문 생성
+          const insertResult = await supabase
+            .from('orders')
+            .insert({
+              user_id: user.id,
+              total_amount: totalAmount,
+              status: 'pending',
+              payment_method: 'card',
+            })
+            .select('id')
+            .single()
+
+          order = insertResult.data
+          orderError = insertResult.error
+        }
 
         if (orderError || !order) {
           addToast('주문 생성에 실패했습니다.', 'error')

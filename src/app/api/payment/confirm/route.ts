@@ -69,6 +69,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // C-5: 토스페이먼츠 응답 금액 검증
+    if (tossData.totalAmount !== amount) {
+      console.error('[금액 불일치]', { requestAmount: amount, tossAmount: tossData.totalAmount })
+      return NextResponse.json(
+        { error: '결제 금액이 불일치합니다. 다시 시도해주세요.' },
+        { status: 400 }
+      )
+    }
+
     // 4. DB에 주문 상태 업데이트
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -84,7 +93,7 @@ export async function POST(request: NextRequest) {
     // 주문 소유권 확인
     const { data: order } = await supabase
       .from('orders')
-      .select('id, user_id, total_amount')
+      .select('id, user_id, total_amount, status')
       .eq('id', dbOrderId)
       .single()
 
@@ -98,8 +107,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '결제 금액이 일치하지 않습니다' }, { status: 400 })
     }
 
-    // 주문 상태 업데이트
-    const { error: updateError } = await supabase
+    // C-2: 주문 상태 업데이트 (race condition 방지)
+    const { data: updatedOrders, error: updateError } = await supabase
       .from('orders')
       .update({
         status: 'paid',
@@ -108,10 +117,18 @@ export async function POST(request: NextRequest) {
         paid_at: new Date().toISOString(),
       })
       .eq('id', dbOrderId)
+      .eq('status', 'pending')
+      .select('id')
 
     if (updateError) {
       console.error('[주문 업데이트 실패]', updateError)
       return NextResponse.json({ error: '주문 상태 업데이트에 실패했습니다' }, { status: 500 })
+    }
+
+    // 업데이트된 행이 없으면 주문이 이미 처리됨 또는 상태가 변경됨
+    if (!updatedOrders || updatedOrders.length === 0) {
+      console.error('[주문 상태 변경 불가]', { orderId: dbOrderId, currentStatus: order.status })
+      return NextResponse.json({ error: '주문이 이미 처리되었거나 상태가 변경되었습니다' }, { status: 409 })
     }
 
     // 5. 주문 확인 이메일 발송 (비동기, 실패해도 결제 성공)
