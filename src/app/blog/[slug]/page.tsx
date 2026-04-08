@@ -134,7 +134,7 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
       <div className="max-w-[1400px] mx-auto px-4 py-12">
         <div className="flex gap-8">
           {/* Main Content */}
-          <div className="flex-1 max-w-[800px]">
+          <div className="flex-1">
 
             {/* Content */}
             <div className="prose prose-sm max-w-none prose-headings:font-bold prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3 prose-h4:text-base prose-h4:mt-4 prose-h4:mb-2 prose-p:text-gray-700 prose-p:leading-relaxed prose-li:text-gray-700 prose-strong:text-gray-900 prose-ul:my-4 prose-li:my-1 prose-table:border-collapse prose-th:bg-gray-50 prose-th:p-3 prose-th:text-left prose-th:border prose-th:border-gray-200 prose-td:p-3 prose-td:border prose-td:border-gray-200">
