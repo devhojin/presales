@@ -16,6 +16,9 @@ export default function CartPage() {
   const { addToast } = useToastStore()
   const [processing, setProcessing] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [couponCode, setCouponCode] = useState('')
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [appliedCoupon, setAppliedCoupon] = useState<{ id: number; name: string; discount_type: string; discount_value: number } | null>(null)
   const router = useRouter()
 
   const allFree = items.length > 0 && items.every((item) => item.price === 0)
@@ -83,6 +86,49 @@ export default function CartPage() {
     return new Intl.NumberFormat('ko-KR').format(price) + '원'
   }
 
+  function getCouponDiscount() {
+    if (!appliedCoupon) return 0
+    const cartTotal = getTotal() + getDiscountTotal()
+    if (appliedCoupon.discount_type === 'percent') {
+      return Math.floor((cartTotal * appliedCoupon.discount_value) / 100)
+    } else {
+      return appliedCoupon.discount_value
+    }
+  }
+
+  async function applyCoupon() {
+    setCouponLoading(true)
+    try {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('coupons')
+        .select('id, name, code, discount_type, discount_value, min_amount, is_active, expires_at')
+        .eq('code', couponCode)
+        .eq('is_active', true)
+        .single()
+
+      if (!data) {
+        addToast('유효하지 않은 쿠폰 코드입니다.', 'error')
+        return
+      }
+      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+        addToast('만료된 쿠폰입니다.', 'error')
+        return
+      }
+      const cartTotal = getTotal() + getDiscountTotal()
+      if (data.min_amount && cartTotal < data.min_amount) {
+        addToast(`최소 주문금액 ${data.min_amount.toLocaleString()}원 이상이어야 합니다.`, 'error')
+        return
+      }
+      setAppliedCoupon(data)
+      addToast('쿠폰이 적용되었습니다!', 'success')
+    } catch {
+      addToast('쿠폰 확인 중 오류가 발생했습니다.', 'error')
+    } finally {
+      setCouponLoading(false)
+    }
+  }
+
   return (
     <div className="container mx-auto px-4 py-10 max-w-3xl">
       <Link href="/store" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6">
@@ -144,6 +190,45 @@ export default function CartPage() {
             ))}
           </div>
 
+          {/* 쿠폰 코드 입력 */}
+          <div className="border border-border rounded-lg p-4">
+            <h3 className="text-sm font-semibold mb-3">쿠폰 코드</h3>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                placeholder="쿠폰 코드를 입력하세요"
+                className="flex-1 h-10 rounded-lg border border-border px-3 text-sm"
+                maxLength={20}
+                disabled={appliedCoupon !== null}
+              />
+              <button
+                onClick={applyCoupon}
+                disabled={!couponCode || couponLoading || appliedCoupon !== null}
+                className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors cursor-pointer"
+              >
+                {couponLoading ? '확인중...' : '적용'}
+              </button>
+            </div>
+            {appliedCoupon && (
+              <div className="flex items-center justify-between text-sm p-2 bg-emerald-50 rounded-lg">
+                <span className="text-emerald-600 font-medium">
+                  ✓ {appliedCoupon.name} (-{appliedCoupon.discount_type === 'percent' ? `${appliedCoupon.discount_value}%` : `${appliedCoupon.discount_value.toLocaleString()}원`})
+                </span>
+                <button
+                  onClick={() => {
+                    setAppliedCoupon(null)
+                    setCouponCode('')
+                  }}
+                  className="text-xs text-muted-foreground hover:text-foreground hover:font-medium cursor-pointer"
+                >
+                  취소
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Summary */}
           <div className="bg-muted/30 rounded-xl p-6 space-y-4">
             <h2 className="font-semibold">주문 요약</h2>
@@ -154,14 +239,20 @@ export default function CartPage() {
               </div>
               {getDiscountTotal() > 0 && (
                 <div className="flex justify-between text-red-500">
-                  <span>할인</span>
+                  <span>상품 할인</span>
                   <span>-{formatPrice(getDiscountTotal())}</span>
+                </div>
+              )}
+              {getCouponDiscount() > 0 && (
+                <div className="flex justify-between text-emerald-600 font-medium">
+                  <span>쿠폰 할인</span>
+                  <span>-{formatPrice(getCouponDiscount())}</span>
                 </div>
               )}
               <Separator />
               <div className="flex justify-between font-bold text-lg pt-2">
                 <span>결제 금액</span>
-                <span className="text-primary">{formatPrice(getTotal())}</span>
+                <span className="text-primary">{formatPrice(Math.max(0, getTotal() - getCouponDiscount()))}</span>
               </div>
             </div>
 
@@ -224,7 +315,7 @@ export default function CartPage() {
                   disabled={processing}
                   className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  {processing ? '처리 중...' : allFree ? '무료 다운로드' : `결제하기 (${formatPrice(getTotal())})`}
+                  {processing ? '처리 중...' : allFree ? '무료 다운로드' : `결제하기 (${formatPrice(Math.max(0, getTotal() - getCouponDiscount()))})`}
                 </button>
               </div>
 
