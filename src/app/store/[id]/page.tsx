@@ -10,9 +10,10 @@ import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, ArrowRight, ShoppingCart, Check, Download, Play, BookOpen, FileDown } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ShoppingCart, Check, Download, Play, BookOpen, FileDown, Copy, Share2, Mail } from 'lucide-react'
 import { PdfPreviewModal } from '@/components/pdf-preview-modal'
 import { ProductReviews } from '@/components/reviews/ProductReviews'
+import * as gtag from '@/lib/gtag'
 
 type TabId = 'info' | 'video' | 'review'
 
@@ -38,6 +39,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [productFiles, setProductFiles] = useState<ProductFile[]>([])
   const [downloading, setDownloading] = useState(false)
+  const [copied, setCopied] = useState(false)
   const { toggleItem, isInCart } = useCartStore()
   const { addToast } = useToastStore()
 
@@ -57,6 +59,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
       if (data) {
         setProduct(data)
+        // GA4: product view
+        gtag.trackProductView(String(data.id), data.title, data.price ?? undefined)
 
         // Load product files
         const { data: filesData } = await supabase
@@ -143,6 +147,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       }
       const { url } = await res.json()
       window.open(url, '_blank')
+      // GA4: download event
+      const ext = (product.format || 'file').toLowerCase()
+      gtag.trackDownload(product.title, ext)
       // 로컬 다운로드 카운트 반영 (서버에서 실제 증가 처리됨)
       setProduct(prev => prev ? { ...prev, download_count: (prev.download_count || 0) + 1 } : prev)
     } catch {
@@ -312,12 +319,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <div className="hidden sm:flex gap-3">
             {canDownload ? (
               <button
-                onClick={() => handleDownload(productFiles[0]?.id)}
-                disabled={downloading}
-                className="flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+                onClick={() => productFiles.length > 0 ? handleDownload(productFiles[0]?.id) : undefined}
+                disabled={downloading || productFiles.length === 0}
+                className={`flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-60 ${productFiles.length === 0 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
               >
                 <Download className="w-4 h-4" />
-                {downloading ? '다운로드 중...' : '다운로드'}
+                {downloading ? '다운로드 중...' : productFiles.length === 0 ? '파일 준비중' : '다운로드'}
               </button>
             ) : !isLoggedIn && product.is_free ? (
               <Link
@@ -384,6 +391,47 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
             <p className="text-xs text-amber-800">⚠️ 디지털 상품 특성상 다운로드 후 환불이 제한될 수 있습니다.</p>
           </div>
+
+          {/* Share buttons */}
+          {(() => {
+            const pageUrl = typeof window !== 'undefined' ? window.location.href : `https://presales.co.kr/store/${id}`
+            return (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-muted-foreground">공유:</span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(pageUrl).then(() => {
+                      setCopied(true)
+                      setTimeout(() => setCopied(false), 2000)
+                    })
+                  }}
+                  title="링크 복사"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  {copied ? '복사됨!' : '링크 복사'}
+                </button>
+                <a
+                  href={`https://sharer.kakao.com/talk/friends/picker/link?url=${encodeURIComponent(pageUrl)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="카카오톡 공유"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                  카카오톡
+                </a>
+                <a
+                  href={`mailto:?subject=${encodeURIComponent(product.title)}&body=${encodeURIComponent(pageUrl)}`}
+                  title="이메일 공유"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  이메일
+                </a>
+              </div>
+            )
+          })()}
         </div>
       </div>
 
@@ -540,12 +588,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         <div className="flex gap-2">
           {canDownload ? (
             <button
-              onClick={() => handleDownload(productFiles[0]?.id)}
-              disabled={downloading}
-              className="flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+              onClick={() => productFiles.length > 0 ? handleDownload(productFiles[0]?.id) : undefined}
+              disabled={downloading || productFiles.length === 0}
+              className={`flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-60 ${productFiles.length === 0 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
             >
               <Download className="w-4 h-4" />
-              {downloading ? '다운로드 중...' : '다운로드'}
+              {downloading ? '다운로드 중...' : productFiles.length === 0 ? '파일 준비중' : '다운로드'}
             </button>
           ) : !isLoggedIn && product.is_free ? (
             <Link

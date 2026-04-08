@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import * as gtag from '@/lib/gtag'
 
 export interface CartItem {
   productId: number
@@ -30,6 +31,8 @@ export const useCartStore = create<CartState>()(
         const exists = get().items.find((i) => i.productId === item.productId)
         if (!exists) {
           set({ items: [...get().items, item] })
+          // GA4: add to cart
+          gtag.trackAddToCart(String(item.productId), item.title, 1)
         }
       },
 

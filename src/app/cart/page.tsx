@@ -9,6 +9,7 @@ import { ShoppingCart, Trash2, X, ArrowLeft, AlertTriangle, Gift } from 'lucide-
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { useToastStore } from '@/stores/toast-store'
+import * as gtag from '@/lib/gtag'
 
 export default function CartPage() {
   const { items, removeItem, clearCart, getTotal, getDiscountTotal } = useCartStore()
@@ -63,6 +64,8 @@ export default function CartPage() {
         price: 0,
       }))
       await supabase.from('order_items').insert(orderItems)
+      // GA4: purchase event
+      gtag.trackPurchase(String(order.id), 0)
       // Remove only free items from cart
       freeItems.forEach((item) => removeItem(item.productId))
       addToast('무료 상품이 처리되었습니다! 마이페이지에서 다운로드하세요.', 'success')
@@ -211,6 +214,8 @@ export default function CartPage() {
                           price: 0,
                         }))
                         await supabase.from('order_items').insert(orderItems)
+                        // GA4: purchase event
+                        gtag.trackPurchase(String(order.id), 0)
                         clearCart()
                         addToast('주문이 완료되었습니다! 마이페이지에서 다운로드하세요.', 'success')
                         router.push('/mypage')
