@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, Star, ArrowLeft, ChevronLeft, ChevronRight, Loader2, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, Star, ArrowLeft, ChevronLeft, ChevronRight, Loader2, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
 const adminNav = [
@@ -17,6 +17,7 @@ const adminNav = [
   { href: '/admin/analytics', icon: BarChart3, label: '통계 분석' },
   { href: '/admin/faq', icon: HelpCircle, label: 'FAQ 관리' },
   { href: '/admin/coupons', icon: Tag, label: '쿠폰 관리' },
+  { href: '/admin/discount-matches', icon: Link2, label: '할인 매칭' },
   { href: '/admin/settings', icon: Settings, label: '사이트 설정' },
 ]
 

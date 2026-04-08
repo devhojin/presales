@@ -41,6 +41,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [productFiles, setProductFiles] = useState<ProductFile[]>([])
   const [downloading, setDownloading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [matchDiscount, setMatchDiscount] = useState<{
+    sourceTitle: string
+    discountAmount: number
+  } | null>(null)
   const { toggleItem, isInCart } = useCartStore()
   const { addToast } = useToastStore()
 
@@ -75,8 +79,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         const { data: { user } } = await supabase.auth.getUser()
         setIsLoggedIn(!!user)
         if (user) {
+          let hasPurchasedThisProduct = false
           if (data.is_free) {
             // 무료 상품: 로그인만 하면 다운로드 가능
+            hasPurchasedThisProduct = true
             setHasPurchased(true)
           } else {
             const { data: paidOrders } = await supabase
@@ -85,7 +91,55 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               .eq('user_id', user.id)
               .eq('status', 'paid')
               .eq('order_items.product_id', data.id)
-            setHasPurchased((paidOrders && paidOrders.length > 0) || false)
+            hasPurchasedThisProduct = (paidOrders && paidOrders.length > 0) || false
+            setHasPurchased(hasPurchasedThisProduct)
+          }
+
+          // 할인 매칭 조회: 이 상품이 타겟인 매칭 찾기
+          const { data: matches } = await supabase
+            .from('product_discount_matches')
+            .select('source_product_id, discount_type, discount_amount')
+            .eq('target_product_id', Number(id))
+            .eq('is_active', true)
+
+          if (matches && matches.length > 0) {
+            // 사용자의 구매 이력에서 소스 상품 확인
+            const sourceIds = matches.map(m => m.source_product_id)
+            const { data: purchasedSources } = await supabase
+              .from('orders')
+              .select('id, order_items!inner(product_id)')
+              .eq('user_id', user.id)
+              .eq('status', 'paid')
+              .in('order_items.product_id', sourceIds)
+
+            if (purchasedSources && purchasedSources.length > 0) {
+              // 매칭되는 소스 상품 찾기
+              const purchasedSourceIds = purchasedSources.flatMap(o =>
+                o.order_items.map((oi: { product_id: number }) => oi.product_id)
+              )
+              const applicableMatch = matches.find(m => purchasedSourceIds.includes(m.source_product_id))
+
+              if (applicableMatch) {
+                // 소스 상품 이름 조회
+                const { data: sourceProduct } = await supabase
+                  .from('products')
+                  .select('title, price')
+                  .eq('id', applicableMatch.source_product_id)
+                  .single()
+
+                const discountAmt = applicableMatch.discount_type === 'auto'
+                  ? (sourceProduct?.price || 0)
+                  : applicableMatch.discount_amount
+
+                // 타겟 상품을 이미 구매했으면 할인 표시 안함
+                if (!hasPurchasedThisProduct && discountAmt > 0) {
+                  setMatchDiscount({
+                    sourceTitle: sourceProduct?.title || '',
+                    discountAmount: Math.min(discountAmt, data.price) // 상품 가격 초과 방지
+                  })
+                }
+              }
+            }
           }
         }
 
@@ -268,6 +322,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             )}
           </div>
 
+          {matchDiscount && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+              <p className="text-sm font-semibold text-emerald-800 mb-1">
+                🎉 구매 이력 할인 적용 가능!
+              </p>
+              <p className="text-sm text-emerald-700">
+                <span className="font-medium">{matchDiscount.sourceTitle}</span>을 이미 구매하셨으므로
+              </p>
+              <p className="text-lg font-bold text-emerald-800 mt-1">
+                {formatPrice(matchDiscount.discountAmount)} 할인 → 최종가 {formatPrice(Math.max(0, product.price - matchDiscount.discountAmount))}
+              </p>
+            </div>
+          )}
+
           <Separator />
 
           <div className="grid grid-cols-2 gap-4 text-sm">
@@ -347,11 +415,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <button
                 onClick={() => {
                   const wasInCart = inCart
+                  const discountedPrice = matchDiscount
+                    ? Math.max(0, product.price - matchDiscount.discountAmount)
+                    : product.price
                   toggleItem({
                     productId: product.id,
                     title: product.title,
-                    price: product.price,
-                    originalPrice: product.original_price,
+                    price: discountedPrice,
+                    originalPrice: product.original_price > 0 ? product.original_price : product.price,
                     thumbnail: product.thumbnail_url || '',
                     format: product.format || '',
                   })
@@ -573,11 +644,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             if (inCart) {
               router.push('/cart')
             } else {
+              const discountedPrice = matchDiscount
+                ? Math.max(0, product.price - matchDiscount.discountAmount)
+                : product.price
               toggleItem({
                 productId: product.id,
                 title: product.title,
-                price: product.price,
-                originalPrice: product.original_price,
+                price: discountedPrice,
+                originalPrice: product.original_price > 0 ? product.original_price : product.price,
                 thumbnail: product.thumbnail_url || '',
                 format: product.format || '',
               })
@@ -619,11 +693,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <button
               onClick={() => {
                 const wasInCart = inCart
+                const discountedPrice = matchDiscount
+                  ? Math.max(0, product.price - matchDiscount.discountAmount)
+                  : product.price
                 toggleItem({
                   productId: product.id,
                   title: product.title,
-                  price: product.price,
-                  originalPrice: product.original_price,
+                  price: discountedPrice,
+                  originalPrice: product.original_price > 0 ? product.original_price : product.price,
                   thumbnail: product.thumbnail_url || '',
                   format: product.format || '',
                 })

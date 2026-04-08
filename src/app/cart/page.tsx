@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useCartStore } from '@/stores/cart-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ShoppingCart, Trash2, X, ArrowLeft, Gift } from 'lucide-react'
+import { ShoppingCart, Trash2, X, ArrowLeft, Gift, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { useToastStore } from '@/stores/toast-store'
@@ -173,10 +173,16 @@ export default function CartPage() {
                     <h3 className="text-sm font-semibold line-clamp-2 leading-snug">{item.title}</h3>
                   </Link>
                   <p className="text-xs text-muted-foreground mt-1">{item.format}</p>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
                     <span className="text-base font-bold text-primary">{formatPrice(item.price)}</span>
                     {item.originalPrice > item.price && (
-                      <span className="text-xs text-muted-foreground line-through">{formatPrice(item.originalPrice)}</span>
+                      <>
+                        <span className="text-xs text-muted-foreground line-through">{formatPrice(item.originalPrice)}</span>
+                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-medium">
+                          <Sparkles className="w-3 h-3" />
+                          구매 이력 할인
+                        </div>
+                      </>
                     )}
                   </div>
                 </div>

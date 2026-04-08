@@ -58,13 +58,67 @@ export default function CheckoutPage() {
           return
         }
 
-        // 가격 변동 확인
-        const priceChanged = paidItems.some(item => {
-          const dbProduct = validProducts.find(p => p.id === item.productId)
-          return !dbProduct || dbProduct.price !== item.price
-        })
-        if (priceChanged) {
-          addToast('상품 가격이 변경되었습니다. 장바구니를 확인해주세요.', 'error')
+        // 할인 매칭 서버사이드 재검증
+        const { data: userPaidOrders } = await supabase
+          .from('orders')
+          .select('id, order_items!inner(product_id)')
+          .eq('user_id', user.id)
+          .eq('status', 'paid')
+
+        const userPurchasedIds = userPaidOrders?.flatMap(o =>
+          o.order_items.map((oi: { product_id: number }) => oi.product_id)
+        ) || []
+
+        let expectedTotalAmount = 0
+        if (userPurchasedIds.length > 0) {
+          const { data: activeMatches } = await supabase
+            .from('product_discount_matches')
+            .select('source_product_id, target_product_id, discount_type, discount_amount')
+            .in('target_product_id', productIds)
+            .in('source_product_id', userPurchasedIds)
+            .eq('is_active', true)
+
+          if (activeMatches && activeMatches.length > 0) {
+            // 소스 상품 가격 조회 (auto 타입용)
+            const sourceProductIds = activeMatches.filter(m => m.discount_type === 'auto').map(m => m.source_product_id)
+            let sourceProducts: { id: number; price: number }[] = []
+            if (sourceProductIds.length > 0) {
+              const { data } = await supabase
+                .from('products')
+                .select('id, price')
+                .in('id', sourceProductIds)
+              sourceProducts = data || []
+            }
+
+            // 각 상품별 할인 계산
+            for (const item of paidItems) {
+              const itemMatches = activeMatches.filter(m => m.target_product_id === item.productId)
+              let applicableDiscount = 0
+
+              for (const match of itemMatches) {
+                if (userPurchasedIds.includes(match.source_product_id)) {
+                  const discount = match.discount_type === 'auto'
+                    ? (sourceProducts.find(p => p.id === match.source_product_id)?.price || 0)
+                    : match.discount_amount
+                  applicableDiscount = Math.max(applicableDiscount, discount)
+                  break
+                }
+              }
+
+              const dbProduct = validProducts.find(p => p.id === item.productId)
+              const discountedPrice = Math.max(0, (dbProduct?.price || 0) - applicableDiscount)
+              expectedTotalAmount += discountedPrice
+            }
+          } else {
+            expectedTotalAmount = validProducts.reduce((sum, p) => sum + p.price, 0)
+          }
+        } else {
+          expectedTotalAmount = validProducts.reduce((sum, p) => sum + p.price, 0)
+        }
+
+        // 가격 검증: 장바구니의 총액이 예상 금액과 일치하는지 확인
+        if (totalAmount !== expectedTotalAmount) {
+          addToast('주문 금액이 일치하지 않습니다. 장바구니를 다시 확인해주세요.', 'error')
           router.replace('/cart')
           return
         }

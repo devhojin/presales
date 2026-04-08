@@ -65,6 +65,19 @@ export interface DbReviewHelpful {
   review_id: number
 }
 
+export interface DbProductDiscountMatch {
+  id: number
+  source_product_id: number
+  target_product_id: number
+  discount_type: 'auto' | 'manual'
+  discount_amount: number
+  is_active: boolean
+  created_at: string
+  updated_at: string
+  source_product?: DbProduct
+  target_product?: DbProduct
+}
+
 export const priceTypes = [
   { id: 'free', label: '무료', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   { id: 'paid', label: '유료', color: 'bg-blue-50 text-blue-700 border-blue-200' },
