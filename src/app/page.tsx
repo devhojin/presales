@@ -224,16 +224,13 @@ export default function Home() {
     return ['문서']
   }
 
-  // Build dynamic stats display
-  const statsDisplay = []
-  if (stats) {
-    statsDisplay.push({ emoji: '📄', value: `${stats.productCount}종`, label: '전문 템플릿' })
-    statsDisplay.push({ emoji: '📥', value: stats.downloadCount > 0 ? `${stats.downloadCount.toLocaleString()}+` : '0', label: '누적 다운로드' })
-    if (stats.reviewAvg !== null) {
-      statsDisplay.push({ emoji: '⭐', value: `${stats.reviewAvg.toFixed(1)} / 5.0`, label: '고객 만족도' })
-    }
-    statsDisplay.push({ emoji: '🏛️', value: '17년', label: '공공조달 전문' })
-  }
+  // Build dynamic stats display (경쟁사 노출 방지: 상품 수/다운로드 수 제외)
+  const statsDisplay = [
+    { emoji: '🏛️', value: '17년', label: '공공조달 경력' },
+    { emoji: '📋', value: '6개 분야', label: '전문 문서 카테고리' },
+    { emoji: '🤝', value: '1:1', label: '전문가 맞춤 컨설팅' },
+    { emoji: '🔒', value: '100%', label: '보안 다운로드' },
+  ]
 
   return (
     <div>
@@ -241,15 +238,15 @@ export default function Home() {
       <section className="relative overflow-hidden bg-gradient-to-br from-[#0B1629] via-[#132744] to-[#1a3a5c] text-white">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.15),transparent_50%)]" />
         <div className="container mx-auto px-4 py-20 md:py-32 relative z-10">
-          <div className="max-w-3xl">
+          <div className="max-w-2xl mx-auto text-center">
             <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 mb-6">공공조달 제안서 전문 플랫폼</Badge>
             <h1 className="text-3xl md:text-5xl font-bold leading-tight mb-6">
               공공조달의 복잡함을<br /><span className="text-blue-400">문서로 단순하게</span>
             </h1>
-            <p className="text-lg text-blue-100 mb-8 max-w-xl leading-relaxed">
+            <p className="text-lg text-blue-100 mb-8 leading-relaxed">
               나라장터·조달청 입찰에 최적화된 기술제안서, 가격제안서, 발표PT 템플릿. 실전 경험이 녹아든 문서로 수주 확률을 높이세요.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/store" className="inline-flex items-center justify-center h-11 px-6 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium text-sm transition-colors">
                 문서 스토어 둘러보기 <ArrowRight className="ml-2 w-4 h-4" />
               </Link>
@@ -264,7 +261,7 @@ export default function Home() {
         {statsDisplay.length > 0 && (
           <div className="relative z-10 bg-white shadow-sm">
             <div className="container mx-auto px-4 py-6">
-              <div className={`grid grid-cols-2 ${statsDisplay.length <= 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-6 md:gap-0 md:divide-x md:divide-gray-200`}>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0 md:divide-x md:divide-gray-200">
                 {statsDisplay.map((stat) => (
                   <div key={stat.label} className="flex flex-col items-center text-center py-2">
                     <span className="text-2xl mb-1">{stat.emoji}</span>

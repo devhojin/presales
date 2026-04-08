@@ -19,6 +19,7 @@ const navLinks = [
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
   const [profileMenu, setProfileMenu] = useState(false)
   const [profile, setProfile] = useState<{ name: string; role: string } | null>(null)
   const profileRef = useRef<HTMLDivElement>(null)
@@ -29,6 +30,7 @@ export function Header() {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user)
+      setAuthLoading(false)
       if (user) {
         supabase.from('profiles').select('name, role').eq('id', user.id).single()
           .then(({ data }) => setProfile(data))
@@ -107,7 +109,9 @@ export function Header() {
 
         <div className="hidden md:flex items-center gap-2">
           <CartDrawer />
-          {user ? (
+          {authLoading ? (
+            <div className="w-20 h-8" />
+          ) : user ? (
             <div className="relative" ref={profileRef}>
               <button
                 onClick={() => setProfileMenu(!profileMenu)}
