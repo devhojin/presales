@@ -31,6 +31,12 @@ import {
 // Types
 // ===========================
 
+interface MemoEntry {
+  content: string
+  created_at: string
+  admin_name: string
+}
+
 interface Profile {
   id: string
   email: string
@@ -40,6 +46,24 @@ interface Profile {
   role: string
   admin_memo: string | null
   created_at: string
+}
+
+function parseMemberMemos(raw: string | null): MemoEntry[] {
+  if (!raw) return []
+  try {
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed)) return parsed as MemoEntry[]
+  } catch {
+    // Legacy plain text → wrap
+    if (raw.trim()) {
+      return [{ content: raw.trim(), created_at: new Date().toISOString(), admin_name: '관리자' }]
+    }
+  }
+  return []
+}
+
+function stringifyMemberMemos(memos: MemoEntry[]): string {
+  return JSON.stringify(memos)
 }
 
 interface MemberStats {
@@ -265,21 +289,22 @@ function ConfirmModal({
 }
 
 // ===========================
-// Admin Memo Modal
+// Admin Memo Modal (threaded)
 // ===========================
 
 function MemoModal({
   memberName,
-  initialMemo,
+  initialMemoRaw,
   onSave,
   onCancel,
 }: {
   memberName: string
-  initialMemo: string
-  onSave: (memo: string) => Promise<void>
+  initialMemoRaw: string | null
+  onSave: (memoJson: string) => Promise<void>
   onCancel: () => void
 }) {
-  const [memo, setMemo] = useState(initialMemo)
+  const [memos, setMemos] = useState<MemoEntry[]>(() => parseMemberMemos(initialMemoRaw))
+  const [newContent, setNewContent] = useState('')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -290,10 +315,30 @@ function MemoModal({
     return () => document.removeEventListener('keydown', handleEsc)
   }, [onCancel])
 
-  const handleSave = async () => {
+  const handleAdd = async () => {
+    if (!newContent.trim()) return
     setSaving(true)
     try {
-      await onSave(memo)
+      const entry: MemoEntry = {
+        content: newContent.trim(),
+        created_at: new Date().toISOString(),
+        admin_name: '관리자',
+      }
+      const updated = [...memos, entry]
+      await onSave(stringifyMemberMemos(updated))
+      setMemos(updated)
+      setNewContent('')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDelete = async (idx: number) => {
+    const updated = memos.filter((_, i) => i !== idx)
+    setSaving(true)
+    try {
+      await onSave(stringifyMemberMemos(updated))
+      setMemos(updated)
     } finally {
       setSaving(false)
     }
@@ -302,8 +347,8 @@ function MemoModal({
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
-        <div className="flex items-center justify-between mb-4">
+      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4 max-h-[80vh] flex flex-col">
+        <div className="flex items-center justify-between mb-4 shrink-0">
           <h3 className="text-sm font-semibold text-gray-900">
             관리자 메모 - {memberName || '(이름 없음)'}
           </h3>
@@ -314,34 +359,59 @@ function MemoModal({
             <X className="w-4 h-4" />
           </button>
         </div>
-        <p className="text-xs text-gray-400 mb-3">
-          회원별로 기록하실 사항이 있다면 메모해 주세요. 회원에겐 표시되지 않습니다.
-        </p>
-        <textarea
-          value={memo}
-          onChange={(e) => {
-            if (e.target.value.length <= 500) setMemo(e.target.value)
-          }}
-          placeholder="메모를 입력하세요..."
-          rows={5}
-          className="w-full text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-gray-400"
-        />
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-xs text-gray-400">{memo.length}/500</span>
+        {/* Memo history */}
+        <div className="flex-1 overflow-y-auto space-y-2 mb-4 min-h-0">
+          {memos.length === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-4">메모가 없습니다</p>
+          ) : (
+            memos.map((m, idx) => (
+              <div key={idx} className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 group">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-gray-700">{m.admin_name}</span>
+                    <span className="text-[11px] text-gray-400">
+                      {new Date(m.created_at).toLocaleString('ko-KR', {
+                        year: 'numeric', month: '2-digit', day: '2-digit',
+                        hour: '2-digit', minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleDelete(idx)}
+                    disabled={saving}
+                    className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all cursor-pointer"
+                    title="삭제"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{m.content}</p>
+              </div>
+            ))
+          )}
+        </div>
+        {/* New memo input */}
+        <div className="shrink-0">
           <div className="flex gap-2">
+            <textarea
+              value={newContent}
+              onChange={(e) => setNewContent(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                  e.preventDefault()
+                  handleAdd()
+                }
+              }}
+              placeholder="새 메모를 입력하세요... (Ctrl+Enter로 등록)"
+              rows={2}
+              className="flex-1 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-gray-400"
+            />
             <button
-              onClick={onCancel}
-              disabled={saving}
-              className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+              onClick={handleAdd}
+              disabled={saving || !newContent.trim()}
+              className="cursor-pointer self-end px-3 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
             >
-              취소
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="cursor-pointer px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-            >
-              {saving ? '저장 중...' : '저장'}
+              {saving ? '...' : '등록'}
             </button>
           </div>
         </div>
@@ -442,7 +512,8 @@ function MemberDetailModal({
   const [showRoleConfirm, setShowRoleConfirm] = useState(false)
   const [roleLoading, setRoleLoading] = useState(false)
   const [currentRole, setCurrentRole] = useState(member.role)
-  const [adminMemo, setAdminMemo] = useState(member.admin_memo || '')
+  const [memos, setMemos] = useState<MemoEntry[]>(() => parseMemberMemos(member.admin_memo))
+  const [newMemoContent, setNewMemoContent] = useState('')
   const [memoSaving, setMemoSaving] = useState(false)
 
   useEffect(() => {
@@ -520,10 +591,30 @@ function MemberDetailModal({
     }
   }
 
-  const handleMemoSave = async () => {
+  const handleMemoAdd = async () => {
+    if (!newMemoContent.trim()) return
     setMemoSaving(true)
     try {
-      await onMemoSave(member.id, adminMemo)
+      const entry: MemoEntry = {
+        content: newMemoContent.trim(),
+        created_at: new Date().toISOString(),
+        admin_name: '관리자',
+      }
+      const updated = [...memos, entry]
+      await onMemoSave(member.id, stringifyMemberMemos(updated))
+      setMemos(updated)
+      setNewMemoContent('')
+    } finally {
+      setMemoSaving(false)
+    }
+  }
+
+  const handleMemoDelete = async (idx: number) => {
+    const updated = memos.filter((_, i) => i !== idx)
+    setMemoSaving(true)
+    try {
+      await onMemoSave(member.id, stringifyMemberMemos(updated))
+      setMemos(updated)
     } finally {
       setMemoSaving(false)
     }
@@ -635,32 +726,63 @@ function MemberDetailModal({
                 </div>
               </div>
 
-              {/* 관리자 메모 */}
+              {/* 관리자 메모 (threaded) */}
               <div>
                 <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
                   관리자 메모
                 </h3>
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-xs text-gray-400 mb-2">
-                    회원별로 기록하실 사항이 있다면 메모해 주세요. 회원에겐 표시되지 않습니다.
-                  </p>
-                  <textarea
-                    value={adminMemo}
-                    onChange={(e) => {
-                      if (e.target.value.length <= 500) setAdminMemo(e.target.value)
-                    }}
-                    placeholder="메모를 입력하세요..."
-                    rows={3}
-                    className="w-full text-sm text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-gray-400"
-                  />
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs text-gray-400">{adminMemo.length}/500</span>
+                <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                  {/* History */}
+                  {memos.length === 0 ? (
+                    <p className="text-xs text-gray-400 text-center py-2">메모가 없습니다</p>
+                  ) : (
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {memos.map((m, idx) => (
+                        <div key={idx} className="bg-white border border-gray-200 rounded-lg px-3 py-2.5 group">
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-semibold text-gray-700">{m.admin_name}</span>
+                              <span className="text-[11px] text-gray-400">
+                                {new Date(m.created_at).toLocaleString('ko-KR', {
+                                  year: 'numeric', month: '2-digit', day: '2-digit',
+                                  hour: '2-digit', minute: '2-digit',
+                                })}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => handleMemoDelete(idx)}
+                              disabled={memoSaving}
+                              className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{m.content}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* New memo */}
+                  <div className="flex gap-2">
+                    <textarea
+                      value={newMemoContent}
+                      onChange={(e) => setNewMemoContent(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                          e.preventDefault()
+                          handleMemoAdd()
+                        }
+                      }}
+                      placeholder="새 메모 입력... (Ctrl+Enter 등록)"
+                      rows={2}
+                      className="flex-1 text-sm text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-gray-400"
+                    />
                     <button
-                      onClick={handleMemoSave}
-                      disabled={memoSaving}
-                      className="cursor-pointer px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                      onClick={handleMemoAdd}
+                      disabled={memoSaving || !newMemoContent.trim()}
+                      className="cursor-pointer self-end px-3 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                     >
-                      {memoSaving ? '저장 중...' : '메모 저장'}
+                      {memoSaving ? '...' : '등록'}
                     </button>
                   </div>
                 </div>
@@ -1241,10 +1363,10 @@ export default function AdminMembers() {
                                 setMemoModal(m)
                               }}
                               className="cursor-pointer w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                              title={m.admin_memo || '메모 없음'}
+                              title={parseMemberMemos(m.admin_memo).map(e => e.content).join(' / ') || '메모 없음'}
                             >
                               <Pencil className="w-3.5 h-3.5" />
-                              {m.admin_memo && (
+                              {parseMemberMemos(m.admin_memo).length > 0 && (
                                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500 absolute -top-0.5 -right-0.5" />
                               )}
                             </button>
@@ -1343,10 +1465,10 @@ export default function AdminMembers() {
       {memoModal && (
         <MemoModal
           memberName={memoModal.name || '(이름 없음)'}
-          initialMemo={memoModal.admin_memo || ''}
-          onSave={async (memo) => {
-            await handleMemoSave(memoModal.id, memo)
-            setMemoModal(null)
+          initialMemoRaw={memoModal.admin_memo}
+          onSave={async (memoJson) => {
+            await handleMemoSave(memoModal.id, memoJson)
+            setMembers((prev) => prev.map((m) => m.id === memoModal.id ? { ...m, admin_memo: memoJson } : m))
           }}
           onCancel={() => setMemoModal(null)}
         />

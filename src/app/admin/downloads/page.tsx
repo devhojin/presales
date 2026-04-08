@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Search, ChevronLeft, ChevronRight, Download } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, Download, X } from 'lucide-react'
 
 interface DownloadLog {
   id: number
@@ -27,25 +27,91 @@ export default function AdminDownloads() {
   const [profileMap, setProfileMap] = useState<ProfileMap>({})
   const [productMap, setProductMap] = useState<ProductMap>({})
   const [loading, setLoading] = useState(true)
+  const [totalCount, setTotalCount] = useState(0)
+
+  // Filters (committed on search)
+  const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
 
-  useEffect(() => {
-    loadLogs()
-  }, [])
-
-  async function loadLogs() {
+  const loadLogs = useCallback(async () => {
+    setLoading(true)
     const supabase = createClient()
-    const { data } = await supabase
+
+    // Build user_id / product_id arrays from search first if needed
+    // For text search we resolve ids then filter
+    let userIdsForSearch: string[] | null = null
+    let productIdsForSearch: number[] | null = null
+
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      // Search profiles
+      const { data: matchedProfiles } = await supabase
+        .from('profiles')
+        .select('id')
+        .or(`name.ilike.%${q}%,email.ilike.%${q}%`)
+      if (matchedProfiles) userIdsForSearch = matchedProfiles.map((p) => p.id)
+
+      // Search products
+      const { data: matchedProducts } = await supabase
+        .from('products')
+        .select('id')
+        .ilike('title', `%${q}%`)
+      if (matchedProducts) productIdsForSearch = matchedProducts.map((p) => p.id)
+    }
+
+    // Build count query
+    let countBase = supabase
+      .from('download_logs')
+      .select('*', { count: 'exact', head: true })
+
+    if (dateFrom) countBase = countBase.gte('downloaded_at', dateFrom)
+    if (dateTo) countBase = countBase.lte('downloaded_at', dateTo + 'T23:59:59')
+
+    if (search.trim()) {
+      const fileFilter = `file_name.ilike.%${search.trim()}%`
+      const orParts: string[] = [fileFilter]
+      if (userIdsForSearch && userIdsForSearch.length > 0) {
+        orParts.push(`user_id.in.(${userIdsForSearch.join(',')})`)
+      }
+      if (productIdsForSearch && productIdsForSearch.length > 0) {
+        orParts.push(`product_id.in.(${productIdsForSearch.join(',')})`)
+      }
+      countBase = countBase.or(orParts.join(','))
+    }
+
+    const { count } = await countBase
+    setTotalCount(count || 0)
+
+    // Build data query
+    let dataQuery = supabase
       .from('download_logs')
       .select('*')
       .order('downloaded_at', { ascending: false })
+      .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1)
+
+    if (dateFrom) dataQuery = dataQuery.gte('downloaded_at', dateFrom)
+    if (dateTo) dataQuery = dataQuery.lte('downloaded_at', dateTo + 'T23:59:59')
+
+    if (search.trim()) {
+      const fileFilter = `file_name.ilike.%${search.trim()}%`
+      const orParts: string[] = [fileFilter]
+      if (userIdsForSearch && userIdsForSearch.length > 0) {
+        orParts.push(`user_id.in.(${userIdsForSearch.join(',')})`)
+      }
+      if (productIdsForSearch && productIdsForSearch.length > 0) {
+        orParts.push(`product_id.in.(${productIdsForSearch.join(',')})`)
+      }
+      dataQuery = dataQuery.or(orParts.join(','))
+    }
+
+    const { data } = await dataQuery
     const logList = (data || []) as DownloadLog[]
     setLogs(logList)
 
-    // Fetch profiles
+    // Fetch profiles for this page
     const userIds = [...new Set(logList.map((l) => l.user_id).filter(Boolean))]
     if (userIds.length > 0) {
       const { data: profiles } = await supabase
@@ -59,9 +125,11 @@ export default function AdminDownloads() {
         }
       }
       setProfileMap(map)
+    } else {
+      setProfileMap({})
     }
 
-    // Fetch product names
+    // Fetch product names for this page
     const productIds = [...new Set(logList.map((l) => l.product_id).filter(Boolean))]
     if (productIds.length > 0) {
       const { data: products } = await supabase
@@ -75,35 +143,81 @@ export default function AdminDownloads() {
         }
       }
       setProductMap(map)
+    } else {
+      setProductMap({})
     }
 
     setLoading(false)
+  }, [page, search, dateFrom, dateTo])
+
+  useEffect(() => {
+    loadLogs()
+  }, [loadLogs])
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1)
+  }, [search, dateFrom, dateTo])
+
+  async function handleCSVExport() {
+    // Fetch all matching records for CSV
+    const supabase = createClient()
+
+    let query = supabase
+      .from('download_logs')
+      .select('*')
+      .order('downloaded_at', { ascending: false })
+
+    if (dateFrom) query = query.gte('downloaded_at', dateFrom)
+    if (dateTo) query = query.lte('downloaded_at', dateTo + 'T23:59:59')
+
+    const { data } = await query
+    const allLogs = (data || []) as DownloadLog[]
+
+    // Fetch all profiles and products needed
+    const userIds = [...new Set(allLogs.map((l) => l.user_id).filter(Boolean))]
+    const productIds = [...new Set(allLogs.map((l) => l.product_id).filter(Boolean))]
+
+    const [profilesRes, productsRes] = await Promise.all([
+      userIds.length > 0
+        ? supabase.from('profiles').select('id, name, email').in('id', userIds)
+        : Promise.resolve({ data: [] }),
+      productIds.length > 0
+        ? supabase.from('products').select('id, title').in('id', productIds)
+        : Promise.resolve({ data: [] }),
+    ])
+
+    const pMap: ProfileMap = {}
+    for (const p of profilesRes.data || []) {
+      pMap[p.id] = { name: p.name || '-', email: p.email || '-' }
+    }
+    const prMap: ProductMap = {}
+    for (const p of productsRes.data || []) {
+      prMap[p.id] = p.title
+    }
+
+    const header = '다운로드일시,사용자명,이메일,상품명,파일명'
+    const rows = allLogs.map((l) => {
+      return [
+        new Date(l.downloaded_at).toLocaleString('ko-KR'),
+        pMap[l.user_id]?.name || '-',
+        pMap[l.user_id]?.email || '-',
+        `"${prMap[l.product_id] || '-'}"`,
+        `"${l.file_name}"`,
+      ].join(',')
+    })
+
+    const csv = '\uFEFF' + header + '\n' + rows.join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `downloads_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
-  const filtered = useMemo(() => {
-    let list = logs
-    if (search.trim()) {
-      const q = search.trim().toLowerCase()
-      list = list.filter(
-        (l) =>
-          l.file_name.toLowerCase().includes(q) ||
-          (productMap[l.product_id] || '').toLowerCase().includes(q) ||
-          (profileMap[l.user_id]?.name || '').toLowerCase().includes(q) ||
-          (profileMap[l.user_id]?.email || '').toLowerCase().includes(q)
-      )
-    }
-    if (dateFrom) {
-      list = list.filter((l) => l.downloaded_at >= dateFrom)
-    }
-    if (dateTo) {
-      const toEnd = dateTo + 'T23:59:59'
-      list = list.filter((l) => l.downloaded_at <= toEnd)
-    }
-    return list
-  }, [logs, search, dateFrom, dateTo, productMap, profileMap])
-
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
 
   const formatDate = (date: string) =>
     new Date(date).toLocaleDateString('ko-KR', {
@@ -122,33 +236,58 @@ export default function AdminDownloads() {
     return Array.from({ length: end - start + 1 }, (_, i) => start + i)
   }
 
+  function handleSearchSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSearch(searchInput)
+    setPage(1)
+  }
+
   return (
     <div>
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-10 h-10 rounded-lg bg-cyan-500 flex items-center justify-center">
-          <Download className="w-5 h-5 text-white" />
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-cyan-500 flex items-center justify-center">
+            <Download className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">다운로드 관리</h1>
+            <p className="text-sm text-gray-500">총 {totalCount}건의 다운로드 기록</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold">다운로드 관리</h1>
-          <p className="text-sm text-gray-500">총 {logs.length}건의 다운로드 기록</p>
-        </div>
+        <button
+          onClick={handleCSVExport}
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+        >
+          <Download className="w-4 h-4" />
+          CSV 내보내기
+        </button>
       </div>
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="flex-1 relative">
+        <form onSubmit={handleSearchSubmit} className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
-            type="search"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value)
-              setPage(1)
-            }}
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
             placeholder="사용자, 상품명, 파일명 검색..."
-            className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 bg-white"
+            className="w-full pl-9 pr-9 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 bg-white"
           />
-        </div>
+          {searchInput && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchInput('')
+                setSearch('')
+                setPage(1)
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </form>
         <div className="flex items-center gap-2">
           <input
             type="date"
@@ -199,7 +338,7 @@ export default function AdminDownloads() {
                     로딩 중...
                   </td>
                 </tr>
-              ) : paginated.length === 0 ? (
+              ) : logs.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-12 text-center text-gray-400">
                     {search || dateFrom || dateTo
@@ -208,7 +347,7 @@ export default function AdminDownloads() {
                   </td>
                 </tr>
               ) : (
-                paginated.map((log) => (
+                logs.map((log) => (
                   <tr key={log.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm text-gray-500">
                       {formatDate(log.downloaded_at)}
@@ -235,10 +374,10 @@ export default function AdminDownloads() {
         {/* Pagination */}
         <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
           <span className="text-xs text-gray-400">
-            총 {filtered.length}건 중{' '}
-            {filtered.length === 0
+            총 {totalCount}건 중{' '}
+            {totalCount === 0
               ? '0'
-              : `${(page - 1) * PAGE_SIZE + 1}-${Math.min(page * PAGE_SIZE, filtered.length)}`}
+              : `${(page - 1) * PAGE_SIZE + 1}-${Math.min(page * PAGE_SIZE, totalCount)}`}
             건
           </span>
           {totalPages > 1 && (
@@ -246,7 +385,7 @@ export default function AdminDownloads() {
               <button
                 onClick={() => setPage(Math.max(1, page - 1))}
                 disabled={page === 1}
-                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4 text-gray-600" />
               </button>
@@ -254,7 +393,7 @@ export default function AdminDownloads() {
                 <button
                   key={p}
                   onClick={() => setPage(p)}
-                  className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
+                  className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                     p === page
                       ? 'bg-gray-900 text-white'
                       : 'text-gray-500 hover:bg-gray-100'
@@ -266,7 +405,7 @@ export default function AdminDownloads() {
               <button
                 onClick={() => setPage(Math.min(totalPages, page + 1))}
                 disabled={page === totalPages}
-                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4 text-gray-600" />
               </button>

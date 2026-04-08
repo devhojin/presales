@@ -1313,14 +1313,17 @@ export default function AdminOrders() {
       result = result.filter((o) => new Date(o.created_at) <= to)
     }
 
-    // Search
+    // Search (order number, name, email, product name)
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       result = result.filter(
         (o) =>
           o.order_number.toLowerCase().includes(q) ||
           (o.profiles?.name || '').toLowerCase().includes(q) ||
-          (o.profiles?.email || '').toLowerCase().includes(q)
+          (o.profiles?.email || '').toLowerCase().includes(q) ||
+          (o.order_items || []).some((item) =>
+            (item.products?.title || '').toLowerCase().includes(q)
+          )
       )
     }
 
@@ -1414,7 +1417,7 @@ export default function AdminOrders() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="주문번호, 주문자 이름, 이메일"
+                  placeholder="주문번호, 주문자, 이메일, 상품명"
                   className="w-full pl-9 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-gray-400"
                 />
                 {search && (

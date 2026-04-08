@@ -13,6 +13,8 @@ import {
   Eye,
   EyeOff,
   Star,
+  Trash2,
+  MessageSquare,
 } from 'lucide-react'
 
 interface ProfileMap {
@@ -33,6 +35,62 @@ function formatDate(date: string) {
   })
 }
 
+// ===========================
+// Delete Confirm Modal
+// ===========================
+
+function DeleteModal({
+  onConfirm,
+  onCancel,
+}: {
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel()
+    }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [onCancel])
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40"
+      onClick={onCancel}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="bg-white rounded-xl shadow-xl max-w-sm w-full mx-4 p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+            <Trash2 className="w-5 h-5 text-red-600" />
+          </div>
+          <h3 className="text-base font-bold text-gray-900">리뷰 삭제</h3>
+        </div>
+        <p className="text-sm text-gray-600 mb-6">이 리뷰를 삭제하시겠습니까? 삭제된 리뷰는 복구할 수 없습니다.</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+          >
+            취소
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors cursor-pointer"
+          >
+            삭제
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminReviewsPage() {
   const [reviews, setReviews] = useState<DbReview[]>([])
   const [profileMap, setProfileMap] = useState<ProfileMap>({})
@@ -45,18 +103,34 @@ export default function AdminReviewsPage() {
   const [ratingFilter, setRatingFilter] = useState<number | null>(null)
   const [selectedReview, setSelectedReview] = useState<DbReview | null>(null)
   const [toggling, setToggling] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<DbReview | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [replyText, setReplyText] = useState('')
+  const [replySaving, setReplySaving] = useState(false)
 
   useEffect(() => {
-    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape' && selectedReview) setSelectedReview(null) }
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (deleteTarget) setDeleteTarget(null)
+        else if (selectedReview) setSelectedReview(null)
+      }
+    }
     document.addEventListener('keydown', handleEsc)
     return () => document.removeEventListener('keydown', handleEsc)
+  }, [selectedReview, deleteTarget])
+
+  // When opening a review, populate reply text
+  useEffect(() => {
+    if (selectedReview) {
+      setReplyText(selectedReview.admin_reply || '')
+    }
   }, [selectedReview])
 
   const loadReviews = useCallback(async () => {
     setLoading(true)
     const supabase = createClient()
 
-    // Count
+    // Build base query with server-side search
     let countQuery = supabase
       .from('reviews')
       .select('*', { count: 'exact', head: true })
@@ -64,11 +138,16 @@ export default function AdminReviewsPage() {
     if (ratingFilter) {
       countQuery = countQuery.eq('rating', ratingFilter)
     }
+    if (search.trim()) {
+      countQuery = countQuery.or(
+        `title.ilike.%${search.trim()}%,content.ilike.%${search.trim()}%`
+      )
+    }
 
     const { count } = await countQuery
     setTotalCount(count || 0)
 
-    // Fetch reviews
+    // Fetch reviews with server-side search
     let query = supabase
       .from('reviews')
       .select('*')
@@ -78,25 +157,19 @@ export default function AdminReviewsPage() {
     if (ratingFilter) {
       query = query.eq('rating', ratingFilter)
     }
+    if (search.trim()) {
+      query = query.or(
+        `title.ilike.%${search.trim()}%,content.ilike.%${search.trim()}%`
+      )
+    }
 
     const { data } = await query
     const reviewList = (data || []) as DbReview[]
 
-    // If search, filter client-side (content/title)
-    let filtered = reviewList
-    if (search) {
-      const s = search.toLowerCase()
-      filtered = reviewList.filter(
-        (r) =>
-          r.title?.toLowerCase().includes(s) ||
-          r.content?.toLowerCase().includes(s)
-      )
-    }
-
-    setReviews(filtered)
+    setReviews(reviewList)
 
     // Load profiles
-    const userIds = [...new Set(filtered.map((r) => r.user_id).filter(Boolean))]
+    const userIds = [...new Set(reviewList.map((r) => r.user_id).filter(Boolean))]
     if (userIds.length > 0) {
       const { data: profiles } = await supabase
         .from('profiles')
@@ -112,7 +185,7 @@ export default function AdminReviewsPage() {
     }
 
     // Load product names
-    const productIds = [...new Set(filtered.map((r) => r.product_id).filter(Boolean))]
+    const productIds = [...new Set(reviewList.map((r) => r.product_id).filter(Boolean))]
     if (productIds.length > 0) {
       const { data: products } = await supabase
         .from('products')
@@ -151,7 +224,6 @@ export default function AdminReviewsPage() {
       .eq('is_published', true)
 
     const pReviews = publishedReviews || []
-    // If we just unpublished, subtract this one; if published, it's already counted
     const count = pReviews.length
     const avg = count > 0 ? pReviews.reduce((s, r) => s + r.rating, 0) / count : 0
 
@@ -160,7 +232,6 @@ export default function AdminReviewsPage() {
       .update({ review_count: count, review_avg: Math.round(avg * 10) / 10 })
       .eq('id', review.product_id)
 
-    // Update local state
     setReviews((prev) =>
       prev.map((r) =>
         r.id === review.id ? { ...r, is_published: newVal } : r
@@ -170,6 +241,47 @@ export default function AdminReviewsPage() {
       setSelectedReview({ ...selectedReview, is_published: newVal })
     }
     setToggling(false)
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    const supabase = createClient()
+    await supabase.from('reviews').delete().eq('id', deleteTarget.id)
+
+    // Update product stats
+    const { data: publishedReviews } = await supabase
+      .from('reviews')
+      .select('rating')
+      .eq('product_id', deleteTarget.product_id)
+      .eq('is_published', true)
+    const pReviews = publishedReviews || []
+    const count = pReviews.length
+    const avg = count > 0 ? pReviews.reduce((s, r) => s + r.rating, 0) / count : 0
+    await supabase
+      .from('products')
+      .update({ review_count: count, review_avg: Math.round(avg * 10) / 10 })
+      .eq('id', deleteTarget.product_id)
+
+    setReviews((prev) => prev.filter((r) => r.id !== deleteTarget.id))
+    setTotalCount((c) => c - 1)
+    if (selectedReview?.id === deleteTarget.id) setSelectedReview(null)
+    setDeleteTarget(null)
+    setDeleting(false)
+  }
+
+  async function handleReplySave() {
+    if (!selectedReview) return
+    setReplySaving(true)
+    const supabase = createClient()
+    await supabase
+      .from('reviews')
+      .update({ admin_reply: replyText.trim() || null })
+      .eq('id', selectedReview.id)
+    const updated = { ...selectedReview, admin_reply: replyText.trim() || null }
+    setReviews((prev) => prev.map((r) => r.id === selectedReview.id ? updated : r))
+    setSelectedReview(updated)
+    setReplySaving(false)
   }
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE)
@@ -192,7 +304,7 @@ export default function AdminReviewsPage() {
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="리뷰 내용 검색..."
+            placeholder="리뷰 제목/내용 검색..."
             className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
           />
           {searchInput && (
@@ -203,7 +315,7 @@ export default function AdminReviewsPage() {
                 setSearch('')
                 setPage(1)
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -216,7 +328,7 @@ export default function AdminReviewsPage() {
               setRatingFilter(null)
               setPage(1)
             }}
-            className={`px-3 py-1.5 text-xs rounded-full transition-colors ${
+            className={`px-3 py-1.5 text-xs rounded-full transition-colors cursor-pointer ${
               ratingFilter === null
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -231,7 +343,7 @@ export default function AdminReviewsPage() {
                 setRatingFilter(ratingFilter === r ? null : r)
                 setPage(1)
               }}
-              className={`px-3 py-1.5 text-xs rounded-full transition-colors inline-flex items-center gap-1 ${
+              className={`px-3 py-1.5 text-xs rounded-full transition-colors inline-flex items-center gap-1 cursor-pointer ${
                 ratingFilter === r
                   ? 'bg-blue-500 text-white'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -294,23 +406,39 @@ export default function AdminReviewsPage() {
                     {formatDate(review.created_at)}
                   </td>
                   <td className="px-6 py-3">
-                    <Badge
-                      className={`border ${
-                        review.is_published
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                          : 'bg-gray-50 text-gray-500 border-gray-200'
-                      }`}
-                    >
-                      {review.is_published ? '공개' : '숨김'}
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      <Badge
+                        className={`border ${
+                          review.is_published
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            : 'bg-gray-50 text-gray-500 border-gray-200'
+                        }`}
+                      >
+                        {review.is_published ? '공개' : '숨김'}
+                      </Badge>
+                      {review.admin_reply && (
+                        <span title="관리자 답글 있음">
+                          <MessageSquare className="w-3.5 h-3.5 text-blue-500" />
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-3 text-right">
-                    <button
-                      onClick={() => setSelectedReview(review)}
-                      className="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                    >
-                      상세
-                    </button>
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => setSelectedReview(review)}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors cursor-pointer"
+                      >
+                        상세
+                      </button>
+                      <button
+                        onClick={() => setDeleteTarget(review)}
+                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                        title="삭제"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -325,7 +453,7 @@ export default function AdminReviewsPage() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors"
+            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -335,7 +463,7 @@ export default function AdminReviewsPage() {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors"
+            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors cursor-pointer"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -349,19 +477,28 @@ export default function AdminReviewsPage() {
           onClick={() => setSelectedReview(null)}
         >
           <div
-            className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 max-h-[80vh] overflow-y-auto"
+            className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-lg">리뷰 상세</h3>
-                <button
-                  onClick={() => setSelectedReview(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setDeleteTarget(selectedReview)}
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                    title="리뷰 삭제"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setSelectedReview(null)}
+                    className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Meta */}
@@ -438,12 +575,36 @@ export default function AdminReviewsPage() {
                 )}
               </div>
 
+              {/* Admin Reply */}
+              <div className="border-t border-gray-200 mt-4 pt-4">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  관리자 답글
+                </p>
+                <textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  placeholder="고객에게 공개될 답글을 입력하세요..."
+                  rows={3}
+                  className="w-full text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-gray-400"
+                />
+                <div className="flex justify-end mt-2">
+                  <button
+                    onClick={handleReplySave}
+                    disabled={replySaving}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {replySaving ? '저장 중...' : '답글 저장'}
+                  </button>
+                </div>
+              </div>
+
               {/* Toggle Published */}
               <div className="border-t border-gray-200 mt-4 pt-4 flex justify-end">
                 <button
                   onClick={() => togglePublished(selectedReview)}
                   disabled={toggling}
-                  className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 ${
+                  className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 cursor-pointer ${
                     selectedReview.is_published
                       ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
@@ -465,6 +626,17 @@ export default function AdminReviewsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Delete Confirm Modal */}
+      {deleteTarget && (
+        <DeleteModal
+          onConfirm={() => {
+            if (deleting) return
+            handleDelete()
+          }}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   )

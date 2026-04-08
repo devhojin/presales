@@ -53,6 +53,7 @@ export interface DbReview {
   helpful_count: number
   is_published: boolean
   is_verified_purchase: boolean
+  admin_reply: string | null
   created_at: string
   profiles?: { name: string; email: string } | null
   products?: { title: string } | null
