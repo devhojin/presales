@@ -233,7 +233,7 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
         <div className="flex items-center gap-3 flex-wrap">
           {imageUrls.map((url, idx) => (
             <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-border">
-              <img src={url} alt="" className="w-full h-full object-cover" />
+              <img src={url} alt="업로드 이미지 미리보기" className="w-full h-full object-cover" />
               <button
                 type="button"
                 onClick={() => removeImage(idx)}

@@ -1365,7 +1365,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                       >
                         <div className="w-10 h-10 rounded overflow-hidden bg-gray-100 shrink-0">
                           {p.thumbnail_url ? (
-                            <img src={p.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                            <img src={p.thumbnail_url} alt="관련 상품 이미지" className="w-full h-full object-cover" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-sm bg-gradient-to-br from-blue-900 to-blue-700">📄</div>
                           )}

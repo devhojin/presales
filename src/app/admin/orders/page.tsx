@@ -603,7 +603,7 @@ function OrderDetailModal({
                   {item.products?.thumbnail_url ? (
                     <img
                       src={item.products.thumbnail_url}
-                      alt=""
+                      alt="상품 이미지"
                       className="w-10 h-10 rounded-lg object-cover bg-gray-200 shrink-0"
                     />
                   ) : (
@@ -1621,7 +1621,7 @@ export default function AdminOrders() {
                                 {item.products?.thumbnail_url ? (
                                   <img
                                     src={item.products.thumbnail_url}
-                                    alt=""
+                                    alt="상품 이미지"
                                     className="w-8 h-8 rounded object-cover bg-gray-100 shrink-0 mt-0.5"
                                   />
                                 ) : (

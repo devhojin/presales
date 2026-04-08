@@ -121,6 +121,7 @@ function saveAttemptData(data: LoginAttemptData) {
   localStorage.setItem(LOGIN_ATTEMPT_KEY, JSON.stringify(data))
 }
 
+// TODO: 향후 Supabase RPC 또는 Redis로 서버사이드 잠금 마이그레이션 필요 (현재 localStorage 기반은 클라이언트에서 우회 가능)
 export function checkLoginLock(): { locked: boolean; remainingMinutes: number } {
   const data = getAttemptData()
   if (data.lockedUntil && Date.now() < data.lockedUntil) {

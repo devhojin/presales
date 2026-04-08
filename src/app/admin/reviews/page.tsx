@@ -567,7 +567,7 @@ export default function AdminReviewsPage() {
                           rel="noopener noreferrer"
                           className="w-24 h-24 rounded-lg overflow-hidden border border-gray-200 hover:opacity-80 transition-opacity"
                         >
-                          <img src={url} alt="" className="w-full h-full object-cover" />
+                          <img src={url} alt="리뷰 이미지" className="w-full h-full object-cover" />
                         </a>
                       ))}
                     </div>

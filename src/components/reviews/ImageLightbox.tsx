@@ -29,7 +29,7 @@ export function ImageLightbox({ images, initialIndex = 0, onClose }: ImageLightb
         </button>
         <img
           src={images[current]}
-          alt=""
+          alt="리뷰 이미지"
           className="w-full max-h-[80vh] object-contain rounded-lg"
         />
         {images.length > 1 && (

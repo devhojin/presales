@@ -399,7 +399,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                       }}
                       className="w-20 h-20 rounded-lg overflow-hidden border border-border hover:opacity-80 transition-opacity"
                     >
-                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <img src={url} alt="리뷰 이미지" className="w-full h-full object-cover" />
                     </button>
                   ))}
                 </div>
