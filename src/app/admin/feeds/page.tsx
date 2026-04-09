@@ -466,6 +466,32 @@ export default function AdminFeedsPage() {
         <div className="flex items-center gap-2 flex-wrap bg-secondary p-3 rounded-xl">
           <span className="text-xs font-medium text-foreground">{selectedIds.size}건 선택</span>
           <button
+            onClick={async () => {
+              const ids = Array.from(selectedIds)
+              const { error } = await supabase.from('community_posts').update({ is_published: true }).in('id', ids)
+              if (error) { showToast('공개 전환 실패'); return }
+              showToast(`${ids.length}건 공개 전환 완료`)
+              setSelectedIds(new Set())
+              fetchFeeds()
+            }}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1 transition-colors"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            선택 공개
+          </button>
+          <button
+            onClick={async () => {
+              const { error } = await supabase.from('community_posts').update({ is_published: true }).eq('is_published', false)
+              if (error) { showToast('전체 공개 실패'); return }
+              showToast('전체 공개 완료')
+              setSelectedIds(new Set())
+              fetchFeeds()
+            }}
+            className="px-3 py-1.5 text-xs font-medium rounded-lg border border-primary text-primary hover:bg-primary/8 flex items-center gap-1 transition-colors"
+          >
+            전체 공개
+          </button>
+          <button
             onClick={() => setModalType('delete')}
             className="px-3 py-1.5 text-xs font-medium rounded-lg bg-destructive text-primary-foreground hover:bg-destructive/90 flex items-center gap-1 transition-colors"
           >
