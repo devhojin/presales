@@ -10,6 +10,10 @@ import {
   ArrowLeft,
   X,
   Zap,
+  Upload,
+  ImageIcon,
+  Star,
+  Trash2,
 } from 'lucide-react'
 
 interface BlogPost {
@@ -294,25 +298,80 @@ export default function AdminBlogEditPage() {
           />
         </div>
 
-        {/* Thumbnail URL */}
+        {/* Thumbnail — 대표이미지 업로드 */}
         <div className="bg-white rounded-xl border border-border p-6">
           <label className="block text-sm font-semibold text-foreground mb-3">
-            썸네일 이미지 URL
+            <span className="inline-flex items-center gap-1.5">
+              <Star className="w-4 h-4 text-amber-500" />
+              대표 이미지
+            </span>
           </label>
-          <input
-            type="text"
-            value={thumbnailUrl}
-            onChange={(e) => setThumbnailUrl(e.target.value)}
-            placeholder="https://example.com/image.jpg"
-            className="w-full px-4 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-          />
-          {thumbnailUrl && (
-            <div className="mt-3">
-              <img
-                src={thumbnailUrl}
-                alt="Thumbnail preview"
-                className="w-full max-w-xs h-40 object-cover rounded-xl"
+          <p className="text-xs text-muted-foreground mb-4">
+            블로그 목록 및 사이드바 미리보기에 표시됩니다. 권장 크기: 600x400px, 최대 5MB
+          </p>
+
+          {/* Upload area */}
+          {!thumbnailUrl ? (
+            <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-border rounded-xl hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer">
+              <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+              <span className="text-sm font-medium text-muted-foreground">클릭하여 이미지 업로드</span>
+              <span className="text-xs text-muted-foreground mt-1">JPG, PNG, WEBP (최대 5MB)</span>
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  if (file.size > 5 * 1024 * 1024) {
+                    alert('파일 크기는 5MB 이하여야 합니다.')
+                    return
+                  }
+                  const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
+                  const fileName = `blog/${isNew ? 'temp' : postId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+                  const { error: uploadErr } = await supabase.storage.from('product-thumbnails').upload(fileName, file)
+                  if (uploadErr) {
+                    alert('업로드 실패: ' + uploadErr.message)
+                    return
+                  }
+                  const { data: urlData } = supabase.storage.from('product-thumbnails').getPublicUrl(fileName)
+                  setThumbnailUrl(urlData.publicUrl)
+                }}
               />
+            </label>
+          ) : (
+            <div className="relative">
+              <div className="relative w-full max-w-sm">
+                <img
+                  src={thumbnailUrl}
+                  alt="대표 이미지 미리보기"
+                  className="w-full h-48 object-cover rounded-xl border border-border"
+                />
+                {/* 대표이미지 표시 뱃지 */}
+                <div className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-1 bg-amber-500 text-white text-[10px] font-bold rounded-md">
+                  <Star className="w-3 h-3" />
+                  대표
+                </div>
+                {/* 삭제 버튼 */}
+                <button
+                  type="button"
+                  onClick={() => setThumbnailUrl('')}
+                  className="absolute top-2 right-2 w-7 h-7 bg-foreground/60 hover:bg-foreground/80 text-white rounded-full flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              {/* URL 직접 입력 (폴백) */}
+              <div className="mt-3">
+                <label className="text-xs text-muted-foreground mb-1 block">또는 URL 직접 입력</label>
+                <input
+                  type="text"
+                  value={thumbnailUrl}
+                  onChange={(e) => setThumbnailUrl(e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                  className="w-full px-3 py-2 border border-border rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
             </div>
           )}
         </div>

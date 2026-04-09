@@ -1,0 +1,104 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "PS 프리세일즈 presales.co.kr" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7]: PS
+        - generic [ref=e8]:
+          - generic [ref=e9]: 프리세일즈
+          - generic [ref=e10]: presales.co.kr
+      - navigation [ref=e11]:
+        - link "문서 스토어" [ref=e12] [cursor=pointer]:
+          - /url: /store
+          - text: 문서 스토어
+        - link "컨설팅" [ref=e14] [cursor=pointer]:
+          - /url: /consulting
+        - link "블로그" [ref=e15] [cursor=pointer]:
+          - /url: /blog
+        - link "회사소개" [ref=e16] [cursor=pointer]:
+          - /url: /about
+        - link "고객지원" [ref=e17] [cursor=pointer]:
+          - /url: /faq
+      - button [ref=e19] [cursor=pointer]:
+        - img [ref=e20]
+  - main [ref=e25]:
+    - generic [ref=e26]:
+      - generic [ref=e27]:
+        - heading "문서 스토어" [level=1] [ref=e28]
+        - paragraph [ref=e29]: 공공조달 입찰에 필요한 모든 문서 템플릿
+      - generic [ref=e30]:
+        - img [ref=e31]
+        - 'textbox "템플릿 검색 (예: 기술제안서, IoT, 스마트시티...)" [ref=e34]'
+      - generic [ref=e35]:
+        - button "전체" [ref=e37] [cursor=pointer]
+        - button "상세 필터" [ref=e38] [cursor=pointer]:
+          - text: 상세 필터
+          - img [ref=e39]
+      - generic [ref=e41]:
+        - paragraph [ref=e43]: 0개 상품
+        - combobox "정렬 기준" [ref=e44] [cursor=pointer]:
+          - option "기본순" [selected]
+          - option "가격 낮은순"
+          - option "가격 높은순"
+          - option "최신순"
+  - contentinfo [ref=e94]:
+    - generic [ref=e95]:
+      - generic [ref=e97]:
+        - generic [ref=e98]:
+          - generic [ref=e99]:
+            - generic [ref=e101]: PS
+            - generic [ref=e102]: 프리세일즈
+          - paragraph [ref=e103]: 공공조달 제안서 전문 플랫폼. 나라장터, 조달청 입찰에 최적화된 기술제안서, 가격제안서, 발표PT 템플릿과 전문가 컨설팅을 제공합니다.
+        - generic [ref=e104]:
+          - heading "서비스" [level=4] [ref=e105]
+          - list [ref=e106]:
+            - listitem [ref=e107]:
+              - link "문서 스토어" [ref=e108] [cursor=pointer]:
+                - /url: /store
+                - text: 문서 스토어
+                - img [ref=e109]
+            - listitem [ref=e112]:
+              - link "전문가 컨설팅" [ref=e113] [cursor=pointer]:
+                - /url: /consulting
+                - text: 전문가 컨설팅
+                - img [ref=e114]
+            - listitem [ref=e117]:
+              - link "무료 가이드" [ref=e118] [cursor=pointer]:
+                - /url: /store?price=free
+                - text: 무료 가이드
+                - img [ref=e119]
+            - listitem [ref=e122]:
+              - link "블로그" [ref=e123] [cursor=pointer]:
+                - /url: /blog
+                - text: 블로그
+                - img [ref=e124]
+        - generic [ref=e127]:
+          - heading "지원" [level=4] [ref=e128]
+          - list [ref=e129]:
+            - listitem [ref=e130]:
+              - link "회사소개" [ref=e131] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e132]:
+              - link "자주 묻는 질문" [ref=e133] [cursor=pointer]:
+                - /url: /faq
+            - listitem [ref=e134]:
+              - link "문의하기" [ref=e135] [cursor=pointer]:
+                - /url: /consulting
+        - generic [ref=e136]:
+          - heading "법적 고지" [level=4] [ref=e137]
+          - list [ref=e138]:
+            - listitem [ref=e139]:
+              - link "이용약관" [ref=e140] [cursor=pointer]:
+                - /url: /terms
+            - listitem [ref=e141]:
+              - link "개인정보처리방침" [ref=e142] [cursor=pointer]:
+                - /url: /privacy
+            - listitem [ref=e143]:
+              - link "환불정책" [ref=e144] [cursor=pointer]:
+                - /url: /refund
+      - generic [ref=e146]:
+        - generic [ref=e147]:
+          - paragraph [ref=e148]: "AMARANS Partners|대표: 채호진"
+          - paragraph [ref=e149]: contact@presales.co.kr
+        - paragraph [ref=e150]: © 2026 AMARANS Partners
+  - alert [ref=e151]

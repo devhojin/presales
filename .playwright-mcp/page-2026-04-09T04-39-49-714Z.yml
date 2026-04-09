@@ -1,0 +1,1172 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "PS 프리세일즈 presales.co.kr" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e7]: PS
+        - generic [ref=e8]:
+          - generic [ref=e9]: 프리세일즈
+          - generic [ref=e10]: presales.co.kr
+      - navigation [ref=e11]:
+        - link "문서 스토어" [ref=e12] [cursor=pointer]:
+          - /url: /store
+          - text: 문서 스토어
+        - link "컨설팅" [ref=e14] [cursor=pointer]:
+          - /url: /consulting
+        - link "블로그" [ref=e15] [cursor=pointer]:
+          - /url: /blog
+        - link "회사소개" [ref=e16] [cursor=pointer]:
+          - /url: /about
+        - link "고객지원" [ref=e17] [cursor=pointer]:
+          - /url: /faq
+      - generic [ref=e18]:
+        - button [ref=e19] [cursor=pointer]:
+          - img [ref=e20]
+        - generic [ref=e24]:
+          - link "로그인" [ref=e25] [cursor=pointer]:
+            - /url: /auth/login
+          - link "시작하기" [ref=e26] [cursor=pointer]:
+            - /url: /auth/signup
+  - main [ref=e27]:
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - heading "문서 스토어" [level=1] [ref=e30]
+        - paragraph [ref=e31]: 공공조달 입찰에 필요한 모든 문서 템플릿
+      - generic [ref=e32]:
+        - img [ref=e33]
+        - 'textbox "템플릿 검색 (예: 기술제안서, IoT, 스마트시티...)" [ref=e36]'
+      - generic [ref=e37]:
+        - generic [ref=e38]:
+          - button "전체" [ref=e39] [cursor=pointer]
+          - button "기술제안서" [ref=e40] [cursor=pointer]
+          - button "입찰 가이드" [ref=e41] [cursor=pointer]
+          - button "발표자료" [ref=e42] [cursor=pointer]
+          - button "가격제안" [ref=e43] [cursor=pointer]
+          - button "풀 패키지" [ref=e44] [cursor=pointer]
+          - button "사업계획서" [ref=e45] [cursor=pointer]
+        - button "상세 필터" [ref=e46] [cursor=pointer]:
+          - text: 상세 필터
+          - img [ref=e47]
+      - generic [ref=e49]:
+        - paragraph [ref=e51]: 51개 상품
+        - combobox "정렬 기준" [ref=e52] [cursor=pointer]:
+          - option "기본순" [selected]
+          - option "가격 낮은순"
+          - option "가격 높은순"
+          - option "최신순"
+      - generic [ref=e53]:
+        - 'link "공공정보화 제안요청서 작성가이드 (2024) FREE 장바구니에 담기 입찰 가이드 ZIP 공공정보화 제안요청서 작성가이드 (2024) FREE #RFP #제안요청서 #공공정보화 +4" [ref=e54] [cursor=pointer]':
+          - /url: /store/59
+          - generic [ref=e55]:
+            - generic [ref=e56]:
+              - img "공공정보화 제안요청서 작성가이드 (2024)" [ref=e57]
+              - generic [ref=e58]: FREE
+              - button "장바구니에 담기" [ref=e59]:
+                - img [ref=e60]
+            - generic [ref=e64]:
+              - generic [ref=e65]:
+                - generic [ref=e67]: 입찰 가이드
+                - generic [ref=e69]: ZIP
+              - heading "공공정보화 제안요청서 작성가이드 (2024)" [level=3] [ref=e70]
+              - generic [ref=e72]: FREE
+              - generic [ref=e73]:
+                - generic [ref=e74]: "#RFP"
+                - generic [ref=e75]: "#제안요청서"
+                - generic [ref=e76]: "#공공정보화"
+                - generic [ref=e77]: "+4"
+        - 'link "상품이력제 정보시스템 구축 용역 제안서 PREMIUM -50% 장바구니에 담기 기술제안서 PPT PDF 상품이력제 정보시스템 구축 용역 제안서 99,000원 199,000원 #상품이력제 #이력추적 #식품안전 +4" [ref=e78] [cursor=pointer]':
+          - /url: /store/58
+          - generic [ref=e79]:
+            - generic [ref=e80]:
+              - img "상품이력제 정보시스템 구축 용역 제안서" [ref=e81]
+              - generic [ref=e82]: PREMIUM
+              - generic [ref=e83]: "-50%"
+              - button "장바구니에 담기" [ref=e84]:
+                - img [ref=e85]
+            - generic [ref=e89]:
+              - generic [ref=e90]:
+                - generic [ref=e92]: 기술제안서
+                - generic [ref=e93]:
+                  - generic [ref=e94]: PPT
+                  - generic [ref=e95]: PDF
+              - heading "상품이력제 정보시스템 구축 용역 제안서" [level=3] [ref=e96]
+              - generic [ref=e97]:
+                - generic [ref=e98]: 99,000원
+                - generic [ref=e99]: 199,000원
+              - generic [ref=e100]:
+                - generic [ref=e101]: "#상품이력제"
+                - generic [ref=e102]: "#이력추적"
+                - generic [ref=e103]: "#식품안전"
+                - generic [ref=e104]: "+4"
+        - 'link "IA(정보구조) 기획서 템플릿 FREE 장바구니에 담기 발표자료 XLS IA(정보구조) 기획서 템플릿 FREE #IA #정보구조 #UX기획 +4" [ref=e105] [cursor=pointer]':
+          - /url: /store/57
+          - generic [ref=e106]:
+            - generic [ref=e107]:
+              - img "IA(정보구조) 기획서 템플릿" [ref=e108]
+              - generic [ref=e109]: FREE
+              - button "장바구니에 담기" [ref=e110]:
+                - img [ref=e111]
+            - generic [ref=e115]:
+              - generic [ref=e116]:
+                - generic [ref=e118]: 발표자료
+                - generic [ref=e120]: XLS
+              - heading "IA(정보구조) 기획서 템플릿" [level=3] [ref=e121]
+              - generic [ref=e123]: FREE
+              - generic [ref=e124]:
+                - generic [ref=e125]: "#IA"
+                - generic [ref=e126]: "#정보구조"
+                - generic [ref=e127]: "#UX기획"
+                - generic [ref=e128]: "+4"
+        - 'link "프로그램 목록 템플릿 FREE 장바구니에 담기 기술제안서 XLS 프로그램 목록 템플릿 FREE #프로그램목록 #개발관리 #산출물 +4" [ref=e129] [cursor=pointer]':
+          - /url: /store/56
+          - generic [ref=e130]:
+            - generic [ref=e131]:
+              - img "프로그램 목록 템플릿" [ref=e132]
+              - generic [ref=e133]: FREE
+              - button "장바구니에 담기" [ref=e134]:
+                - img [ref=e135]
+            - generic [ref=e139]:
+              - generic [ref=e140]:
+                - generic [ref=e142]: 기술제안서
+                - generic [ref=e144]: XLS
+              - heading "프로그램 목록 템플릿" [level=3] [ref=e145]
+              - generic [ref=e147]: FREE
+              - generic [ref=e148]:
+                - generic [ref=e149]: "#프로그램목록"
+                - generic [ref=e150]: "#개발관리"
+                - generic [ref=e151]: "#산출물"
+                - generic [ref=e152]: "+4"
+        - 'link "특허청 소프트웨어(SW) 개발방법론 FREE 장바구니에 담기 입찰 가이드 PDF 특허청 소프트웨어(SW) 개발방법론 FREE #소프트웨어개발방법론 #특허청 #SW개발 +3" [ref=e153] [cursor=pointer]':
+          - /url: /store/55
+          - generic [ref=e154]:
+            - generic [ref=e155]:
+              - img "특허청 소프트웨어(SW) 개발방법론" [ref=e156]
+              - generic [ref=e157]: FREE
+              - button "장바구니에 담기" [ref=e158]:
+                - img [ref=e159]
+            - generic [ref=e163]:
+              - generic [ref=e164]:
+                - generic [ref=e166]: 입찰 가이드
+                - generic [ref=e168]: PDF
+              - heading "특허청 소프트웨어(SW) 개발방법론" [level=3] [ref=e169]
+              - generic [ref=e171]: FREE
+              - generic [ref=e172]:
+                - generic [ref=e173]: "#소프트웨어개발방법론"
+                - generic [ref=e174]: "#특허청"
+                - generic [ref=e175]: "#SW개발"
+                - generic [ref=e176]: "+3"
+        - 'link "투찰가 산정 및 지분율 계산기 FREE 장바구니에 담기 가격제안 XLS 투찰가 산정 및 지분율 계산기 FREE #투찰가 #지분율 #공동수급 +4" [ref=e177] [cursor=pointer]':
+          - /url: /store/54
+          - generic [ref=e178]:
+            - generic [ref=e179]:
+              - img "투찰가 산정 및 지분율 계산기" [ref=e180]
+              - generic [ref=e181]: FREE
+              - button "장바구니에 담기" [ref=e182]:
+                - img [ref=e183]
+            - generic [ref=e187]:
+              - generic [ref=e188]:
+                - generic [ref=e190]: 가격제안
+                - generic [ref=e192]: XLS
+              - heading "투찰가 산정 및 지분율 계산기" [level=3] [ref=e193]
+              - generic [ref=e195]: FREE
+              - generic [ref=e196]:
+                - generic [ref=e197]: "#투찰가"
+                - generic [ref=e198]: "#지분율"
+                - generic [ref=e199]: "#공동수급"
+                - generic [ref=e200]: "+4"
+        - 'link "제안서 목차 템플릿 (2024) FREE 장바구니에 담기 입찰 가이드 XLS 제안서 목차 템플릿 (2024) FREE #제안서목차 #2024 #입찰 +4" [ref=e201] [cursor=pointer]':
+          - /url: /store/53
+          - generic [ref=e202]:
+            - generic [ref=e203]:
+              - img "제안서 목차 템플릿 (2024)" [ref=e204]
+              - generic [ref=e205]: FREE
+              - button "장바구니에 담기" [ref=e206]:
+                - img [ref=e207]
+            - generic [ref=e211]:
+              - generic [ref=e212]:
+                - generic [ref=e214]: 입찰 가이드
+                - generic [ref=e216]: XLS
+              - heading "제안서 목차 템플릿 (2024)" [level=3] [ref=e217]
+              - generic [ref=e219]: FREE
+              - generic [ref=e220]:
+                - generic [ref=e221]: "#제안서목차"
+                - generic [ref=e222]: "#2024"
+                - generic [ref=e223]: "#입찰"
+                - generic [ref=e224]: "+4"
+        - 'link "제안서 목차 참조 템플릿 FREE 장바구니에 담기 입찰 가이드 XLS 제안서 목차 참조 템플릿 FREE #제안서목차 #입찰 #공공조달 +3" [ref=e225] [cursor=pointer]':
+          - /url: /store/52
+          - generic [ref=e226]:
+            - generic [ref=e227]:
+              - img "제안서 목차 참조 템플릿" [ref=e228]
+              - generic [ref=e229]: FREE
+              - button "장바구니에 담기" [ref=e230]:
+                - img [ref=e231]
+            - generic [ref=e235]:
+              - generic [ref=e236]:
+                - generic [ref=e238]: 입찰 가이드
+                - generic [ref=e240]: XLS
+              - heading "제안서 목차 참조 템플릿" [level=3] [ref=e241]
+              - generic [ref=e243]: FREE
+              - generic [ref=e244]:
+                - generic [ref=e245]: "#제안서목차"
+                - generic [ref=e246]: "#입찰"
+                - generic [ref=e247]: "#공공조달"
+                - generic [ref=e248]: "+3"
+        - 'link "우선협상대상자 기술협상안 FREE 장바구니에 담기 입찰 가이드 HWP 우선협상대상자 기술협상안 FREE #우선협상대상자 #기술협상 #공공조달 +3" [ref=e249] [cursor=pointer]':
+          - /url: /store/51
+          - generic [ref=e250]:
+            - generic [ref=e251]:
+              - img "우선협상대상자 기술협상안" [ref=e252]
+              - generic [ref=e253]: FREE
+              - button "장바구니에 담기" [ref=e254]:
+                - img [ref=e255]
+            - generic [ref=e259]:
+              - generic [ref=e260]:
+                - generic [ref=e262]: 입찰 가이드
+                - generic [ref=e264]: HWP
+              - heading "우선협상대상자 기술협상안" [level=3] [ref=e265]
+              - generic [ref=e267]: FREE
+              - generic [ref=e268]:
+                - generic [ref=e269]: "#우선협상대상자"
+                - generic [ref=e270]: "#기술협상"
+                - generic [ref=e271]: "#공공조달"
+                - generic [ref=e272]: "+3"
+        - 'link "엔티티 정의서 (DB 설계 문서) FREE 장바구니에 담기 기술제안서 ZIP 엔티티 정의서 (DB 설계 문서) FREE #엔티티정의서 #DB설계 #데이터베이스 +3" [ref=e273] [cursor=pointer]':
+          - /url: /store/50
+          - generic [ref=e274]:
+            - generic [ref=e275]:
+              - img "엔티티 정의서 (DB 설계 문서)" [ref=e276]
+              - generic [ref=e277]: FREE
+              - button "장바구니에 담기" [ref=e278]:
+                - img [ref=e279]
+            - generic [ref=e283]:
+              - generic [ref=e284]:
+                - generic [ref=e286]: 기술제안서
+                - generic [ref=e288]: ZIP
+              - heading "엔티티 정의서 (DB 설계 문서)" [level=3] [ref=e289]
+              - generic [ref=e291]: FREE
+              - generic [ref=e292]:
+                - generic [ref=e293]: "#엔티티정의서"
+                - generic [ref=e294]: "#DB설계"
+                - generic [ref=e295]: "#데이터베이스"
+                - generic [ref=e296]: "+3"
+        - 'link "프로젝트 수행계획서 템플릿 FREE 장바구니에 담기 입찰 가이드 DOC 프로젝트 수행계획서 템플릿 FREE #수행계획서 #프로젝트관리 #PM +4" [ref=e297] [cursor=pointer]':
+          - /url: /store/49
+          - generic [ref=e298]:
+            - generic [ref=e299]:
+              - img "프로젝트 수행계획서 템플릿" [ref=e300]
+              - generic [ref=e301]: FREE
+              - button "장바구니에 담기" [ref=e302]:
+                - img [ref=e303]
+            - generic [ref=e307]:
+              - generic [ref=e308]:
+                - generic [ref=e310]: 입찰 가이드
+                - generic [ref=e312]: DOC
+              - heading "프로젝트 수행계획서 템플릿" [level=3] [ref=e313]
+              - generic [ref=e315]: FREE
+              - generic [ref=e316]:
+                - generic [ref=e317]: "#수행계획서"
+                - generic [ref=e318]: "#프로젝트관리"
+                - generic [ref=e319]: "#PM"
+                - generic [ref=e320]: "+4"
+        - 'link "MOU(양해각서) 양식 템플릿 FREE 장바구니에 담기 입찰 가이드 DOC MOU(양해각서) 양식 템플릿 FREE #MOU #양해각서 #업무협약 +4" [ref=e321] [cursor=pointer]':
+          - /url: /store/48
+          - generic [ref=e322]:
+            - generic [ref=e323]:
+              - img "MOU(양해각서) 양식 템플릿" [ref=e324]
+              - generic [ref=e325]: FREE
+              - button "장바구니에 담기" [ref=e326]:
+                - img [ref=e327]
+            - generic [ref=e331]:
+              - generic [ref=e332]:
+                - generic [ref=e334]: 입찰 가이드
+                - generic [ref=e336]: DOC
+              - heading "MOU(양해각서) 양식 템플릿" [level=3] [ref=e337]
+              - generic [ref=e339]: FREE
+              - generic [ref=e340]:
+                - generic [ref=e341]: "#MOU"
+                - generic [ref=e342]: "#양해각서"
+                - generic [ref=e343]: "#업무협약"
+                - generic [ref=e344]: "+4"
+        - 'link "LMS 학습관리시스템 분석설계서 PREMIUM -25% 장바구니에 담기 발표자료 PPT LMS 학습관리시스템 분석설계서 58,900원 79,000원 #LMS #학습관리시스템 #분석설계서 +3" [ref=e345] [cursor=pointer]':
+          - /url: /store/47
+          - generic [ref=e346]:
+            - generic [ref=e347]:
+              - img "LMS 학습관리시스템 분석설계서" [ref=e348]
+              - generic [ref=e349]: PREMIUM
+              - generic [ref=e350]: "-25%"
+              - button "장바구니에 담기" [ref=e351]:
+                - img [ref=e352]
+            - generic [ref=e356]:
+              - generic [ref=e357]:
+                - generic [ref=e359]: 발표자료
+                - generic [ref=e361]: PPT
+              - heading "LMS 학습관리시스템 분석설계서" [level=3] [ref=e362]
+              - generic [ref=e363]:
+                - generic [ref=e364]: 58,900원
+                - generic [ref=e365]: 79,000원
+              - generic [ref=e366]:
+                - generic [ref=e367]: "#LMS"
+                - generic [ref=e368]: "#학습관리시스템"
+                - generic [ref=e369]: "#분석설계서"
+                - generic [ref=e370]: "+3"
+        - 'link "SLA 서비스품질관리 부문 제안서 PREMIUM -29% 장바구니에 담기 기술제안서 PPT SLA 서비스품질관리 부문 제안서 49,000원 69,000원 #SLA #서비스품질관리 #입찰 +4" [ref=e371] [cursor=pointer]':
+          - /url: /store/46
+          - generic [ref=e372]:
+            - generic [ref=e373]:
+              - img "SLA 서비스품질관리 부문 제안서" [ref=e374]
+              - generic [ref=e375]: PREMIUM
+              - generic [ref=e376]: "-29%"
+              - button "장바구니에 담기" [ref=e377]:
+                - img [ref=e378]
+            - generic [ref=e382]:
+              - generic [ref=e383]:
+                - generic [ref=e385]: 기술제안서
+                - generic [ref=e387]: PPT
+              - heading "SLA 서비스품질관리 부문 제안서" [level=3] [ref=e388]
+              - generic [ref=e389]:
+                - generic [ref=e390]: 49,000원
+                - generic [ref=e391]: 69,000원
+              - generic [ref=e392]:
+                - generic [ref=e393]: "#SLA"
+                - generic [ref=e394]: "#서비스품질관리"
+                - generic [ref=e395]: "#입찰"
+                - generic [ref=e396]: "+4"
+        - 'link "정보보안 업무관리 시스템 구축 (27억 규모) PREMIUM -25% 장바구니에 담기 기술제안서 PPT PDF 정보보안 업무관리 시스템 구축 (27억 규모) 149,000원 199,000원 #정보보안 #업무관리시스템 #27억규모" [ref=e397] [cursor=pointer]':
+          - /url: /store/37
+          - generic [ref=e398]:
+            - generic [ref=e399]:
+              - img "정보보안 업무관리 시스템 구축 (27억 규모)" [ref=e400]
+              - generic [ref=e401]: PREMIUM
+              - generic [ref=e402]: "-25%"
+              - button "장바구니에 담기" [ref=e403]:
+                - img [ref=e404]
+            - generic [ref=e408]:
+              - generic [ref=e409]:
+                - generic [ref=e411]: 기술제안서
+                - generic [ref=e412]:
+                  - generic [ref=e413]: PPT
+                  - generic [ref=e414]: PDF
+              - heading "정보보안 업무관리 시스템 구축 (27억 규모)" [level=3] [ref=e415]
+              - generic [ref=e416]:
+                - generic [ref=e417]: 149,000원
+                - generic [ref=e418]: 199,000원
+              - generic [ref=e419]:
+                - generic [ref=e420]: "#정보보안"
+                - generic [ref=e421]: "#업무관리시스템"
+                - generic [ref=e422]: "#27억규모"
+        - 'link "[A3] 45억 규모 공공 제안서 - 시스템 구축부문 PREMIUM -20% 장바구니에 담기 기술제안서 PPT PDF [A3] 45억 규모 공공 제안서 - 시스템 구축부문 199,000원 249,000원 #45억규모 #A3 #공공제안서 +1" [ref=e423] [cursor=pointer]':
+          - /url: /store/40
+          - generic [ref=e424]:
+            - generic [ref=e425]:
+              - img "[A3] 45억 규모 공공 제안서 - 시스템 구축부문" [ref=e426]
+              - generic [ref=e427]: PREMIUM
+              - generic [ref=e428]: "-20%"
+              - button "장바구니에 담기" [ref=e429]:
+                - img [ref=e430]
+            - generic [ref=e434]:
+              - generic [ref=e435]:
+                - generic [ref=e437]: 기술제안서
+                - generic [ref=e438]:
+                  - generic [ref=e439]: PPT
+                  - generic [ref=e440]: PDF
+              - heading "[A3] 45억 규모 공공 제안서 - 시스템 구축부문" [level=3] [ref=e441]
+              - generic [ref=e442]:
+                - generic [ref=e443]: 199,000원
+                - generic [ref=e444]: 249,000원
+              - generic [ref=e445]:
+                - generic [ref=e446]: "#45억규모"
+                - generic [ref=e447]: "#A3"
+                - generic [ref=e448]: "#공공제안서"
+                - generic [ref=e449]: "+1"
+        - 'link "[세로/A4] 45억 규모 공공 제안서 - 시스템 구축부문 PREMIUM -20% 장바구니에 담기 기술제안서 PPT PDF [세로/A4] 45억 규모 공공 제안서 - 시스템 구축부문 199,000원 249,000원 #45억규모 #A4 #세로형 +1" [ref=e450] [cursor=pointer]':
+          - /url: /store/41
+          - generic [ref=e451]:
+            - generic [ref=e452]:
+              - img "[세로/A4] 45억 규모 공공 제안서 - 시스템 구축부문" [ref=e453]
+              - generic [ref=e454]: PREMIUM
+              - generic [ref=e455]: "-20%"
+              - button "장바구니에 담기" [ref=e456]:
+                - img [ref=e457]
+            - generic [ref=e461]:
+              - generic [ref=e462]:
+                - generic [ref=e464]: 기술제안서
+                - generic [ref=e465]:
+                  - generic [ref=e466]: PPT
+                  - generic [ref=e467]: PDF
+              - heading "[세로/A4] 45억 규모 공공 제안서 - 시스템 구축부문" [level=3] [ref=e468]
+              - generic [ref=e469]:
+                - generic [ref=e470]: 199,000원
+                - generic [ref=e471]: 249,000원
+              - generic [ref=e472]:
+                - generic [ref=e473]: "#45억규모"
+                - generic [ref=e474]: "#A4"
+                - generic [ref=e475]: "#세로형"
+                - generic [ref=e476]: "+1"
+        - 'link "예비창업패키지 사업계획서 PREMIUM -25% 장바구니에 담기 사업계획서 PPT PDF HWP 예비창업패키지 사업계획서 89,000원 119,000원 #예비창업패키지 #사업계획서 #창업지원" [ref=e477] [cursor=pointer]':
+          - /url: /store/45
+          - generic [ref=e478]:
+            - generic [ref=e479]:
+              - img "예비창업패키지 사업계획서" [ref=e480]
+              - generic [ref=e481]: PREMIUM
+              - generic [ref=e482]: "-25%"
+              - button "장바구니에 담기" [ref=e483]:
+                - img [ref=e484]
+            - generic [ref=e488]:
+              - generic [ref=e489]:
+                - generic [ref=e491]: 사업계획서
+                - generic [ref=e492]:
+                  - generic [ref=e493]: PPT
+                  - generic [ref=e494]: PDF
+                  - generic [ref=e495]: HWP
+              - heading "예비창업패키지 사업계획서" [level=3] [ref=e496]
+              - generic [ref=e497]:
+                - generic [ref=e498]: 89,000원
+                - generic [ref=e499]: 119,000원
+              - generic [ref=e500]:
+                - generic [ref=e501]: "#예비창업패키지"
+                - generic [ref=e502]: "#사업계획서"
+                - generic [ref=e503]: "#창업지원"
+        - 'link "산업활용 디자인DB 구축 (박물관 제안서) PREMIUM -25% 장바구니에 담기 기술제안서 PPT 산업활용 디자인DB 구축 (박물관 제안서) 89,000원 119,000원 #박물관 #디자인DB #디지털아카이브" [ref=e504] [cursor=pointer]':
+          - /url: /store/35
+          - generic [ref=e505]:
+            - generic [ref=e506]:
+              - img "산업활용 디자인DB 구축 (박물관 제안서)" [ref=e507]
+              - generic [ref=e508]: PREMIUM
+              - generic [ref=e509]: "-25%"
+              - button "장바구니에 담기" [ref=e510]:
+                - img [ref=e511]
+            - generic [ref=e515]:
+              - generic [ref=e516]:
+                - generic [ref=e518]: 기술제안서
+                - generic [ref=e520]: PPT
+              - heading "산업활용 디자인DB 구축 (박물관 제안서)" [level=3] [ref=e521]
+              - generic [ref=e522]:
+                - generic [ref=e523]: 89,000원
+                - generic [ref=e524]: 119,000원
+              - generic [ref=e525]:
+                - generic [ref=e526]: "#박물관"
+                - generic [ref=e527]: "#디자인DB"
+                - generic [ref=e528]: "#디지털아카이브"
+        - 'link "사업비 세부내역 산출 (비목 산출표) PREMIUM -29% 장바구니에 담기 가격제안 ZIP 사업비 세부내역 산출 (비목 산출표) 35,000원 49,000원 #사업비 #비목산출 #원가산정" [ref=e529] [cursor=pointer]':
+          - /url: /store/33
+          - generic [ref=e530]:
+            - generic [ref=e531]:
+              - img "사업비 세부내역 산출 (비목 산출표)" [ref=e532]
+              - generic [ref=e533]: PREMIUM
+              - generic [ref=e534]: "-29%"
+              - button "장바구니에 담기" [ref=e535]:
+                - img [ref=e536]
+            - generic [ref=e540]:
+              - generic [ref=e541]:
+                - generic [ref=e543]: 가격제안
+                - generic [ref=e545]: ZIP
+              - heading "사업비 세부내역 산출 (비목 산출표)" [level=3] [ref=e546]
+              - generic [ref=e547]:
+                - generic [ref=e548]: 35,000원
+                - generic [ref=e549]: 49,000원
+              - generic [ref=e550]:
+                - generic [ref=e551]: "#사업비"
+                - generic [ref=e552]: "#비목산출"
+                - generic [ref=e553]: "#원가산정"
+        - 'link "ISP 통합전산망 구축 정보화 전략계획 PREMIUM -20% 장바구니에 담기 기술제안서 PPT PDF ISP 통합전산망 구축 정보화 전략계획 199,000원 249,000원 #ISP #통합전산망 #정보화전략" [ref=e554] [cursor=pointer]':
+          - /url: /store/43
+          - generic [ref=e555]:
+            - generic [ref=e556]:
+              - img "ISP 통합전산망 구축 정보화 전략계획" [ref=e557]
+              - generic [ref=e558]: PREMIUM
+              - generic [ref=e559]: "-20%"
+              - button "장바구니에 담기" [ref=e560]:
+                - img [ref=e561]
+            - generic [ref=e565]:
+              - generic [ref=e566]:
+                - generic [ref=e568]: 기술제안서
+                - generic [ref=e569]:
+                  - generic [ref=e570]: PPT
+                  - generic [ref=e571]: PDF
+              - heading "ISP 통합전산망 구축 정보화 전략계획" [level=3] [ref=e572]
+              - generic [ref=e573]:
+                - generic [ref=e574]: 199,000원
+                - generic [ref=e575]: 249,000원
+              - generic [ref=e576]:
+                - generic [ref=e577]: "#ISP"
+                - generic [ref=e578]: "#통합전산망"
+                - generic [ref=e579]: "#정보화전략"
+        - 'link "나라장터 제안서 작성법 PREMIUM -22% 장바구니에 담기 입찰 가이드 PPT PDF 나라장터 제안서 작성법 69,000원 89,000원 #나라장터 #제안서작성법 #입찰가이드" [ref=e580] [cursor=pointer]':
+          - /url: /store/44
+          - generic [ref=e581]:
+            - generic [ref=e582]:
+              - img "나라장터 제안서 작성법" [ref=e583]
+              - generic [ref=e584]: PREMIUM
+              - generic [ref=e585]: "-22%"
+              - button "장바구니에 담기" [ref=e586]:
+                - img [ref=e587]
+            - generic [ref=e591]:
+              - generic [ref=e592]:
+                - generic [ref=e594]: 입찰 가이드
+                - generic [ref=e595]:
+                  - generic [ref=e596]: PPT
+                  - generic [ref=e597]: PDF
+              - heading "나라장터 제안서 작성법" [level=3] [ref=e598]
+              - generic [ref=e599]:
+                - generic [ref=e600]: 69,000원
+                - generic [ref=e601]: 89,000원
+              - generic [ref=e602]:
+                - generic [ref=e603]: "#나라장터"
+                - generic [ref=e604]: "#제안서작성법"
+                - generic [ref=e605]: "#입찰가이드"
+        - 'link "네트워크 보안 인력 양성 교육 플랫폼 개발 운영 제안서 PREMIUM -25% 장바구니에 담기 기술제안서 PPT PDF 네트워크 보안 인력 양성 교육 플랫폼 개발 운영 제안서 89,000원 119,000원 #교육플랫폼 #네트워크보안 #인력양성" [ref=e606] [cursor=pointer]':
+          - /url: /store/36
+          - generic [ref=e607]:
+            - generic [ref=e608]:
+              - img "네트워크 보안 인력 양성 교육 플랫폼 개발 운영 제안서" [ref=e609]
+              - generic [ref=e610]: PREMIUM
+              - generic [ref=e611]: "-25%"
+              - button "장바구니에 담기" [ref=e612]:
+                - img [ref=e613]
+            - generic [ref=e617]:
+              - generic [ref=e618]:
+                - generic [ref=e620]: 기술제안서
+                - generic [ref=e621]:
+                  - generic [ref=e622]: PPT
+                  - generic [ref=e623]: PDF
+              - heading "네트워크 보안 인력 양성 교육 플랫폼 개발 운영 제안서" [level=3] [ref=e624]
+              - generic [ref=e625]:
+                - generic [ref=e626]: 89,000원
+                - generic [ref=e627]: 119,000원
+              - generic [ref=e628]:
+                - generic [ref=e629]: "#교육플랫폼"
+                - generic [ref=e630]: "#네트워크보안"
+                - generic [ref=e631]: "#인력양성"
+        - 'link "농산물 물류 추적 및 관리 시스템 구축 용역 PREMIUM -23% 장바구니에 담기 기술제안서 PPT 농산물 물류 추적 및 관리 시스템 구축 용역 99,000원 129,000원 #농산물 #물류추적 #관리시스템" [ref=e632] [cursor=pointer]':
+          - /url: /store/38
+          - generic [ref=e633]:
+            - generic [ref=e634]:
+              - img "농산물 물류 추적 및 관리 시스템 구축 용역" [ref=e635]
+              - generic [ref=e636]: PREMIUM
+              - generic [ref=e637]: "-23%"
+              - button "장바구니에 담기" [ref=e638]:
+                - img [ref=e639]
+            - generic [ref=e643]:
+              - generic [ref=e644]:
+                - generic [ref=e646]: 기술제안서
+                - generic [ref=e648]: PPT
+              - heading "농산물 물류 추적 및 관리 시스템 구축 용역" [level=3] [ref=e649]
+              - generic [ref=e650]:
+                - generic [ref=e651]: 99,000원
+                - generic [ref=e652]: 129,000원
+              - generic [ref=e653]:
+                - generic [ref=e654]: "#농산물"
+                - generic [ref=e655]: "#물류추적"
+                - generic [ref=e656]: "#관리시스템"
+        - 'link "악성코드 은닉사이트 조치 및 기술지원 용역 PREMIUM -24% 장바구니에 담기 기술제안서 PPT PDF 악성코드 은닉사이트 조치 및 기술지원 용역 129,000원 169,000원 #악성코드 #보안 #은닉사이트" [ref=e657] [cursor=pointer]':
+          - /url: /store/32
+          - generic [ref=e658]:
+            - generic [ref=e659]:
+              - img "악성코드 은닉사이트 조치 및 기술지원 용역" [ref=e660]
+              - generic [ref=e661]: PREMIUM
+              - generic [ref=e662]: "-24%"
+              - button "장바구니에 담기" [ref=e663]:
+                - img [ref=e664]
+            - generic [ref=e668]:
+              - generic [ref=e669]:
+                - generic [ref=e671]: 기술제안서
+                - generic [ref=e672]:
+                  - generic [ref=e673]: PPT
+                  - generic [ref=e674]: PDF
+              - heading "악성코드 은닉사이트 조치 및 기술지원 용역" [level=3] [ref=e675]
+              - generic [ref=e676]:
+                - generic [ref=e677]: 129,000원
+                - generic [ref=e678]: 169,000원
+              - generic [ref=e679]:
+                - generic [ref=e680]: "#악성코드"
+                - generic [ref=e681]: "#보안"
+                - generic [ref=e682]: "#은닉사이트"
+        - 'link "광고플랫폼 스토리보드 PREMIUM -25% 장바구니에 담기 발표자료 PPT 광고플랫폼 스토리보드 59,000원 79,000원 #광고플랫폼 #스토리보드 #화면설계" [ref=e683] [cursor=pointer]':
+          - /url: /store/34
+          - generic [ref=e684]:
+            - generic [ref=e685]:
+              - img "광고플랫폼 스토리보드" [ref=e686]
+              - generic [ref=e687]: PREMIUM
+              - generic [ref=e688]: "-25%"
+              - button "장바구니에 담기" [ref=e689]:
+                - img [ref=e690]
+            - generic [ref=e694]:
+              - generic [ref=e695]:
+                - generic [ref=e697]: 발표자료
+                - generic [ref=e699]: PPT
+              - heading "광고플랫폼 스토리보드" [level=3] [ref=e700]
+              - generic [ref=e701]:
+                - generic [ref=e702]: 59,000원
+                - generic [ref=e703]: 79,000원
+              - generic [ref=e704]:
+                - generic [ref=e705]: "#광고플랫폼"
+                - generic [ref=e706]: "#스토리보드"
+                - generic [ref=e707]: "#화면설계"
+        - 'link "화영시 여객서비스 입주기업 지원 포털사이트 제안서 PREMIUM -24% 장바구니에 담기 기술제안서 PPT 화영시 여객서비스 입주기업 지원 포털사이트 제안서 129,000원 169,000원 #포털사이트 #지자체 #여객서비스" [ref=e708] [cursor=pointer]':
+          - /url: /store/39
+          - generic [ref=e709]:
+            - generic [ref=e710]:
+              - img "화영시 여객서비스 입주기업 지원 포털사이트 제안서" [ref=e711]
+              - generic [ref=e712]: PREMIUM
+              - generic [ref=e713]: "-24%"
+              - button "장바구니에 담기" [ref=e714]:
+                - img [ref=e715]
+            - generic [ref=e719]:
+              - generic [ref=e720]:
+                - generic [ref=e722]: 기술제안서
+                - generic [ref=e724]: PPT
+              - heading "화영시 여객서비스 입주기업 지원 포털사이트 제안서" [level=3] [ref=e725]
+              - generic [ref=e726]:
+                - generic [ref=e727]: 129,000원
+                - generic [ref=e728]: 169,000원
+              - generic [ref=e729]:
+                - generic [ref=e730]: "#포털사이트"
+                - generic [ref=e731]: "#지자체"
+                - generic [ref=e732]: "#여객서비스"
+        - 'link "IoT 서버 시스템 디바이스 연동 시나리오 (유료버전) PREMIUM -17% 장바구니에 담기 기술제안서 PPT IoT 서버 시스템 디바이스 연동 시나리오 (유료버전) 49,000원 59,000원 #IoT #서버시스템 #디바이스연동" [ref=e733] [cursor=pointer]':
+          - /url: /store/24
+          - generic [ref=e734]:
+            - generic [ref=e735]:
+              - img "IoT 서버 시스템 디바이스 연동 시나리오 (유료버전)" [ref=e736]
+              - generic [ref=e737]: PREMIUM
+              - generic [ref=e738]: "-17%"
+              - button "장바구니에 담기" [ref=e739]:
+                - img [ref=e740]
+            - generic [ref=e744]:
+              - generic [ref=e745]:
+                - generic [ref=e747]: 기술제안서
+                - generic [ref=e749]: PPT
+              - heading "IoT 서버 시스템 디바이스 연동 시나리오 (유료버전)" [level=3] [ref=e750]
+              - generic [ref=e751]:
+                - generic [ref=e752]: 49,000원
+                - generic [ref=e753]: 59,000원
+              - generic [ref=e754]:
+                - generic [ref=e755]: "#IoT"
+                - generic [ref=e756]: "#서버시스템"
+                - generic [ref=e757]: "#디바이스연동"
+        - 'link "UI/UX 기획서 PREMIUM -22% 장바구니에 담기 발표자료 PPT UI/UX 기획서 69,000원 89,000원 #UIUX #기획서 #화면설계" [ref=e758] [cursor=pointer]':
+          - /url: /store/31
+          - generic [ref=e759]:
+            - generic [ref=e760]:
+              - img "UI/UX 기획서" [ref=e761]
+              - generic [ref=e762]: PREMIUM
+              - generic [ref=e763]: "-22%"
+              - button "장바구니에 담기" [ref=e764]:
+                - img [ref=e765]
+            - generic [ref=e769]:
+              - generic [ref=e770]:
+                - generic [ref=e772]: 발표자료
+                - generic [ref=e774]: PPT
+              - heading "UI/UX 기획서" [level=3] [ref=e775]
+              - generic [ref=e776]:
+                - generic [ref=e777]: 69,000원
+                - generic [ref=e778]: 89,000원
+              - generic [ref=e779]:
+                - generic [ref=e780]: "#UIUX"
+                - generic [ref=e781]: "#기획서"
+                - generic [ref=e782]: "#화면설계"
+        - 'link "군부대 IoT 시설물 원격감시체계 구축 제안서 PREMIUM -25% 장바구니에 담기 기술제안서 PPT PDF 군부대 IoT 시설물 원격감시체계 구축 제안서 149,000원 199,000원 #군부대 #IoT #원격감시 +1" [ref=e783] [cursor=pointer]':
+          - /url: /store/27
+          - generic [ref=e784]:
+            - generic [ref=e785]:
+              - img "군부대 IoT 시설물 원격감시체계 구축 제안서" [ref=e786]
+              - generic [ref=e787]: PREMIUM
+              - generic [ref=e788]: "-25%"
+              - button "장바구니에 담기" [ref=e789]:
+                - img [ref=e790]
+            - generic [ref=e794]:
+              - generic [ref=e795]:
+                - generic [ref=e797]: 기술제안서
+                - generic [ref=e798]:
+                  - generic [ref=e799]: PPT
+                  - generic [ref=e800]: PDF
+              - heading "군부대 IoT 시설물 원격감시체계 구축 제안서" [level=3] [ref=e801]
+              - generic [ref=e802]:
+                - generic [ref=e803]: 149,000원
+                - generic [ref=e804]: 199,000원
+              - generic [ref=e805]:
+                - generic [ref=e806]: "#군부대"
+                - generic [ref=e807]: "#IoT"
+                - generic [ref=e808]: "#원격감시"
+                - generic [ref=e809]: "+1"
+        - 'link "정부 지자체 홈페이지 통합 유지보수 및 고도화 PREMIUM -25% 장바구니에 담기 기술제안서 PPT PDF 정부 지자체 홈페이지 통합 유지보수 및 고도화 149,000원 199,000원 #정부 #지자체 #홈페이지 +1" [ref=e810] [cursor=pointer]':
+          - /url: /store/29
+          - generic [ref=e811]:
+            - generic [ref=e812]:
+              - img "정부 지자체 홈페이지 통합 유지보수 및 고도화" [ref=e813]
+              - generic [ref=e814]: PREMIUM
+              - generic [ref=e815]: "-25%"
+              - button "장바구니에 담기" [ref=e816]:
+                - img [ref=e817]
+            - generic [ref=e821]:
+              - generic [ref=e822]:
+                - generic [ref=e824]: 기술제안서
+                - generic [ref=e825]:
+                  - generic [ref=e826]: PPT
+                  - generic [ref=e827]: PDF
+              - heading "정부 지자체 홈페이지 통합 유지보수 및 고도화" [level=3] [ref=e828]
+              - generic [ref=e829]:
+                - generic [ref=e830]: 149,000원
+                - generic [ref=e831]: 199,000원
+              - generic [ref=e832]:
+                - generic [ref=e833]: "#정부"
+                - generic [ref=e834]: "#지자체"
+                - generic [ref=e835]: "#홈페이지"
+                - generic [ref=e836]: "+1"
+        - 'link "청해시 홈페이지 통합 유지보수 및 고도화 제안서 PREMIUM -25% 장바구니에 담기 기술제안서 PPT 청해시 홈페이지 통합 유지보수 및 고도화 제안서 149,000원 199,000원 #청해시 #홈페이지 #유지보수 +1" [ref=e837] [cursor=pointer]':
+          - /url: /store/30
+          - generic [ref=e838]:
+            - generic [ref=e839]:
+              - img "청해시 홈페이지 통합 유지보수 및 고도화 제안서" [ref=e840]
+              - generic [ref=e841]: PREMIUM
+              - generic [ref=e842]: "-25%"
+              - button "장바구니에 담기" [ref=e843]:
+                - img [ref=e844]
+            - generic [ref=e848]:
+              - generic [ref=e849]:
+                - generic [ref=e851]: 기술제안서
+                - generic [ref=e853]: PPT
+              - heading "청해시 홈페이지 통합 유지보수 및 고도화 제안서" [level=3] [ref=e854]
+              - generic [ref=e855]:
+                - generic [ref=e856]: 149,000원
+                - generic [ref=e857]: 199,000원
+              - generic [ref=e858]:
+                - generic [ref=e859]: "#청해시"
+                - generic [ref=e860]: "#홈페이지"
+                - generic [ref=e861]: "#유지보수"
+                - generic [ref=e862]: "+1"
+        - 'link "안전플랫폼 관제 시스템 MMI PREMIUM -25% 장바구니에 담기 기술제안서 PPT 안전플랫폼 관제 시스템 MMI 59,000원 79,000원 #안전플랫폼 #관제시스템 #MMI +1" [ref=e863] [cursor=pointer]':
+          - /url: /store/20
+          - generic [ref=e864]:
+            - generic [ref=e865]:
+              - img "안전플랫폼 관제 시스템 MMI" [ref=e866]
+              - generic [ref=e867]: PREMIUM
+              - generic [ref=e868]: "-25%"
+              - button "장바구니에 담기" [ref=e869]:
+                - img [ref=e870]
+            - generic [ref=e874]:
+              - generic [ref=e875]:
+                - generic [ref=e877]: 기술제안서
+                - generic [ref=e879]: PPT
+              - heading "안전플랫폼 관제 시스템 MMI" [level=3] [ref=e880]
+              - generic [ref=e881]:
+                - generic [ref=e882]: 59,000원
+                - generic [ref=e883]: 79,000원
+              - generic [ref=e884]:
+                - generic [ref=e885]: "#안전플랫폼"
+                - generic [ref=e886]: "#관제시스템"
+                - generic [ref=e887]: "#MMI"
+                - generic [ref=e888]: "+1"
+        - 'link "나라장터 입찰 제안서 - 시스템 구축부문 (30억 규모) PREMIUM -23% 장바구니에 담기 기술제안서 PPT PDF 나라장터 입찰 제안서 - 시스템 구축부문 (30억 규모) 99,000원 129,000원 #나라장터 #입찰제안서 #시스템구축 +1" [ref=e889] [cursor=pointer]':
+          - /url: /store/19
+          - generic [ref=e890]:
+            - generic [ref=e891]:
+              - img "나라장터 입찰 제안서 - 시스템 구축부문 (30억 규모)" [ref=e892]
+              - generic [ref=e893]: PREMIUM
+              - generic [ref=e894]: "-23%"
+              - button "장바구니에 담기" [ref=e895]:
+                - img [ref=e896]
+            - generic [ref=e900]:
+              - generic [ref=e901]:
+                - generic [ref=e903]: 기술제안서
+                - generic [ref=e904]:
+                  - generic [ref=e905]: PPT
+                  - generic [ref=e906]: PDF
+              - heading "나라장터 입찰 제안서 - 시스템 구축부문 (30억 규모)" [level=3] [ref=e907]
+              - generic [ref=e908]:
+                - generic [ref=e909]: 99,000원
+                - generic [ref=e910]: 129,000원
+              - generic [ref=e911]:
+                - generic [ref=e912]: "#나라장터"
+                - generic [ref=e913]: "#입찰제안서"
+                - generic [ref=e914]: "#시스템구축"
+                - generic [ref=e915]: "+1"
+        - 'link "금융 시스템 유지운영 제안서 (월 1억 매출) PREMIUM -23% 장바구니에 담기 기술제안서 PPT PDF 금융 시스템 유지운영 제안서 (월 1억 매출) 99,000원 129,000원 #금융시스템 #유지운영 #통합유지보수" [ref=e916] [cursor=pointer]':
+          - /url: /store/25
+          - generic [ref=e917]:
+            - generic [ref=e918]:
+              - img "금융 시스템 유지운영 제안서 (월 1억 매출)" [ref=e919]
+              - generic [ref=e920]: PREMIUM
+              - generic [ref=e921]: "-23%"
+              - button "장바구니에 담기" [ref=e922]:
+                - img [ref=e923]
+            - generic [ref=e927]:
+              - generic [ref=e928]:
+                - generic [ref=e930]: 기술제안서
+                - generic [ref=e931]:
+                  - generic [ref=e932]: PPT
+                  - generic [ref=e933]: PDF
+              - heading "금융 시스템 유지운영 제안서 (월 1억 매출)" [level=3] [ref=e934]
+              - generic [ref=e935]:
+                - generic [ref=e936]: 99,000원
+                - generic [ref=e937]: 129,000원
+              - generic [ref=e938]:
+                - generic [ref=e939]: "#금융시스템"
+                - generic [ref=e940]: "#유지운영"
+                - generic [ref=e941]: "#통합유지보수"
+        - 'link "대형쇼핑몰 서비스정책서 통합본 (유료버전) PREMIUM -29% 장바구니에 담기 기술제안서 PDF DOC 대형쇼핑몰 서비스정책서 통합본 (유료버전) 49,000원 69,000원 #쇼핑몰 #서비스정책서 #이커머스" [ref=e942] [cursor=pointer]':
+          - /url: /store/28
+          - generic [ref=e943]:
+            - generic [ref=e944]:
+              - img "대형쇼핑몰 서비스정책서 통합본 (유료버전)" [ref=e945]
+              - generic [ref=e946]: PREMIUM
+              - generic [ref=e947]: "-29%"
+              - button "장바구니에 담기" [ref=e948]:
+                - img [ref=e949]
+            - generic [ref=e953]:
+              - generic [ref=e954]:
+                - generic [ref=e956]: 기술제안서
+                - generic [ref=e957]:
+                  - generic [ref=e958]: PDF
+                  - generic [ref=e959]: DOC
+              - heading "대형쇼핑몰 서비스정책서 통합본 (유료버전)" [level=3] [ref=e960]
+              - generic [ref=e961]:
+                - generic [ref=e962]: 49,000원
+                - generic [ref=e963]: 69,000원
+              - generic [ref=e964]:
+                - generic [ref=e965]: "#쇼핑몰"
+                - generic [ref=e966]: "#서비스정책서"
+                - generic [ref=e967]: "#이커머스"
+        - 'link "국내 Top tier 쇼핑몰 BM 개선 및 차세대 제안서 PREMIUM -23% 장바구니에 담기 기술제안서 PPT PDF 국내 Top tier 쇼핑몰 BM 개선 및 차세대 제안서 99,000원 129,000원 #쇼핑몰 #BM개선 #차세대 +1" [ref=e968] [cursor=pointer]':
+          - /url: /store/23
+          - generic [ref=e969]:
+            - generic [ref=e970]:
+              - img "국내 Top tier 쇼핑몰 BM 개선 및 차세대 제안서" [ref=e971]
+              - generic [ref=e972]: PREMIUM
+              - generic [ref=e973]: "-23%"
+              - button "장바구니에 담기" [ref=e974]:
+                - img [ref=e975]
+            - generic [ref=e979]:
+              - generic [ref=e980]:
+                - generic [ref=e982]: 기술제안서
+                - generic [ref=e983]:
+                  - generic [ref=e984]: PPT
+                  - generic [ref=e985]: PDF
+              - heading "국내 Top tier 쇼핑몰 BM 개선 및 차세대 제안서" [level=3] [ref=e986]
+              - generic [ref=e987]:
+                - generic [ref=e988]: 99,000원
+                - generic [ref=e989]: 129,000원
+              - generic [ref=e990]:
+                - generic [ref=e991]: "#쇼핑몰"
+                - generic [ref=e992]: "#BM개선"
+                - generic [ref=e993]: "#차세대"
+                - generic [ref=e994]: "+1"
+        - 'link "프로젝트 평가서 FREE 장바구니에 담기 기술제안서 XLS 프로젝트 평가서 FREE #프로젝트평가 #성과평가 #PMO" [ref=e995] [cursor=pointer]':
+          - /url: /store/17
+          - generic [ref=e996]:
+            - generic [ref=e997]:
+              - img "프로젝트 평가서" [ref=e998]
+              - generic [ref=e999]: FREE
+              - button "장바구니에 담기" [ref=e1000]:
+                - img [ref=e1001]
+            - generic [ref=e1005]:
+              - generic [ref=e1006]:
+                - generic [ref=e1008]: 기술제안서
+                - generic [ref=e1010]: XLS
+              - heading "프로젝트 평가서" [level=3] [ref=e1011]
+              - generic [ref=e1013]: FREE
+              - generic [ref=e1014]:
+                - generic [ref=e1015]: "#프로젝트평가"
+                - generic [ref=e1016]: "#성과평가"
+                - generic [ref=e1017]: "#PMO"
+        - 'link "기능 및 기술요건 정의서 FREE 장바구니에 담기 기술제안서 DOC 기능 및 기술요건 정의서 FREE #기술요건 #기능정의 #요구사항정의" [ref=e1018] [cursor=pointer]':
+          - /url: /store/7
+          - generic [ref=e1019]:
+            - generic [ref=e1020]:
+              - img "기능 및 기술요건 정의서" [ref=e1021]
+              - generic [ref=e1022]: FREE
+              - button "장바구니에 담기" [ref=e1023]:
+                - img [ref=e1024]
+            - generic [ref=e1028]:
+              - generic [ref=e1029]:
+                - generic [ref=e1031]: 기술제안서
+                - generic [ref=e1033]: DOC
+              - heading "기능 및 기술요건 정의서" [level=3] [ref=e1034]
+              - generic [ref=e1036]: FREE
+              - generic [ref=e1037]:
+                - generic [ref=e1038]: "#기술요건"
+                - generic [ref=e1039]: "#기능정의"
+                - generic [ref=e1040]: "#요구사항정의"
+        - 'link "요구사항 추적표 FREE 장바구니에 담기 기술제안서 XLS 요구사항 추적표 FREE #요구사항추적 #RTM #품질관리" [ref=e1041] [cursor=pointer]':
+          - /url: /store/14
+          - generic [ref=e1042]:
+            - generic [ref=e1043]:
+              - img "요구사항 추적표" [ref=e1044]
+              - generic [ref=e1045]: FREE
+              - button "장바구니에 담기" [ref=e1046]:
+                - img [ref=e1047]
+            - generic [ref=e1051]:
+              - generic [ref=e1052]:
+                - generic [ref=e1054]: 기술제안서
+                - generic [ref=e1056]: XLS
+              - heading "요구사항 추적표" [level=3] [ref=e1057]
+              - generic [ref=e1059]: FREE
+              - generic [ref=e1060]:
+                - generic [ref=e1061]: "#요구사항추적"
+                - generic [ref=e1062]: "#RTM"
+                - generic [ref=e1063]: "#품질관리"
+        - 'link "3개년 수주 ARPU FREE 장바구니에 담기 사업계획서 XLS 3개년 수주 ARPU FREE #수주관리 #ARPU #매출산정" [ref=e1064] [cursor=pointer]':
+          - /url: /store/2
+          - generic [ref=e1065]:
+            - generic [ref=e1066]:
+              - img "3개년 수주 ARPU" [ref=e1067]
+              - generic [ref=e1068]: FREE
+              - button "장바구니에 담기" [ref=e1069]:
+                - img [ref=e1070]
+            - generic [ref=e1074]:
+              - generic [ref=e1075]:
+                - generic [ref=e1077]: 사업계획서
+                - generic [ref=e1079]: XLS
+              - heading "3개년 수주 ARPU" [level=3] [ref=e1080]
+              - generic [ref=e1082]: FREE
+              - generic [ref=e1083]:
+                - generic [ref=e1084]: "#수주관리"
+                - generic [ref=e1085]: "#ARPU"
+                - generic [ref=e1086]: "#매출산정"
+        - 'link "프로젝트 산출물 템플릿 세트 (무료) FREE 장바구니에 담기 풀 패키지 XLS DOC ZIP 프로젝트 산출물 템플릿 세트 (무료) FREE #프로젝트산출물 #SI템플릿 #번들" [ref=e1087] [cursor=pointer]':
+          - /url: /store/16
+          - generic [ref=e1088]:
+            - generic [ref=e1089]:
+              - img "프로젝트 산출물 템플릿 세트 (무료)" [ref=e1090]
+              - generic [ref=e1091]: FREE
+              - button "장바구니에 담기" [ref=e1092]:
+                - img [ref=e1093]
+            - generic [ref=e1097]:
+              - generic [ref=e1098]:
+                - generic [ref=e1100]: 풀 패키지
+                - generic [ref=e1101]:
+                  - generic [ref=e1102]: XLS
+                  - generic [ref=e1103]: DOC
+                  - generic [ref=e1104]: ZIP
+              - heading "프로젝트 산출물 템플릿 세트 (무료)" [level=3] [ref=e1105]
+              - generic [ref=e1107]: FREE
+              - generic [ref=e1108]:
+                - generic [ref=e1109]: "#프로젝트산출물"
+                - generic [ref=e1110]: "#SI템플릿"
+                - generic [ref=e1111]: "#번들"
+        - 'link "IoT 서버 시스템 디바이스 연동 시나리오 FREE 장바구니에 담기 기술제안서 PPT IoT 서버 시스템 디바이스 연동 시나리오 FREE #IoT #서버시스템 #디바이스연동" [ref=e1112] [cursor=pointer]':
+          - /url: /store/3
+          - generic [ref=e1113]:
+            - generic [ref=e1114]:
+              - img "IoT 서버 시스템 디바이스 연동 시나리오" [ref=e1115]
+              - generic [ref=e1116]: FREE
+              - button "장바구니에 담기" [ref=e1117]:
+                - img [ref=e1118]
+            - generic [ref=e1122]:
+              - generic [ref=e1123]:
+                - generic [ref=e1125]: 기술제안서
+                - generic [ref=e1127]: PPT
+              - heading "IoT 서버 시스템 디바이스 연동 시나리오" [level=3] [ref=e1128]
+              - generic [ref=e1130]: FREE
+              - generic [ref=e1131]:
+                - generic [ref=e1132]: "#IoT"
+                - generic [ref=e1133]: "#서버시스템"
+                - generic [ref=e1134]: "#디바이스연동"
+        - 'link "WBS PPT 템플릿 FREE 장바구니에 담기 기술제안서 PPT WBS PPT 템플릿 FREE #WBS #작업분류체계 #프로젝트관리" [ref=e1135] [cursor=pointer]':
+          - /url: /store/4
+          - generic [ref=e1136]:
+            - generic [ref=e1137]:
+              - img "WBS PPT 템플릿" [ref=e1138]
+              - generic [ref=e1139]: FREE
+              - button "장바구니에 담기" [ref=e1140]:
+                - img [ref=e1141]
+            - generic [ref=e1145]:
+              - generic [ref=e1146]:
+                - generic [ref=e1148]: 기술제안서
+                - generic [ref=e1150]: PPT
+              - heading "WBS PPT 템플릿" [level=3] [ref=e1151]
+              - generic [ref=e1153]: FREE
+              - generic [ref=e1154]:
+                - generic [ref=e1155]: "#WBS"
+                - generic [ref=e1156]: "#작업분류체계"
+                - generic [ref=e1157]: "#프로젝트관리"
+        - 'link "개인정보보호법 적용사례 시나리오 100건 FREE 장바구니에 담기 기술제안서 PDF 개인정보보호법 적용사례 시나리오 100건 FREE #개인정보보호법 #PIPA #컴플라이언스" [ref=e1158] [cursor=pointer]':
+          - /url: /store/5
+          - generic [ref=e1159]:
+            - generic [ref=e1160]:
+              - img "개인정보보호법 적용사례 시나리오 100건" [ref=e1161]
+              - generic [ref=e1162]: FREE
+              - button "장바구니에 담기" [ref=e1163]:
+                - img [ref=e1164]
+            - generic [ref=e1168]:
+              - generic [ref=e1169]:
+                - generic [ref=e1171]: 기술제안서
+                - generic [ref=e1173]: PDF
+              - heading "개인정보보호법 적용사례 시나리오 100건" [level=3] [ref=e1174]
+              - generic [ref=e1176]: FREE
+              - generic [ref=e1177]:
+                - generic [ref=e1178]: "#개인정보보호법"
+                - generic [ref=e1179]: "#PIPA"
+                - generic [ref=e1180]: "#컴플라이언스"
+        - 'link "대형쇼핑몰 서비스정책서 FREE 장바구니에 담기 기술제안서 PDF DOC 대형쇼핑몰 서비스정책서 FREE #쇼핑몰 #서비스정책 #이커머스" [ref=e1181] [cursor=pointer]':
+          - /url: /store/8
+          - generic [ref=e1182]:
+            - generic [ref=e1183]:
+              - img "대형쇼핑몰 서비스정책서" [ref=e1184]
+              - generic [ref=e1185]: FREE
+              - button "장바구니에 담기" [ref=e1186]:
+                - img [ref=e1187]
+            - generic [ref=e1191]:
+              - generic [ref=e1192]:
+                - generic [ref=e1194]: 기술제안서
+                - generic [ref=e1195]:
+                  - generic [ref=e1196]: PDF
+                  - generic [ref=e1197]: DOC
+              - heading "대형쇼핑몰 서비스정책서" [level=3] [ref=e1198]
+              - generic [ref=e1200]: FREE
+              - generic [ref=e1201]:
+                - generic [ref=e1202]: "#쇼핑몰"
+                - generic [ref=e1203]: "#서비스정책"
+                - generic [ref=e1204]: "#이커머스"
+        - 'link "데이터전환 계획서 FREE 장바구니에 담기 기술제안서 DOC 데이터전환 계획서 FREE #데이터전환 #마이그레이션 #ETL" [ref=e1205] [cursor=pointer]':
+          - /url: /store/9
+          - generic [ref=e1206]:
+            - generic [ref=e1207]:
+              - img "데이터전환 계획서" [ref=e1208]
+              - generic [ref=e1209]: FREE
+              - button "장바구니에 담기" [ref=e1210]:
+                - img [ref=e1211]
+            - generic [ref=e1215]:
+              - generic [ref=e1216]:
+                - generic [ref=e1218]: 기술제안서
+                - generic [ref=e1220]: DOC
+              - heading "데이터전환 계획서" [level=3] [ref=e1221]
+              - generic [ref=e1223]: FREE
+              - generic [ref=e1224]:
+                - generic [ref=e1225]: "#데이터전환"
+                - generic [ref=e1226]: "#마이그레이션"
+                - generic [ref=e1227]: "#ETL"
+        - 'link "디바이스 배포 프로세스 FREE 장바구니에 담기 기술제안서 PPT 디바이스 배포 프로세스 FREE #IoT #디바이스배포 #설치프로세스" [ref=e1228] [cursor=pointer]':
+          - /url: /store/10
+          - generic [ref=e1229]:
+            - generic [ref=e1230]:
+              - img "디바이스 배포 프로세스" [ref=e1231]
+              - generic [ref=e1232]: FREE
+              - button "장바구니에 담기" [ref=e1233]:
+                - img [ref=e1234]
+            - generic [ref=e1238]:
+              - generic [ref=e1239]:
+                - generic [ref=e1241]: 기술제안서
+                - generic [ref=e1243]: PPT
+              - heading "디바이스 배포 프로세스" [level=3] [ref=e1244]
+              - generic [ref=e1246]: FREE
+              - generic [ref=e1247]:
+                - generic [ref=e1248]: "#IoT"
+                - generic [ref=e1249]: "#디바이스배포"
+                - generic [ref=e1250]: "#설치프로세스"
+        - 'link "PMO 문서관리지침서 FREE 장바구니에 담기 기술제안서 DOC PMO 문서관리지침서 FREE #PMO #문서관리 #지침서" [ref=e1251] [cursor=pointer]':
+          - /url: /store/11
+          - generic [ref=e1252]:
+            - generic [ref=e1253]:
+              - img "PMO 문서관리지침서" [ref=e1254]
+              - generic [ref=e1255]: FREE
+              - button "장바구니에 담기" [ref=e1256]:
+                - img [ref=e1257]
+            - generic [ref=e1261]:
+              - generic [ref=e1262]:
+                - generic [ref=e1264]: 기술제안서
+                - generic [ref=e1266]: DOC
+              - heading "PMO 문서관리지침서" [level=3] [ref=e1267]
+              - generic [ref=e1269]: FREE
+              - generic [ref=e1270]:
+                - generic [ref=e1271]: "#PMO"
+                - generic [ref=e1272]: "#문서관리"
+                - generic [ref=e1273]: "#지침서"
+        - 'link "프로젝트 변경요청서 템플릿 FREE 장바구니에 담기 기술제안서 DOC 프로젝트 변경요청서 템플릿 FREE #변경요청 #변경관리 #프로젝트관리" [ref=e1274] [cursor=pointer]':
+          - /url: /store/12
+          - generic [ref=e1275]:
+            - generic [ref=e1276]:
+              - img "프로젝트 변경요청서 템플릿" [ref=e1277]
+              - generic [ref=e1278]: FREE
+              - button "장바구니에 담기" [ref=e1279]:
+                - img [ref=e1280]
+            - generic [ref=e1284]:
+              - generic [ref=e1285]:
+                - generic [ref=e1287]: 기술제안서
+                - generic [ref=e1289]: DOC
+              - heading "프로젝트 변경요청서 템플릿" [level=3] [ref=e1290]
+              - generic [ref=e1292]: FREE
+              - generic [ref=e1293]:
+                - generic [ref=e1294]: "#변경요청"
+                - generic [ref=e1295]: "#변경관리"
+                - generic [ref=e1296]: "#프로젝트관리"
+        - 'link "설계문서 ERD FREE 장바구니에 담기 기술제안서 PPT 설계문서 ERD FREE #ERD #데이터베이스설계 #DB설계" [ref=e1297] [cursor=pointer]':
+          - /url: /store/13
+          - generic [ref=e1298]:
+            - generic [ref=e1299]:
+              - img "설계문서 ERD" [ref=e1300]
+              - generic [ref=e1301]: FREE
+              - button "장바구니에 담기" [ref=e1302]:
+                - img [ref=e1303]
+            - generic [ref=e1307]:
+              - generic [ref=e1308]:
+                - generic [ref=e1310]: 기술제안서
+                - generic [ref=e1312]: PPT
+              - heading "설계문서 ERD" [level=3] [ref=e1313]
+              - generic [ref=e1315]: FREE
+              - generic [ref=e1316]:
+                - generic [ref=e1317]: "#ERD"
+                - generic [ref=e1318]: "#데이터베이스설계"
+                - generic [ref=e1319]: "#DB설계"
+  - contentinfo [ref=e1320]:
+    - generic [ref=e1321]:
+      - generic [ref=e1323]:
+        - generic [ref=e1324]:
+          - generic [ref=e1325]:
+            - generic [ref=e1327]: PS
+            - generic [ref=e1328]: 프리세일즈
+          - paragraph [ref=e1329]: 공공조달 제안서 전문 플랫폼. 나라장터, 조달청 입찰에 최적화된 기술제안서, 가격제안서, 발표PT 템플릿과 전문가 컨설팅을 제공합니다.
+        - generic [ref=e1330]:
+          - heading "서비스" [level=4] [ref=e1331]
+          - list [ref=e1332]:
+            - listitem [ref=e1333]:
+              - link "문서 스토어" [ref=e1334] [cursor=pointer]:
+                - /url: /store
+                - text: 문서 스토어
+                - img [ref=e1335]
+            - listitem [ref=e1338]:
+              - link "전문가 컨설팅" [ref=e1339] [cursor=pointer]:
+                - /url: /consulting
+                - text: 전문가 컨설팅
+                - img [ref=e1340]
+            - listitem [ref=e1343]:
+              - link "무료 가이드" [ref=e1344] [cursor=pointer]:
+                - /url: /store?price=free
+                - text: 무료 가이드
+                - img [ref=e1345]
+            - listitem [ref=e1348]:
+              - link "블로그" [ref=e1349] [cursor=pointer]:
+                - /url: /blog
+                - text: 블로그
+                - img [ref=e1350]
+        - generic [ref=e1353]:
+          - heading "지원" [level=4] [ref=e1354]
+          - list [ref=e1355]:
+            - listitem [ref=e1356]:
+              - link "회사소개" [ref=e1357] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e1358]:
+              - link "자주 묻는 질문" [ref=e1359] [cursor=pointer]:
+                - /url: /faq
+            - listitem [ref=e1360]:
+              - link "문의하기" [ref=e1361] [cursor=pointer]:
+                - /url: /consulting
+        - generic [ref=e1362]:
+          - heading "법적 고지" [level=4] [ref=e1363]
+          - list [ref=e1364]:
+            - listitem [ref=e1365]:
+              - link "이용약관" [ref=e1366] [cursor=pointer]:
+                - /url: /terms
+            - listitem [ref=e1367]:
+              - link "개인정보처리방침" [ref=e1368] [cursor=pointer]:
+                - /url: /privacy
+            - listitem [ref=e1369]:
+              - link "환불정책" [ref=e1370] [cursor=pointer]:
+                - /url: /refund
+      - generic [ref=e1372]:
+        - generic [ref=e1373]:
+          - paragraph [ref=e1374]: "AMARANS Partners|대표: 채호진|사업자등록번호: 확인 필요|통신판매업신고: 준비 중"
+          - paragraph [ref=e1375]: 서울특별시 강남구 테헤란로 123|contact@presales.co.kr
+        - paragraph [ref=e1376]: © 2026 AMARANS Partners
+  - alert [ref=e1377]

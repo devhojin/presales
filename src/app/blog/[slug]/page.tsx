@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
-import { ChevronLeft, Loader2 } from 'lucide-react'
+import { ChevronLeft, Loader2, ImageOff } from 'lucide-react'
 import DOMPurify from 'dompurify'
 import { createClient } from '@/lib/supabase'
 
@@ -12,6 +13,7 @@ interface BlogPost {
   slug: string
   excerpt: string | null
   content_html: string
+  thumbnail_url: string | null
   category: string
   author: string
   published_at: string
@@ -24,6 +26,7 @@ interface BlogPostSummary {
   title: string
   slug: string
   excerpt: string | null
+  thumbnail_url: string | null
   category: string
   author: string
   published_at: string
@@ -58,7 +61,7 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
       // 전체 포스트 (사이드바용)
       const { data: allData } = await supabase
         .from('blog_posts')
-        .select('id, title, slug, excerpt, category, author, published_at, tags, view_count')
+        .select('id, title, slug, excerpt, thumbnail_url, category, author, published_at, tags, view_count')
         .eq('is_published', true)
         .order('published_at', { ascending: false })
 
@@ -202,20 +205,39 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
             )}
           </div>
 
-          {/* Sidebar */}
-          <aside className="w-64 hidden lg:block shrink-0">
+          {/* Sidebar — kakaowork reference style */}
+          <aside className="w-[280px] hidden lg:block shrink-0">
             <div className="sticky top-[100px]">
-              <h3 className="text-xs font-semibold uppercase tracking-widest text-foreground mb-6">최신 글</h3>
+              <h3 className="text-[16px] font-bold text-foreground mb-4">최신글</h3>
               <div className="space-y-4">
-                {allPosts.slice(0, 30).map((item) => (
-                  <Link key={item.id} href={`/blog/${item.slug}`}>
-                    <div className={`cursor-pointer transition-all duration-300 group rounded-lg px-3 py-2 ${item.id === post.id ? 'bg-emerald-50' : 'hover:bg-muted/50'}`}>
-                      <p className={`text-sm font-semibold line-clamp-2 leading-snug transition-colors duration-300 ${
-                        item.id === post.id ? 'text-emerald-600' : 'text-foreground group-hover:text-emerald-600'
+                {allPosts.slice(0, 8).map((item) => (
+                  <Link key={item.id} href={`/blog/${item.slug}`} className="flex gap-3 group">
+                    {/* Thumbnail 75x75 */}
+                    <div className="w-[75px] h-[75px] rounded-lg overflow-hidden bg-muted shrink-0">
+                      {item.thumbnail_url ? (
+                        <Image
+                          src={item.thumbnail_url}
+                          alt={item.title}
+                          width={75}
+                          height={75}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-muted">
+                          <ImageOff className="w-5 h-5 text-muted-foreground/40" />
+                        </div>
+                      )}
+                    </div>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 py-0.5">
+                      <p className={`text-[14px] font-normal leading-[22px] line-clamp-2 transition-colors duration-300 ${
+                        item.id === post.id ? 'text-primary font-medium' : 'text-foreground group-hover:text-primary'
                       }`}>
                         {item.title}
                       </p>
-                      <p className="text-xs text-muted-foreground mt-2">{formatDate(item.published_at)}</p>
+                      <p className="text-[13px] text-muted-foreground mt-1.5">
+                        {item.category}
+                      </p>
                     </div>
                   </Link>
                 ))}
