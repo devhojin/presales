@@ -1,0 +1,2 @@
+[     485ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vswkrbemigyclgjrpgqt.supabase.co/rest/v1/feeds?select=*&order=created_at.desc:0
+[  136195ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://presales-zeta.vercel.app/api/admin/feeds:0
