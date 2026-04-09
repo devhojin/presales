@@ -64,19 +64,19 @@ function DeleteModal({
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="font-bold text-lg mb-2">{title}</h3>
-        <p className="text-sm text-gray-600 mb-6">{message}</p>
+        <p className="text-sm text-muted-foreground mb-6">{message}</p>
         <div className="flex justify-end gap-2">
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer"
+            className="px-4 py-2 text-sm rounded-xl border border-border hover:bg-muted cursor-pointer"
           >
             취소
           </button>
           <button
             type="button"
             onClick={onConfirm}
-            className="px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+            className="px-4 py-2 text-sm rounded-xl bg-red-600 text-white hover:bg-red-700 cursor-pointer"
           >
             삭제
           </button>
@@ -125,18 +125,18 @@ function FaqEditModal({
       >
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-bold text-lg">{isNew ? 'FAQ 추가' : 'FAQ 수정'}</h3>
-          <button type="button" onClick={onCancel} className="text-gray-400 hover:text-gray-600 cursor-pointer">
+          <button type="button" onClick={onCancel} className="text-muted-foreground hover:text-muted-foreground cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+            <label className="block text-sm font-medium text-foreground mb-1">카테고리</label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 cursor-pointer"
+              className="w-full px-3 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
             >
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -147,24 +147,24 @@ function FaqEditModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">질문</label>
+            <label className="block text-sm font-medium text-foreground mb-1">질문</label>
             <input
               type="text"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="자주 묻는 질문을 입력하세요"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+              className="w-full px-3 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">답변</label>
+            <label className="block text-sm font-medium text-foreground mb-1">답변</label>
             <textarea
               value={answer}
               onChange={(e) => setAnswer(e.target.value)}
               placeholder="답변을 입력하세요"
               rows={5}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 resize-y"
+              className="w-full px-3 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-y"
             />
           </div>
         </div>
@@ -173,7 +173,7 @@ function FaqEditModal({
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer"
+            className="px-4 py-2 text-sm rounded-xl border border-border hover:bg-muted cursor-pointer"
           >
             취소
           </button>
@@ -184,7 +184,7 @@ function FaqEditModal({
               onSave({ category_id: categoryId, question: question.trim(), answer: answer.trim() })
             }}
             disabled={!question.trim() || !answer.trim()}
-            className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1.5"
+            className="px-4 py-2 text-sm rounded-xl bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1.5"
           >
             <Save className="w-4 h-4" />
             {isNew ? '추가' : '저장'}
@@ -231,29 +231,29 @@ function CategoryEditModal({
       >
         <div className="flex items-center justify-between mb-5">
           <h3 className="font-bold text-lg">{isNew ? '카테고리 추가' : '카테고리 수정'}</h3>
-          <button type="button" onClick={onCancel} className="text-gray-400 hover:text-gray-600 cursor-pointer">
+          <button type="button" onClick={onCancel} className="text-muted-foreground hover:text-muted-foreground cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">아이콘 (이모지)</label>
+            <label className="block text-sm font-medium text-foreground mb-1">아이콘 (이모지)</label>
             <input
               type="text"
               value={icon}
               onChange={(e) => setIcon(e.target.value)}
-              className="w-20 px-3 py-2 border border-gray-200 rounded-lg text-center text-xl focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+              className="w-20 px-3 py-2 border border-border rounded-xl text-center text-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">카테고리명</label>
+            <label className="block text-sm font-medium text-foreground mb-1">카테고리명</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="예: 구매/결제"
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+              className="w-full px-3 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
           </div>
         </div>
@@ -262,7 +262,7 @@ function CategoryEditModal({
           <button
             type="button"
             onClick={onCancel}
-            className="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer"
+            className="px-4 py-2 text-sm rounded-xl border border-border hover:bg-muted cursor-pointer"
           >
             취소
           </button>
@@ -273,7 +273,7 @@ function CategoryEditModal({
               onSave({ name: name.trim(), icon: icon.trim() })
             }}
             disabled={!name.trim() || !icon.trim()}
-            className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1.5"
+            className="px-4 py-2 text-sm rounded-xl bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1.5"
           >
             <Save className="w-4 h-4" />
             {isNew ? '추가' : '저장'}
@@ -390,7 +390,7 @@ export default function AdminFaqPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -407,7 +407,7 @@ export default function AdminFaqPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold">FAQ 관리</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             {categories.length}개 카테고리, {activeFaqs}/{totalFaqs}개 활성
           </p>
         </div>
@@ -415,7 +415,7 @@ export default function AdminFaqPage() {
           <button
             type="button"
             onClick={() => setEditingCategory({})}
-            className="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 inline-flex items-center gap-1.5 cursor-pointer"
+            className="px-4 py-2 text-sm rounded-xl border border-border hover:bg-muted inline-flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             카테고리 추가
@@ -423,7 +423,7 @@ export default function AdminFaqPage() {
           <button
             type="button"
             onClick={() => setEditingFaq({})}
-            className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 inline-flex items-center gap-1.5 cursor-pointer"
+            className="px-4 py-2 text-sm rounded-xl bg-primary text-white hover:bg-primary/90 inline-flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             FAQ 추가
@@ -439,15 +439,15 @@ export default function AdminFaqPage() {
             <div
               key={cat.id}
               className={`border rounded-xl overflow-hidden ${
-                cat.is_active ? 'border-gray-200 bg-white' : 'border-gray-100 bg-gray-50 opacity-60'
+                cat.is_active ? 'border-border bg-white' : 'border-border/50 bg-muted opacity-60'
               }`}
             >
               {/* Category header */}
-              <div className="flex items-center gap-3 px-5 py-4 bg-gray-50/80">
+              <div className="flex items-center gap-3 px-5 py-4 bg-muted/80">
                 <button
                   type="button"
                   onClick={() => toggleExpand(cat.id)}
-                  className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                  className="text-muted-foreground hover:text-muted-foreground cursor-pointer"
                 >
                   {isExpanded ? (
                     <ChevronDown className="w-4 h-4" />
@@ -455,10 +455,10 @@ export default function AdminFaqPage() {
                     <ChevronRight className="w-4 h-4" />
                   )}
                 </button>
-                <GripVertical className="w-4 h-4 text-gray-300" />
+                <GripVertical className="w-4 h-4 text-muted-foreground" />
                 <span className="text-lg">{cat.icon}</span>
                 <span className="font-semibold text-sm">{cat.name}</span>
-                <span className="text-xs text-gray-400">({cat.faqs.length})</span>
+                <span className="text-xs text-muted-foreground">({cat.faqs.length})</span>
 
                 <div className="ml-auto flex items-center gap-2">
                   <button
@@ -467,7 +467,7 @@ export default function AdminFaqPage() {
                     className={`px-2.5 py-1 text-xs rounded-full cursor-pointer ${
                       cat.is_active
                         ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-500'
+                        : 'bg-muted text-muted-foreground'
                     }`}
                   >
                     {cat.is_active ? '활성' : '비활성'}
@@ -475,7 +475,7 @@ export default function AdminFaqPage() {
                   <button
                     type="button"
                     onClick={() => setEditingCategory(cat)}
-                    className="p-1.5 text-gray-400 hover:text-blue-600 cursor-pointer"
+                    className="p-1.5 text-muted-foreground hover:text-primary cursor-pointer"
                     title="카테고리 수정"
                   >
                     <Pencil className="w-3.5 h-3.5" />
@@ -483,7 +483,7 @@ export default function AdminFaqPage() {
                   <button
                     type="button"
                     onClick={() => setDeletingCategory(cat)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 cursor-pointer"
+                    className="p-1.5 text-muted-foreground hover:text-red-600 cursor-pointer"
                     title="카테고리 삭제"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -495,23 +495,23 @@ export default function AdminFaqPage() {
               {isExpanded && (
                 <div className="divide-y divide-gray-100">
                   {cat.faqs.length === 0 ? (
-                    <div className="px-5 py-8 text-center text-sm text-gray-400">
+                    <div className="px-5 py-8 text-center text-sm text-muted-foreground">
                       등록된 FAQ가 없습니다
                     </div>
                   ) : (
                     cat.faqs.map((faq) => (
                       <div
                         key={faq.id}
-                        className={`px-5 py-3.5 flex items-start gap-3 group hover:bg-blue-50/30 transition-colors ${
+                        className={`px-5 py-3.5 flex items-start gap-3 group hover:bg-primary/8/30 transition-colors ${
                           !faq.is_active ? 'opacity-50' : ''
                         }`}
                       >
                         <GripVertical className="w-4 h-4 text-gray-200 mt-0.5 shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 leading-snug">
+                          <p className="text-sm font-medium text-foreground leading-snug">
                             {faq.question}
                           </p>
-                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                             {faq.answer}
                           </p>
                         </div>
@@ -522,7 +522,7 @@ export default function AdminFaqPage() {
                             className={`px-2 py-0.5 text-xs rounded-full cursor-pointer ${
                               faq.is_active
                                 ? 'bg-green-100 text-green-700'
-                                : 'bg-gray-100 text-gray-500'
+                                : 'bg-muted text-muted-foreground'
                             }`}
                           >
                             {faq.is_active ? '활성' : '비활성'}
@@ -530,7 +530,7 @@ export default function AdminFaqPage() {
                           <button
                             type="button"
                             onClick={() => setEditingFaq(faq)}
-                            className="p-1.5 text-gray-400 hover:text-blue-600 cursor-pointer"
+                            className="p-1.5 text-muted-foreground hover:text-primary cursor-pointer"
                             title="수정"
                           >
                             <Pencil className="w-3.5 h-3.5" />
@@ -538,7 +538,7 @@ export default function AdminFaqPage() {
                           <button
                             type="button"
                             onClick={() => setDeletingFaq(faq)}
-                            className="p-1.5 text-gray-400 hover:text-red-600 cursor-pointer"
+                            className="p-1.5 text-muted-foreground hover:text-red-600 cursor-pointer"
                             title="삭제"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -553,7 +553,7 @@ export default function AdminFaqPage() {
                     <button
                       type="button"
                       onClick={() => setEditingFaq({ category_id: cat.id })}
-                      className="text-xs text-blue-600 hover:text-blue-700 inline-flex items-center gap-1 cursor-pointer"
+                      className="text-xs text-primary hover:text-primary inline-flex items-center gap-1 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       이 카테고리에 FAQ 추가

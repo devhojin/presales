@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
-import { Search, MessageCircle, Loader2 } from 'lucide-react'
+import { Search, MessageCircle, Loader2, HelpCircle } from 'lucide-react'
 import {
   Accordion,
   AccordionItem,
@@ -70,68 +70,72 @@ export function FaqClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-[100dvh] flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-[100dvh] bg-background">
       {/* Hero */}
-      <section className="bg-gradient-to-b from-muted/60 to-background border-b border-border py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-3xl md:text-4xl font-bold mb-3">자주 묻는 질문</h1>
-          <p className="text-muted-foreground text-lg mb-8">
-            궁금하신 점을 빠르게 찾아보세요
-          </p>
-
-          {/* Search */}
-          <div className="relative max-w-lg mx-auto">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
-            <input
-              type="text"
-              placeholder="키워드로 검색 (예: 환불, 다운로드, 결제...)"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition-colors"
-            />
-          </div>
-
-          {searchQuery && (
-            <p className="mt-3 text-sm text-muted-foreground">
-              &ldquo;{searchQuery}&rdquo; 검색 결과: {totalMatches}개
+      <section className="border-b border-border/50 py-20 md:py-24">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+          <div className="max-w-2xl mx-auto text-center">
+            <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-4">FAQ</p>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">자주 묻는 질문</h1>
+            <p className="text-muted-foreground mb-10">
+              궁금하신 점을 빠르게 찾아보세요
             </p>
-          )}
+
+            {/* Search */}
+            <div className="relative max-w-lg mx-auto">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-muted-foreground pointer-events-none" />
+              <input
+                type="text"
+                placeholder="키워드로 검색 (예: 환불, 다운로드, 결제...)"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-3.5 rounded-xl border-0 bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              />
+            </div>
+
+            {searchQuery && (
+              <p className="mt-3 text-sm text-muted-foreground">
+                &ldquo;{searchQuery}&rdquo; 검색 결과: {totalMatches}개
+              </p>
+            )}
+          </div>
         </div>
       </section>
 
       {/* FAQ Content */}
-      <section className="container mx-auto px-4 py-12 max-w-3xl">
+      <section className="max-w-[800px] mx-auto px-4 md:px-8 py-16 md:py-20">
         {filteredData.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-muted-foreground text-lg mb-2">검색 결과가 없습니다</p>
+          <div className="text-center py-24">
+            <HelpCircle className="w-10 h-10 text-muted-foreground/30 mx-auto mb-4" />
+            <p className="text-lg font-semibold text-foreground tracking-tight mb-2">검색 결과가 없습니다</p>
             <p className="text-sm text-muted-foreground">다른 키워드로 검색하거나 아래 문의하기를 이용해 주세요.</p>
           </div>
         ) : (
-          <div className="space-y-10">
+          <div className="space-y-12">
             {filteredData.map((section) => (
               <div key={section.id}>
-                <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                  <span className="text-xl">{section.icon}</span>
+                <h2 className="text-base font-bold mb-4 flex items-center gap-2.5 tracking-tight">
+                  <HelpCircle className="w-4.5 h-4.5 text-primary" />
                   {section.name}
-                  <span className="ml-1 text-sm font-normal text-muted-foreground">
+                  <span className="text-xs font-normal text-muted-foreground">
                     ({section.faqs.length})
                   </span>
                 </h2>
-                <div className="border border-border rounded-xl overflow-hidden bg-card">
+                <div className="border border-border/50 rounded-2xl overflow-hidden bg-card">
                   <Accordion>
                     {section.faqs.map((item) => (
                       <AccordionItem key={item.id} value={`faq-${item.id}`}>
-                        <AccordionTrigger className="px-5 py-4 text-sm font-medium hover:no-underline">
+                        <AccordionTrigger className="px-6 py-4.5 text-sm font-medium hover:no-underline">
                           {item.question}
                         </AccordionTrigger>
-                        <AccordionContent className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed">
+                        <AccordionContent className="px-6 pb-5 text-sm text-muted-foreground leading-relaxed">
                           {item.answer}
                         </AccordionContent>
                       </AccordionItem>
@@ -144,15 +148,15 @@ export function FaqClient() {
         )}
 
         {/* CTA */}
-        <div className="mt-16 rounded-2xl bg-primary/5 border border-primary/10 p-8 text-center">
-          <MessageCircle className="w-10 h-10 text-primary mx-auto mb-3" />
-          <h3 className="text-lg font-bold mb-2">원하는 답변을 찾지 못하셨나요?</h3>
-          <p className="text-sm text-muted-foreground mb-5">
+        <div className="mt-20 rounded-2xl bg-[#0C1220] p-8 md:p-10 text-center text-white">
+          <MessageCircle className="w-10 h-10 text-emerald-400 mx-auto mb-4" />
+          <h3 className="text-lg font-bold tracking-tight mb-2">원하는 답변을 찾지 못하셨나요?</h3>
+          <p className="text-sm text-zinc-400 mb-6 leading-relaxed">
             전문 컨설턴트가 직접 도와드립니다. 문의 후 영업일 기준 1일 이내 답변드립니다.
           </p>
           <Link
             href="/consulting"
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-3 rounded-full text-sm font-medium transition-all duration-300 active:scale-[0.98]"
           >
             <MessageCircle className="w-4 h-4" />
             컨설팅 문의하기

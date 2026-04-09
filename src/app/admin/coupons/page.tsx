@@ -146,7 +146,7 @@ export default function CouponsPage() {
       {/* Toast */}
       {toast && (
         <div
-          className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-lg shadow-lg text-sm font-medium text-white ${
+          className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white ${
             toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
           }`}
         >
@@ -157,15 +157,15 @@ export default function CouponsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <Tag className="w-6 h-6 text-gray-600" />
+          <Tag className="w-6 h-6 text-muted-foreground" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">쿠폰 관리</h1>
-            <p className="text-sm text-gray-500 mt-0.5">할인 쿠폰을 생성하고 관리합니다</p>
+            <h1 className="text-2xl font-bold text-foreground">쿠폰 관리</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">할인 쿠폰을 생성하고 관리합니다</p>
           </div>
         </div>
         <button
           onClick={() => { setForm(EMPTY_FORM); setShowModal(true) }}
-          className="flex items-center gap-2 h-10 px-4 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors cursor-pointer"
+          className="flex items-center gap-2 h-10 px-4 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" /> 쿠폰 생성
         </button>
@@ -174,60 +174,60 @@ export default function CouponsPage() {
       {/* Table */}
       {loading ? (
         <div className="flex items-center justify-center h-40">
-          <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
         </div>
       ) : coupons.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-16 text-center text-gray-400">
+        <div className="bg-white rounded-xl border border-border p-16 text-center text-muted-foreground">
           <Tag className="w-12 h-12 mx-auto mb-3 opacity-30" />
           <p className="text-sm">등록된 쿠폰이 없습니다</p>
           <button
             onClick={() => { setForm(EMPTY_FORM); setShowModal(true) }}
-            className="mt-4 text-blue-600 text-sm hover:underline cursor-pointer"
+            className="mt-4 text-primary text-sm hover:underline cursor-pointer"
           >
             첫 쿠폰 만들기
           </button>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-muted border-b border-border">
                 <tr>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">코드</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">할인</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">최소주문</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">유효기간</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">사용</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">상태</th>
-                  <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">액션</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">코드</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">할인</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">최소주문</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">유효기간</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">사용</th>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">상태</th>
+                  <th className="text-right px-4 py-3 text-xs font-semibold text-muted-foreground">액션</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {coupons.map((c) => (
-                  <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                  <tr key={c.id} className="hover:bg-muted transition-colors">
                     <td className="px-4 py-3">
-                      <span className="font-mono font-semibold text-gray-900">{c.code}</span>
+                      <span className="font-mono font-semibold text-foreground">{c.code}</span>
                     </td>
                     <td className="px-4 py-3">
                       <Badge
                         className={`text-xs border ${
                           c.discount_type === 'percentage'
                             ? 'bg-purple-50 text-purple-700 border-purple-200'
-                            : 'bg-blue-50 text-blue-700 border-blue-200'
+                            : 'bg-primary/8 text-primary border-primary/20'
                         }`}
                       >
                         {formatDiscount(c)}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-muted-foreground">
                       {c.min_order_amount > 0 ? `${c.min_order_amount.toLocaleString()}원+` : '-'}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 text-xs">
+                    <td className="px-4 py-3 text-muted-foreground text-xs">
                       {c.valid_from || c.valid_until
                         ? `${formatDate(c.valid_from)} ~ ${formatDate(c.valid_until)}`
                         : '제한없음'}
                     </td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-muted-foreground">
                       {c.usage_count}{c.max_usage ? ` / ${c.max_usage}` : ''}
                     </td>
                     <td className="px-4 py-3">
@@ -239,9 +239,9 @@ export default function CouponsPage() {
                         {c.is_active ? (
                           <ToggleRight className="w-5 h-5 text-green-500" />
                         ) : (
-                          <ToggleLeft className="w-5 h-5 text-gray-400" />
+                          <ToggleLeft className="w-5 h-5 text-muted-foreground" />
                         )}
-                        <span className={`text-xs font-medium ${c.is_active ? 'text-green-600' : 'text-gray-400'}`}>
+                        <span className={`text-xs font-medium ${c.is_active ? 'text-green-600' : 'text-muted-foreground'}`}>
                           {c.is_active ? '활성' : '비활성'}
                         </span>
                       </button>
@@ -249,7 +249,7 @@ export default function CouponsPage() {
                     <td className="px-4 py-3 text-right">
                       <button
                         onClick={() => setDeleteTarget(c.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                        className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors cursor-pointer"
                         title="삭제"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -275,35 +275,35 @@ export default function CouponsPage() {
           >
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-semibold">쿠폰 생성</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer">
+              <button onClick={() => setShowModal(false)} className="text-muted-foreground hover:text-muted-foreground cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-700 block mb-1">쿠폰 코드 *</label>
+                <label className="text-sm font-medium text-foreground block mb-1">쿠폰 코드 *</label>
                 <input
                   type="text"
                   value={form.code}
                   onChange={(e) => setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))}
                   placeholder="예: SUMMER2026"
-                  className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full h-10 px-3 rounded-xl border border-border text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1">할인 유형 *</label>
+                  <label className="text-sm font-medium text-foreground block mb-1">할인 유형 *</label>
                   <select
                     value={form.discount_type}
                     onChange={(e) => setForm((f) => ({ ...f, discount_type: e.target.value as 'percentage' | 'fixed' }))}
-                    className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full h-10 px-3 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="percentage">퍼센트 (%)</option>
                     <option value="fixed">고정금액 (원)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1">
+                  <label className="text-sm font-medium text-foreground block mb-1">
                     할인 값 * {form.discount_type === 'percentage' ? '(%)' : '(원)'}
                   </label>
                   <input
@@ -312,51 +312,51 @@ export default function CouponsPage() {
                     onChange={(e) => setForm((f) => ({ ...f, discount_value: e.target.value }))}
                     placeholder={form.discount_type === 'percentage' ? '10' : '5000'}
                     min="0"
-                    className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full h-10 px-3 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1">최소 주문금액 (원)</label>
+                  <label className="text-sm font-medium text-foreground block mb-1">최소 주문금액 (원)</label>
                   <input
                     type="number"
                     value={form.min_order_amount}
                     onChange={(e) => setForm((f) => ({ ...f, min_order_amount: e.target.value }))}
                     placeholder="0"
                     min="0"
-                    className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full h-10 px-3 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1">최대 사용 횟수</label>
+                  <label className="text-sm font-medium text-foreground block mb-1">최대 사용 횟수</label>
                   <input
                     type="number"
                     value={form.max_usage}
                     onChange={(e) => setForm((f) => ({ ...f, max_usage: e.target.value }))}
                     placeholder="무제한"
                     min="1"
-                    className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full h-10 px-3 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1">유효 시작일</label>
+                  <label className="text-sm font-medium text-foreground block mb-1">유효 시작일</label>
                   <input
                     type="datetime-local"
                     value={form.valid_from}
                     onChange={(e) => setForm((f) => ({ ...f, valid_from: e.target.value }))}
-                    className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full h-10 px-3 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-700 block mb-1">유효 종료일</label>
+                  <label className="text-sm font-medium text-foreground block mb-1">유효 종료일</label>
                   <input
                     type="datetime-local"
                     value={form.valid_until}
                     onChange={(e) => setForm((f) => ({ ...f, valid_until: e.target.value }))}
-                    className="w-full h-10 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full h-10 px-3 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
               </div>
@@ -364,14 +364,14 @@ export default function CouponsPage() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowModal(false)}
-                className="flex-1 h-10 rounded-lg border border-gray-200 text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer"
+                className="flex-1 h-10 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
               >
                 취소
               </button>
               <button
                 onClick={handleCreate}
                 disabled={saving}
-                className="flex-1 h-10 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                className="flex-1 h-10 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {saving ? '생성 중...' : '쿠폰 생성'}
@@ -392,17 +392,17 @@ export default function CouponsPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold mb-2">쿠폰 삭제</h3>
-            <p className="text-sm text-gray-500 mb-6">이 쿠폰을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
+            <p className="text-sm text-muted-foreground mb-6">이 쿠폰을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteTarget(null)}
-                className="flex-1 h-10 rounded-lg border border-gray-200 text-sm font-medium hover:bg-gray-50 transition-colors cursor-pointer"
+                className="flex-1 h-10 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
               >
                 취소
               </button>
               <button
                 onClick={() => handleDelete(deleteTarget)}
-                className="flex-1 h-10 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors cursor-pointer"
+                className="flex-1 h-10 rounded-xl bg-red-600 text-white text-sm font-medium hover:bg-red-700 transition-colors cursor-pointer"
               >
                 삭제
               </button>

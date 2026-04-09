@@ -209,7 +209,7 @@ export default function AdminBlogEditPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -221,10 +221,10 @@ export default function AdminBlogEditPage() {
         <button
           type="button"
           onClick={() => router.back()}
-          className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors"
+          className="p-2 hover:bg-muted rounded-xl cursor-pointer transition-colors"
           title="뒤로 가기"
         >
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
+          <ArrowLeft className="w-5 h-5 text-muted-foreground" />
         </button>
         <div>
           <h1 className="text-2xl font-bold">{isNew ? '새 글 작성' : '글 수정'}</h1>
@@ -234,8 +234,8 @@ export default function AdminBlogEditPage() {
       {/* Form */}
       <div className="space-y-6">
         {/* Title */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <label className="block text-sm font-semibold text-gray-900 mb-3">
+        <div className="bg-white rounded-xl border border-border p-6">
+          <label className="block text-sm font-semibold text-foreground mb-3">
             제목 <span className="text-red-500">*</span>
           </label>
           <input
@@ -243,13 +243,13 @@ export default function AdminBlogEditPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="글 제목을 입력하세요"
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg text-lg font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            className="w-full px-4 py-3 border border-border rounded-xl text-lg font-medium focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
 
         {/* Slug */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <label className="block text-sm font-semibold text-gray-900 mb-3">
+        <div className="bg-white rounded-xl border border-border p-6">
+          <label className="block text-sm font-semibold text-foreground mb-3">
             슬러그 (자동 생성)
           </label>
           <input
@@ -257,16 +257,16 @@ export default function AdminBlogEditPage() {
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
             placeholder="url-friendly-slug"
-            className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            className="w-full px-4 py-2 border border-border rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-muted-foreground mt-2">
             URL: /blog/{slug}
           </p>
         </div>
 
         {/* Excerpt */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <label className="block text-sm font-semibold text-gray-900 mb-3">
+        <div className="bg-white rounded-xl border border-border p-6">
+          <label className="block text-sm font-semibold text-foreground mb-3">
             요약 (2-3줄)
           </label>
           <textarea
@@ -275,16 +275,16 @@ export default function AdminBlogEditPage() {
             placeholder="글에 대한 짧은 요약을 입력하세요"
             rows={3}
             maxLength={200}
-            className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 resize-none"
+            className="w-full px-4 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
           />
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-muted-foreground mt-2">
             {excerpt.length}/200자
           </p>
         </div>
 
         {/* Content Editor */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <label className="block text-sm font-semibold text-gray-900 mb-3">
+        <div className="bg-white rounded-xl border border-border p-6">
+          <label className="block text-sm font-semibold text-foreground mb-3">
             본문 내용 <span className="text-red-500">*</span>
           </label>
           <RichTextEditor
@@ -295,8 +295,8 @@ export default function AdminBlogEditPage() {
         </div>
 
         {/* Thumbnail URL */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <label className="block text-sm font-semibold text-gray-900 mb-3">
+        <div className="bg-white rounded-xl border border-border p-6">
+          <label className="block text-sm font-semibold text-foreground mb-3">
             썸네일 이미지 URL
           </label>
           <input
@@ -304,28 +304,28 @@ export default function AdminBlogEditPage() {
             value={thumbnailUrl}
             onChange={(e) => setThumbnailUrl(e.target.value)}
             placeholder="https://example.com/image.jpg"
-            className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            className="w-full px-4 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
           {thumbnailUrl && (
             <div className="mt-3">
               <img
                 src={thumbnailUrl}
                 alt="Thumbnail preview"
-                className="w-full max-w-xs h-40 object-cover rounded-lg"
+                className="w-full max-w-xs h-40 object-cover rounded-xl"
               />
             </div>
           )}
         </div>
 
         {/* Category */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <label className="block text-sm font-semibold text-gray-900 mb-3">
+        <div className="bg-white rounded-xl border border-border p-6">
+          <label className="block text-sm font-semibold text-foreground mb-3">
             카테고리
           </label>
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40 cursor-pointer"
+            className="w-full px-4 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 cursor-pointer"
           >
             {CATEGORIES.map((cat) => (
               <option key={cat} value={cat}>
@@ -336,8 +336,8 @@ export default function AdminBlogEditPage() {
         </div>
 
         {/* Author */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <label className="block text-sm font-semibold text-gray-900 mb-3">
+        <div className="bg-white rounded-xl border border-border p-6">
+          <label className="block text-sm font-semibold text-foreground mb-3">
             작성자
           </label>
           <input
@@ -345,20 +345,20 @@ export default function AdminBlogEditPage() {
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
             placeholder="작성자 이름"
-            className="w-full px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            className="w-full px-4 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
 
         {/* Tags */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-white rounded-xl border border-border p-6">
           <div className="flex items-center justify-between mb-3">
-            <label className="block text-sm font-semibold text-gray-900">
+            <label className="block text-sm font-semibold text-foreground">
               태그
             </label>
             <button
               type="button"
               onClick={handleExtractTags}
-              className="px-3 py-1 text-xs bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 cursor-pointer inline-flex items-center gap-1.5 transition-colors"
+              className="px-3 py-1 text-xs bg-primary/8 text-primary rounded-xl hover:bg-primary/10 cursor-pointer inline-flex items-center gap-1.5 transition-colors"
             >
               <Zap className="w-3.5 h-3.5" />
               자동 추출
@@ -371,13 +371,13 @@ export default function AdminBlogEditPage() {
               {tags.map((tag, idx) => (
                 <div
                   key={idx}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-sm"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 text-primary rounded-full text-sm"
                 >
                   <span>#{tag}</span>
                   <button
                     type="button"
                     onClick={() => removeTag(idx)}
-                    className="text-blue-600 hover:text-blue-800 cursor-pointer"
+                    className="text-primary hover:text-primary cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -399,7 +399,7 @@ export default function AdminBlogEditPage() {
                 }
               }}
               placeholder="태그 입력 후 Enter"
-              className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+              className="flex-1 px-4 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
               maxLength={20}
               disabled={tags.length >= 10}
             />
@@ -407,37 +407,37 @@ export default function AdminBlogEditPage() {
               type="button"
               onClick={addTag}
               disabled={tags.length >= 10 || !tagInput.trim()}
-              className="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 text-sm rounded-xl border border-border hover:bg-muted cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               추가
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="text-xs text-muted-foreground mt-2">
             {tags.length}/10개 태그
           </p>
         </div>
 
         {/* Publish Status */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-white rounded-xl border border-border p-6">
           <label className="flex items-center gap-3 cursor-pointer">
             <input
               type="checkbox"
               checked={isPublished}
               onChange={(e) => setIsPublished(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-blue-600 cursor-pointer"
+              className="w-4 h-4 rounded border-border text-primary cursor-pointer"
             />
-            <span className="text-sm font-medium text-gray-900">
+            <span className="text-sm font-medium text-foreground">
               발행 상태 (발행하면 공개됩니다)
             </span>
           </label>
         </div>
 
         {/* Action buttons */}
-        <div className="flex gap-3 sticky bottom-4 bg-gray-50 -mx-4 -mb-4 px-4 py-4 border-t border-gray-200">
+        <div className="flex gap-3 sticky bottom-4 bg-muted -mx-4 -mb-4 px-4 py-4 border-t border-border">
           <button
             type="button"
             onClick={() => router.back()}
-            className="px-4 py-2 text-sm rounded-lg border border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
+            className="px-4 py-2 text-sm rounded-xl border border-border hover:bg-muted cursor-pointer transition-colors"
           >
             취소
           </button>
@@ -445,7 +445,7 @@ export default function AdminBlogEditPage() {
             type="button"
             onClick={handleSave}
             disabled={saving || !title.trim() || !contentHtml.trim()}
-            className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1.5 transition-colors"
+            className="px-4 py-2 text-sm rounded-xl bg-primary text-white hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer inline-flex items-center gap-1.5 transition-colors"
           >
             {saving ? (
               <>

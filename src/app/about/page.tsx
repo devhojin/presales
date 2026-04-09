@@ -90,60 +90,67 @@ export default function AboutPage() {
   }, [])
 
   return (
-    <div className="container mx-auto px-4 py-10">
-      {/* Hero */}
-      <div className="text-center mb-16">
-        <Badge className="bg-primary/10 text-primary border-primary/20 mb-4">
-          회사소개
-        </Badge>
-        <h1 className="text-2xl md:text-3xl font-bold mb-3">
-          공공조달의 복잡함을 문서로 단순하게
-        </h1>
-        <p className="text-muted-foreground max-w-lg mx-auto">
-          나라장터·조달청 입찰의 실전 경험을 가진 전문가들이
-          만든 공공조달 제안서 전문 플랫폼입니다.
-        </p>
+    <div className="bg-background">
+      {/* Hero - Left-aligned asymmetric */}
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-24 md:py-32">
+        <div className="max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-4">회사소개</p>
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-6">
+            공공조달의 복잡함을 문서로 단순하게
+          </h1>
+          <p className="text-lg text-muted-foreground leading-relaxed">
+            나라장터·조달청 입찰의 실전 경험을 가진 전문가들이
+            만든 공공조달 제안서 전문 플랫폼입니다.
+          </p>
+        </div>
       </div>
 
       {/* Mission / Vision / Values */}
       {(loading || mission || vision || value) && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
-          {loading
-            ? Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="border border-border rounded-xl p-6 space-y-3 animate-pulse">
-                  <div className="h-5 bg-muted rounded w-1/3" />
-                  <div className="h-4 bg-muted rounded w-full" />
-                  <div className="h-4 bg-muted rounded w-4/5" />
-                </div>
-              ))
-            : [
-                { title: 'Mission', desc: mission },
-                { title: 'Vision', desc: vision },
-                { title: 'Value', desc: value },
-              ]
-                .filter((item) => item.desc)
-                .map((item) => (
-                  <div key={item.title} className="border border-border rounded-xl p-6 space-y-3">
-                    <h3 className="text-lg font-bold text-primary">{item.title}</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
-                  </div>
-                ))}
+        <div className="bg-muted/30">
+          <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-24 md:py-32">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {loading
+                ? Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="border border-border/50 bg-card rounded-2xl p-8 space-y-3 animate-pulse">
+                      <div className="h-5 bg-muted rounded w-1/3" />
+                      <div className="h-4 bg-muted rounded w-full" />
+                      <div className="h-4 bg-muted rounded w-4/5" />
+                    </div>
+                  ))
+                : [
+                    { title: 'Mission', desc: mission },
+                    { title: 'Vision', desc: vision },
+                    { title: 'Value', desc: value },
+                  ]
+                    .filter((item) => item.desc)
+                    .map((item) => (
+                      <div key={item.title} className="border border-border/50 bg-card rounded-2xl p-8 space-y-4 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-shadow duration-500">
+                        <h3 className="text-lg font-bold text-primary">{item.title}</h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                      </div>
+                    ))}
+            </div>
+          </div>
         </div>
       )}
 
       {/* Team */}
-      <div className="mb-20">
-        <h2 className="text-xl font-bold text-center mb-2">전문가 팀</h2>
-        <p className="text-muted-foreground text-center mb-10">
-          각 분야 최고의 전문가들이 함께합니다
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-24 md:py-32">
+        <div className="max-w-2xl mx-auto text-center mb-16">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">전문가 팀</p>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground mb-3">전문가 팀</h2>
+          <p className="text-muted-foreground">
+            각 분야 최고의 전문가들이 함께합니다
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {loading
             ? Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="border border-border rounded-xl p-6 animate-pulse">
+                <div key={i} className="border border-border/50 bg-card rounded-2xl p-8 animate-pulse">
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 rounded-full bg-muted" />
-                    <div className="space-y-2 flex-1">
+                    <div className="w-14 h-14 rounded-full bg-muted shrink-0" />
+                    <div className="space-y-2 flex-1 min-w-0">
                       <div className="h-4 bg-muted rounded w-1/2" />
                       <div className="h-3 bg-muted rounded w-3/4" />
                     </div>
@@ -158,38 +165,38 @@ export default function AboutPage() {
             : team.map((member) => (
                 <div
                   key={member.name}
-                  className="border border-border rounded-xl p-6 hover:shadow-md transition-all hover:-translate-y-1"
+                  className="border border-border/50 bg-card rounded-2xl p-8 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-500 hover:-translate-y-1 flex flex-col"
                 >
                   {/* 이니셜 + 이름 + 역할 */}
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 rounded-full bg-brand-dark flex items-center justify-center text-white font-bold text-lg shrink-0">
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg shrink-0">
                       {getInitials(member.name)}
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-bold text-base truncate">{member.name}</h3>
+                      <h3 className="font-bold text-base truncate text-foreground">{member.name}</h3>
                       <p className="text-xs text-primary font-medium leading-tight">{member.role}</p>
                     </div>
                   </div>
 
                   {/* 소개 문구 */}
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed mb-6 flex-1">
                     {getIntro(member.name)}
                   </p>
 
                   {/* 경력 */}
-                  <ul className="text-xs text-muted-foreground space-y-1 mb-4">
+                  <ul className="text-xs text-muted-foreground space-y-1 mb-6">
                     {member.career.map((c) => (
                       <li key={c} className="flex items-start gap-1.5">
-                        <span className="text-primary mt-0.5">•</span>
+                        <span className="text-primary mt-0.5 shrink-0">•</span>
                         <span>{c}</span>
                       </li>
                     ))}
                   </ul>
 
                   {/* 전문 분야 태그 */}
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-2">
                     {member.expertise.map((e) => (
-                      <Badge key={e} variant="outline" className="text-[10px] border-primary/30 text-primary">
+                      <Badge key={e} variant="outline" className="text-[10px] border-primary/30 text-primary bg-primary/5 rounded-full">
                         {e}
                       </Badge>
                     ))}
@@ -199,28 +206,43 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* Timeline */}
+      {/* Timeline - Editorial feel */}
       {(loading || timeline.length > 0) && (
-        <div className="max-w-md mx-auto">
-          <h2 className="text-xl font-bold text-center mb-10">연혁</h2>
-          <div className="space-y-6">
-            {loading
-              ? Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-4 animate-pulse">
-                    <div className="w-16 h-5 bg-muted rounded" />
-                    <div className="w-3 h-3 rounded-full bg-muted shrink-0" />
-                    <div className="h-4 bg-muted rounded flex-1" />
-                  </div>
-                ))
-              : timeline.map((item) => (
-                  <div key={item.year} className="flex items-center gap-4">
-                    <div className="w-16 text-right">
-                      <span className="font-bold text-primary">{item.year}</span>
-                    </div>
-                    <div className="w-3 h-3 rounded-full bg-primary shrink-0" />
-                    <p className="text-sm">{item.event}</p>
-                  </div>
-                ))}
+        <div className="bg-muted/30">
+          <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-24 md:py-32">
+            <div className="max-w-2xl mx-auto text-center mb-16">
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">연혁</p>
+              <h2 className="text-3xl font-bold tracking-tight text-foreground">연혁</h2>
+            </div>
+            <div className="max-w-md mx-auto">
+              <div className="relative">
+                {/* Vertical line */}
+                <div className="absolute left-8 top-0 bottom-0 w-px bg-border/50" />
+
+                <div className="space-y-8">
+                  {loading
+                    ? Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="flex items-start gap-8 animate-pulse">
+                          <div className="w-16 h-5 bg-muted rounded shrink-0" />
+                          <div className="h-4 bg-muted rounded flex-1" />
+                        </div>
+                      ))
+                    : timeline.map((item) => (
+                        <div key={item.year} className="flex items-start gap-8">
+                          <div className="relative pt-1">
+                            <div className="w-16 text-right">
+                              <span className="font-bold text-primary text-sm">{item.year}</span>
+                            </div>
+                            <div className="absolute left-1/2 top-3.5 -translate-x-1/2 w-3 h-3 rounded-full bg-primary -ml-1.5" />
+                          </div>
+                          <div className="pt-1 pb-8">
+                            <p className="text-sm text-foreground leading-relaxed">{item.event}</p>
+                          </div>
+                        </div>
+                      ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}

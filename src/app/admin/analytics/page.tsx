@@ -321,7 +321,7 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20 text-gray-400 text-sm">
+      <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">
         데이터를 불러오는 중...
       </div>
     )
@@ -383,7 +383,7 @@ export default function AnalyticsPage() {
 
   // ── Funnel bars ───────────────────────────────────────────────────────
   const funnelSteps = [
-    { label: '방문자 수', value: funnelData.visitors, color: 'bg-blue-500' },
+    { label: '방문자 수', value: funnelData.visitors, color: 'bg-primary' },
     { label: '상품 조회 (/store/)', value: funnelData.storeViews, color: 'bg-indigo-500' },
     { label: '장바구니 (주문 생성)', value: funnelData.orders, color: 'bg-amber-500' },
     { label: '구매 완료', value: funnelData.completed, color: 'bg-emerald-500' },
@@ -393,8 +393,8 @@ export default function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">통계 분석</h1>
-        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+        <h1 className="text-2xl font-bold text-foreground">통계 분석</h1>
+        <div className="flex items-center gap-1 bg-muted rounded-xl p-1">
           {([7, 30, 90] as const).map((days) => (
             <button
               key={days}
@@ -402,8 +402,8 @@ export default function AnalyticsPage() {
               onClick={() => setPeriodDays(days)}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                 periodDays === days
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-white text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {days}일
@@ -413,17 +413,17 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── 방문자 차트 ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">
+      <div className="bg-white rounded-xl border border-border p-6">
+        <h2 className="text-sm font-semibold text-foreground mb-4">
           방문자 추이 (최근 {periodDays}일)
         </h2>
-        <div className="flex items-center gap-6 mb-3 text-xs text-gray-500">
+        <div className="flex items-center gap-6 mb-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'rgba(147,197,253,0.5)' }} />
             페이지뷰
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-sm bg-blue-600" />
+            <span className="w-3 h-3 rounded-sm bg-primary" />
             방문자
           </span>
         </div>
@@ -436,16 +436,16 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── 매출 추이 차트 ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">
+      <div className="bg-white rounded-xl border border-border p-6">
+        <h2 className="text-sm font-semibold text-foreground mb-4">
           매출 추이 (최근 {periodDays}일, 결제완료 기준)
         </h2>
-        <div className="flex items-center gap-6 mb-3 text-xs text-gray-500">
+        <div className="flex items-center gap-6 mb-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-sm bg-red-500" />
             일별 매출
           </span>
-          <span className="text-gray-400 ml-auto font-medium">
+          <span className="text-muted-foreground ml-auto font-medium">
             기간 합계: {dailyStats.reduce((a, s) => a + s.revenue, 0).toLocaleString()}원
           </span>
         </div>
@@ -453,8 +453,8 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── 전환 퍼널 ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-5">
+      <div className="bg-white rounded-xl border border-border p-6">
+        <h2 className="text-sm font-semibold text-foreground mb-5">
           전환 퍼널 (최근 {periodDays}일)
         </h2>
         <div className="space-y-4">
@@ -470,21 +470,21 @@ export default function AnalyticsPage() {
               <div key={step.label}>
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-700 font-medium">{step.label}</span>
+                    <span className="text-sm text-foreground font-medium">{step.label}</span>
                     {dropPct !== null && (
-                      <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                      <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
                         전단계 대비 {dropPct}%
                       </span>
                     )}
                   </div>
-                  <span className="text-sm font-semibold text-gray-900">
+                  <span className="text-sm font-semibold text-foreground">
                     {step.value.toLocaleString()}
-                    <span className="text-xs text-gray-400 font-normal ml-1">({pct}%)</span>
+                    <span className="text-xs text-muted-foreground font-normal ml-1">({pct}%)</span>
                   </span>
                 </div>
-                <div className="h-7 w-full bg-gray-100 rounded-lg overflow-hidden">
+                <div className="h-7 w-full bg-muted rounded-xl overflow-hidden">
                   <div
-                    className={`h-full ${step.color} rounded-lg transition-all duration-500 flex items-center justify-end pr-2`}
+                    className={`h-full ${step.color} rounded-xl transition-all duration-500 flex items-center justify-end pr-2`}
                     style={{ width: `${Math.max(pct, pct > 0 ? 2 : 0)}%` }}
                   >
                     {pct >= 8 && (
@@ -497,17 +497,17 @@ export default function AnalyticsPage() {
           })}
         </div>
         {funnelData.visitors === 0 && (
-          <p className="text-xs text-gray-400 mt-4 text-center">이 기간의 방문 데이터가 없습니다</p>
+          <p className="text-xs text-muted-foreground mt-4 text-center">이 기간의 방문 데이터가 없습니다</p>
         )}
       </div>
 
       {/* ── 유입 경로 (레퍼러) ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-5">
+      <div className="bg-white rounded-xl border border-border p-6">
+        <h2 className="text-sm font-semibold text-foreground mb-5">
           유입 경로 (최근 {periodDays}일)
         </h2>
         {referrers.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">유입 데이터가 없습니다</p>
+          <p className="text-sm text-muted-foreground text-center py-4">유입 데이터가 없습니다</p>
         ) : (
           <div className="space-y-3">
             {referrers.map((ref) => {
@@ -515,17 +515,17 @@ export default function AnalyticsPage() {
               return (
                 <div key={ref.referrer}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-gray-700 font-medium truncate max-w-[60%]">
+                    <span className="text-sm text-foreground font-medium truncate max-w-[60%]">
                       {ref.referrer}
                     </span>
-                    <span className="text-sm text-gray-500 shrink-0 ml-2">
+                    <span className="text-sm text-muted-foreground shrink-0 ml-2">
                       {ref.count.toLocaleString()}건{' '}
-                      <span className="text-gray-400 text-xs">({pct}%)</span>
+                      <span className="text-muted-foreground text-xs">({pct}%)</span>
                     </span>
                   </div>
-                  <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                      className="h-full bg-primary rounded-full transition-all duration-500"
                       style={{ width: `${Math.max(pct, pct > 0 ? 1 : 0)}%` }}
                     />
                   </div>
@@ -537,14 +537,14 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── 기간별 분석 ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white rounded-xl border border-border p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-gray-700">기간별 분석 (최근 {periodDays}일)</h2>
+          <h2 className="text-sm font-semibold text-foreground">기간별 분석 (최근 {periodDays}일)</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-gray-500 text-xs">
+              <tr className="border-b border-border text-muted-foreground text-xs">
                 <th className="text-left py-2 pr-4 font-medium">일자</th>
                 <th className="text-right py-2 px-3 font-medium">주문수</th>
                 <th className="text-right py-2 px-3 font-medium">매출액</th>
@@ -556,25 +556,25 @@ export default function AnalyticsPage() {
             </thead>
             <tbody>
               {[...dailyStats].reverse().map((s, i) => (
-                <tr key={s.date} className={i % 2 === 1 ? 'bg-gray-50' : ''}>
-                  <td className="py-2 pr-4 text-gray-700">{s.date}</td>
-                  <td className="py-2 px-3 text-right text-gray-600">{s.orders}</td>
-                  <td className="py-2 px-3 text-right text-gray-600">{s.revenue.toLocaleString()}원</td>
-                  <td className="py-2 px-3 text-right text-blue-600 font-medium">{s.visitors}</td>
-                  <td className="py-2 px-3 text-right text-gray-600">{s.signups}</td>
-                  <td className="py-2 px-3 text-right text-gray-600">{s.consulting}</td>
-                  <td className="py-2 px-3 text-right text-gray-600">{s.reviews}</td>
+                <tr key={s.date} className={i % 2 === 1 ? 'bg-muted' : ''}>
+                  <td className="py-2 pr-4 text-foreground">{s.date}</td>
+                  <td className="py-2 px-3 text-right text-muted-foreground">{s.orders}</td>
+                  <td className="py-2 px-3 text-right text-muted-foreground">{s.revenue.toLocaleString()}원</td>
+                  <td className="py-2 px-3 text-right text-primary font-medium">{s.visitors}</td>
+                  <td className="py-2 px-3 text-right text-muted-foreground">{s.signups}</td>
+                  <td className="py-2 px-3 text-right text-muted-foreground">{s.consulting}</td>
+                  <td className="py-2 px-3 text-right text-muted-foreground">{s.reviews}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t border-gray-200 font-medium text-gray-800 bg-gray-50">
+              <tr className="border-t border-border font-medium text-foreground bg-muted">
                 <td className="py-2 pr-4">합계</td>
                 <td className="py-2 px-3 text-right">{dailyStats.reduce((a, s) => a + s.orders, 0)}</td>
                 <td className="py-2 px-3 text-right">
                   {dailyStats.reduce((a, s) => a + s.revenue, 0).toLocaleString()}원
                 </td>
-                <td className="py-2 px-3 text-right text-blue-600">
+                <td className="py-2 px-3 text-right text-primary">
                   {dailyStats.reduce((a, s) => a + s.visitors, 0)}
                 </td>
                 <td className="py-2 px-3 text-right">{dailyStats.reduce((a, s) => a + s.signups, 0)}</td>
@@ -589,16 +589,16 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── 월간 및 연간 ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white rounded-xl border border-border p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-gray-700">월간 및 연간</h2>
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden text-xs">
+          <h2 className="text-sm font-semibold text-foreground">월간 및 연간</h2>
+          <div className="flex rounded-xl border border-border overflow-hidden text-xs">
             <button
               onClick={() => setViewMode('visitors')}
               className={`px-3 py-1.5 cursor-pointer ${
                 viewMode === 'visitors'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-50'
+                  ? 'bg-primary text-white'
+                  : 'bg-white text-muted-foreground hover:bg-muted'
               }`}
             >
               방문자
@@ -607,8 +607,8 @@ export default function AnalyticsPage() {
               onClick={() => setViewMode('pageviews')}
               className={`px-3 py-1.5 cursor-pointer ${
                 viewMode === 'pageviews'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-50'
+                  ? 'bg-primary text-white'
+                  : 'bg-white text-muted-foreground hover:bg-muted'
               }`}
             >
               페이지뷰
@@ -618,7 +618,7 @@ export default function AnalyticsPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-gray-500 text-xs">
+              <tr className="border-b border-border text-muted-foreground text-xs">
                 <th className="text-left py-2 pr-4 font-medium">연도</th>
                 {Array.from({ length: 12 }, (_, i) => (
                   <th key={i} className="text-right py-2 px-2 font-medium">
@@ -632,8 +632,8 @@ export default function AnalyticsPage() {
               {years.map((y, yi) => {
                 let total = 0
                 return (
-                  <tr key={y} className={yi % 2 === 1 ? 'bg-gray-50' : ''}>
-                    <td className="py-2 pr-4 font-medium text-gray-700">{y}</td>
+                  <tr key={y} className={yi % 2 === 1 ? 'bg-muted' : ''}>
+                    <td className="py-2 pr-4 font-medium text-foreground">{y}</td>
                     {Array.from({ length: 12 }, (_, i) => {
                       const m = i + 1
                       const val = monthlyData[y]?.[m]
@@ -643,12 +643,12 @@ export default function AnalyticsPage() {
                         : 0
                       total += val
                       return (
-                        <td key={m} className="py-2 px-2 text-right text-gray-600">
+                        <td key={m} className="py-2 px-2 text-right text-muted-foreground">
                           {val > 0 ? val.toLocaleString() : '-'}
                         </td>
                       )
                     })}
-                    <td className="py-2 pl-3 text-right font-medium text-blue-600">
+                    <td className="py-2 pl-3 text-right font-medium text-primary">
                       {total > 0 ? total.toLocaleString() : '-'}
                     </td>
                   </tr>
@@ -660,12 +660,12 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── 일간 평균 ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">일간 평균 (방문자)</h2>
+      <div className="bg-white rounded-xl border border-border p-6">
+        <h2 className="text-sm font-semibold text-foreground mb-4">일간 평균 (방문자)</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-gray-500 text-xs">
+              <tr className="border-b border-border text-muted-foreground text-xs">
                 <th className="text-left py-2 pr-4 font-medium">연도</th>
                 {Array.from({ length: 12 }, (_, i) => (
                   <th key={i} className="text-right py-2 px-2 font-medium">
@@ -676,15 +676,15 @@ export default function AnalyticsPage() {
             </thead>
             <tbody>
               {years.map((y, yi) => (
-                <tr key={y} className={yi % 2 === 1 ? 'bg-gray-50' : ''}>
-                  <td className="py-2 pr-4 font-medium text-gray-700">{y}</td>
+                <tr key={y} className={yi % 2 === 1 ? 'bg-muted' : ''}>
+                  <td className="py-2 pr-4 font-medium text-foreground">{y}</td>
                   {Array.from({ length: 12 }, (_, i) => {
                     const m = i + 1
                     const uv = monthlyData[y]?.[m]?.uv || 0
                     const days = daysInMonth(+y, m)
                     const avg = uv > 0 ? (uv / days).toFixed(1) : '-'
                     return (
-                      <td key={m} className="py-2 px-2 text-right text-gray-600">
+                      <td key={m} className="py-2 px-2 text-right text-muted-foreground">
                         {avg}
                       </td>
                     )
@@ -697,12 +697,12 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── 최근 주별 현황 ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">최근 주별 현황</h2>
+      <div className="bg-white rounded-xl border border-border p-6">
+        <h2 className="text-sm font-semibold text-foreground mb-4">최근 주별 현황</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-gray-500 text-xs">
+              <tr className="border-b border-border text-muted-foreground text-xs">
                 <th className="text-left py-2 pr-4 font-medium">주</th>
                 {DAY_LABELS.map((d) => (
                   <th key={d} className="text-center py-2 px-3 font-medium">
@@ -716,8 +716,8 @@ export default function AnalyticsPage() {
               {weeks.map((week, wi) => {
                 const weekTotal = week.days.reduce((a, d) => a + (d?.visitors || 0), 0)
                 return (
-                  <tr key={wi} className={wi % 2 === 1 ? 'bg-gray-50' : ''}>
-                    <td className="py-2 pr-4 text-gray-600 whitespace-nowrap">
+                  <tr key={wi} className={wi % 2 === 1 ? 'bg-muted' : ''}>
+                    <td className="py-2 pr-4 text-muted-foreground whitespace-nowrap">
                       {fmt(week.start)}~{fmt(addDays(week.start, 6))}
                     </td>
                     {week.days.map((d, di) => {
@@ -728,17 +728,17 @@ export default function AnalyticsPage() {
                           key={di}
                           className={`py-2 px-3 text-center ${
                             isFuture
-                              ? 'text-gray-300'
+                              ? 'text-muted-foreground'
                               : d
-                              ? 'text-gray-700'
-                              : 'text-gray-400'
+                              ? 'text-foreground'
+                              : 'text-muted-foreground'
                           }`}
                         >
                           {isFuture ? '' : d ? d.visitors : 0}
                         </td>
                       )
                     })}
-                    <td className="py-2 pl-3 text-right font-medium text-blue-600">{weekTotal}</td>
+                    <td className="py-2 pl-3 text-right font-medium text-primary">{weekTotal}</td>
                   </tr>
                 )
               })}

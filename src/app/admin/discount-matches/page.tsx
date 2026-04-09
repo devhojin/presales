@@ -35,7 +35,7 @@ function Toast({ message, type = 'success', onClose }: { message: string; type?:
     return () => clearTimeout(timer)
   }, [onClose])
 
-  const bgColor = type === 'error' ? 'bg-red-500' : type === 'info' ? 'bg-blue-500' : 'bg-green-600'
+  const bgColor = type === 'error' ? 'bg-red-500' : type === 'info' ? 'bg-primary' : 'bg-green-600'
   const icon = type === 'error' ? '✕' : '✓'
 
   return (
@@ -62,7 +62,7 @@ function ToastContainer() {
         <div
           key={toast.id}
           className={`flex items-center gap-2 ${
-            toast.type === 'error' ? 'bg-red-500' : toast.type === 'info' ? 'bg-blue-500' : 'bg-green-600'
+            toast.type === 'error' ? 'bg-red-500' : toast.type === 'info' ? 'bg-primary' : 'bg-green-600'
           } text-white px-5 py-3 rounded-xl shadow-lg text-sm`}
         >
           <CheckCircle className="w-4 h-4" />
@@ -115,19 +115,19 @@ function DeleteModal({
           <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
             <Trash2 className="w-5 h-5 text-red-600" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900">매칭 삭제</h3>
+          <h3 className="text-lg font-bold text-foreground">매칭 삭제</h3>
         </div>
-        <p className="text-sm text-gray-600 mb-6">이 할인 매칭을 삭제하시겠습니까?</p>
+        <p className="text-sm text-muted-foreground mb-6">이 할인 매칭을 삭제하시겠습니까?</p>
         <div className="flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-muted transition-colors"
           >
             취소
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 transition-colors"
           >
             삭제
           </button>
@@ -198,26 +198,26 @@ function ProductSearchDropdown({
   return (
     <div className="relative">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
         <input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
-          className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full pl-10 pr-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
         />
       </div>
 
       {isOpen && value.trim() && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-xl shadow-lg z-20 max-h-64 overflow-y-auto">
           {isLoading && (
-            <div className="p-3 text-center text-gray-500 text-sm">
+            <div className="p-3 text-center text-muted-foreground text-sm">
               <Loader2 className="w-4 h-4 animate-spin inline-block" /> 검색 중...
             </div>
           )}
           {!isLoading && products.length === 0 && (
-            <div className="p-3 text-center text-gray-500 text-sm">검색 결과가 없습니다</div>
+            <div className="p-3 text-center text-muted-foreground text-sm">검색 결과가 없습니다</div>
           )}
           {products.map((product) => (
             <button
@@ -226,10 +226,10 @@ function ProductSearchDropdown({
                 onSelect(product)
                 setIsOpen(false)
               }}
-              className="w-full px-3 py-2 text-left hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0 text-sm"
+              className="w-full px-3 py-2 text-left hover:bg-primary/8 transition-colors border-b border-border/50 last:border-b-0 text-sm"
             >
-              <div className="font-medium text-gray-900">{product.title}</div>
-              <div className="text-xs text-gray-500">
+              <div className="font-medium text-foreground">{product.title}</div>
+              <div className="text-xs text-muted-foreground">
                 {product.format && `${product.format} • `}
                 {product.is_free || product.price === 0 ? '무료' : `${product.price.toLocaleString('ko-KR')}원`}
               </div>
@@ -338,12 +338,12 @@ function MatchModal({
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-900">
+          <h2 className="text-xl font-bold text-foreground">
             {match ? '매칭 수정' : '새 매칭 추가'}
           </h2>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-muted-foreground hover:text-muted-foreground transition-colors"
             title="닫기"
           >
             <X className="w-5 h-5" />
@@ -353,7 +353,7 @@ function MatchModal({
         <div className="space-y-4">
           {/* Source Product */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               소스 상품 (구매한 상품)
             </label>
             <ProductSearchDropdown
@@ -366,10 +366,10 @@ function MatchModal({
               }}
             />
             {sourceProduct && (
-              <div className="mt-2 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
+              <div className="mt-2 p-3 bg-primary/8 rounded-xl flex items-center justify-between">
                 <div className="text-sm">
-                  <div className="font-medium text-gray-900">{sourceProduct.title}</div>
-                  <div className="text-xs text-gray-500">{sourceProduct.price.toLocaleString('ko-KR')}원</div>
+                  <div className="font-medium text-foreground">{sourceProduct.title}</div>
+                  <div className="text-xs text-muted-foreground">{sourceProduct.price.toLocaleString('ko-KR')}원</div>
                 </div>
                 <button
                   onClick={() => {
@@ -386,7 +386,7 @@ function MatchModal({
 
           {/* Target Product */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               타겟 상품 (구매할 상품)
             </label>
             <ProductSearchDropdown
@@ -399,10 +399,10 @@ function MatchModal({
               }}
             />
             {targetProduct && (
-              <div className="mt-2 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
+              <div className="mt-2 p-3 bg-primary/8 rounded-xl flex items-center justify-between">
                 <div className="text-sm">
-                  <div className="font-medium text-gray-900">{targetProduct.title}</div>
-                  <div className="text-xs text-gray-500">{targetProduct.price.toLocaleString('ko-KR')}원</div>
+                  <div className="font-medium text-foreground">{targetProduct.title}</div>
+                  <div className="text-xs text-muted-foreground">{targetProduct.price.toLocaleString('ko-KR')}원</div>
                 </div>
                 <button
                   onClick={() => {
@@ -419,7 +419,7 @@ function MatchModal({
 
           {/* Discount Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">할인 유형</label>
+            <label className="block text-sm font-medium text-foreground mb-3">할인 유형</label>
             <div className="space-y-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -430,7 +430,7 @@ function MatchModal({
                   onChange={() => setDiscountType('auto')}
                   className="w-4 h-4 cursor-pointer"
                 />
-                <span className="text-sm text-gray-700">
+                <span className="text-sm text-foreground">
                   소스 상품 가격만큼 자동 할인
                   {sourceProduct && ` (${sourceProduct.price.toLocaleString('ko-KR')}원)`}
                 </span>
@@ -444,7 +444,7 @@ function MatchModal({
                   onChange={() => setDiscountType('manual')}
                   className="w-4 h-4 cursor-pointer"
                 />
-                <span className="text-sm text-gray-700">직접 입력</span>
+                <span className="text-sm text-foreground">직접 입력</span>
               </label>
             </div>
           </div>
@@ -452,7 +452,7 @@ function MatchModal({
           {/* Discount Amount */}
           {discountType === 'manual' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 할인 금액 (원)
               </label>
               <input
@@ -461,20 +461,20 @@ function MatchModal({
                 onChange={(e) => setDiscountAmount(e.target.value)}
                 min="0"
                 step="1000"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
             </div>
           )}
 
           {/* Preview */}
           {targetProduct && (
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-xs text-gray-500 mb-2">미리보기</p>
+            <div className="p-4 bg-muted rounded-xl">
+              <p className="text-xs text-muted-foreground mb-2">미리보기</p>
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-gray-600">타겟 상품 {targetProduct.price.toLocaleString('ko-KR')}원</span>
-                <span className="text-gray-400">-</span>
+                <span className="text-muted-foreground">타겟 상품 {targetProduct.price.toLocaleString('ko-KR')}원</span>
+                <span className="text-muted-foreground">-</span>
                 <span className="text-red-500 font-medium">할인 {finalDiscountAmount.toLocaleString('ko-KR')}원</span>
-                <span className="text-gray-400">=</span>
+                <span className="text-muted-foreground">=</span>
                 <span className="text-green-600 font-bold">최종가 {finalPrice.toLocaleString('ko-KR')}원</span>
               </div>
             </div>
@@ -484,14 +484,14 @@ function MatchModal({
           <div className="flex justify-end gap-2 pt-4">
             <button
               onClick={onCancel}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-muted transition-colors"
             >
               취소
             </button>
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
               {isSaving ? '저장 중...' : '저장'}
@@ -602,8 +602,8 @@ export default function DiscountMatchesPage() {
     <div>
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">할인 상품 매칭</h1>
-        <p className="text-gray-600">상품 간 할인을 설정합니다. 소스 상품을 구매한 사용자가 타겟 상품을 구매할 때 할인이 적용됩니다.</p>
+        <h1 className="text-3xl font-bold text-foreground mb-2">할인 상품 매칭</h1>
+        <p className="text-muted-foreground">상품 간 할인을 설정합니다. 소스 상품을 구매한 사용자가 타겟 상품을 구매할 때 할인이 적용됩니다.</p>
       </div>
 
       {/* Add button */}
@@ -613,7 +613,7 @@ export default function DiscountMatchesPage() {
             setEditingMatch(null)
             setIsModalOpen(true)
           }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors font-medium"
         >
           <Plus className="w-4 h-4" />
           새 매칭 추가
@@ -623,53 +623,53 @@ export default function DiscountMatchesPage() {
       {/* Table */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="flex items-center gap-3 text-gray-400">
+          <div className="flex items-center gap-3 text-muted-foreground">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span className="text-sm">로드 중...</span>
           </div>
         </div>
       ) : matches.length === 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <div className="text-gray-400 mb-2">할인 매칭이 없습니다</div>
-          <p className="text-sm text-gray-500">"새 매칭 추가" 버튼을 클릭하여 할인 매칭을 생성해주세요.</p>
+        <div className="bg-white rounded-xl border border-border p-12 text-center">
+          <div className="text-muted-foreground mb-2">할인 매칭이 없습니다</div>
+          <p className="text-sm text-muted-foreground">"새 매칭 추가" 버튼을 클릭하여 할인 매칭을 생성해주세요.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-border overflow-hidden">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-muted border-b border-border">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   소스 상품
                 </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   →
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   타겟 상품
                 </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   할인 유형
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   할인액
                 </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   상태
                 </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   관리
                 </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {matches.map((match) => (
-                <tr key={match.id} className="hover:bg-gray-50/50 transition-colors">
+                <tr key={match.id} className="hover:bg-muted/50 transition-colors">
                   {/* Source Product */}
                   <td className="px-6 py-4">
                     <div className="text-sm">
-                      <div className="font-medium text-gray-900">{match.source_product?.title || '상품 없음'}</div>
+                      <div className="font-medium text-foreground">{match.source_product?.title || '상품 없음'}</div>
                       {match.source_product && (
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-muted-foreground">
                           {match.source_product.format && `${match.source_product.format} • `}
                           {match.source_product.price.toLocaleString('ko-KR')}원
                         </div>
@@ -679,15 +679,15 @@ export default function DiscountMatchesPage() {
 
                   {/* Arrow */}
                   <td className="px-6 py-4 text-center">
-                    <span className="text-gray-400">→</span>
+                    <span className="text-muted-foreground">→</span>
                   </td>
 
                   {/* Target Product */}
                   <td className="px-6 py-4">
                     <div className="text-sm">
-                      <div className="font-medium text-gray-900">{match.target_product?.title || '상품 없음'}</div>
+                      <div className="font-medium text-foreground">{match.target_product?.title || '상품 없음'}</div>
                       {match.target_product && (
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-muted-foreground">
                           {match.target_product.format && `${match.target_product.format} • `}
                           {match.target_product.price.toLocaleString('ko-KR')}원
                         </div>
@@ -730,14 +730,14 @@ export default function DiscountMatchesPage() {
                           setEditingMatch(match)
                           setIsModalOpen(true)
                         }}
-                        className="p-1.5 rounded-lg hover:bg-blue-100 transition-colors text-blue-600"
+                        className="p-1.5 rounded-xl hover:bg-primary/10 transition-colors text-primary"
                         title="수정"
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => setDeleteConfirmId(match.id)}
-                        className="p-1.5 rounded-lg hover:bg-red-100 transition-colors text-red-600"
+                        className="p-1.5 rounded-xl hover:bg-red-100 transition-colors text-red-600"
                         title="삭제"
                       >
                         <Trash2 className="w-4 h-4" />

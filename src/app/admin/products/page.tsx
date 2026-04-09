@@ -132,19 +132,19 @@ function DeleteModal({
           <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
             <Trash2 className="w-5 h-5 text-red-600" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900">상품 삭제</h3>
+          <h3 className="text-lg font-bold text-foreground">상품 삭제</h3>
         </div>
-        <p className="text-sm text-gray-600 mb-6">&apos;{productName}&apos;을 삭제하시겠습니까?</p>
+        <p className="text-sm text-muted-foreground mb-6">&apos;{productName}&apos;을 삭제하시겠습니까?</p>
         <div className="flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-muted transition-colors"
           >
             취소
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 transition-colors"
           >
             삭제
           </button>
@@ -190,19 +190,19 @@ function BulkDeleteModal({
           <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
             <Trash2 className="w-5 h-5 text-red-600" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900">일괄 삭제</h3>
+          <h3 className="text-lg font-bold text-foreground">일괄 삭제</h3>
         </div>
-        <p className="text-sm text-gray-600 mb-6">선택한 {count}개 상품을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
+        <p className="text-sm text-muted-foreground mb-6">선택한 {count}개 상품을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
         <div className="flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-muted transition-colors"
           >
             취소
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 transition-colors"
           >
             삭제
           </button>
@@ -253,7 +253,7 @@ function SortableProductRow({
     <tr
       ref={setNodeRef}
       style={style}
-      className={`border-b border-gray-100 hover:bg-gray-50/50 transition-colors ${selected ? 'bg-blue-50/40' : ''}`}
+      className={`border-b border-border/50 hover:bg-muted/50 transition-colors ${selected ? 'bg-primary/8/40' : ''}`}
     >
       {/* Checkbox */}
       <td className="px-2 py-3 w-9">
@@ -261,7 +261,7 @@ function SortableProductRow({
           type="checkbox"
           checked={selected}
           onChange={() => onSelect(product.id)}
-          className="w-4 h-4 rounded border-gray-300 text-blue-600 cursor-pointer"
+          className="w-4 h-4 rounded border-border text-primary cursor-pointer"
           onClick={(e) => e.stopPropagation()}
         />
       </td>
@@ -270,10 +270,10 @@ function SortableProductRow({
         <button
           {...attributes}
           {...listeners}
-          className="flex items-center justify-center w-7 h-7 rounded-lg hover:bg-gray-100 cursor-grab active:cursor-grabbing"
+          className="flex items-center justify-center w-7 h-7 rounded-xl hover:bg-muted cursor-grab active:cursor-grabbing"
           title="드래그하여 순서 변경"
         >
-          <GripVertical className="w-4 h-4 text-gray-400" />
+          <GripVertical className="w-4 h-4 text-muted-foreground" />
         </button>
       </td>
       <ProductRowCells
@@ -308,7 +308,7 @@ function ProductRowCells({
         <div className="flex items-center gap-2">
           <Link
             href={`/admin/products/${product.id}`}
-            className="text-sm font-medium text-gray-900 hover:text-blue-600 truncate max-w-[300px] block"
+            className="text-sm font-medium text-foreground hover:text-primary truncate max-w-[300px] block"
           >
             {product.title}
           </Link>
@@ -319,12 +319,12 @@ function ProductRowCells({
             className="shrink-0"
             title="스토어 페이지 열기"
           >
-            <ExternalLink className="w-3.5 h-3.5 text-gray-400 hover:text-blue-500 transition-colors" />
+            <ExternalLink className="w-3.5 h-3.5 text-muted-foreground hover:text-primary transition-colors" />
           </a>
         </div>
       </td>
       {/* Category */}
-      <td className="px-3 py-3 text-sm text-gray-500">
+      <td className="px-3 py-3 text-sm text-muted-foreground">
         {Array.isArray(product.categories)
           ? product.categories[0]?.name || '-'
           : product.categories?.name || '-'}
@@ -335,11 +335,11 @@ function ProductRowCells({
           <span className="font-medium text-emerald-600">무료</span>
         ) : (
           <div>
-            <span className="text-sm font-medium text-gray-900">
+            <span className="text-sm font-medium text-foreground">
               {formatPrice(product.price)}
             </span>
             {product.original_price > product.price && (
-              <p className="text-xs text-gray-400 line-through">
+              <p className="text-xs text-muted-foreground line-through">
                 {formatPrice(product.original_price)}
               </p>
             )}
@@ -349,7 +349,7 @@ function ProductRowCells({
       {/* 무료/유료 */}
       <td className="px-3 py-3">
         <Badge
-          className={`text-xs border ${product.is_free ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}
+          className={`text-xs border ${product.is_free ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-primary/8 text-primary border-primary/20'}`}
         >
           {product.is_free ? '무료' : '유료'}
         </Badge>
@@ -360,18 +360,18 @@ function ProductRowCells({
           className={
             product.is_published
               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-              : 'bg-gray-50 text-gray-500 border-gray-200'
+              : 'bg-muted text-muted-foreground border-border'
           }
         >
           {product.is_published ? '공개' : '비공개'}
         </Badge>
       </td>
       {/* Download count */}
-      <td className="px-3 py-3 text-center text-sm text-gray-500">
+      <td className="px-3 py-3 text-center text-sm text-muted-foreground">
         {product.download_count}
       </td>
       {/* Created date */}
-      <td className="px-3 py-3 text-center text-xs text-gray-500">
+      <td className="px-3 py-3 text-center text-xs text-muted-foreground">
         {formatDate(product.created_at)}
       </td>
       {/* Actions */}
@@ -379,21 +379,21 @@ function ProductRowCells({
         <div className="flex items-center justify-end gap-1">
           <Link
             href={`/admin/products/${product.id}`}
-            className="p-1.5 rounded-md hover:bg-blue-50 text-gray-400 hover:text-blue-600 transition-colors"
+            className="p-1.5 rounded-md hover:bg-primary/8 text-muted-foreground hover:text-primary transition-colors"
             title="수정"
           >
             <Pencil className="w-4 h-4" />
           </Link>
           <button
             onClick={() => onClone(product.id)}
-            className="p-1.5 rounded-md hover:bg-purple-50 text-gray-400 hover:text-purple-600 transition-colors"
+            className="p-1.5 rounded-md hover:bg-purple-50 text-muted-foreground hover:text-purple-600 transition-colors"
             title="상품 복제"
           >
             <Copy className="w-4 h-4" />
           </button>
           <button
             onClick={() => onTogglePublish(product.id, product.is_published)}
-            className="p-1.5 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-muted-foreground transition-colors"
             title={product.is_published ? '비공개로 변경' : '공개로 변경'}
           >
             {product.is_published ? (
@@ -404,7 +404,7 @@ function ProductRowCells({
           </button>
           <button
             onClick={() => onDelete(product.id)}
-            className="p-1.5 rounded-md hover:bg-red-50 text-gray-400 hover:text-red-600 transition-colors"
+            className="p-1.5 rounded-md hover:bg-red-50 text-muted-foreground hover:text-red-600 transition-colors"
             title="삭제"
           >
             <Trash2 className="w-4 h-4" />
@@ -661,18 +661,18 @@ export default function AdminProducts() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-5">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">상품 관리</h1>
-            <p className="text-sm text-gray-500 mt-1">전체 {products.length}개 상품</p>
+            <h1 className="text-xl font-bold text-foreground">상품 관리</h1>
+            <p className="text-sm text-muted-foreground mt-1">전체 {products.length}개 상품</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={handleCSVExport}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-xl transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-border hover:bg-muted text-foreground text-sm font-medium rounded-xl transition-colors"
               title="CSV 내보내기"
             >
               <Download className="w-4 h-4" />
@@ -698,7 +698,7 @@ export default function AdminProducts() {
             className={`px-4 py-2 text-sm font-medium rounded-full transition ${
               categoryFilter === null
                 ? 'bg-gray-900 text-white'
-                : 'text-gray-600 hover:bg-gray-100'
+                : 'text-muted-foreground hover:bg-muted'
             }`}
           >
             전체
@@ -720,7 +720,7 @@ export default function AdminProducts() {
                 className={`px-4 py-2 text-sm font-medium rounded-full transition ${
                   categoryFilter === cat.id
                     ? 'bg-gray-900 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    : 'text-muted-foreground hover:bg-muted'
                 }`}
               >
                 {cat.name} ({catCount})
@@ -746,16 +746,16 @@ export default function AdminProducts() {
                   setStatusFilter(tab.key)
                   setPage(1)
                 }}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition ${
+                className={`px-4 py-2 text-sm font-medium rounded-xl transition ${
                   statusFilter === tab.key
                     ? 'bg-gray-900 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    : 'text-muted-foreground hover:bg-muted'
                 }`}
               >
                 {tab.label}
                 <span
                   className={`ml-1.5 text-xs ${
-                    statusFilter === tab.key ? 'text-gray-300' : 'text-gray-400'
+                    statusFilter === tab.key ? 'text-muted-foreground' : 'text-muted-foreground'
                   }`}
                 >
                   {statusCounts[tab.key]}
@@ -767,7 +767,7 @@ export default function AdminProducts() {
           {/* Search */}
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="search"
                 value={search}
@@ -776,14 +776,14 @@ export default function AdminProducts() {
                   setPage(1)
                 }}
                 placeholder="상품명 검색..."
-                className="w-full pl-9 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 bg-white"
+                className="w-full pl-9 pr-4 py-2.5 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 bg-white"
               />
             </div>
           </div>
 
           {/* Page size selector */}
           <div className="flex items-center gap-1 shrink-0">
-            <span className="text-xs text-gray-400 mr-1">보기</span>
+            <span className="text-xs text-muted-foreground mr-1">보기</span>
             {PAGE_SIZES.map((size) => (
               <button
                 key={size}
@@ -791,10 +791,10 @@ export default function AdminProducts() {
                   setPageSize(size)
                   setPage(1)
                 }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
                   pageSize === size
                     ? 'bg-gray-900 text-white'
-                    : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                    : 'bg-muted text-muted-foreground hover:bg-muted'
                 }`}
               >
                 {size}개
@@ -805,10 +805,10 @@ export default function AdminProducts() {
 
         {/* Drag hint */}
         {isDragEnabled ? (
-          <p className="text-xs text-gray-400 flex items-center gap-1">
+          <p className="text-xs text-muted-foreground flex items-center gap-1">
             <GripVertical className="w-3.5 h-3.5" />
             좌측 핸들을 드래그하여 순서 변경 (위쪽 = 스토어 상단 노출)
-            {saving && <span className="ml-2 text-blue-500">저장 중...</span>}
+            {saving && <span className="ml-2 text-primary">저장 중...</span>}
           </p>
         ) : (statusFilter !== 'all' || categoryFilter !== null || search.trim()) && (
           <p className="text-xs text-amber-600 flex items-center gap-1">
@@ -818,30 +818,30 @@ export default function AdminProducts() {
 
         {/* Bulk Action Bar */}
         {selectedIds.size > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex items-center justify-between">
-            <span className="text-sm font-medium text-blue-700">선택 {selectedIds.size}개</span>
+          <div className="bg-primary/8 border border-primary/20 rounded-xl px-4 py-3 flex items-center justify-between">
+            <span className="text-sm font-medium text-primary">선택 {selectedIds.size}개</span>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleBulkPublish(true)}
-                className="px-3 py-1.5 text-xs font-medium text-emerald-700 bg-white border border-emerald-200 rounded-lg hover:bg-emerald-50 transition-colors"
+                className="px-3 py-1.5 text-xs font-medium text-emerald-700 bg-white border border-emerald-200 rounded-xl hover:bg-emerald-50 transition-colors"
               >
                 일괄 공개
               </button>
               <button
                 onClick={() => handleBulkPublish(false)}
-                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                className="px-3 py-1.5 text-xs font-medium text-foreground bg-white border border-border rounded-xl hover:bg-muted transition-colors"
               >
                 일괄 비공개
               </button>
               <button
                 onClick={() => setBulkDeleteConfirm(true)}
-                className="px-3 py-1.5 text-xs font-medium text-red-700 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+                className="px-3 py-1.5 text-xs font-medium text-red-700 bg-white border border-red-200 rounded-xl hover:bg-red-50 transition-colors"
               >
                 일괄 삭제
               </button>
               <button
                 onClick={() => setSelectedIds(new Set())}
-                className="px-2 py-1.5 text-xs text-blue-500 hover:text-blue-700"
+                className="px-2 py-1.5 text-xs text-primary hover:text-primary"
               >
                 선택 해제
               </button>
@@ -850,42 +850,42 @@ export default function AdminProducts() {
         )}
 
         {/* Table Card */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-muted border-b border-border">
                 <tr>
                   <th className="px-2 py-3 w-9">
                     <input
                       type="checkbox"
                       checked={paginated.length > 0 && paginated.every((p) => selectedIds.has(p.id))}
                       onChange={() => toggleSelectAll(paginated)}
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600 cursor-pointer"
+                      className="w-4 h-4 rounded border-border text-primary cursor-pointer"
                     />
                   </th>
                   <th className="w-10" />
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 min-w-[260px]">
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground min-w-[260px]">
                     상품명
                   </th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 w-28">
+                  <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-28">
                     카테고리
                   </th>
-                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 w-28">
+                  <th className="px-3 py-3 text-right text-xs font-semibold text-muted-foreground w-28">
                     가격
                   </th>
-                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 w-20">
+                  <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-20">
                     구분
                   </th>
-                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 w-20">
+                  <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-20">
                     상태
                   </th>
-                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 w-20">
+                  <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-20">
                     다운로드
                   </th>
-                  <th className="px-3 py-3 text-center text-xs font-semibold text-gray-600 w-24">
+                  <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-24">
                     등록일
                   </th>
-                  <th className="px-3 py-3 text-right text-xs font-semibold text-gray-600 w-28">
+                  <th className="px-3 py-3 text-right text-xs font-semibold text-muted-foreground w-28">
                     관리
                   </th>
                 </tr>
@@ -893,13 +893,13 @@ export default function AdminProducts() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={10} className="text-center py-16 text-gray-400 text-sm">
+                    <td colSpan={10} className="text-center py-16 text-muted-foreground text-sm">
                       로딩 중...
                     </td>
                   </tr>
                 ) : paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="text-center py-16 text-gray-400 text-sm">
+                    <td colSpan={10} className="text-center py-16 text-muted-foreground text-sm">
                       {search ? '검색 결과가 없습니다' : '등록된 상품이 없습니다'}
                     </td>
                   </tr>
@@ -930,14 +930,14 @@ export default function AdminProducts() {
                   paginated.map((product) => (
                     <tr
                       key={product.id}
-                      className={`border-b border-gray-100 hover:bg-gray-50/50 transition-colors ${selectedIds.has(product.id) ? 'bg-blue-50/40' : ''}`}
+                      className={`border-b border-border/50 hover:bg-muted/50 transition-colors ${selectedIds.has(product.id) ? 'bg-primary/8/40' : ''}`}
                     >
                       <td className="px-2 py-3 w-9">
                         <input
                           type="checkbox"
                           checked={selectedIds.has(product.id)}
                           onChange={() => toggleSelect(product.id)}
-                          className="w-4 h-4 rounded border-gray-300 text-blue-600 cursor-pointer"
+                          className="w-4 h-4 rounded border-border text-primary cursor-pointer"
                         />
                       </td>
                       <td className="px-2 py-3 w-10">
@@ -959,8 +959,8 @@ export default function AdminProducts() {
           </div>
 
           {/* Pagination */}
-          <div className="px-5 py-3 border-t border-gray-100 flex items-center justify-between">
-            <span className="text-xs text-gray-400">
+          <div className="px-5 py-3 border-t border-border/50 flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">
               총 {filtered.length}개 중{' '}
               {filtered.length === 0
                 ? '0'
@@ -972,18 +972,18 @@ export default function AdminProducts() {
                 <button
                   onClick={() => setPage(Math.max(1, page - 1))}
                   disabled={page === 1}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  <ChevronLeft className="w-4 h-4 text-gray-600" />
+                  <ChevronLeft className="w-4 h-4 text-muted-foreground" />
                 </button>
                 {getPageRange().map((p) => (
                   <button
                     key={p}
                     onClick={() => setPage(p)}
-                    className={`w-8 h-8 rounded-lg text-xs font-medium transition-colors ${
+                    className={`w-8 h-8 rounded-xl text-xs font-medium transition-colors ${
                       p === page
                         ? 'bg-gray-900 text-white'
-                        : 'text-gray-500 hover:bg-gray-100'
+                        : 'text-muted-foreground hover:bg-muted'
                     }`}
                   >
                     {p}
@@ -992,9 +992,9 @@ export default function AdminProducts() {
                 <button
                   onClick={() => setPage(Math.min(totalPages, page + 1))}
                   disabled={page === totalPages}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="w-8 h-8 rounded-xl flex items-center justify-center hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  <ChevronRight className="w-4 h-4 text-gray-600" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 </button>
               </div>
             )}

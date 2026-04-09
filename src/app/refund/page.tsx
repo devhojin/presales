@@ -20,9 +20,10 @@ const sections = [
 
 export default function RefundPage() {
   return (
-    <div className="container mx-auto px-4 py-10 max-w-4xl">
-      <div className="mb-10">
-        <h1 className="text-2xl md:text-3xl font-bold mb-2">환불정책</h1>
+    <div className="max-w-[900px] mx-auto px-4 md:px-8 py-16 md:py-20">
+      <div className="mb-12">
+        <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">REFUND POLICY</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-2">환불정책</h1>
         <p className="text-muted-foreground text-sm">최종 수정일: 2026년 4월 7일</p>
       </div>
 

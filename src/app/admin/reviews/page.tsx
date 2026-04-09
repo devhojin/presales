@@ -69,19 +69,19 @@ function DeleteModal({
           <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
             <Trash2 className="w-5 h-5 text-red-600" />
           </div>
-          <h3 className="text-base font-bold text-gray-900">리뷰 삭제</h3>
+          <h3 className="text-base font-bold text-foreground">리뷰 삭제</h3>
         </div>
-        <p className="text-sm text-gray-600 mb-6">이 리뷰를 삭제하시겠습니까? 삭제된 리뷰는 복구할 수 없습니다.</p>
+        <p className="text-sm text-muted-foreground mb-6">이 리뷰를 삭제하시겠습니까? 삭제된 리뷰는 복구할 수 없습니다.</p>
         <div className="flex justify-end gap-2">
           <button
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
+            className="px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-muted transition-colors cursor-pointer"
           >
             취소
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors cursor-pointer"
+            className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-xl hover:bg-red-600 transition-colors cursor-pointer"
           >
             삭제
           </button>
@@ -299,13 +299,13 @@ export default function AdminReviewsPage() {
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <form onSubmit={handleSearch} className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="리뷰 제목/내용 검색..."
-            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+            className="w-full pl-9 pr-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
           />
           {searchInput && (
             <button
@@ -315,7 +315,7 @@ export default function AdminReviewsPage() {
                 setSearch('')
                 setPage(1)
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -330,8 +330,8 @@ export default function AdminReviewsPage() {
             }}
             className={`px-3 py-1.5 text-xs rounded-full transition-colors cursor-pointer ${
               ratingFilter === null
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-primary text-white'
+                : 'bg-muted text-muted-foreground hover:bg-muted'
             }`}
           >
             전체
@@ -345,8 +345,8 @@ export default function AdminReviewsPage() {
               }}
               className={`px-3 py-1.5 text-xs rounded-full transition-colors inline-flex items-center gap-1 cursor-pointer ${
                 ratingFilter === r
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-primary text-white'
+                  : 'bg-muted text-muted-foreground hover:bg-muted'
               }`}
             >
               <Star className="w-3 h-3" />
@@ -357,29 +357,29 @@ export default function AdminReviewsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-border overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">상품</th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">작성자</th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">별점</th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">내용 미리보기</th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">작성일</th>
-              <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">상태</th>
-              <th className="text-right px-6 py-3 text-xs font-medium text-gray-500 uppercase">관리</th>
+            <tr className="border-b border-border bg-muted">
+              <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase">상품</th>
+              <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase">작성자</th>
+              <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase">별점</th>
+              <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase">내용 미리보기</th>
+              <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase">작성일</th>
+              <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase">상태</th>
+              <th className="text-right px-6 py-3 text-xs font-medium text-muted-foreground uppercase">관리</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
+                <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
                   로딩 중...
                 </td>
               </tr>
             ) : reviews.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
+                <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
                   리뷰가 없습니다
                 </td>
               </tr>
@@ -387,7 +387,7 @@ export default function AdminReviewsPage() {
               reviews.map((review) => (
                 <tr
                   key={review.id}
-                  className="hover:bg-gray-50 transition-colors"
+                  className="hover:bg-muted transition-colors"
                 >
                   <td className="px-6 py-3 text-sm max-w-[200px] truncate">
                     {productMap[review.product_id] || '-'}
@@ -398,11 +398,11 @@ export default function AdminReviewsPage() {
                   <td className="px-6 py-3">
                     <ReviewStars rating={review.rating} size={14} />
                   </td>
-                  <td className="px-6 py-3 text-sm text-gray-600 max-w-[300px] truncate">
+                  <td className="px-6 py-3 text-sm text-muted-foreground max-w-[300px] truncate">
                     {review.title ? `[${review.title}] ` : ''}
                     {review.content}
                   </td>
-                  <td className="px-6 py-3 text-sm text-gray-500">
+                  <td className="px-6 py-3 text-sm text-muted-foreground">
                     {formatDate(review.created_at)}
                   </td>
                   <td className="px-6 py-3">
@@ -411,14 +411,14 @@ export default function AdminReviewsPage() {
                         className={`border ${
                           review.is_published
                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-gray-50 text-gray-500 border-gray-200'
+                            : 'bg-muted text-muted-foreground border-border'
                         }`}
                       >
                         {review.is_published ? '공개' : '숨김'}
                       </Badge>
                       {review.admin_reply && (
                         <span title="관리자 답글 있음">
-                          <MessageSquare className="w-3.5 h-3.5 text-blue-500" />
+                          <MessageSquare className="w-3.5 h-3.5 text-primary" />
                         </span>
                       )}
                     </div>
@@ -427,13 +427,13 @@ export default function AdminReviewsPage() {
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => setSelectedReview(review)}
-                        className="text-xs px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors cursor-pointer"
+                        className="text-xs px-3 py-1.5 rounded-xl bg-primary/8 text-primary hover:bg-primary/10 transition-colors cursor-pointer"
                       >
                         상세
                       </button>
                       <button
                         onClick={() => setDeleteTarget(review)}
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                        className="p-1.5 rounded-xl text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                         title="삭제"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -453,17 +453,17 @@ export default function AdminReviewsPage() {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors cursor-pointer"
+            className="p-2 rounded-xl hover:bg-muted disabled:opacity-30 transition-colors cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-muted-foreground">
             {page} / {totalPages}
           </span>
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
-            className="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-30 transition-colors cursor-pointer"
+            className="p-2 rounded-xl hover:bg-muted disabled:opacity-30 transition-colors cursor-pointer"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -487,14 +487,14 @@ export default function AdminReviewsPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setDeleteTarget(selectedReview)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-xl text-muted-foreground hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
                     title="리뷰 삭제"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setSelectedReview(null)}
-                    className="text-gray-400 hover:text-gray-600 cursor-pointer"
+                    className="text-muted-foreground hover:text-muted-foreground cursor-pointer"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -504,52 +504,52 @@ export default function AdminReviewsPage() {
               {/* Meta */}
               <div className="space-y-3 mb-4">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">상품</span>
+                  <span className="text-muted-foreground">상품</span>
                   <span className="font-medium">{productMap[selectedReview.product_id] || '-'}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">작성자</span>
+                  <span className="text-muted-foreground">작성자</span>
                   <span>{profileMap[selectedReview.user_id]?.name || '-'} ({profileMap[selectedReview.user_id]?.email || '-'})</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">별점</span>
+                  <span className="text-muted-foreground">별점</span>
                   <ReviewStars rating={selectedReview.rating} size={16} />
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">작성일</span>
+                  <span className="text-muted-foreground">작성일</span>
                   <span>{formatDate(selectedReview.created_at)}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">구매인증</span>
+                  <span className="text-muted-foreground">구매인증</span>
                   <span>{selectedReview.is_verified_purchase ? '예' : '아니오'}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">도움 수</span>
+                  <span className="text-muted-foreground">도움 수</span>
                   <span>{selectedReview.helpful_count}</span>
                 </div>
               </div>
 
-              <div className="border-t border-gray-200 pt-4 space-y-3">
+              <div className="border-t border-border pt-4 space-y-3">
                 {selectedReview.title && (
                   <div>
-                    <p className="text-xs text-gray-500 mb-1">제목</p>
+                    <p className="text-xs text-muted-foreground mb-1">제목</p>
                     <p className="font-semibold text-sm">{selectedReview.title}</p>
                   </div>
                 )}
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">내용</p>
+                  <p className="text-xs text-muted-foreground mb-1">내용</p>
                   <p className="text-sm whitespace-pre-wrap">{selectedReview.content}</p>
                 </div>
 
                 {selectedReview.pros && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
                     <p className="text-xs font-medium text-emerald-700 mb-1">좋은점</p>
                     <p className="text-sm text-emerald-700">{selectedReview.pros}</p>
                   </div>
                 )}
 
                 {selectedReview.cons && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
                     <p className="text-xs font-medium text-amber-700 mb-1">아쉬운점</p>
                     <p className="text-sm text-amber-800">{selectedReview.cons}</p>
                   </div>
@@ -557,7 +557,7 @@ export default function AdminReviewsPage() {
 
                 {selectedReview.image_urls && selectedReview.image_urls.length > 0 && (
                   <div>
-                    <p className="text-xs text-gray-500 mb-2">첨부 이미지</p>
+                    <p className="text-xs text-muted-foreground mb-2">첨부 이미지</p>
                     <div className="flex gap-2">
                       {selectedReview.image_urls.map((url, idx) => (
                         <a
@@ -565,7 +565,7 @@ export default function AdminReviewsPage() {
                           href={url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="w-24 h-24 rounded-lg overflow-hidden border border-gray-200 hover:opacity-80 transition-opacity"
+                          className="w-24 h-24 rounded-xl overflow-hidden border border-border hover:opacity-80 transition-opacity"
                         >
                           <img src={url} alt="리뷰 이미지" className="w-full h-full object-cover" />
                         </a>
@@ -576,8 +576,8 @@ export default function AdminReviewsPage() {
               </div>
 
               {/* Admin Reply */}
-              <div className="border-t border-gray-200 mt-4 pt-4">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+              <div className="border-t border-border mt-4 pt-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
                   <MessageSquare className="w-3.5 h-3.5" />
                   관리자 답글
                 </p>
@@ -586,13 +586,13 @@ export default function AdminReviewsPage() {
                   onChange={(e) => setReplyText(e.target.value)}
                   placeholder="고객에게 공개될 답글을 입력하세요..."
                   rows={3}
-                  className="w-full text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-gray-400"
+                  className="w-full text-sm text-foreground bg-muted border border-border rounded-xl px-3 py-2 resize-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
                 />
                 <div className="flex justify-end mt-2">
                   <button
                     onClick={handleReplySave}
                     disabled={replySaving}
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 cursor-pointer"
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer"
                   >
                     {replySaving ? '저장 중...' : '답글 저장'}
                   </button>
@@ -600,13 +600,13 @@ export default function AdminReviewsPage() {
               </div>
 
               {/* Toggle Published */}
-              <div className="border-t border-gray-200 mt-4 pt-4 flex justify-end">
+              <div className="border-t border-border mt-4 pt-4 flex justify-end">
                 <button
                   onClick={() => togglePublished(selectedReview)}
                   disabled={toggling}
-                  className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-colors disabled:opacity-50 cursor-pointer ${
+                  className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-xl transition-colors disabled:opacity-50 cursor-pointer ${
                     selectedReview.is_published
-                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-muted text-foreground hover:bg-muted'
                       : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                   }`}
                 >

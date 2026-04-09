@@ -14,7 +14,7 @@ import dynamic from 'next/dynamic'
 
 const RichTextEditor = dynamic(
   () => import('@/components/RichTextEditor').then(m => ({ default: m.RichTextEditor })),
-  { ssr: false, loading: () => <div className="h-[400px] border border-gray-200 rounded-lg animate-pulse bg-gray-50" /> }
+  { ssr: false, loading: () => <div className="h-[400px] border border-border rounded-xl animate-pulse bg-muted" /> }
 )
 
 // ===========================
@@ -133,11 +133,11 @@ function ListEditor({
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <label className="text-xs font-medium text-gray-500">{label}</label>
+        <label className="text-xs font-medium text-muted-foreground">{label}</label>
         <button
           type="button"
           onClick={addItem}
-          className="inline-flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1 text-xs text-primary hover:bg-primary/8 rounded-xl transition-colors"
         >
           <Plus className="w-3 h-3" />
           추가
@@ -151,13 +151,13 @@ function ListEditor({
               value={item}
               onChange={(e) => updateItem(idx, e.target.value)}
               placeholder={placeholder}
-              className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all"
+              className="flex-1 px-3 py-2 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all"
             />
             {items.length > 1 && (
               <button
                 type="button"
                 onClick={() => removeItem(idx)}
-                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -188,11 +188,11 @@ function SpecsEditor({
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <label className="text-xs font-medium text-gray-500">스펙 (키-값)</label>
+        <label className="text-xs font-medium text-muted-foreground">스펙 (키-값)</label>
         <button
           type="button"
           onClick={addSpec}
-          className="inline-flex items-center gap-1 px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1 text-xs text-primary hover:bg-primary/8 rounded-xl transition-colors"
         >
           <Plus className="w-3 h-3" />
           추가
@@ -206,20 +206,20 @@ function SpecsEditor({
               value={spec.label}
               onChange={(e) => updateSpec(idx, 'label', e.target.value)}
               placeholder="항목명 (예: 페이지수)"
-              className="w-1/3 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all"
+              className="w-1/3 px-3 py-2 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all"
             />
             <input
               type="text"
               value={spec.value}
               onChange={(e) => updateSpec(idx, 'value', e.target.value)}
               placeholder="값 (예: 45p)"
-              className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all"
+              className="flex-1 px-3 py-2 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all"
             />
             {specs.length > 1 && (
               <button
                 type="button"
                 onClick={() => removeSpec(idx)}
-                className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                className="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -625,11 +625,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       : 0
 
   const inputClass =
-    'w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all'
+    'w-full px-4 py-2.5 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all'
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20 text-gray-400">
+      <div className="flex items-center justify-center py-20 text-muted-foreground">
         <Loader2 className="w-5 h-5 animate-spin mr-2" />
         로딩 중...
       </div>
@@ -660,7 +660,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             <button
               type="button"
               onClick={() => setDeleteConfirmFile(null)}
-              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted rounded-xl transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -669,18 +669,18 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 <AlertCircle className="w-5 h-5 text-red-500" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-gray-900">파일 삭제</h3>
-                <p className="text-xs text-gray-400 mt-0.5">이 작업은 되돌릴 수 없습니다</p>
+                <h3 className="text-sm font-bold text-foreground">파일 삭제</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">이 작업은 되돌릴 수 없습니다</p>
               </div>
             </div>
-            <p className="text-sm text-gray-600 mb-5">
-              <span className="font-medium text-gray-900">{deleteConfirmFile.file_name}</span>을 삭제하시겠습니까?
+            <p className="text-sm text-muted-foreground mb-5">
+              <span className="font-medium text-foreground">{deleteConfirmFile.file_name}</span>을 삭제하시겠습니까?
             </p>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setDeleteConfirmFile(null)}
-                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
+                className="flex-1 px-4 py-2.5 border border-border text-foreground text-sm font-medium rounded-xl hover:bg-muted transition-colors cursor-pointer"
               >
                 취소
               </button>
@@ -707,16 +707,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         <div className="flex items-center gap-3">
           <Link
             href="/admin/products"
-            className="w-9 h-9 rounded-lg border border-gray-200 hover:bg-gray-50 flex items-center justify-center transition-colors"
+            className="w-9 h-9 rounded-xl border border-border hover:bg-muted flex items-center justify-center transition-colors"
           >
-            <ArrowLeft className="w-4 h-4 text-gray-600" />
+            <ArrowLeft className="w-4 h-4 text-muted-foreground" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">
+            <h1 className="text-xl font-bold text-foreground">
               {isNew ? '상품 등록' : '상품 수정'}
             </h1>
             {!isNew && (
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 ID: {id}
                 {createdAt && <> | 등록일: {new Date(createdAt).toLocaleDateString('ko-KR')}</>}
                 {' '}| 다운로드: {downloadCount}회
@@ -751,15 +751,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         <div className="flex-1 space-y-5 min-w-0">
 
           {/* ─── 기본 정보 ─── */}
-          <section className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <FileText className="w-4 h-4 text-gray-400" />
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-muted-foreground" />
               기본 정보
             </h2>
             <div className="space-y-4">
               {/* 상품명 */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">
                   상품명 <span className="text-red-400">*</span>
                 </label>
                 <input
@@ -773,7 +773,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
               {/* 상품 설명 */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">상품 설명</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">상품 설명</label>
                 <textarea
                   rows={3}
                   value={form.description}
@@ -785,17 +785,17 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
               {/* 카테고리 (복수 선택) */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-2">카테고리 (복수 선택 가능)</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-2">카테고리 (복수 선택 가능)</label>
                 <div className="flex flex-wrap gap-2">
                   {categories.map(c => {
                     const checked = form.category_ids.includes(c.id)
                     return (
                       <label
                         key={c.id}
-                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-colors ${
                           checked
-                            ? 'bg-blue-50 border-blue-300 text-blue-700'
-                            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                            ? 'bg-primary/8 border-blue-300 text-primary'
+                            : 'bg-white border-border text-muted-foreground hover:bg-muted'
                         }`}
                       >
                         <input
@@ -809,7 +809,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             // Keep category_id in sync for backwards compat
                             updateField('category_id', next.length > 0 ? String(next[0]) : '')
                           }}
-                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                         />
                         <span className="text-sm font-medium">{c.name}</span>
                       </label>
@@ -832,14 +832,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         updateField('original_price', 0)
                       }
                     }}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                   />
-                  <span className="text-sm text-gray-700">무료 상품</span>
+                  <span className="text-sm text-foreground">무료 상품</span>
                 </label>
                 {!form.is_free && (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1.5">판매가 (원)</label>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1.5">판매가 (원)</label>
                       <input
                         type="number"
                         min={0}
@@ -849,7 +849,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1.5">정가 (원)</label>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1.5">정가 (원)</label>
                       <input
                         type="number"
                         min={0}
@@ -859,9 +859,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1.5">할인율</label>
-                      <div className="h-[42px] flex items-center px-3 rounded-lg bg-gray-50 border border-gray-200">
-                        <span className={`text-sm font-bold ${discount > 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1.5">할인율</label>
+                      <div className="h-[42px] flex items-center px-3 rounded-xl bg-muted border border-border">
+                        <span className={`text-sm font-bold ${discount > 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
                           {discount > 0 ? `-${discount}%` : '-'}
                         </span>
                       </div>
@@ -873,12 +873,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </section>
 
           {/* ─── 대표 이미지 (썸네일) ─── */}
-          <section className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <ImageIcon className="w-4 h-4 text-gray-400" />
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-muted-foreground" />
               대표 이미지
             </h2>
-            <p className="text-[11px] text-gray-400 mb-3">권장 해상도: 750 x 750px / JPG, PNG, WEBP</p>
+            <p className="text-[11px] text-muted-foreground mb-3">권장 해상도: 750 x 750px / JPG, PNG, WEBP</p>
 
             <input
               ref={fileInputRef}
@@ -894,22 +894,22 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             <div className="flex flex-col sm:flex-row gap-4">
               {/* 드래그앤드롭 영역 */}
               <div
-                className="w-full sm:w-[280px] h-[200px] rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-all flex flex-col items-center justify-center gap-2"
+                className="w-full sm:w-[280px] h-[200px] rounded-xl border-2 border-dashed border-border bg-muted cursor-pointer hover:border-blue-400 hover:bg-primary/8/30 transition-all flex flex-col items-center justify-center gap-2"
                 onClick={() => !uploading && fileInputRef.current?.click()}
                 onDragOver={e => {
                   e.preventDefault()
                   e.stopPropagation()
-                  e.currentTarget.classList.add('border-blue-400', 'bg-blue-50/50')
+                  e.currentTarget.classList.add('border-blue-400', 'bg-primary/8/50')
                 }}
                 onDragLeave={e => {
                   e.preventDefault()
                   e.stopPropagation()
-                  e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50/50')
+                  e.currentTarget.classList.remove('border-blue-400', 'bg-primary/8/50')
                 }}
                 onDrop={async e => {
                   e.preventDefault()
                   e.stopPropagation()
-                  e.currentTarget.classList.remove('border-blue-400', 'bg-blue-50/50')
+                  e.currentTarget.classList.remove('border-blue-400', 'bg-primary/8/50')
                   const file = Array.from(e.dataTransfer.files).find(f => f.type.startsWith('image/'))
                   if (file) handleThumbnailUpload(file)
                 }}
@@ -918,9 +918,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
                 ) : (
                   <>
-                    <Upload className="w-8 h-8 text-gray-300" />
-                    <span className="text-xs text-gray-400">이미지를 드래그하여 놓거나 클릭하여 선택</span>
-                    <span className="text-[10px] text-gray-300">750 x 750px 권장</span>
+                    <Upload className="w-8 h-8 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">이미지를 드래그하여 놓거나 클릭하여 선택</span>
+                    <span className="text-[10px] text-muted-foreground">750 x 750px 권장</span>
                   </>
                 )}
               </div>
@@ -928,7 +928,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               {/* 썸네일 미리보기 */}
               {form.thumbnail_url && (
                 <div className="relative group">
-                  <div className="w-[160px] h-[160px] rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
+                  <div className="w-[160px] h-[160px] rounded-xl overflow-hidden border border-border bg-muted">
                     <img
                       src={form.thumbnail_url}
                       alt="썸네일 미리보기"
@@ -948,7 +948,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
             {/* URL 직접 입력 */}
             <div className="mt-3">
-              <label className="block text-xs font-medium text-gray-500 mb-1.5">또는 URL 직접 입력</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">또는 URL 직접 입력</label>
               <input
                 type="url"
                 value={form.thumbnail_url}
@@ -960,26 +960,26 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </section>
 
           {/* ─── 상세 설명 (리치 에디터 + HTML 소스) ─── */}
-          <section className="bg-white rounded-xl border border-gray-200 p-5">
+          <section className="bg-white rounded-xl border border-border p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-gray-400" />
+              <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <FileText className="w-4 h-4 text-muted-foreground" />
                 상세 설명 (HTML 에디터)
               </h2>
               <button
                 type="button"
                 onClick={() => setShowHtmlSource(!showHtmlSource)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-xl border transition-colors ${
                   showHtmlSource
                     ? 'bg-gray-900 text-white border-gray-900'
-                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                    : 'bg-white text-muted-foreground border-border hover:bg-muted'
                 }`}
               >
                 <Code className="w-3.5 h-3.5" />
                 {showHtmlSource ? 'WYSIWYG' : 'HTML 소스'}
               </button>
             </div>
-            <p className="text-xs text-gray-400 mb-3">
+            <p className="text-xs text-muted-foreground mb-3">
               상품 상세 페이지에 표시되는 리치 텍스트 설명입니다.
             </p>
 
@@ -989,7 +989,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 onChange={e => updateField('description_html', e.target.value)}
                 placeholder="<h2>상품 소개</h2><p>내용을 입력하세요...</p>"
                 rows={16}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg text-sm font-mono text-gray-800 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all bg-gray-50"
+                className="w-full px-4 py-3 border border-border rounded-xl text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all bg-muted"
                 spellCheck={false}
               />
             ) : (
@@ -1002,13 +1002,13 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </section>
 
           {/* ─── 유튜브 소개 영상 ─── */}
-          <section className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
               <Play className="w-4 h-4 text-red-500" />
               유튜브 소개 영상
             </h2>
             <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5">유튜브 URL 또는 영상 ID</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">유튜브 URL 또는 영상 ID</label>
               <input
                 type="text"
                 value={form.youtube_id}
@@ -1019,10 +1019,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 placeholder="https://www.youtube.com/watch?v=... 또는 영상 ID"
                 className={inputClass}
               />
-              <p className="text-xs text-gray-400 mt-1">유튜브 URL을 붙여넣으면 자동으로 ID가 추출됩니다.</p>
+              <p className="text-xs text-muted-foreground mt-1">유튜브 URL을 붙여넣으면 자동으로 ID가 추출됩니다.</p>
             </div>
             {form.youtube_id && (
-              <div className="mt-3 aspect-video rounded-lg overflow-hidden bg-black max-w-xl">
+              <div className="mt-3 aspect-video rounded-xl overflow-hidden bg-black max-w-xl">
                 <iframe
                   src={`https://www.youtube.com/embed/${form.youtube_id}`}
                   className="w-full h-full"
@@ -1033,19 +1033,19 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </section>
 
           {/* ─── PDF 미리보기 ─── */}
-          <section className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
               📖 PDF 미리보기
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">미리보기 PDF 파일</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">미리보기 PDF 파일</label>
                 <div
-                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-blue-500', 'bg-blue-50/50') }}
-                  onDragLeave={(e) => { e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50/50') }}
+                  onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/8/50') }}
+                  onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary', 'bg-primary/8/50') }}
                   onDrop={async (e) => {
                     e.preventDefault()
-                    e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50/50')
+                    e.currentTarget.classList.remove('border-primary', 'bg-primary/8/50')
                     const file = e.dataTransfer.files[0]
                     if (!file || !file.name.endsWith('.pdf')) { setToast('PDF 파일만 업로드 가능합니다'); return }
                     const supabase = createClient()
@@ -1056,7 +1056,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     updateField('preview_pdf_url', urlData.publicUrl)
                     setToast('PDF 업로드 완료')
                   }}
-                  className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center transition-colors cursor-pointer hover:border-gray-400"
+                  className="border-2 border-dashed border-border rounded-xl p-6 text-center transition-colors cursor-pointer hover:border-gray-400"
                   onClick={() => document.getElementById('pdf-upload-input')?.click()}
                 >
                   <input
@@ -1079,21 +1079,21 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   {form.preview_pdf_url ? (
                     <div>
                       <p className="text-sm text-emerald-600 font-medium mb-1">✅ PDF 등록됨</p>
-                      <p className="text-xs text-gray-400">{form.preview_pdf_url.split('/').pop()}</p>
-                      <p className="text-xs text-blue-500 mt-2">클릭하거나 새 파일을 드래그해서 교체</p>
+                      <p className="text-xs text-muted-foreground">{form.preview_pdf_url.split('/').pop()}</p>
+                      <p className="text-xs text-primary mt-2">클릭하거나 새 파일을 드래그해서 교체</p>
                     </div>
                   ) : (
                     <div>
                       <p className="text-2xl mb-2">📄</p>
-                      <p className="text-sm text-gray-600 font-medium">PDF 파일을 드래그하거나 클릭해서 업로드</p>
-                      <p className="text-xs text-gray-400 mt-1">미리보기용 PDF 파일</p>
+                      <p className="text-sm text-muted-foreground font-medium">PDF 파일을 드래그하거나 클릭해서 업로드</p>
+                      <p className="text-xs text-muted-foreground mt-1">미리보기용 PDF 파일</p>
                     </div>
                   )}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">선명 페이지 수 (0=자동)</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">선명 페이지 수 (0=자동)</label>
                   <input
                     type="number"
                     min="0"
@@ -1102,10 +1102,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     placeholder="0 (자동: 전체의 5%)"
                     className={inputClass}
                   />
-                  <p className="text-xs text-gray-400 mt-1">0이면 자동 (전체의 5%, 최소3, 최대15)</p>
+                  <p className="text-xs text-muted-foreground mt-1">0이면 자동 (전체의 5%, 최소3, 최대15)</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">블러 페이지 수</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">블러 페이지 수</label>
                   <input
                     type="number"
                     min="0"
@@ -1114,16 +1114,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     placeholder="2"
                     className={inputClass}
                   />
-                  <p className="text-xs text-gray-400 mt-1">흐리게 보여줄 페이지 수</p>
+                  <p className="text-xs text-muted-foreground mt-1">흐리게 보여줄 페이지 수</p>
                 </div>
               </div>
             </div>
           </section>
 
           {/* ─── 소개 리스트 (overview) ─── */}
-          <section className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="text-sm font-bold text-gray-900 mb-4">소개 (Overview)</h2>
-            <p className="text-xs text-gray-400 mb-3">판매 페이지의 &quot;상품 소개&quot; 섹션에 표시됩니다.</p>
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-4">소개 (Overview)</h2>
+            <p className="text-xs text-muted-foreground mb-3">판매 페이지의 &quot;상품 소개&quot; 섹션에 표시됩니다.</p>
             <ListEditor
               items={form.overview}
               onChange={items => updateField('overview', items)}
@@ -1133,9 +1133,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </section>
 
           {/* ─── 특장점 (features) ─── */}
-          <section className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="text-sm font-bold text-gray-900 mb-4">특장점 (Features)</h2>
-            <p className="text-xs text-gray-400 mb-3">판매 페이지의 &quot;이런 점이 좋아요&quot; 섹션에 표시됩니다.</p>
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-4">특장점 (Features)</h2>
+            <p className="text-xs text-muted-foreground mb-3">판매 페이지의 &quot;이런 점이 좋아요&quot; 섹션에 표시됩니다.</p>
             <ListEditor
               items={form.features}
               onChange={items => updateField('features', items)}
@@ -1145,9 +1145,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </section>
 
           {/* ─── 스펙 (specs) ─── */}
-          <section className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="text-sm font-bold text-gray-900 mb-4">스펙 정보</h2>
-            <p className="text-xs text-gray-400 mb-3">판매 페이지의 &quot;상품 정보&quot; 테이블에 표시됩니다.</p>
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-4">스펙 정보</h2>
+            <p className="text-xs text-muted-foreground mb-3">판매 페이지의 &quot;상품 정보&quot; 테이블에 표시됩니다.</p>
             <SpecsEditor
               specs={form.specs}
               onChange={specs => updateField('specs', specs)}
@@ -1155,25 +1155,25 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </section>
 
           {/* ─── 문서 유형 / 형태 ─── */}
-          <section className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <FileType className="w-4 h-4 text-gray-400" />
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+              <FileType className="w-4 h-4 text-muted-foreground" />
               문서 유형 / 형태
             </h2>
             <div className="space-y-4">
               {/* 파일 유형 체크박스 */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-2">파일 유형 (복수 선택 가능)</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-2">파일 유형 (복수 선택 가능)</label>
                 <div className="flex flex-wrap gap-2">
                   {FILE_TYPE_OPTIONS.map(ft => {
                     const checked = form.file_types.includes(ft)
                     return (
                       <label
                         key={ft}
-                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                        className={`inline-flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-colors ${
                           checked
-                            ? 'bg-blue-50 border-blue-300 text-blue-700'
-                            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                            ? 'bg-primary/8 border-blue-300 text-primary'
+                            : 'bg-white border-border text-muted-foreground hover:bg-muted'
                         }`}
                       >
                         <input
@@ -1185,7 +1185,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                               : [...form.file_types, ft]
                             updateField('file_types', next)
                           }}
-                          className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                         />
                         <span className="text-sm font-medium">{ft}</span>
                       </label>
@@ -1196,7 +1196,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
               {/* 문서 형태 (라디오) */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-2 flex items-center gap-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
                   <Monitor className="w-3 h-3" />
                   문서 형태
                 </label>
@@ -1204,10 +1204,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   {(['가로형', '세로형'] as const).map(orient => (
                     <label
                       key={orient}
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer transition-colors ${
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border cursor-pointer transition-colors ${
                         form.document_orientation === orient
-                          ? 'bg-blue-50 border-blue-300 text-blue-700'
-                          : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                          ? 'bg-primary/8 border-blue-300 text-primary'
+                          : 'bg-white border-border text-muted-foreground hover:bg-muted'
                       }`}
                     >
                       <input
@@ -1215,7 +1215,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         name="documentOrientation"
                         checked={form.document_orientation === orient}
                         onChange={() => updateField('document_orientation', orient)}
-                        className="w-4 h-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="w-4 h-4 border-border text-primary focus:ring-primary"
                       />
                       <span className="text-sm font-medium">{orient}</span>
                     </label>
@@ -1226,12 +1226,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </section>
 
           {/* ─── 해시태그 ─── */}
-          <section className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Tag className="w-4 h-4 text-gray-400" />
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+              <Tag className="w-4 h-4 text-muted-foreground" />
               해시태그
             </h2>
-            <p className="text-xs text-gray-400 mb-3">검색 및 필터링에 사용되는 태그입니다. Enter를 눌러 추가하세요.</p>
+            <p className="text-xs text-muted-foreground mb-3">검색 및 필터링에 사용되는 태그입니다. Enter를 눌러 추가하세요.</p>
 
             {/* 태그 표시 */}
             {form.tags.length > 0 && (
@@ -1239,7 +1239,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 {form.tags.map(tag => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-primary/8 text-primary text-xs font-medium rounded-xl cursor-pointer hover:bg-primary/10 transition-colors"
                     onClick={() => removeTag(tag)}
                   >
                     #{tag}
@@ -1262,12 +1262,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   }
                 }}
                 placeholder="태그 입력 후 Enter"
-                className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all"
+                className="flex-1 px-4 py-2.5 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all"
               />
               <button
                 type="button"
                 onClick={addTag}
-                className="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                className="px-3 py-2.5 bg-muted hover:bg-muted text-foreground rounded-xl transition-colors"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -1275,12 +1275,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </section>
 
           {/* ─── 관련 상품 ─── */}
-          <section className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <Tag className="w-4 h-4 text-gray-400" />
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+              <Tag className="w-4 h-4 text-muted-foreground" />
               관련 상품
             </h2>
-            <p className="text-xs text-gray-400 mb-3">상품 상세 페이지 하단에 표시되는 관련 상품을 직접 지정합니다. 비어있으면 같은 카테고리 상품이 자동 표시됩니다.</p>
+            <p className="text-xs text-muted-foreground mb-3">상품 상세 페이지 하단에 표시되는 관련 상품을 직접 지정합니다. 비어있으면 같은 카테고리 상품이 자동 표시됩니다.</p>
 
             {/* Current related products */}
             {relatedProducts.length > 0 && (
@@ -1289,8 +1289,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   const rp = relatedProducts.find(p => p.id === rpId)
                   if (!rp) return null
                   return (
-                    <div key={rp.id} className="relative group border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                      <div className="aspect-[4/3] bg-gray-100 overflow-hidden">
+                    <div key={rp.id} className="relative group border border-border rounded-xl overflow-hidden bg-muted">
+                      <div className="aspect-[4/3] bg-muted overflow-hidden">
                         {rp.thumbnail_url ? (
                           <img src={rp.thumbnail_url} alt={rp.title} className="w-full h-full object-cover" />
                         ) : (
@@ -1298,8 +1298,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         )}
                       </div>
                       <div className="p-2">
-                        <p className="text-xs font-medium text-gray-900 line-clamp-1">{rp.title}</p>
-                        <p className="text-[11px] text-gray-500 mt-0.5">
+                        <p className="text-xs font-medium text-foreground line-clamp-1">{rp.title}</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
                           {rp.is_free ? '무료' : `${rp.price.toLocaleString()}원`}
                         </p>
                       </div>
@@ -1330,14 +1330,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     if (relatedSearch.trim()) setRelatedSearchOpen(true)
                   }}
                   placeholder="상품명으로 검색하여 추가..."
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all"
+                  className="flex-1 px-4 py-2.5 border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-gray-400 focus:ring-1 focus:ring-gray-400 transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => {
                     if (relatedSearch.trim()) setRelatedSearchOpen(true)
                   }}
-                  className="px-3 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                  className="px-3 py-2.5 bg-muted hover:bg-muted text-foreground rounded-xl transition-colors"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -1345,14 +1345,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
               {/* Dropdown results */}
               {relatedSearchOpen && relatedSearch.trim() && (
-                <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                <div className="absolute z-20 mt-1 w-full bg-white border border-border rounded-xl shadow-lg max-h-64 overflow-y-auto">
                   {searchingRelated ? (
-                    <div className="p-3 text-center text-xs text-gray-400">
+                    <div className="p-3 text-center text-xs text-muted-foreground">
                       <Loader2 className="w-4 h-4 animate-spin inline mr-1" />
                       검색 중...
                     </div>
                   ) : relatedSearchResults.length === 0 ? (
-                    <div className="p-3 text-center text-xs text-gray-400">
+                    <div className="p-3 text-center text-xs text-muted-foreground">
                       검색 결과가 없습니다
                     </div>
                   ) : (
@@ -1361,9 +1361,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                         key={p.id}
                         type="button"
                         onClick={() => addRelatedProduct(p)}
-                        className="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition-colors text-left"
+                        className="w-full flex items-center gap-3 px-3 py-2 hover:bg-muted transition-colors text-left"
                       >
-                        <div className="w-10 h-10 rounded overflow-hidden bg-gray-100 shrink-0">
+                        <div className="w-10 h-10 rounded overflow-hidden bg-muted shrink-0">
                           {p.thumbnail_url ? (
                             <img src={p.thumbnail_url} alt="관련 상품 이미지" className="w-full h-full object-cover" />
                           ) : (
@@ -1371,12 +1371,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm text-gray-900 truncate">{p.title}</p>
-                          <p className="text-xs text-gray-400">
+                          <p className="text-sm text-foreground truncate">{p.title}</p>
+                          <p className="text-xs text-muted-foreground">
                             {p.is_free ? '무료' : `${p.price.toLocaleString()}원`}
                           </p>
                         </div>
-                        <Plus className="w-4 h-4 text-gray-300 shrink-0" />
+                        <Plus className="w-4 h-4 text-muted-foreground shrink-0" />
                       </button>
                     ))
                   )}
@@ -1385,20 +1385,20 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             </div>
 
             {form.related_product_ids.length > 0 && (
-              <p className="text-xs text-gray-400 mt-2">{form.related_product_ids.length}개 상품이 연결되었습니다</p>
+              <p className="text-xs text-muted-foreground mt-2">{form.related_product_ids.length}개 상품이 연결되었습니다</p>
             )}
           </section>
 
           {/* ─── 다운로드 파일 관리 ─── */}
-          <section className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="text-sm font-bold text-gray-900 mb-1 flex items-center gap-2">
-              <Download className="w-4 h-4 text-gray-400" />
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
+              <Download className="w-4 h-4 text-muted-foreground" />
               다운로드 파일 관리
             </h2>
-            <p className="text-xs text-gray-400 mb-4">구매자가 다운로드할 실제 파일입니다. product-files 버킷에 저장됩니다.</p>
+            <p className="text-xs text-muted-foreground mb-4">구매자가 다운로드할 실제 파일입니다. product-files 버킷에 저장됩니다.</p>
 
             {isNew ? (
-              <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+              <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 상품을 먼저 저장한 후 파일을 업로드할 수 있습니다.
               </div>
@@ -1417,8 +1417,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 <div
                   className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
                     dragOver
-                      ? 'border-blue-400 bg-blue-50/50'
-                      : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/20'
+                      ? 'border-blue-400 bg-primary/8/50'
+                      : 'border-border bg-muted hover:border-blue-300 hover:bg-primary/8/20'
                   }`}
                   onClick={() => !fileUploading && downloadFileInputRef.current?.click()}
                   onDragOver={e => {
@@ -1442,11 +1442,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   {fileUploading ? (
                     <div className="flex flex-col items-center gap-2">
                       <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-                      <p className="text-xs text-blue-600 font-medium">업로드 중...</p>
+                      <p className="text-xs text-primary font-medium">업로드 중...</p>
                       {fileUploadProgress > 0 && (
-                        <div className="w-full max-w-[200px] bg-gray-200 rounded-full h-1.5 mt-1">
+                        <div className="w-full max-w-[200px] bg-muted rounded-full h-1.5 mt-1">
                           <div
-                            className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                            className="bg-primary h-1.5 rounded-full transition-all duration-300"
                             style={{ width: `${fileUploadProgress}%` }}
                           />
                         </div>
@@ -1454,9 +1454,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-2">
-                      <Upload className="w-8 h-8 text-gray-300" />
-                      <p className="text-sm text-gray-600 font-medium">파일을 드래그하거나 클릭하여 업로드</p>
-                      <p className="text-xs text-gray-400">PPT, PDF, HWP, XLS, ZIP 등 모든 파일 형식</p>
+                      <Upload className="w-8 h-8 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground font-medium">파일을 드래그하거나 클릭하여 업로드</p>
+                      <p className="text-xs text-muted-foreground">PPT, PDF, HWP, XLS, ZIP 등 모든 파일 형식</p>
                     </div>
                   )}
                 </div>
@@ -1464,23 +1464,23 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 {/* File list */}
                 {productFiles.length > 0 && (
                   <div className="mt-4 space-y-2">
-                    <p className="text-xs font-medium text-gray-500">{productFiles.length}개 파일 등록됨</p>
-                    <div className="divide-y divide-gray-100 border border-gray-200 rounded-xl overflow-hidden">
+                    <p className="text-xs font-medium text-muted-foreground">{productFiles.length}개 파일 등록됨</p>
+                    <div className="divide-y divide-gray-100 border border-border rounded-xl overflow-hidden">
                       {productFiles.map(file => (
-                        <div key={file.id} className="flex items-center gap-3 px-4 py-3 bg-white hover:bg-gray-50 transition-colors group">
-                          <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
-                            <FileText className="w-4 h-4 text-blue-500" />
+                        <div key={file.id} className="flex items-center gap-3 px-4 py-3 bg-white hover:bg-muted transition-colors group">
+                          <div className="w-8 h-8 bg-primary/8 rounded-xl flex items-center justify-center shrink-0">
+                            <FileText className="w-4 h-4 text-primary" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">{file.file_name}</p>
-                            <p className="text-xs text-gray-400 mt-0.5">
+                            <p className="text-sm font-medium text-foreground truncate">{file.file_name}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
                               {formatFileSize(file.file_size)} · {new Date(file.created_at).toLocaleDateString('ko-KR')}
                             </p>
                           </div>
                           <button
                             type="button"
                             onClick={() => setDeleteConfirmFile(file)}
-                            className="w-7 h-7 flex items-center justify-center text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
+                            className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
                             title="삭제"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1492,7 +1492,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 )}
 
                 {productFiles.length === 0 && !fileUploading && (
-                  <p className="text-center text-xs text-gray-400 mt-3">등록된 파일이 없습니다</p>
+                  <p className="text-center text-xs text-muted-foreground mt-3">등록된 파일이 없습니다</p>
                 )}
               </>
             )}
@@ -1505,19 +1505,19 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         <div className="lg:w-[320px] shrink-0 space-y-5">
 
           {/* 상태 */}
-          <section className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="text-sm font-bold text-gray-900 mb-3">상태</h2>
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-3">상태</h2>
             <div className="space-y-3">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={form.is_published}
                   onChange={e => updateField('is_published', e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                 />
                 <div>
-                  <span className="text-sm font-medium text-gray-700">공개</span>
-                  <p className="text-xs text-gray-400">체크하면 스토어에 노출됩니다</p>
+                  <span className="text-sm font-medium text-foreground">공개</span>
+                  <p className="text-xs text-muted-foreground">체크하면 스토어에 노출됩니다</p>
                 </div>
               </label>
               <div className="flex items-center gap-2 pt-1">
@@ -1527,7 +1527,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     공개
                   </Badge>
                 ) : (
-                  <Badge className="bg-gray-50 text-gray-500 border-gray-200">
+                  <Badge className="bg-muted text-muted-foreground border-border">
                     <EyeOff className="w-3 h-3 mr-1" />
                     비공개
                   </Badge>
@@ -1540,24 +1540,24 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </section>
 
           {/* 배지 설정 */}
-          <section className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="text-sm font-bold text-gray-900 mb-3">배지 설정</h2>
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-3">배지 설정</h2>
             <div className="space-y-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={form.badge_new}
                   onChange={e => updateField('badge_new', e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                 />
-                <span className="px-2 py-0.5 text-xs font-bold bg-blue-100 text-blue-600 rounded">NEW</span>
+                <span className="px-2 py-0.5 text-xs font-bold bg-primary/10 text-primary rounded">NEW</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={form.badge_best}
                   onChange={e => updateField('badge_best', e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                 />
                 <span className="px-2 py-0.5 text-xs font-bold bg-orange-100 text-orange-600 rounded">BEST</span>
               </label>
@@ -1566,22 +1566,22 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   type="checkbox"
                   checked={form.badge_sale}
                   onChange={e => updateField('badge_sale', e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                 />
                 <span className="px-2 py-0.5 text-xs font-bold bg-red-100 text-red-500 rounded">SALE</span>
                 {discount > 0 && (
-                  <span className="text-xs text-gray-400">(-{discount}%)</span>
+                  <span className="text-xs text-muted-foreground">(-{discount}%)</span>
                 )}
               </label>
             </div>
           </section>
 
           {/* 파일 정보 */}
-          <section className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="text-sm font-bold text-gray-900 mb-3">파일 정보</h2>
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-3">파일 정보</h2>
             <div className="space-y-3">
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">파일 형식</label>
+                <label className="text-xs text-muted-foreground mb-1 block">파일 형식</label>
                 <input
                   value={form.format}
                   onChange={e => updateField('format', e.target.value)}
@@ -1590,7 +1590,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">페이지 수</label>
+                <label className="text-xs text-muted-foreground mb-1 block">페이지 수</label>
                 <input
                   value={form.pages}
                   onChange={e => updateField('pages', e.target.value)}
@@ -1599,7 +1599,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 />
               </div>
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">파일 크기</label>
+                <label className="text-xs text-muted-foreground mb-1 block">파일 크기</label>
                 <input
                   value={form.file_size}
                   onChange={e => updateField('file_size', e.target.value)}
@@ -1611,9 +1611,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </section>
 
           {/* 판매자 */}
-          <section className="bg-white rounded-xl border border-gray-200 p-5">
-            <h2 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-              <User className="w-4 h-4 text-gray-400" />
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+              <User className="w-4 h-4 text-muted-foreground" />
               판매자
             </h2>
             <input
@@ -1626,9 +1626,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
           {/* 빠른 미리보기 */}
           {form.thumbnail_url && (
-            <section className="bg-white rounded-xl border border-gray-200 p-5">
-              <h2 className="text-sm font-bold text-gray-900 mb-3">미리보기</h2>
-              <div className="rounded-lg overflow-hidden border border-gray-100 bg-gray-50">
+            <section className="bg-white rounded-xl border border-border p-5">
+              <h2 className="text-sm font-bold text-foreground mb-3">미리보기</h2>
+              <div className="rounded-xl overflow-hidden border border-border/50 bg-muted">
                 <div className="aspect-square relative">
                   <img
                     src={form.thumbnail_url}
@@ -1637,7 +1637,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   />
                   <div className="absolute top-2 left-2 flex gap-1">
                     {form.badge_new && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-blue-600 text-white rounded">NEW</span>
+                      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-primary text-white rounded">NEW</span>
                     )}
                     {form.badge_best && (
                       <span className="px-1.5 py-0.5 text-[10px] font-bold bg-orange-500 text-white rounded">BEST</span>
@@ -1648,19 +1648,19 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   </div>
                 </div>
                 <div className="p-3">
-                  <p className="text-xs font-semibold text-gray-900 line-clamp-1">{form.title || '상품명'}</p>
-                  <p className="text-[11px] text-gray-400 mt-0.5 line-clamp-1">{form.description || '상품 설명'}</p>
+                  <p className="text-xs font-semibold text-foreground line-clamp-1">{form.title || '상품명'}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-1">{form.description || '상품 설명'}</p>
                   <div className="flex items-center gap-2 mt-1.5">
                     {form.is_free ? (
                       <span className="text-xs font-bold text-purple-600">무료</span>
                     ) : (
                       <>
                         {form.original_price > form.price && (
-                          <span className="text-[10px] text-gray-400 line-through">
+                          <span className="text-[10px] text-muted-foreground line-through">
                             {form.original_price.toLocaleString()}원
                           </span>
                         )}
-                        <span className="text-xs font-bold text-gray-900">
+                        <span className="text-xs font-bold text-foreground">
                           {form.price.toLocaleString()}원
                         </span>
                       </>
@@ -1669,10 +1669,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   {form.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {form.tags.slice(0, 3).map(tag => (
-                        <span key={tag} className="text-[10px] text-gray-400">#{tag}</span>
+                        <span key={tag} className="text-[10px] text-muted-foreground">#{tag}</span>
                       ))}
                       {form.tags.length > 3 && (
-                        <span className="text-[10px] text-gray-300">+{form.tags.length - 3}</span>
+                        <span className="text-[10px] text-muted-foreground">+{form.tags.length - 3}</span>
                       )}
                     </div>
                   )}

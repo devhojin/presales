@@ -59,7 +59,7 @@ const statusMap: Record<string, { label: string; class: string }> = {
   paid: { label: '결제완료', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   completed: { label: '완료', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   cancelled: { label: '취소', class: 'bg-red-50 text-red-700 border-red-200' },
-  refunded: { label: '환불', class: 'bg-gray-50 text-gray-500 border-gray-200' },
+  refunded: { label: '환불', class: 'bg-muted text-muted-foreground border-border' },
   pending_refund: { label: '환불문의', class: 'bg-orange-50 text-orange-700 border-orange-200' },
 }
 
@@ -356,7 +356,7 @@ export default function MyPage() {
                   {orders.map((order) => {
                     const isExpanded = expandedOrderId === order.id
                     const items = (order.order_items || []) as OrderItem[]
-                    const statusInfo = statusMap[order.status] || { label: order.status, class: 'bg-gray-50 text-gray-500 border-gray-200' }
+                    const statusInfo = statusMap[order.status] || { label: order.status, class: 'bg-muted text-muted-foreground border-border' }
                     return (
                       <div key={order.id} className="rounded-lg border border-border overflow-hidden">
                         <button
@@ -431,7 +431,7 @@ export default function MyPage() {
                                   <button
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); printReceipt(order) }}
-                                    className="px-3 py-1.5 rounded-lg border border-blue-300 text-blue-600 text-xs font-medium hover:bg-blue-50 transition-colors cursor-pointer"
+                                    className="px-3 py-1.5 rounded-lg border border-blue-300 text-primary text-xs font-medium hover:bg-primary/8 transition-colors cursor-pointer"
                                   >
                                     영수증
                                   </button>
@@ -499,7 +499,7 @@ export default function MyPage() {
                             <p className="text-sm font-semibold truncate">{p.title}</p>
                             <div className="flex items-center gap-2 mt-1 flex-wrap">
                               {p.format && (
-                                <Badge className="text-[10px] px-1.5 py-0 bg-blue-50 text-blue-700 border-blue-200 border">
+                                <Badge className="text-[10px] px-1.5 py-0 bg-primary/8 text-primary border-blue-200 border">
                                   {p.format}
                                 </Badge>
                               )}

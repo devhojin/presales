@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { type DbProduct, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
-import { FileText, Download, Globe, Handshake, ArrowRight, ShoppingCart, Check, Star, Quote } from 'lucide-react'
+import { FileText, Download, Globe, Handshake, ArrowRight, ShoppingCart, Check, Star, Quote, ChevronRight } from 'lucide-react'
 
 interface StatsData {
   productCount: number
@@ -26,25 +26,34 @@ interface ReviewData {
 interface CategoryCount {
   id: number
   name: string
-  emoji: string
   slug: string
   count: number
+  icon: typeof FileText
 }
 
-const CATEGORY_META: Record<number, { emoji: string; slug: string }> = {
-  1: { emoji: '📋', slug: 'technical-proposal' },
-  2: { emoji: '📖', slug: 'bidding-guide' },
-  3: { emoji: '🎤', slug: 'presentation' },
-  4: { emoji: '💰', slug: 'price-proposal' },
-  5: { emoji: '📦', slug: 'full-package' },
-  6: { emoji: '📊', slug: 'business-plan' },
+const CATEGORY_ICONS: Record<number, typeof FileText> = {
+  1: FileText,
+  2: FileText,
+  3: FileText,
+  4: FileText,
+  5: FileText,
+  6: FileText,
+}
+
+const CATEGORY_SLUGS: Record<number, string> = {
+  1: 'technical-proposal',
+  2: 'bidding-guide',
+  3: 'presentation',
+  4: 'price-proposal',
+  5: 'full-package',
+  6: 'business-plan',
 }
 
 function FeaturedCardSkeleton() {
   return (
-    <div className="border border-border rounded-xl overflow-hidden animate-pulse">
+    <div className="rounded-2xl overflow-hidden animate-pulse bg-card border border-border/50">
       <div className="aspect-[4/3] bg-muted" />
-      <div className="p-4 space-y-3">
+      <div className="p-5 space-y-3">
         <div className="h-3 bg-muted rounded w-1/3" />
         <div className="h-4 bg-muted rounded w-full" />
         <div className="h-4 bg-muted rounded w-2/3" />
@@ -61,35 +70,37 @@ function FeaturedCard({ product, categoryNames }: { product: DbProduct; category
 
   return (
     <Link href={`/store/${product.id}`} className="group">
-      <div className="border border-border rounded-xl overflow-hidden bg-card hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+      <div className="rounded-2xl overflow-hidden bg-card border border-border/50 hover:border-border hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-500">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {product.thumbnail_url ? (
-            <Image src={product.thumbnail_url} alt={product.title} width={400} height={300} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <Image src={product.thumbnail_url} alt={product.title} width={400} height={300} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-700" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center"><span className="text-4xl">📄</span></div>
+            <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-600 flex items-center justify-center">
+              <FileText className="w-10 h-10 text-zinc-400" />
+            </div>
           )}
-          <Badge className={`absolute top-3 left-3 border text-xs ${product.is_free ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
-            {product.is_free ? '무료' : '유료'}
+          <Badge className={`absolute top-3 left-3 text-[10px] font-semibold tracking-wide ${product.is_free ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-zinc-100 text-zinc-700 border-zinc-200'}`}>
+            {product.is_free ? 'FREE' : 'PREMIUM'}
           </Badge>
-          {!product.is_free && discount > 0 && <Badge className="absolute top-3 right-3 bg-red-500 text-white border-0 text-xs">-{discount}%</Badge>}
+          {!product.is_free && discount > 0 && <Badge className="absolute top-3 right-3 bg-red-500 text-white border-0 text-[10px]">-{discount}%</Badge>}
           <button
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); const wasInCart = inCart; toggleItem({ productId: product.id, title: product.title, price: product.price, originalPrice: product.original_price, thumbnail: product.thumbnail_url || '', format: product.format || '' }); addToast(wasInCart ? '장바구니에서 제거되었습니다' : '장바구니에 추가되었습니다', wasInCart ? 'info' : 'success') }}
-            className={`absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md ${inCart ? 'bg-primary text-primary-foreground' : 'bg-white/90 text-gray-600 hover:bg-white hover:text-primary'}`}
+            className={`absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 active:scale-[0.92] ${inCart ? 'bg-primary text-primary-foreground shadow-md' : 'bg-white/95 text-zinc-500 hover:text-primary shadow-md'}`}
           >
             {inCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
           </button>
         </div>
-        <div className="p-4 space-y-2">
-          <div className="flex gap-1 flex-wrap">
+        <div className="p-5 space-y-2.5">
+          <div className="flex gap-1.5 flex-wrap">
             {categoryNames.map((name) => (
-              <span key={name} className="text-xs text-muted-foreground">{name}</span>
+              <span key={name} className="text-[11px] text-muted-foreground font-medium">{name}</span>
             ))}
           </div>
-          <h3 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">{product.title}</h3>
+          <h3 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors duration-300">{product.title}</h3>
           <div className="flex items-center gap-2">
-            {product.is_free ? <span className="text-base font-bold text-emerald-600">무료</span> : (
+            {product.is_free ? <span className="text-base font-bold text-primary">무료</span> : (
               <>
-                <span className="text-base font-bold text-primary">{formatPrice(product.price)}</span>
+                <span className="text-base font-bold text-foreground">{formatPrice(product.price)}</span>
                 {product.original_price > product.price && <span className="text-xs text-muted-foreground line-through">{formatPrice(product.original_price)}</span>}
               </>
             )}
@@ -119,7 +130,6 @@ export default function Home() {
     async function load() {
       const supabase = createClient()
 
-      // Parallel fetch: products, categories, stats, reviews
       const [
         { data: allData },
         { data: catData },
@@ -142,11 +152,9 @@ export default function Home() {
 
       setCategories(catData || [])
 
-      // Stats: product count, download sum, review avg
       const allProducts = allData || []
       const totalDownloads = allProducts.reduce((sum, p) => sum + (p.download_count || 0), 0)
 
-      // Calculate review average from all products that have reviews
       const productsWithReviews = allProducts.filter(p => p.review_count > 0)
       let reviewAvg: number | null = null
       if (productsWithReviews.length > 0) {
@@ -161,7 +169,6 @@ export default function Home() {
         reviewAvg,
       })
 
-      // Category counts
       const catCountMap = new Map<number, number>()
       allProducts.forEach(p => {
         const catIds = p.category_ids && p.category_ids.length > 0
@@ -172,13 +179,12 @@ export default function Home() {
       const dynamicCats: CategoryCount[] = (catData || []).map((c: { id: number; name: string }) => ({
         id: c.id,
         name: c.name,
-        emoji: CATEGORY_META[c.id]?.emoji || '📁',
-        slug: CATEGORY_META[c.id]?.slug || '',
+        icon: CATEGORY_ICONS[c.id] || FileText,
+        slug: CATEGORY_SLUGS[c.id] || '',
         count: catCountMap.get(c.id) || 0,
       }))
       setCategoryCounts(dynamicCats)
 
-      // Reviews from DB
       if (reviewsData && reviewsData.length > 0) {
         const mapped: ReviewData[] = reviewsData.map((r: Record<string, unknown>) => {
           const profiles = r.profiles as { name?: string } | null
@@ -193,13 +199,11 @@ export default function Home() {
         setReviews(mapped)
       }
 
-      // Featured products: is_published, price > 0, top 6 by download_count
       const featured = [...allProducts]
         .filter(p => !p.is_free && p.price > 0)
         .sort((a, b) => (b.download_count || 0) - (a.download_count || 0))
         .slice(0, 6)
 
-      // If not enough paid products, fill with free ones
       if (featured.length < 6) {
         const freeOnes = allProducts
           .filter(p => p.is_free && !featured.some(f => f.id === p.id))
@@ -224,96 +228,123 @@ export default function Home() {
     return ['문서']
   }
 
-  // Build dynamic stats display (경쟁사 노출 방지: 상품 수/다운로드 수 제외)
-  const statsDisplay = [
-    { emoji: '🏛️', value: '17년', label: '공공조달 경력' },
-    { emoji: '📋', value: '6개 분야', label: '전문 문서 카테고리' },
-    { emoji: '🤝', value: '1:1', label: '전문가 맞춤 컨설팅' },
-    { emoji: '🔒', value: '100%', label: '보안 다운로드' },
-  ]
-
   return (
     <div>
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#0B1629] via-[#132744] to-[#1a3a5c] text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.15),transparent_50%)]" />
-        <div className="container mx-auto px-4 py-20 md:py-32 relative z-10">
-          <div className="max-w-2xl mx-auto text-center">
-            <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30 mb-6">공공조달 제안서 전문 플랫폼</Badge>
-            <h1 className="text-3xl md:text-5xl font-bold leading-tight mb-6">
-              공공조달의 복잡함을<br /><span className="text-blue-400">문서로 단순하게</span>
-            </h1>
-            <p className="text-lg text-blue-100 mb-8 leading-relaxed">
-              나라장터·조달청 입찰에 최적화된 기술제안서, 가격제안서, 발표PT 템플릿. 실전 경험이 녹아든 문서로 수주 확률을 높이세요.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/store" className="inline-flex items-center justify-center h-11 px-6 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-medium text-sm transition-colors">
-                문서 스토어 둘러보기 <ArrowRight className="ml-2 w-4 h-4" />
-              </Link>
-              <Link href="/consulting" className="inline-flex items-center justify-center h-11 px-6 rounded-lg border border-blue-400/30 text-blue-200 hover:bg-blue-500/10 font-medium text-sm transition-colors">
-                전문가 컨설팅 알아보기
-              </Link>
+      {/* Hero — Asymmetric Split Layout */}
+      <section className="relative min-h-[100dvh] flex items-center bg-[#0C1220] text-white overflow-hidden">
+        {/* Subtle gradient orbs */}
+        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-emerald-500/8 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-30%] left-[-10%] w-[500px] h-[500px] bg-emerald-600/5 rounded-full blur-[100px]" />
+
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 w-full py-20 md:py-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
+            {/* Left: Content */}
+            <div className="space-y-8">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-[11px] font-medium tracking-wide text-emerald-300 uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                공공조달 제안서 전문 플랫폼
+              </div>
+
+              <h1 className="text-4xl md:text-6xl font-bold tracking-tighter leading-[1.08]">
+                공공조달의<br />
+                복잡함을
+                <span className="block text-emerald-400 mt-1">문서로 단순하게</span>
+              </h1>
+
+              <p className="text-base md:text-lg text-zinc-400 leading-relaxed max-w-[480px]">
+                나라장터, 조달청 입찰에 최적화된 기술제안서, 가격제안서, 발표PT 템플릿.
+                실전 경험이 녹아든 문서로 수주 확률을 높이세요.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link
+                  href="/store"
+                  className="inline-flex items-center justify-center h-12 px-7 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white font-medium text-sm transition-all duration-300 active:scale-[0.98] shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                >
+                  문서 스토어 둘러보기
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Link>
+                <Link
+                  href="/consulting"
+                  className="inline-flex items-center justify-center h-12 px-7 rounded-full border border-white/[0.12] text-zinc-300 hover:bg-white/[0.06] font-medium text-sm transition-all duration-300"
+                >
+                  전문가 컨설팅 알아보기
+                </Link>
+              </div>
+            </div>
+
+            {/* Right: Stats Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { value: '17년', label: '공공조달 경력', accent: false },
+                { value: '6개 분야', label: '전문 문서 카테고리', accent: true },
+                { value: '1:1', label: '전문가 맞춤 컨설팅', accent: true },
+                { value: '100%', label: '보안 다운로드', accent: false },
+              ].map((stat, i) => (
+                <div
+                  key={stat.label}
+                  className={`rounded-2xl p-6 md:p-8 ${
+                    stat.accent
+                      ? 'bg-emerald-500/[0.08] border border-emerald-500/[0.12]'
+                      : 'bg-white/[0.04] border border-white/[0.06]'
+                  }`}
+                >
+                  <p className="text-2xl md:text-3xl font-bold tracking-tight text-white">{stat.value}</p>
+                  <p className="text-xs text-zinc-400 mt-2 leading-relaxed">{stat.label}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-
-        {/* 실적 카운터 */}
-        {statsDisplay.length > 0 && (
-          <div className="relative z-10 bg-white shadow-sm">
-            <div className="container mx-auto px-4 py-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0 md:divide-x md:divide-gray-200">
-                {statsDisplay.map((stat) => (
-                  <div key={stat.label} className="flex flex-col items-center text-center py-2">
-                    <span className="text-2xl mb-1">{stat.emoji}</span>
-                    <span className="text-2xl font-bold text-gray-900">{stat.value}</span>
-                    <span className="text-xs text-gray-500 mt-0.5">{stat.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </section>
 
-      {/* Value Props */}
-      <section className="py-20 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      {/* Value Props — Horizontal scroll on mobile, grid on desktop */}
+      <section className="py-24 md:py-32">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {[
-              { icon: FileText, title: '실전 제안서', desc: '실제 수주 성공한 제안서 기반 템플릿' },
-              { icon: Download, title: '즉시 다운로드', desc: '결제 즉시 원본 파일 다운로드' },
-              { icon: Globe, title: '나라장터 최적화', desc: '공공조달 평가기준에 맞춘 구조' },
-              { icon: Handshake, title: '전문가 컨설팅', desc: '입찰 전략부터 발표까지 1:1 코칭' },
-            ].map((item, i) => (
-              <div key={i} className="text-center space-y-3">
-                <div className="w-12 h-12 mx-auto rounded-xl bg-primary/10 flex items-center justify-center">
-                  <item.icon className="w-6 h-6 text-primary" />
+              { icon: FileText, title: '실전 제안서', desc: '실제 수주에 성공한 제안서를 기반으로 제작된 고품질 템플릿' },
+              { icon: Download, title: '즉시 다운로드', desc: '결제 완료 즉시 원본 파일 다운로드. 수정 가능한 원본 제공' },
+              { icon: Globe, title: '나라장터 최적화', desc: '공공조달 평가기준에 맞춘 구조와 핵심 포인트 반영' },
+              { icon: Handshake, title: '전문가 컨설팅', desc: '입찰 전략 수립부터 발표 리허설까지 1:1 전문 코칭' },
+            ].map((item) => (
+              <div key={item.title} className="group p-6 md:p-8 rounded-2xl border border-border/50 bg-card hover:border-primary/20 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-500">
+                <div className="w-11 h-11 rounded-xl bg-primary/8 flex items-center justify-center mb-5 group-hover:bg-primary/12 transition-colors duration-500">
+                  <item.icon className="w-5 h-5 text-primary" />
                 </div>
-                <h3 className="font-semibold">{item.title}</h3>
-                <p className="text-sm text-muted-foreground">{item.desc}</p>
+                <h3 className="font-semibold text-base mb-2 tracking-tight">{item.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 카테고리 쇼케이스 */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl font-bold mb-2">카테고리별 탐색</h2>
-            <p className="text-muted-foreground">필요한 문서 유형을 빠르게 찾아보세요</p>
+      {/* Category Showcase */}
+      <section className="py-24 md:py-32 bg-card border-y border-border/50">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+          <div className="flex items-end justify-between mb-12">
+            <div>
+              <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">CATEGORIES</p>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">카테고리별 탐색</h2>
+            </div>
+            <Link href="/store" className="hidden md:inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors group">
+              전체보기
+              <ChevronRight className="w-4 h-4 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {categoryCounts.map((cat) => (
               <Link
                 key={cat.id}
                 href={`/store?category=${cat.id}`}
                 aria-label={`${cat.name} 카테고리 보기`}
-                className="group flex flex-col items-center justify-center p-5 rounded-2xl border border-border bg-card hover:border-primary/40 hover:bg-primary/5 hover:shadow-md transition-all duration-200 text-center cursor-pointer"
+                className="group flex flex-col items-center justify-center p-6 rounded-2xl border border-border/50 bg-background hover:border-primary/30 hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all duration-500 text-center"
               >
-                <span className="text-3xl mb-2">{cat.emoji}</span>
-                <span className="font-semibold text-sm group-hover:text-primary transition-colors">{cat.name}</span>
+                <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center mb-3 group-hover:bg-primary/12 transition-colors duration-500">
+                  <FileText className="w-5 h-5 text-primary" />
+                </div>
+                <span className="font-semibold text-sm tracking-tight group-hover:text-primary transition-colors duration-300">{cat.name}</span>
                 <span className="text-xs text-muted-foreground mt-1">{cat.count}개</span>
               </Link>
             ))}
@@ -321,22 +352,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 에디터 추천 상품 */}
-      <section className="py-20 bg-muted/20">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-10">
+      {/* Featured Products */}
+      <section className="py-24 md:py-32">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+          <div className="flex items-end justify-between mb-12">
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Badge className="bg-amber-50 text-amber-700 border-amber-200 text-xs">BEST</Badge>
-                <h2 className="text-2xl font-bold">인기 상품</h2>
+              <div className="flex items-center gap-3 mb-3">
+                <p className="text-xs font-semibold text-primary uppercase tracking-widest">BEST SELLERS</p>
+                <Badge className="bg-amber-50 text-amber-700 border-amber-200/50 text-[10px] font-semibold">TOP</Badge>
               </div>
-              <p className="text-muted-foreground">다운로드 수 기준 가장 인기 있는 템플릿</p>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">인기 상품</h2>
+              <p className="text-muted-foreground mt-2">다운로드 수 기준 가장 인기 있는 템플릿</p>
             </div>
-            <Link href="/store" className="inline-flex items-center h-10 min-h-[44px] px-4 rounded-lg border border-border bg-background hover:bg-muted text-sm font-medium transition-colors">
-              전체보기 <ArrowRight className="ml-1 w-4 h-4" />
+            <Link
+              href="/store"
+              className="hidden md:inline-flex items-center h-10 px-5 rounded-full border border-border bg-card hover:bg-muted text-sm font-medium transition-all duration-300 group"
+            >
+              전체보기
+              <ArrowRight className="ml-1.5 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {loadingProducts
               ? Array.from({ length: 6 }).map((_, i) => <FeaturedCardSkeleton key={i} />)
               : products.slice(0, 6).map((product) => (
@@ -344,16 +380,17 @@ export default function Home() {
                 ))
             }
           </div>
-          {/* 무료→유료 업셀 배너 */}
+
+          {/* Upsell Banner */}
           {!loadingProducts && (
-            <div className="mt-8 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 flex flex-col sm:flex-row sm:items-center gap-4 text-white">
+            <div className="mt-10 rounded-2xl bg-[#0C1220] p-8 md:p-10 flex flex-col sm:flex-row sm:items-center gap-6 text-white">
               <div className="flex-1">
-                <p className="font-bold text-lg mb-1">프리미엄 버전으로 낙찰률을 높이세요</p>
-                <p className="text-blue-100 text-sm">무료 템플릿으로 시작했다면, 이제 실전 수주 경험이 담긴 유료 버전으로 업그레이드하세요.</p>
+                <p className="font-bold text-lg tracking-tight mb-1.5">프리미엄 버전으로 낙찰률을 높이세요</p>
+                <p className="text-zinc-400 text-sm leading-relaxed">무료 템플릿으로 시작했다면, 이제 실전 수주 경험이 담긴 유료 버전으로 업그레이드하세요.</p>
               </div>
               <Link
                 href="/store?price=paid"
-                className="shrink-0 inline-flex items-center justify-center h-10 px-5 rounded-lg bg-white text-blue-700 text-sm font-semibold hover:bg-blue-50 transition-colors"
+                className="shrink-0 inline-flex items-center justify-center h-11 px-6 rounded-full bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-400 transition-all duration-300 active:scale-[0.98]"
               >
                 유료 템플릿 보기 <ArrowRight className="ml-1.5 w-4 h-4" />
               </Link>
@@ -362,21 +399,22 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 고객 후기 — DB에 리뷰가 있을 때만 표시 */}
+      {/* Customer Reviews */}
       {reviews.length > 0 && (
-        <section className="py-20">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-10">
-              <h2 className="text-2xl font-bold mb-2">고객 후기</h2>
-              <p className="text-muted-foreground">실제 고객들의 성공 경험을 확인하세요</p>
+        <section className="py-24 md:py-32 bg-card border-y border-border/50">
+          <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+            <div className="text-center mb-14">
+              <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">TESTIMONIALS</p>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">고객 ��기</h2>
+              <p className="text-muted-foreground mt-2">실제 고객들의 성공 경험을 확인하세요</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {reviews.map((t, i) => (
-                <div key={i} className="relative bg-card border border-border rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                  <Quote className="w-8 h-8 text-primary/20 mb-4" />
-                  <p className="text-sm leading-relaxed text-foreground mb-5">{t.text}</p>
+                <div key={i} className="relative bg-background border border-border/50 rounded-2xl p-7 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-500">
+                  <Quote className="w-8 h-8 text-primary/10 mb-5" />
+                  <p className="text-sm leading-relaxed text-foreground mb-6">{t.text}</p>
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
+                    <div className="w-9 h-9 rounded-full bg-primary/8 flex items-center justify-center text-sm font-bold text-primary">
                       {t.author[0]}
                     </div>
                     <div>
@@ -397,11 +435,23 @@ export default function Home() {
       )}
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-2">첫 입찰, 어디서부터 시작해야 할지 모르겠다면?</h2>
-          <p className="text-blue-100 mb-8 max-w-lg mx-auto">무료 입찰 가이드부터 전문가 1:1 컨설팅까지. 프리세일즈가 함께합니다.</p>
-          <Link href="/consulting" className="inline-flex items-center justify-center h-11 px-8 rounded-lg bg-white text-blue-700 hover:bg-blue-50 font-medium text-sm transition-colors">컨설팅 상담 신청</Link>
+      <section className="py-24 md:py-32 bg-[#0C1220] text-white relative overflow-hidden">
+        <div className="absolute top-[-20%] left-[50%] -translate-x-1/2 w-[800px] h-[400px] bg-emerald-500/8 rounded-full blur-[120px]" />
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 text-center relative z-10">
+          <h2 className="text-2xl md:text-4xl font-bold tracking-tighter mb-4">
+            첫 입찰, 어디서부터<br className="md:hidden" /> 시작해야 할지 모르겠다면?
+          </h2>
+          <p className="text-zinc-400 mb-10 max-w-md mx-auto leading-relaxed">
+            무료 입찰 가이드부터 전문가 1:1 컨설팅까지.
+            프리세일즈가 함께합니다.
+          </p>
+          <Link
+            href="/consulting"
+            className="inline-flex items-center justify-center h-12 px-8 rounded-full bg-emerald-500 text-white hover:bg-emerald-400 font-medium text-sm transition-all duration-300 active:scale-[0.98] shadow-[0_0_30px_rgba(16,185,129,0.2)]"
+          >
+            컨설팅 상담 신청
+            <ArrowRight className="ml-2 w-4 h-4" />
+          </Link>
         </div>
       </section>
     </div>

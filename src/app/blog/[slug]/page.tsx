@@ -79,22 +79,22 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-white">
-        <div className="max-w-[1400px] mx-auto px-4 py-12">
-          <Link href="/blog" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-8">
-            <ChevronLeft className="w-4 h-4" />
+      <div className="min-h-screen bg-background">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-12">
+          <Link href="/blog" className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 mb-8 group text-sm font-medium transition-colors duration-300">
+            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-300" />
             블로그로 돌아가기
           </Link>
-          <div className="text-center py-12">
-            <p className="text-gray-500">포스트를 찾을 수 없습니다.</p>
+          <div className="text-center py-16">
+            <p className="text-muted-foreground text-base">포스트를 찾을 수 없습니다.</p>
           </div>
         </div>
       </div>
@@ -108,74 +108,114 @@ export default function BlogPostPage({ params }: { params: Promise<{ slug: strin
   const sanitizedHtml = DOMPurify.sanitize(post.content_html)
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header — 리스트 페이지와 동일 */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-[1400px] mx-auto px-4 py-12">
-          <Link href="/blog" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 group text-sm">
-            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+    <div className="min-h-screen bg-background">
+      {/* Header — Editorial Style */}
+      <div className="bg-background border-b border-border/50">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-12 md:py-16">
+          <Link href="/blog" className="inline-flex items-center gap-2 text-emerald-600 hover:text-emerald-700 mb-8 group text-sm font-medium transition-colors duration-300">
+            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform duration-300" />
             블로그로 돌아가기
           </Link>
-          <div className="text-sm text-gray-500 font-medium mb-2">{post.category}</div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4 leading-tight">{post.title}</h1>
-          <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-            <span>{post.author}</span>
-            <span>·</span>
+
+          {/* Category Pill */}
+          <div className="inline-flex items-center px-3 py-1.5 bg-emerald-50 rounded-full mb-4">
+            <span className="text-xs font-semibold uppercase tracking-widest text-emerald-600">
+              {post.category}
+            </span>
+          </div>
+
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 leading-tight tracking-tight">
+            {post.title}
+          </h1>
+
+          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6 pb-6 border-b border-border/50">
+            <span className="font-medium text-foreground">{post.author}</span>
+            <span className="opacity-40">·</span>
             <span>{formatDate(post.published_at)}</span>
           </div>
+
           <div className="flex flex-wrap gap-2">
             {post.tags?.map((tag) => (
-              <span key={tag} className="text-xs text-gray-500">#{tag}</span>
+              <span key={tag} className="text-xs text-emerald-600 font-medium">
+                #{tag}
+              </span>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto px-4 py-12">
-        <div className="flex gap-8">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-12 md:py-16">
+        <div className="flex gap-8 md:gap-12">
           {/* Main Content */}
           <div className="flex-1">
-
             {/* Content */}
-            <div className="prose prose-sm max-w-none prose-headings:font-bold prose-h2:text-2xl prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-lg prose-h3:mt-6 prose-h3:mb-3 prose-h4:text-base prose-h4:mt-4 prose-h4:mb-2 prose-p:text-gray-700 prose-p:leading-relaxed prose-li:text-gray-700 prose-strong:text-gray-900 prose-ul:my-4 prose-li:my-1 prose-table:border-collapse prose-th:bg-gray-50 prose-th:p-3 prose-th:text-left prose-th:border prose-th:border-gray-200 prose-td:p-3 prose-td:border prose-td:border-gray-200">
+            <article className="prose prose-sm max-w-none
+              prose-headings:font-bold prose-headings:text-foreground prose-headings:tracking-tight
+              prose-h2:text-2xl md:prose-h2:text-3xl prose-h2:mt-10 prose-h2:mb-5 prose-h2:leading-tight
+              prose-h3:text-lg md:prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4 prose-h3:leading-tight
+              prose-h4:text-base prose-h4:mt-6 prose-h4:mb-3
+              prose-p:text-muted-foreground prose-p:leading-relaxed prose-p:text-base
+              prose-strong:text-foreground prose-strong:font-semibold
+              prose-em:text-muted-foreground
+              prose-a:text-emerald-600 prose-a:underline hover:prose-a:text-emerald-700 prose-a:transition-colors
+              prose-ul:my-6 prose-ul:pl-6 prose-li:text-muted-foreground prose-li:my-2 prose-li:leading-relaxed
+              prose-ol:my-6 prose-ol:pl-6 prose-li:text-muted-foreground
+              prose-code:text-emerald-700 prose-code:bg-emerald-50 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm prose-code:font-mono
+              prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-pre:rounded-xl prose-pre:p-4 prose-pre:overflow-x-auto
+              prose-pre:text-foreground
+              prose-blockquote:border-l-4 prose-blockquote:border-emerald-200 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-muted-foreground prose-blockquote:my-6
+              prose-img:rounded-xl prose-img:border prose-img:border-border/50 prose-img:my-8
+              prose-table:border-collapse prose-table:w-full prose-table:my-6
+              prose-th:bg-muted prose-th:px-4 prose-th:py-3 prose-th:text-left prose-th:font-semibold prose-th:text-foreground prose-th:border prose-th:border-border
+              prose-td:px-4 prose-td:py-3 prose-td:border prose-td:border-border prose-td:text-muted-foreground
+              prose-hr:border-border/50 prose-hr:my-8
+            ">
               <div dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />
-            </div>
+            </article>
 
-            <div className="border-t border-gray-100 my-8" />
+            <div className="border-t border-border/50 my-12 md:my-16" />
 
             {/* Related Posts */}
             {relatedPosts.length > 0 && (
-              <div className="mt-12">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">관련 글</h2>
+              <section className="mt-12 md:mt-16">
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8 tracking-tight">관련 글</h2>
                 <div className="grid grid-cols-1 gap-6">
                   {relatedPosts.map((relatedPost) => (
                     <Link key={relatedPost.id} href={`/blog/${relatedPost.slug}`}>
-                      <div className="border border-gray-100 rounded-lg p-4 hover:shadow-md hover:border-gray-200 transition-all group cursor-pointer">
-                        <p className="text-xs text-gray-500 mb-2">{relatedPost.category}</p>
-                        <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
+                      <div className="bg-card border border-border/50 rounded-2xl p-6 hover:border-emerald-200/50 hover:bg-muted/50 transition-all duration-500 group cursor-pointer">
+                        <div className="inline-flex items-center px-3 py-1 bg-emerald-50 rounded-full mb-3">
+                          <p className="text-xs font-semibold uppercase tracking-widest text-emerald-600">
+                            {relatedPost.category}
+                          </p>
+                        </div>
+                        <h3 className="font-bold text-lg text-foreground group-hover:text-emerald-600 transition-colors duration-300 line-clamp-2 mb-3">
                           {relatedPost.title}
                         </h3>
-                        <p className="text-sm text-gray-600 mt-2 line-clamp-2">{relatedPost.excerpt}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {relatedPost.excerpt}
+                        </p>
                       </div>
                     </Link>
                   ))}
                 </div>
-              </div>
+              </section>
             )}
           </div>
 
           {/* Sidebar */}
-          <aside className="w-[230px] hidden lg:block">
-            <div className="sticky top-[80px]">
-              <h3 className="text-sm font-bold text-gray-900 mb-4">최신 글</h3>
-              <div className="space-y-3">
+          <aside className="w-64 hidden lg:block shrink-0">
+            <div className="sticky top-[100px]">
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-foreground mb-6">최신 글</h3>
+              <div className="space-y-4">
                 {allPosts.slice(0, 30).map((item) => (
                   <Link key={item.id} href={`/blog/${item.slug}`}>
-                    <div className={`cursor-pointer transition-colors group ${item.id === post.id ? 'bg-gray-100 rounded px-2 py-1' : ''}`}>
-                      <p className={`text-xs font-medium group-hover:text-blue-600 line-clamp-2 leading-snug ${item.id === post.id ? 'text-blue-600' : 'text-gray-900'}`}>
+                    <div className={`cursor-pointer transition-all duration-300 group rounded-lg px-3 py-2 ${item.id === post.id ? 'bg-emerald-50' : 'hover:bg-muted/50'}`}>
+                      <p className={`text-sm font-semibold line-clamp-2 leading-snug transition-colors duration-300 ${
+                        item.id === post.id ? 'text-emerald-600' : 'text-foreground group-hover:text-emerald-600'
+                      }`}>
                         {item.title}
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">{formatDate(item.published_at)}</p>
+                      <p className="text-xs text-muted-foreground mt-2">{formatDate(item.published_at)}</p>
                     </div>
                   </Link>
                 ))}

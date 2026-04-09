@@ -11,7 +11,7 @@ import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, ArrowRight, ShoppingCart, Check, Download, Play, BookOpen, FileDown, Copy, Share2, Mail } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ShoppingCart, Check, Download, Play, BookOpen, FileDown, Copy, Share2, Mail, FileText, AlertTriangle, Lightbulb } from 'lucide-react'
 import { PdfPreviewModal } from '@/components/pdf-preview-modal'
 import { ProductReviews } from '@/components/reviews/ProductReviews'
 import * as gtag from '@/lib/gtag'
@@ -264,24 +264,24 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   ]
 
   return (
-    <div className="container mx-auto px-4 py-10">
-      <Link href="/store" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6">
-        <ArrowLeft className="w-4 h-4 mr-1" /> 스토어로 돌아가기
+    <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-10">
+      <Link href="/store" className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border/50 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-300 mb-8">
+        <ArrowLeft className="w-4 h-4" /> 스토어로 돌아가기
       </Link>
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-8 lg:gap-12">
         {/* Left: Image + Preview */}
-        <div className="space-y-3">
-          <div className="relative rounded-xl overflow-hidden bg-muted flex items-center justify-center border border-gray-100">
+        <div className="space-y-4">
+          <div className="relative rounded-2xl overflow-hidden bg-muted flex items-center justify-center border border-border/50 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
             {product.thumbnail_url ? (
               <Image src={product.thumbnail_url} alt={product.title} width={400} height={300} className="w-full h-auto object-contain max-h-[500px]" />
             ) : (
-              <div className="w-full aspect-[4/3] bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center">
-                <span className="text-6xl">📄</span>
+              <div className="w-full aspect-[4/3] bg-gradient-to-br from-emerald-900 to-emerald-700 flex items-center justify-center">
+                <FileText className="w-16 h-16 text-emerald-200" />
               </div>
             )}
-            <Badge className={`absolute top-4 left-4 border ${product.is_free ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
-              {product.is_free ? '무료' : '유료'}
+            <Badge className={`absolute top-4 left-4 border font-bold tracking-tight ${product.is_free ? 'bg-primary text-white border-primary' : 'bg-zinc-900 text-white border-zinc-900'}`}>
+              {product.is_free ? 'FREE' : '유료'}
             </Badge>
           </div>
 
@@ -289,10 +289,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           {product.preview_pdf_url && (
             <button
               onClick={() => setShowPdfPreview(true)}
-              className="w-full bg-gray-50 border border-gray-200 rounded-lg py-3 hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 text-sm font-medium text-gray-700"
+              className="w-full bg-card border border-border/50 rounded-2xl py-3 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-center justify-center gap-2 text-sm font-medium text-foreground"
             >
               <BookOpen className="w-4 h-4" />
-              📖 문서 미리보기 ▶️
+              문서 미리보기
             </button>
           )}
         </div>
@@ -300,32 +300,32 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         {/* Right: Info */}
         <div className="space-y-6">
           <div>
-            <div className="flex gap-2 flex-wrap mb-1">
+            <div className="flex gap-2 flex-wrap mb-2">
               {getCategoryNames(product).map((name) => (
-                <span key={name} className="text-sm text-muted-foreground">{name}</span>
+                <span key={name} className="text-xs font-semibold text-muted-foreground uppercase tracking-tight">{name}</span>
               ))}
             </div>
-            <h1 className="text-2xl font-bold">{product.title}</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{product.title}</h1>
           </div>
 
           <div className="flex items-baseline gap-3">
             {product.is_free ? (
-              <span className="text-3xl font-bold text-emerald-600">무료</span>
+              <span className="text-4xl font-bold text-primary">무료</span>
             ) : (
               <>
-                <span className="text-3xl font-bold text-primary">{formatPrice(product.price)}</span>
+                <span className="text-4xl font-bold text-primary">{formatPrice(product.price)}</span>
                 {product.original_price > product.price && (
-                  <span className="text-lg text-muted-foreground line-through">{formatPrice(product.original_price)}</span>
+                  <span className="text-xl text-muted-foreground line-through">{formatPrice(product.original_price)}</span>
                 )}
-                {discount > 0 && <Badge className="bg-red-500 text-white border-0">-{discount}%</Badge>}
+                {discount > 0 && <Badge className="bg-red-500 text-white border-0 font-bold">-{discount}%</Badge>}
               </>
             )}
           </div>
 
           {matchDiscount && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
               <p className="text-sm font-semibold text-emerald-800 mb-1">
-                🎉 구매 이력 할인 적용 가능!
+                구매 이력 할인 적용 가능!
               </p>
               <p className="text-sm text-emerald-700">
                 <span className="font-medium">{matchDiscount.sourceTitle}</span>을 이미 구매하셨으므로
@@ -336,42 +336,42 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </div>
           )}
 
-          <Separator />
+          <Separator className="my-6" />
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="space-y-2 text-sm divide-y divide-border/50">
             {product.format && (
-              <div>
+              <div className="py-2 flex justify-between">
                 <p className="text-muted-foreground">파일 형식</p>
                 <p className="font-medium">{product.format}</p>
               </div>
             )}
             {product.pages && (
-              <div>
+              <div className="py-2 flex justify-between">
                 <p className="text-muted-foreground">페이지 수</p>
                 <p className="font-medium">{product.pages}p</p>
               </div>
             )}
             {product.file_size && (
-              <div>
+              <div className="py-2 flex justify-between">
                 <p className="text-muted-foreground">파일 크기</p>
                 <p className="font-medium">{product.file_size}</p>
               </div>
             )}
-            <div>
+            <div className="py-2 flex justify-between">
               <p className="text-muted-foreground">카테고리</p>
               <p className="font-medium">{getCategoryNames(product).join(', ') || '-'}</p>
             </div>
-            <div>
+            <div className="py-2 flex justify-between">
               <p className="text-muted-foreground">다운로드</p>
               <p className="font-medium">{product.download_count}회</p>
             </div>
           </div>
 
-          <Separator />
+          <Separator className="my-6" />
 
           {product.description && !product.description_html && (
             <div>
-              <h3 className="font-semibold mb-2">상품 설명</h3>
+              <h3 className="font-semibold mb-3 tracking-tight">상품 설명</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
             </div>
           )}
@@ -385,12 +385,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           )}
 
           {/* Desktop CTA */}
-          <div className="hidden sm:flex gap-3">
+          <div className="hidden sm:flex gap-3 pt-2">
             {canDownload ? (
               <button
                 onClick={() => productFiles.length > 0 ? handleDownload(productFiles[0]?.id) : undefined}
                 disabled={downloading || productFiles.length === 0}
-                className={`flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-60 ${productFiles.length === 0 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+                className={`flex-1 h-13 rounded-full font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-[0.98] disabled:opacity-60 ${productFiles.length === 0 ? 'bg-muted text-muted-foreground cursor-not-allowed' : 'bg-primary text-white hover:shadow-[0_8px_30px_rgba(5,150,105,0.3)]'}`}
               >
                 <Download className="w-4 h-4" />
                 {downloading ? '다운로드 중...' : productFiles.length === 0 ? '파일 준비중' : '다운로드'}
@@ -398,7 +398,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             ) : !isLoggedIn && product.is_free ? (
               <Link
                 href={`/auth/login?redirect=/store/${id}`}
-                className="flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors bg-emerald-600 text-white hover:bg-emerald-700"
+                className="flex-1 h-13 rounded-full font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 bg-primary text-white hover:shadow-[0_8px_30px_rgba(5,150,105,0.3)] active:scale-[0.98]"
               >
                 <Download className="w-4 h-4" />
                 로그인 후 무료 다운로드
@@ -406,7 +406,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             ) : !isLoggedIn && !product.is_free ? (
               <Link
                 href={`/auth/login?redirect=/store/${id}`}
-                className="flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
+                className="flex-1 h-13 rounded-full font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 bg-primary text-white hover:shadow-[0_8px_30px_rgba(5,150,105,0.3)] active:scale-[0.98]"
               >
                 <ShoppingCart className="w-4 h-4" />
                 로그인 후 구매하기
@@ -428,10 +428,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   })
                   addToast(wasInCart ? '장바구니에서 제거되었습니다' : '장바구니에 추가되었습니다', wasInCart ? 'info' : 'success')
                 }}
-                className={`flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors ${
+                className={`flex-1 h-13 rounded-full font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-[0.98] ${
                   inCart
-                    ? 'bg-muted text-muted-foreground border border-border'
-                    : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                    ? 'bg-muted text-muted-foreground border border-border/50'
+                    : 'bg-primary text-white hover:shadow-[0_8px_30px_rgba(5,150,105,0.3)]'
                 }`}
               >
                 {inCart ? <><Check className="w-4 h-4" /> 장바구니에서 빼기</> :
@@ -442,10 +442,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
           {/* Product Files List */}
           {canDownload && productFiles.length > 1 && (
-            <div className="border border-border rounded-lg p-4 space-y-2">
-              <h3 className="text-sm font-semibold mb-3">첨부 파일</h3>
+            <div className="border border-border/50 rounded-2xl p-4 space-y-2">
+              <h3 className="text-sm font-semibold mb-3 tracking-tight">첨부 파일</h3>
               {productFiles.map((file) => (
-                <div key={file.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/50 transition-colors">
+                <div key={file.id} className="flex items-center justify-between py-2 px-3 rounded-xl hover:bg-muted/50 transition-colors duration-300">
                   <div className="flex items-center gap-2 min-w-0">
                     <FileDown className="w-4 h-4 text-muted-foreground shrink-0" />
                     <span className="text-sm truncate">{file.file_name}</span>
@@ -454,7 +454,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <button
                     onClick={() => handleDownload(file.id)}
                     disabled={downloading}
-                    className="text-xs px-3 py-1.5 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors shrink-0 ml-2"
+                    className="text-xs px-3 py-1.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors duration-300 shrink-0 ml-2 font-medium"
                   >
                     다운로드
                   </button>
@@ -463,16 +463,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </div>
           )}
 
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-            <p className="text-xs text-amber-800">⚠️ 디지털 상품 특성상 다운로드 후 환불이 제한될 수 있습니다.</p>
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3">
+            <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-800">디지털 상품 특성상 다운로드 후 환불이 제한될 수 있습니다.</p>
           </div>
 
           {/* Share buttons */}
           {(() => {
             const pageUrl = typeof window !== 'undefined' ? window.location.href : `https://presales.co.kr/store/${id}`
             return (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs text-muted-foreground">공유:</span>
+              <div className="flex items-center gap-2 flex-wrap pt-2">
+                <span className="text-xs text-muted-foreground font-medium">공유:</span>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(pageUrl).then(() => {
@@ -481,7 +482,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     })
                   }}
                   title="링크 복사"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border/50 text-xs font-medium hover:bg-muted transition-all duration-300 cursor-pointer"
                 >
                   <Copy className="w-3.5 h-3.5" />
                   {copied ? '복사됨!' : '링크 복사'}
@@ -491,7 +492,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   target="_blank"
                   rel="noopener noreferrer"
                   title="카카오톡 공유"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border/50 text-xs font-medium hover:bg-muted transition-all duration-300 cursor-pointer"
                 >
                   <Share2 className="w-3.5 h-3.5" />
                   카카오톡
@@ -499,7 +500,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 <a
                   href={`mailto:?subject=${encodeURIComponent(product.title)}&body=${encodeURIComponent(pageUrl)}`}
                   title="이메일 공유"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-xs font-medium hover:bg-muted transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border/50 text-xs font-medium hover:bg-muted transition-all duration-300 cursor-pointer"
                 >
                   <Mail className="w-3.5 h-3.5" />
                   이메일
@@ -511,16 +512,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* Tabs */}
-      <div className="mt-12">
-        <div className="border-b border-border sticky top-0 bg-background z-10">
+      <div className="mt-14">
+        <div className="border-b border-border/50 sticky top-0 bg-background z-10">
           <nav className="flex gap-0 -mb-px">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 sm:px-6 py-3 min-h-[44px] text-sm transition-colors border-b-2 ${
+                className={`px-4 sm:px-6 py-4 min-h-[44px] text-sm font-medium transition-all duration-300 border-b-2 tracking-tight ${
                   activeTab === tab.id
-                    ? 'border-primary text-primary font-semibold'
+                    ? 'border-primary text-primary'
                     : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -555,10 +556,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <div>
               {product.youtube_id ? (
                 <div className="max-w-3xl mx-auto">
-                  <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                  <div className="relative w-full rounded-2xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.06)]" style={{ paddingBottom: '56.25%' }}>
                     <iframe
                       src={`https://www.youtube.com/embed/${product.youtube_id}`}
-                      className="absolute inset-0 w-full h-full rounded-lg"
+                      className="absolute inset-0 w-full h-full"
                       allowFullScreen
                     />
                   </div>
@@ -583,14 +584,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
       {/* 컨설팅 업셀 CTA 배너 — 유료 상품에만 표시 */}
       {product && !product.is_free && (
-        <div className="mt-10 rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="flex-1">
-            <p className="font-semibold text-blue-900 mb-1">💡 이 문서만으로 부족하신가요?</p>
-            <p className="text-sm text-blue-800/70">전문 컨설턴트가 귀사에 맞는 맞춤 제안서를 함께 만들어 드립니다.</p>
+        <div className="mt-12 rounded-2xl border border-white/20 bg-[#0C1220] p-6 flex flex-col sm:flex-row sm:items-center gap-4 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
+          <div className="flex-1 flex gap-4">
+            <div className="shrink-0">
+              <Lightbulb className="w-6 h-6 text-yellow-400" />
+            </div>
+            <div>
+              <p className="font-semibold text-white mb-1 tracking-tight">이 문서만으로 부족하신가요?</p>
+              <p className="text-sm text-white/70">전문 컨설턴트가 귀사에 맞는 맞춤 제안서를 함께 만들어 드립니다.</p>
+            </div>
           </div>
           <Link
             href="/consulting"
-            className="shrink-0 inline-flex items-center justify-center h-10 px-5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+            className="shrink-0 inline-flex items-center justify-center h-11 px-6 rounded-full bg-primary text-white text-sm font-semibold hover:shadow-[0_8px_30px_rgba(5,150,105,0.4)] transition-all duration-300 active:scale-[0.98]"
           >
             컨설팅 문의하기 <ArrowRight className="ml-1.5 w-4 h-4" />
           </Link>
@@ -599,24 +605,24 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
       {/* Related */}
       {related.length > 0 && (
-        <div className="mt-12">
-          <h2 className="text-xl font-bold mb-6">함께 보면 좋은 상품</h2>
+        <div className="mt-14">
+          <h2 className="text-2xl font-bold mb-8 tracking-tight">함께 보면 좋은 상품</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {related.slice(0, 4).map((p) => (
               <Link key={p.id} href={`/store/${p.id}`} className="group">
-                <div className="border border-border rounded-xl overflow-hidden bg-card hover:shadow-md hover:-translate-y-1 transition-all">
+                <div className="border border-border/50 rounded-2xl overflow-hidden bg-card hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-500">
                   <div className="aspect-[4/3] overflow-hidden bg-muted">
                     {p.thumbnail_url ? (
                       <Image src={p.thumbnail_url} alt={p.title} width={400} height={300} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center">
-                        <span className="text-4xl">📄</span>
+                      <div className="w-full h-full bg-gradient-to-br from-emerald-900 to-emerald-700 flex items-center justify-center">
+                        <FileText className="w-10 h-10 text-emerald-200" />
                       </div>
                     )}
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold text-sm line-clamp-2">{p.title}</h3>
-                    <p className="text-primary font-bold mt-2">
+                    <h3 className="font-semibold text-sm line-clamp-2 tracking-tight">{p.title}</h3>
+                    <p className={`font-bold mt-2 ${p.is_free ? 'text-primary' : 'text-foreground'}`}>
                       {p.is_free ? '무료' : formatPrice(p.price)}
                     </p>
                   </div>
@@ -662,13 +668,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       )}
 
       {/* Mobile Sticky CTA */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border p-3 safe-area-pb">
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-border/50 p-3 safe-area-pb">
         <div className="flex gap-2">
           {canDownload ? (
             <button
               onClick={() => productFiles.length > 0 ? handleDownload(productFiles[0]?.id) : undefined}
               disabled={downloading || productFiles.length === 0}
-              className={`flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-60 ${productFiles.length === 0 ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-emerald-600 text-white hover:bg-emerald-700'}`}
+              className={`flex-1 h-13 rounded-full font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-[0.98] disabled:opacity-60 ${productFiles.length === 0 ? 'bg-muted text-muted-foreground cursor-not-allowed' : 'bg-primary text-white'}`}
             >
               <Download className="w-4 h-4" />
               {downloading ? '다운로드 중...' : productFiles.length === 0 ? '파일 준비중' : '다운로드'}
@@ -676,7 +682,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           ) : !isLoggedIn && product.is_free ? (
             <Link
               href={`/auth/login?redirect=/store/${id}`}
-              className="flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors bg-emerald-600 text-white hover:bg-emerald-700"
+              className="flex-1 h-13 rounded-full font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 bg-primary text-white active:scale-[0.98]"
             >
               <Download className="w-4 h-4" />
               로그인 후 무료 다운로드
@@ -684,7 +690,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           ) : !isLoggedIn && !product.is_free ? (
             <Link
               href={`/auth/login?redirect=/store/${id}`}
-              className="flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors bg-primary text-primary-foreground hover:bg-primary/90"
+              className="flex-1 h-13 rounded-full font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 bg-primary text-white active:scale-[0.98]"
             >
               <ShoppingCart className="w-4 h-4" />
               로그인 후 구매하기
@@ -706,10 +712,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 })
                 addToast(wasInCart ? '장바구니에서 제거되었습니다' : '장바구니에 추가되었습니다', wasInCart ? 'info' : 'success')
               }}
-              className={`flex-1 h-12 rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors ${
+              className={`flex-1 h-13 rounded-full font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-[0.98] ${
                 inCart
-                  ? 'bg-muted text-muted-foreground border border-border'
-                  : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  ? 'bg-muted text-muted-foreground border border-border/50'
+                  : 'bg-primary text-white'
               }`}
             >
               {inCart ? <><Check className="w-4 h-4" /> 장바구니에서 빼기</> :

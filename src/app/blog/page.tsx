@@ -60,37 +60,44 @@ export default function BlogPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-[1400px] mx-auto px-4 py-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">블로그</h1>
-          <p className="text-lg text-gray-600">공공조달 전문가의 인사이트</p>
+    <div className="min-h-screen bg-background">
+      {/* Header — Editorial Style Hero */}
+      <div className="bg-background border-b border-border/50">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-16 md:py-20">
+          <div className="mb-8">
+            <span className="text-xs font-semibold uppercase tracking-widest text-emerald-600">커뮤니티</span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-3 tracking-tight leading-tight">
+            블로그
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-2xl">
+            공공조달 전문가의 인사이트와 실무 경험을 공유합니다
+          </p>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[1400px] mx-auto px-4 py-12">
-        <div className="flex gap-8">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-12 md:py-16">
+        <div className="flex gap-8 md:gap-12">
           {/* Left Column: Posts */}
           <div className="flex-1">
             {/* Search */}
-            <div className="mb-8">
+            <div className="mb-10 md:mb-12">
               <div className="relative">
-                <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input
                   type="text"
-                  placeholder="제목 또는 태그로 검색..."
+                  placeholder="제목, 태그, 카테고리로 검색..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                  className="w-full pl-12 pr-5 py-3 bg-muted border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600/20 focus:ring-offset-2 ring-offset-background transition-all duration-300 text-foreground placeholder:text-muted-foreground"
                 />
               </div>
             </div>
@@ -101,32 +108,34 @@ export default function BlogPage() {
                 {filteredPosts.map((post, index) => (
                   <div key={post.id}>
                     <Link href={`/blog/${post.slug}`}>
-                      <div className="py-6 cursor-pointer hover:bg-gray-50 transition-colors px-0 group">
-                        <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                          <span className="font-medium">{post.category}</span>
-                          <span>·</span>
+                      <div className="py-6 md:py-7 px-4 md:px-6 cursor-pointer hover:bg-muted/50 rounded-xl transition-all duration-500 group -mx-4 md:-mx-6">
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground mb-2">
+                          <span className="font-medium text-foreground">{post.category}</span>
+                          <span className="opacity-40">·</span>
                           <span>{formatDate(post.published_at)}</span>
                         </div>
-                        <h2 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                        <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2 group-hover:text-emerald-600 transition-colors duration-300 tracking-tight">
                           {post.title}
                         </h2>
-                        <p className="text-gray-600 text-sm leading-relaxed line-clamp-2 mb-3">
+                        <p className="text-muted-foreground text-sm md:text-base leading-relaxed line-clamp-2 mb-4">
                           {post.excerpt}
                         </p>
                         <div className="flex flex-wrap gap-2">
                           {post.tags?.map((tag) => (
-                            <span key={tag} className="text-xs text-gray-500">#{tag}</span>
+                            <span key={tag} className="text-xs text-emerald-600 font-medium">
+                              #{tag}
+                            </span>
                           ))}
                         </div>
                       </div>
                     </Link>
-                    {index < filteredPosts.length - 1 && <div className="border-b border-gray-100" />}
+                    {index < filteredPosts.length - 1 && <div className="border-b border-border/50 mx-4 md:mx-6" />}
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <p className="text-gray-500 text-sm">
+              <div className="text-center py-16">
+                <p className="text-muted-foreground text-base">
                   {posts.length === 0 ? '아직 게시된 글이 없습니다.' : '검색 결과가 없습니다. 다른 키워드를 시도해보세요.'}
                 </p>
               </div>
@@ -134,17 +143,17 @@ export default function BlogPage() {
           </div>
 
           {/* Right Column: Sidebar */}
-          <aside className="w-[230px] hidden lg:block">
-            <div className="sticky top-[80px]">
-              <h3 className="text-sm font-bold text-gray-900 mb-4">최신 글</h3>
-              <div className="space-y-3">
+          <aside className="w-64 hidden lg:block shrink-0">
+            <div className="sticky top-[100px]">
+              <h3 className="text-xs font-semibold uppercase tracking-widest text-foreground mb-6">최신 글</h3>
+              <div className="space-y-4">
                 {posts.slice(0, 30).map((post) => (
                   <Link key={post.id} href={`/blog/${post.slug}`}>
-                    <div className="cursor-pointer hover:text-blue-600 transition-colors group">
-                      <p className="text-xs text-gray-900 font-medium group-hover:text-blue-600 line-clamp-2 leading-snug">
+                    <div className="cursor-pointer group transition-all duration-300">
+                      <p className="text-sm font-semibold text-foreground group-hover:text-emerald-600 line-clamp-2 leading-snug transition-colors duration-300">
                         {post.title}
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">{formatDate(post.published_at)}</p>
+                      <p className="text-xs text-muted-foreground mt-2">{formatDate(post.published_at)}</p>
                     </div>
                   </Link>
                 ))}

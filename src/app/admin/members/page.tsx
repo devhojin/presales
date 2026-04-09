@@ -183,7 +183,7 @@ function exportCSV(members: Profile[], statsMap: Map<string, MemberStats>) {
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     completed: 'bg-green-50 text-green-700 border border-green-200',
-    paid: 'bg-blue-50 text-blue-700 border border-blue-200',
+    paid: 'bg-primary/8 text-primary border border-primary/20',
     pending: 'bg-yellow-50 text-yellow-700 border border-yellow-200',
     cancelled: 'bg-red-50 text-red-700 border border-red-200',
     answered: 'bg-green-50 text-green-700 border border-green-200',
@@ -197,7 +197,7 @@ function StatusBadge({ status }: { status: string }) {
   }
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${styles[status] || 'bg-gray-50 text-gray-600 border border-gray-200'}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${styles[status] || 'bg-muted text-muted-foreground border border-border'}`}
     >
       {label[status] || status}
     </span>
@@ -207,12 +207,12 @@ function StatusBadge({ status }: { status: string }) {
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-start gap-3 py-3">
-      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">
+      <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] text-gray-400 mb-0.5">{label}</p>
-        <p className="text-sm font-medium text-gray-900 break-all">{value || '-'}</p>
+        <p className="text-[11px] text-muted-foreground mb-0.5">{label}</p>
+        <p className="text-sm font-medium text-foreground break-all">{value || '-'}</p>
       </div>
     </div>
   )
@@ -262,23 +262,23 @@ function ConfirmModal({
             {icon}
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-            <p className="text-xs text-gray-500">{subtitle}</p>
+            <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
           </div>
         </div>
-        <div className="text-sm text-gray-700 mb-6">{message}</div>
+        <div className="text-sm text-foreground mb-6">{message}</div>
         <div className="flex gap-3 justify-end">
           <button
             onClick={onCancel}
             disabled={loading}
-            className="cursor-pointer px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+            className="cursor-pointer px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-muted transition-colors disabled:opacity-50"
           >
             취소
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
-            className={`cursor-pointer px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 ${confirmClass}`}
+            className={`cursor-pointer px-4 py-2 text-sm font-medium rounded-xl transition-colors disabled:opacity-50 ${confirmClass}`}
           >
             {loading ? '처리 중...' : confirmLabel}
           </button>
@@ -349,12 +349,12 @@ function MemoModal({
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
       <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4 max-h-[80vh] flex flex-col">
         <div className="flex items-center justify-between mb-4 shrink-0">
-          <h3 className="text-sm font-semibold text-gray-900">
+          <h3 className="text-sm font-semibold text-foreground">
             관리자 메모 - {memberName || '(이름 없음)'}
           </h3>
           <button
             onClick={onCancel}
-            className="cursor-pointer w-7 h-7 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+            className="cursor-pointer w-7 h-7 rounded-xl hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-muted-foreground transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -362,14 +362,14 @@ function MemoModal({
         {/* Memo history */}
         <div className="flex-1 overflow-y-auto space-y-2 mb-4 min-h-0">
           {memos.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-4">메모가 없습니다</p>
+            <p className="text-xs text-muted-foreground text-center py-4">메모가 없습니다</p>
           ) : (
             memos.map((m, idx) => (
-              <div key={idx} className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 group">
+              <div key={idx} className="bg-muted border border-border rounded-xl px-3 py-2.5 group">
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-gray-700">{m.admin_name}</span>
-                    <span className="text-[11px] text-gray-400">
+                    <span className="text-xs font-semibold text-foreground">{m.admin_name}</span>
+                    <span className="text-[11px] text-muted-foreground">
                       {new Date(m.created_at).toLocaleString('ko-KR', {
                         year: 'numeric', month: '2-digit', day: '2-digit',
                         hour: '2-digit', minute: '2-digit',
@@ -379,13 +379,13 @@ function MemoModal({
                   <button
                     onClick={() => handleDelete(idx)}
                     disabled={saving}
-                    className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all cursor-pointer"
+                    className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-all cursor-pointer"
                     title="삭제"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{m.content}</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{m.content}</p>
               </div>
             ))
           )}
@@ -404,12 +404,12 @@ function MemoModal({
               }}
               placeholder="새 메모를 입력하세요... (Ctrl+Enter로 등록)"
               rows={2}
-              className="flex-1 text-sm text-gray-700 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-gray-400"
+              className="flex-1 text-sm text-foreground bg-muted border border-border rounded-xl px-3 py-2 resize-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
             />
             <button
               onClick={handleAdd}
               disabled={saving || !newContent.trim()}
-              className="cursor-pointer self-end px-3 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="cursor-pointer self-end px-3 py-2 text-xs font-medium text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               {saving ? '...' : '등록'}
             </button>
@@ -451,19 +451,19 @@ function RowActionsMenu({
           e.stopPropagation()
           setOpen((p) => !p)
         }}
-        className="cursor-pointer w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+        className="cursor-pointer w-8 h-8 flex items-center justify-center rounded-xl text-muted-foreground hover:text-muted-foreground hover:bg-muted transition-colors"
       >
         <MoreHorizontal className="w-4 h-4" />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 w-36 z-30">
+        <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-border py-1 w-36 z-30">
           <button
             onClick={(e) => {
               e.stopPropagation()
               setOpen(false)
               onRoleChange()
             }}
-            className="cursor-pointer w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+            className="cursor-pointer w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted flex items-center gap-2"
           >
             <Shield className="w-3.5 h-3.5" />
             권한변경
@@ -632,34 +632,34 @@ function MemberDetailModal({
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
               {(member.name || '?')[0]}
             </div>
             <div>
-              <h2 className="text-base font-semibold text-gray-900">{member.name || '(이름 없음)'}</h2>
-              <p className="text-xs text-gray-500">{member.email}</p>
+              <h2 className="text-base font-semibold text-foreground">{member.name || '(이름 없음)'}</h2>
+              <p className="text-xs text-muted-foreground">{member.email}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="cursor-pointer w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+            className="cursor-pointer w-8 h-8 rounded-xl hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-muted-foreground transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-gray-100 px-6">
+        <div className="flex border-b border-border/50 px-6">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
               className={`cursor-pointer flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab.key
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-blue-600 text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
               {tab.icon}
@@ -674,10 +674,10 @@ function MemberDetailModal({
           {activeTab === 'info' && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                   회원 기본정보
                 </h3>
-                <div className="bg-gray-50 rounded-xl p-4 space-y-0 divide-y divide-gray-200/60">
+                <div className="bg-muted rounded-xl p-4 space-y-0 divide-y divide-gray-200/60">
                   <InfoRow icon={<User className="w-4 h-4" />} label="이름" value={member.name || '-'} />
                   <InfoRow icon={<Mail className="w-4 h-4" />} label="이메일" value={member.email} />
                   <InfoRow icon={<Phone className="w-4 h-4" />} label="연락처" value={member.phone || '-'} />
@@ -692,21 +692,21 @@ function MemberDetailModal({
 
               {/* 권한 변경 */}
               <div>
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                   권한 관리
                 </h3>
-                <div className="bg-gray-50 rounded-xl p-4 flex items-center justify-between">
+                <div className="bg-muted rounded-xl p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center">
-                      <Shield className="w-4 h-4 text-gray-500" />
+                    <div className="w-8 h-8 rounded-xl bg-white border border-border flex items-center justify-center">
+                      <Shield className="w-4 h-4 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">현재 권한</p>
+                      <p className="text-sm font-medium text-foreground">현재 권한</p>
                       <Badge
                         className={
                           currentRole === 'admin'
                             ? 'bg-red-50 text-red-700 border border-red-200 mt-1'
-                            : 'bg-gray-100 text-gray-600 border border-gray-200 mt-1'
+                            : 'bg-muted text-muted-foreground border border-border mt-1'
                         }
                       >
                         {currentRole === 'admin' ? '관리자' : '일반'}
@@ -715,10 +715,10 @@ function MemberDetailModal({
                   </div>
                   <button
                     onClick={() => setShowRoleConfirm(true)}
-                    className={`cursor-pointer px-4 py-2 text-xs font-medium rounded-lg transition-colors ${
+                    className={`cursor-pointer px-4 py-2 text-xs font-medium rounded-xl transition-colors ${
                       currentRole === 'admin'
-                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                        ? 'bg-muted text-foreground hover:bg-gray-300'
+                        : 'bg-primary text-white hover:bg-primary/90'
                     }`}
                   >
                     {currentRole === 'admin' ? '일반으로 변경' : '관리자로 변경'}
@@ -728,21 +728,21 @@ function MemberDetailModal({
 
               {/* 관리자 메모 (threaded) */}
               <div>
-                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                   관리자 메모
                 </h3>
-                <div className="bg-gray-50 rounded-xl p-4 space-y-3">
+                <div className="bg-muted rounded-xl p-4 space-y-3">
                   {/* History */}
                   {memos.length === 0 ? (
-                    <p className="text-xs text-gray-400 text-center py-2">메모가 없습니다</p>
+                    <p className="text-xs text-muted-foreground text-center py-2">메모가 없습니다</p>
                   ) : (
                     <div className="space-y-2 max-h-48 overflow-y-auto">
                       {memos.map((m, idx) => (
-                        <div key={idx} className="bg-white border border-gray-200 rounded-lg px-3 py-2.5 group">
+                        <div key={idx} className="bg-white border border-border rounded-xl px-3 py-2.5 group">
                           <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-semibold text-gray-700">{m.admin_name}</span>
-                              <span className="text-[11px] text-gray-400">
+                              <span className="text-xs font-semibold text-foreground">{m.admin_name}</span>
+                              <span className="text-[11px] text-muted-foreground">
                                 {new Date(m.created_at).toLocaleString('ko-KR', {
                                   year: 'numeric', month: '2-digit', day: '2-digit',
                                   hour: '2-digit', minute: '2-digit',
@@ -752,12 +752,12 @@ function MemberDetailModal({
                             <button
                               onClick={() => handleMemoDelete(idx)}
                               disabled={memoSaving}
-                              className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all cursor-pointer"
+                              className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-all cursor-pointer"
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                          <p className="text-sm text-gray-700 whitespace-pre-wrap">{m.content}</p>
+                          <p className="text-sm text-foreground whitespace-pre-wrap">{m.content}</p>
                         </div>
                       ))}
                     </div>
@@ -775,12 +775,12 @@ function MemberDetailModal({
                       }}
                       placeholder="새 메모 입력... (Ctrl+Enter 등록)"
                       rows={2}
-                      className="flex-1 text-sm text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-gray-400"
+                      className="flex-1 text-sm text-foreground bg-white border border-border rounded-xl px-3 py-2 resize-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
                     />
                     <button
                       onClick={handleMemoAdd}
                       disabled={memoSaving || !newMemoContent.trim()}
-                      className="cursor-pointer self-end px-3 py-2 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                      className="cursor-pointer self-end px-3 py-2 text-xs font-medium text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50"
                     >
                       {memoSaving ? '...' : '등록'}
                     </button>
@@ -793,42 +793,42 @@ function MemberDetailModal({
           {/* 주문내역 탭 */}
           {activeTab === 'orders' && (
             <div>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 주문 내역
               </h3>
               {loadingOrders ? (
-                <div className="text-center py-12 text-sm text-gray-400">불러오는 중...</div>
+                <div className="text-center py-12 text-sm text-muted-foreground">불러오는 중...</div>
               ) : orders.length === 0 ? (
                 <div className="text-center py-12">
                   <ShoppingCart className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                  <p className="text-sm text-gray-400">주문 내역이 없습니다</p>
+                  <p className="text-sm text-muted-foreground">주문 내역이 없습니다</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {orders.map((order) => (
-                    <div key={order.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <div key={order.id} className="bg-muted rounded-xl p-4 border border-border/50">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <Package className="w-4 h-4 text-gray-400" />
-                          <span className="text-xs font-mono text-gray-500">{order.order_number}</span>
+                          <Package className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-xs font-mono text-muted-foreground">{order.order_number}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <StatusBadge status={order.status} />
-                          <span className="text-xs text-gray-400">{formatDate(order.created_at)}</span>
+                          <span className="text-xs text-muted-foreground">{formatDate(order.created_at)}</span>
                         </div>
                       </div>
                       {order.order_items && order.order_items.length > 0 && (
                         <div className="space-y-1.5 mb-3">
                           {order.order_items.map((item) => (
                             <div key={item.id} className="flex items-center justify-between text-sm">
-                              <span className="text-gray-700">{item.products?.title || '상품명 없음'}</span>
-                              <span className="text-gray-500 font-medium">{formatWon(item.price)}</span>
+                              <span className="text-foreground">{item.products?.title || '상품명 없음'}</span>
+                              <span className="text-muted-foreground font-medium">{formatWon(item.price)}</span>
                             </div>
                           ))}
                         </div>
                       )}
-                      <div className="flex items-center justify-end pt-2 border-t border-gray-200/60">
-                        <span className="text-sm font-semibold text-gray-900">
+                      <div className="flex items-center justify-end pt-2 border-t border-border/60">
+                        <span className="text-sm font-semibold text-foreground">
                           합계 {formatWon(order.total_amount)}
                         </span>
                       </div>
@@ -842,27 +842,27 @@ function MemberDetailModal({
           {/* 다운로드내역 탭 */}
           {activeTab === 'downloads' && (
             <div>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 다운로드 내역
               </h3>
               {loadingDownloads ? (
-                <div className="text-center py-12 text-sm text-gray-400">불러오는 중...</div>
+                <div className="text-center py-12 text-sm text-muted-foreground">불러오는 중...</div>
               ) : downloads.length === 0 ? (
                 <div className="text-center py-12">
                   <Download className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                  <p className="text-sm text-gray-400">다운로드 내역이 없습니다</p>
+                  <p className="text-sm text-muted-foreground">다운로드 내역이 없습니다</p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {downloads.map((dl) => (
-                    <div key={dl.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100 flex items-center justify-between">
+                    <div key={dl.id} className="bg-muted rounded-xl p-4 border border-border/50 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <FileDown className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-700">
+                        <FileDown className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm text-foreground">
                           {dl.products?.title || '상품명 없음'}
                         </span>
                       </div>
-                      <span className="text-xs text-gray-400">{formatDateTime(dl.created_at)}</span>
+                      <span className="text-xs text-muted-foreground">{formatDateTime(dl.created_at)}</span>
                     </div>
                   ))}
                 </div>
@@ -873,30 +873,30 @@ function MemberDetailModal({
           {/* 문의내역 탭 */}
           {activeTab === 'consulting' && (
             <div>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 문의 내역
               </h3>
               {loadingConsulting ? (
-                <div className="text-center py-12 text-sm text-gray-400">불러오는 중...</div>
+                <div className="text-center py-12 text-sm text-muted-foreground">불러오는 중...</div>
               ) : consulting.length === 0 ? (
                 <div className="text-center py-12">
                   <MessageSquare className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                  <p className="text-sm text-gray-400">문의 내역이 없습니다</p>
+                  <p className="text-sm text-muted-foreground">문의 내역이 없습니다</p>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {consulting.map((req) => (
-                    <div key={req.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <div key={req.id} className="bg-muted rounded-xl p-4 border border-border/50">
                       <div className="flex items-center justify-between mb-2">
-                        <Badge className="bg-blue-50 text-blue-700 border border-blue-200">
+                        <Badge className="bg-primary/8 text-primary border border-primary/20">
                           {req.package_type}
                         </Badge>
                         <div className="flex items-center gap-2">
                           <StatusBadge status={req.status} />
-                          <span className="text-xs text-gray-400">{formatDate(req.created_at)}</span>
+                          <span className="text-xs text-muted-foreground">{formatDate(req.created_at)}</span>
                         </div>
                       </div>
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap line-clamp-3">
+                      <p className="text-sm text-foreground whitespace-pre-wrap line-clamp-3">
                         {req.message}
                       </p>
                     </div>
@@ -918,14 +918,14 @@ function MemberDetailModal({
           message={
             <p>
               <span className="font-medium">{member.name || '(이름 없음)'}</span> 님의 권한을{' '}
-              <span className="font-semibold text-blue-600">
+              <span className="font-semibold text-primary">
                 {currentRole === 'admin' ? '일반' : '관리자'}
               </span>
               (으)로 변경하시겠습니까?
             </p>
           }
           confirmLabel="변경"
-          confirmClass="text-white bg-blue-600 hover:bg-blue-700"
+          confirmClass="text-white bg-primary hover:bg-primary/90"
           onConfirm={handleRoleToggle}
           onCancel={() => setShowRoleConfirm(false)}
           loading={roleLoading}
@@ -1104,11 +1104,11 @@ export default function AdminMembers() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <div className="flex max-w-[1400px] mx-auto">
         {/* Left Sidebar */}
         <div className="w-[200px] flex-shrink-0 p-4 pt-8">
-          <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-3">
             회원 그룹
           </h2>
           <nav className="space-y-1">
@@ -1116,10 +1116,10 @@ export default function AdminMembers() {
               <button
                 key={g.key}
                 onClick={() => setFilterTab(g.key)}
-                className={`cursor-pointer w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`cursor-pointer w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   filterTab === g.key
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-primary/8 text-primary'
+                    : 'text-muted-foreground hover:bg-muted'
                 }`}
               >
                 <span className="flex items-center gap-2">
@@ -1128,7 +1128,7 @@ export default function AdminMembers() {
                 </span>
                 <span
                   className={`text-xs font-normal ${
-                    filterTab === g.key ? 'text-blue-500' : 'text-gray-400'
+                    filterTab === g.key ? 'text-primary' : 'text-muted-foreground'
                   }`}
                 >
                   {g.count}
@@ -1139,7 +1139,7 @@ export default function AdminMembers() {
           <div className="mt-4 px-3">
             <button
               disabled
-              className="w-full text-left text-xs text-gray-400 py-2 flex items-center gap-1.5 opacity-60"
+              className="w-full text-left text-xs text-muted-foreground py-2 flex items-center gap-1.5 opacity-60"
               title="준비 중"
             >
               <span className="text-base leading-none">+</span> 새 그룹 만들기
@@ -1152,25 +1152,25 @@ export default function AdminMembers() {
           {/* Page Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">회원 관리</h1>
-              <p className="text-sm text-gray-500 mt-1">
+              <h1 className="text-2xl font-bold text-foreground">회원 관리</h1>
+              <p className="text-sm text-muted-foreground mt-1">
                 전체 {totalCount}명의 회원을 관리합니다
               </p>
             </div>
           </div>
 
           {/* Search & Controls */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+          <div className="bg-white rounded-xl border border-border p-4 mb-4">
             <div className="flex items-center justify-between gap-4">
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   ref={searchRef}
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="이름, 이메일, 회사 검색"
-                  className="w-full pl-9 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-gray-400"
+                  className="w-full pl-9 pr-8 py-2 border border-border rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
                 />
                 {search && (
                   <button
@@ -1178,7 +1178,7 @@ export default function AdminMembers() {
                       setSearch('')
                       searchRef.current?.focus()
                     }}
-                    className="cursor-pointer absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="cursor-pointer absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -1188,7 +1188,7 @@ export default function AdminMembers() {
                 <select
                   value={pageSize}
                   onChange={(e) => setPageSize(Number(e.target.value))}
-                  className="cursor-pointer border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:border-blue-500"
+                  className="cursor-pointer border border-border rounded-xl px-3 py-2 text-sm text-foreground bg-white focus:outline-none focus:border-primary"
                 >
                   <option value={20}>20개</option>
                   <option value={50}>50개</option>
@@ -1196,7 +1196,7 @@ export default function AdminMembers() {
                 </select>
                 <button
                   onClick={() => exportCSV(filtered, statsMap)}
-                  className="cursor-pointer flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="cursor-pointer flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-muted transition-colors"
                 >
                   <FileDown className="w-4 h-4" />
                   내보내기
@@ -1207,8 +1207,8 @@ export default function AdminMembers() {
 
           {/* Bulk Action Bar */}
           {selectedIds.size > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-4 flex items-center justify-between">
-              <span className="text-sm font-medium text-blue-700">
+            <div className="bg-primary/8 border border-primary/20 rounded-xl px-4 py-3 mb-4 flex items-center justify-between">
+              <span className="text-sm font-medium text-primary">
                 선택 {selectedIds.size}명
               </span>
               <button
@@ -1216,7 +1216,7 @@ export default function AdminMembers() {
                   const selectedMembers = members.filter((m) => selectedIds.has(m.id))
                   exportCSV(selectedMembers, statsMap)
                 }}
-                className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
+                className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-xl hover:bg-blue-200 transition-colors"
               >
                 <FileDown className="w-3.5 h-3.5" />
                 내보내기 (CSV)
@@ -1225,11 +1225,11 @@ export default function AdminMembers() {
           )}
 
           {/* Members Table */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
+                  <tr className="border-b border-border bg-muted">
                     <th className="w-10 px-4 py-3">
                       <input
                         type="checkbox"
@@ -1238,28 +1238,28 @@ export default function AdminMembers() {
                           if (el) el.indeterminate = somePageSelected && !allPageSelected
                         }}
                         onChange={toggleSelectAll}
-                        className="cursor-pointer w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        className="cursor-pointer w-4 h-4 rounded border-border text-primary focus:ring-primary"
                       />
                     </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       이름
                     </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       이메일
                     </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       회원유형
                     </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
                       가입일
                     </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">
                       주문/구매액
                     </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
                       리뷰
                     </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">
                       메모
                     </th>
                     <th className="w-10 px-4 py-3" />
@@ -1270,8 +1270,8 @@ export default function AdminMembers() {
                     <tr>
                       <td colSpan={9} className="px-6 py-16 text-center">
                         <div className="flex flex-col items-center gap-3">
-                          <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
-                          <p className="text-sm text-gray-400">회원 목록을 불러오는 중...</p>
+                          <div className="w-8 h-8 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+                          <p className="text-sm text-muted-foreground">회원 목록을 불러오는 중...</p>
                         </div>
                       </td>
                     </tr>
@@ -1279,7 +1279,7 @@ export default function AdminMembers() {
                     <tr>
                       <td colSpan={9} className="px-6 py-16 text-center">
                         <User className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-muted-foreground">
                           {search ? '검색 결과가 없습니다' : '가입된 회원이 없습니다'}
                         </p>
                       </td>
@@ -1290,7 +1290,7 @@ export default function AdminMembers() {
                       return (
                         <tr
                           key={m.id}
-                          className="hover:bg-blue-50/40 transition-colors group"
+                          className="hover:bg-primary/8/40 transition-colors group"
                         >
                           {/* Checkbox */}
                           <td className="px-4 py-3">
@@ -1301,7 +1301,7 @@ export default function AdminMembers() {
                                 e.stopPropagation()
                                 toggleSelect(m.id)
                               }}
-                              className="cursor-pointer w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              className="cursor-pointer w-4 h-4 rounded border-border text-primary focus:ring-primary"
                             />
                           </td>
                           {/* 이름 */}
@@ -1310,23 +1310,23 @@ export default function AdminMembers() {
                               onClick={() => setSelectedMember(m)}
                               className="cursor-pointer flex items-center gap-2.5 text-left"
                             >
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-gray-600 text-xs font-semibold flex-shrink-0">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-muted-foreground text-xs font-semibold flex-shrink-0">
                                 {(m.name || '?')[0]}
                               </div>
-                              <span className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">
+                              <span className="text-sm font-medium text-foreground hover:text-primary transition-colors">
                                 {m.name || '-'}
                               </span>
                             </button>
                           </td>
                           {/* 이메일 */}
-                          <td className="px-4 py-3 text-sm text-gray-500">{m.email}</td>
+                          <td className="px-4 py-3 text-sm text-muted-foreground">{m.email}</td>
                           {/* 회원유형 */}
                           <td className="px-4 py-3">
                             <Badge
                               className={
                                 m.role === 'admin'
                                   ? 'bg-red-50 text-red-700 border border-red-200'
-                                  : 'bg-gray-50 text-gray-500 border border-gray-200'
+                                  : 'bg-muted text-muted-foreground border border-border'
                               }
                             >
                               {m.role === 'admin' ? '관리자' : '일반'}
@@ -1334,7 +1334,7 @@ export default function AdminMembers() {
                           </td>
                           {/* 가입일 (relative) */}
                           <td
-                            className="px-4 py-3 text-sm text-gray-500 hidden lg:table-cell"
+                            className="px-4 py-3 text-sm text-muted-foreground hidden lg:table-cell"
                             title={formatDateTime(m.created_at)}
                           >
                             {relativeTime(m.created_at)}
@@ -1342,17 +1342,17 @@ export default function AdminMembers() {
                           {/* 주문/구매액 */}
                           <td className="px-4 py-3 hidden md:table-cell">
                             <div className="text-sm">
-                              <span className="text-gray-700 font-medium">
+                              <span className="text-foreground font-medium">
                                 {stats?.order_count ?? 0}회
                               </span>
-                              <span className="text-gray-400 mx-1">/</span>
-                              <span className="text-gray-500">
+                              <span className="text-muted-foreground mx-1">/</span>
+                              <span className="text-muted-foreground">
                                 {formatWon(stats?.total_spent ?? 0)}
                               </span>
                             </div>
                           </td>
                           {/* 리뷰 */}
-                          <td className="px-4 py-3 text-sm text-gray-500 hidden lg:table-cell">
+                          <td className="px-4 py-3 text-sm text-muted-foreground hidden lg:table-cell">
                             {stats?.review_count ?? 0}
                           </td>
                           {/* 메모 */}
@@ -1362,12 +1362,12 @@ export default function AdminMembers() {
                                 e.stopPropagation()
                                 setMemoModal(m)
                               }}
-                              className="cursor-pointer w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                              className="cursor-pointer w-7 h-7 flex items-center justify-center rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors"
                               title={parseMemberMemos(m.admin_memo).map(e => e.content).join(' / ') || '메모 없음'}
                             >
                               <Pencil className="w-3.5 h-3.5" />
                               {parseMemberMemos(m.admin_memo).length > 0 && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 absolute -top-0.5 -right-0.5" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-primary absolute -top-0.5 -right-0.5" />
                               )}
                             </button>
                           </td>
@@ -1389,8 +1389,8 @@ export default function AdminMembers() {
 
             {/* Pagination */}
             {!loading && filtered.length > 0 && (
-              <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/50">
-                <p className="text-xs text-gray-500">
+              <div className="flex items-center justify-between px-6 py-4 border-t border-border/50 bg-muted/50">
+                <p className="text-xs text-muted-foreground">
                   총 {filtered.length}명 중 {(safePage - 1) * pageSize + 1}-
                   {Math.min(safePage * pageSize, filtered.length)}명
                 </p>
@@ -1398,7 +1398,7 @@ export default function AdminMembers() {
                   <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={safePage <= 1}
-                    className="cursor-pointer w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    className="cursor-pointer w-8 h-8 flex items-center justify-center rounded-xl text-muted-foreground hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
@@ -1419,7 +1419,7 @@ export default function AdminMembers() {
                       item === 'ellipsis' ? (
                         <span
                           key={`e-${idx}`}
-                          className="w-8 h-8 flex items-center justify-center text-xs text-gray-400"
+                          className="w-8 h-8 flex items-center justify-center text-xs text-muted-foreground"
                         >
                           ...
                         </span>
@@ -1427,10 +1427,10 @@ export default function AdminMembers() {
                         <button
                           key={item}
                           onClick={() => setCurrentPage(item)}
-                          className={`cursor-pointer w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                          className={`cursor-pointer w-8 h-8 flex items-center justify-center rounded-xl text-sm font-medium transition-colors ${
                             safePage === item
                               ? 'bg-gray-900 text-white'
-                              : 'text-gray-600 hover:bg-gray-200'
+                              : 'text-muted-foreground hover:bg-muted'
                           }`}
                         >
                           {item}
@@ -1440,7 +1440,7 @@ export default function AdminMembers() {
                   <button
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={safePage >= totalPages}
-                    className="cursor-pointer w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    className="cursor-pointer w-8 h-8 flex items-center justify-center rounded-xl text-muted-foreground hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -1484,14 +1484,14 @@ export default function AdminMembers() {
           message={
             <p>
               <span className="font-medium">{roleConfirm.name || '(이름 없음)'}</span> 님의 권한을{' '}
-              <span className="font-semibold text-blue-600">
+              <span className="font-semibold text-primary">
                 {roleConfirm.role === 'admin' ? '일반' : '관리자'}
               </span>
               (으)로 변경하시겠습니까?
             </p>
           }
           confirmLabel="변경"
-          confirmClass="text-white bg-blue-600 hover:bg-blue-700"
+          confirmClass="text-white bg-primary hover:bg-primary/90"
           onConfirm={async () => {
             setActionLoading(true)
             try {

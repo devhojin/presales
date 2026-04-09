@@ -129,11 +129,11 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[5vh]" role="dialog" aria-modal="true" aria-labelledby="consulting-modal-title">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl z-10">
-          <h2 id="consulting-modal-title" className="text-lg font-bold text-gray-900">컨설팅 문의</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 sticky top-0 bg-card rounded-t-2xl z-10">
+          <h2 id="consulting-modal-title" className="text-lg font-bold text-foreground">컨설팅 문의</h2>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-muted-foreground">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -143,8 +143,8 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
             <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
               <Check className="w-8 h-8 text-emerald-600" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">문의가 접수되었습니다</h3>
-            <p className="text-sm text-gray-500 mb-6">24시간 이내에 담당자가 연락드리겠습니다.</p>
+            <h3 className="text-lg font-bold text-foreground mb-2">문의가 접수되었습니다</h3>
+            <p className="text-sm text-muted-foreground mb-6">24시간 이내에 담당자가 연락드리겠습니다.</p>
             <button onClick={onClose} className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 cursor-pointer">
               확인
             </button>
@@ -160,16 +160,16 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
               <label className={labelClass}>요금 방식 *</label>
               <div className="space-y-2">
                 {pkgOptions.map(opt => (
-                  <label key={opt.value} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${form.package_type === opt.value ? 'border-blue-500 bg-blue-50/50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                  <label key={opt.value} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${form.package_type === opt.value ? 'border-blue-500 bg-primary/5' : 'border-border hover:bg-muted'}`}>
                     <input
                       type="radio"
                       name="package_type"
                       value={opt.value}
                       checked={form.package_type === opt.value}
                       onChange={e => setForm({ ...form, package_type: e.target.value })}
-                      className="w-4 h-4 text-blue-600"
+                      className="w-4 h-4 text-primary"
                     />
-                    <span className="text-sm font-medium text-gray-700">{opt.label}</span>
+                    <span className="text-sm font-medium text-foreground">{opt.label}</span>
                   </label>
                 ))}
               </div>
@@ -201,7 +201,7 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
 
             {/* 회사명 (선택) */}
             <div>
-              <label className={labelClass}>회사명 <span className="text-gray-400">(선택)</span></label>
+              <label className={labelClass}>회사명 <span className="text-muted-foreground">(선택)</span></label>
               <input type="text" value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} placeholder="(주)OO기업" className={inputClass} />
             </div>
 
@@ -213,15 +213,15 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
 
             {/* 첨부파일 (선택) */}
             <div>
-              <label className={labelClass}>첨부파일 <span className="text-gray-400">(선택, RFP/사업계획서, 10MB 이하)</span></label>
+              <label className={labelClass}>첨부파일 <span className="text-muted-foreground">(선택, RFP/사업계획서, 10MB 이하)</span></label>
               <div className="relative">
                 <input type="file" accept=".pdf,.doc,.docx,.hwp,.pptx,.ppt,.xlsx,.xls,.zip" onChange={handleFileChange} className="hidden" id="inquiry-file" />
-                <label htmlFor="inquiry-file" className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-colors">
-                  <Upload className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-500">{file ? file.name : '파일 선택 (PDF, DOC, HWP, PPT, XLS, ZIP)'}</span>
+                <label htmlFor="inquiry-file" className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-border rounded-lg cursor-pointer hover:border-gray-400 hover:bg-muted transition-colors">
+                  <Upload className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">{file ? file.name : '파일 선택 (PDF, DOC, HWP, PPT, XLS, ZIP)'}</span>
                 </label>
                 {file && (
-                  <button type="button" onClick={() => setFile(null)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500">
+                  <button type="button" onClick={() => setFile(null)} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-red-500">
                     <X className="w-4 h-4" />
                   </button>
                 )}
@@ -272,9 +272,9 @@ const compareFeatures = [
 ]
 
 function FeatureCell({ value }: { value: boolean | string }) {
-  if (value === true) return <Check className="w-5 h-5 text-blue-600 mx-auto" />
+  if (value === true) return <Check className="w-5 h-5 text-primary mx-auto" />
   if (value === false) return <X className="w-5 h-5 text-gray-300 mx-auto" />
-  return <span className="text-sm font-medium text-blue-600">{value}</span>
+  return <span className="text-sm font-medium text-primary">{value}</span>
 }
 
 export default function ConsultingPage() {
@@ -307,7 +307,7 @@ export default function ConsultingPage() {
   return (
     <div className="container mx-auto px-4 py-10">
       <div className="text-center mb-12">
-        <Badge className="bg-blue-500/10 text-blue-700 border-blue-200 mb-4">
+        <Badge className="bg-primary/10 text-primary border-blue-200 mb-4">
           전문가 컨설팅
         </Badge>
         <h1 className="text-2xl md:text-3xl font-bold mb-3">
@@ -408,10 +408,10 @@ export default function ConsultingPage() {
             {compareFeatures.map((feat, i) => (
               <div
                 key={feat.label}
-                className={`grid grid-cols-4 ${i % 2 === 0 ? 'bg-white' : 'bg-muted/20'} ${i < compareFeatures.length - 1 ? 'border-b border-border/50' : ''}`}
+                className={`grid grid-cols-4 ${i % 2 === 0 ? 'bg-card' : 'bg-muted/20'} ${i < compareFeatures.length - 1 ? 'border-b border-border/50' : ''}`}
               >
                 <div className="p-3.5 border-r border-border/50 flex items-center">
-                  <p className="text-sm text-gray-700">{feat.label}</p>
+                  <p className="text-sm text-foreground">{feat.label}</p>
                 </div>
                 <div className={`p-3.5 flex items-center justify-center`}>
                   <FeatureCell value={feat.spot} />
@@ -432,7 +432,7 @@ export default function ConsultingPage() {
                 <div key={pkg?.slug || ''} className={`p-4 flex items-center justify-center ${pkg?.slug === 'review' ? 'bg-primary/5 border-x border-primary/20' : ''}`}>
                   <button
                     onClick={() => pkg?.slug && openInquiry(pkg.slug)}
-                    className="w-full h-9 rounded-lg font-medium text-xs transition-all cursor-pointer border border-primary/30 bg-white text-primary hover:bg-primary hover:text-primary-foreground hover:border-primary hover:shadow-md"
+                    className="w-full h-9 rounded-lg font-medium text-xs transition-all cursor-pointer border border-primary/30 bg-card text-primary hover:bg-primary hover:text-primary-foreground hover:border-primary hover:shadow-md"
                   >
                     선택하기
                   </button>
@@ -466,11 +466,11 @@ export default function ConsultingPage() {
                       return (
                         <div key={feat.label} className="flex items-center gap-2.5 text-sm">
                           {val === true ? (
-                            <Check className="w-4 h-4 text-blue-600 shrink-0" />
+                            <Check className="w-4 h-4 text-primary shrink-0" />
                           ) : (
-                            <span className="text-xs font-medium text-blue-600 shrink-0 min-w-[40px]">{val}</span>
+                            <span className="text-xs font-medium text-primary shrink-0 min-w-[40px]">{val}</span>
                           )}
-                          <span className="text-gray-700">{feat.label}</span>
+                          <span className="text-foreground">{feat.label}</span>
                         </div>
                       )
                     })}
@@ -512,7 +512,7 @@ export default function ConsultingPage() {
                 {/* Step circle */}
                 <div className={`relative z-10 w-20 h-20 rounded-2xl bg-gradient-to-br ${item.color} shadow-lg flex flex-col items-center justify-center mb-5`}>
                   <item.icon className="w-6 h-6 text-white mb-1" />
-                  <span className="text-[10px] font-bold text-white/80">STEP {item.step}</span>
+                  <span className="text-[10px] font-bold text-primary-foreground/80">STEP {item.step}</span>
                 </div>
                 {/* Arrow between steps (mobile) */}
                 {i < 3 && (

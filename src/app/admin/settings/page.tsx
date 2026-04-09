@@ -86,7 +86,7 @@ export default function SiteSettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -96,7 +96,7 @@ export default function SiteSettingsPage() {
       {/* Toast */}
       {toast && (
         <div
-          className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-lg shadow-lg text-sm font-medium text-white transition-all ${
+          className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg text-sm font-medium text-white transition-all ${
             toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
           }`}
         >
@@ -107,16 +107,16 @@ export default function SiteSettingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <Settings className="w-6 h-6 text-gray-600" />
+          <Settings className="w-6 h-6 text-muted-foreground" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">사이트 설정</h1>
-            <p className="text-sm text-gray-500 mt-0.5">사이트 전체에 표시되는 기본 정보를 관리합니다</p>
+            <h1 className="text-2xl font-bold text-foreground">사이트 설정</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">사이트 전체에 표시되는 기본 정보를 관리합니다</p>
           </div>
         </div>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 h-10 px-5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 cursor-pointer"
+          className="flex items-center gap-2 h-10 px-5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {saving ? '저장 중...' : '저장'}
@@ -126,23 +126,23 @@ export default function SiteSettingsPage() {
       {/* Groups */}
       <div className="space-y-8">
         {Object.entries(SETTING_GROUPS).map(([groupName, fields]) => (
-          <div key={groupName} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
-              <h2 className="text-sm font-semibold text-gray-700">{groupName}</h2>
+          <div key={groupName} className="bg-white rounded-xl border border-border overflow-hidden">
+            <div className="px-6 py-4 border-b border-border/50 bg-muted">
+              <h2 className="text-sm font-semibold text-foreground">{groupName}</h2>
             </div>
             <div className="divide-y divide-gray-100">
               {fields.map((field) => (
                 <div key={field.key} className="px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-2">
-                  <label className="text-sm font-medium text-gray-700 w-48 shrink-0">
+                  <label className="text-sm font-medium text-foreground w-48 shrink-0">
                     {field.label}
-                    <span className="ml-1 text-xs text-gray-400 font-normal">({field.key})</span>
+                    <span className="ml-1 text-xs text-muted-foreground font-normal">({field.key})</span>
                   </label>
                   <input
                     type="text"
                     value={settings[field.key] ?? ''}
                     onChange={(e) => handleChange(field.key, e.target.value)}
                     placeholder={`${field.label} 입력`}
-                    className="flex-1 h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 h-9 px-3 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
               ))}
@@ -156,7 +156,7 @@ export default function SiteSettingsPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 h-10 px-6 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 cursor-pointer"
+          className="flex items-center gap-2 h-10 px-6 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 cursor-pointer"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {saving ? '저장 중...' : '변경사항 저장'}

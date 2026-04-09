@@ -130,25 +130,24 @@ export default function CartPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10 max-w-3xl">
-      <Link href="/store" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6">
-        <ArrowLeft className="w-4 h-4 mr-1" /> 스토어로 돌아가기
+    <div className="max-w-[900px] mx-auto px-4 md:px-8 py-12 md:py-16">
+      <Link href="/store" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8">
+        <ArrowLeft className="w-4 h-4" /> 스토어로 돌아가기
       </Link>
 
-      <div className="flex items-center gap-3 mb-8">
-        <ShoppingCart className="w-6 h-6" />
-        <h1 className="text-2xl font-bold">장바구니</h1>
-        <Badge variant="outline" className="text-sm">{items.length}개</Badge>
+      <div className="flex items-center gap-3 mb-10">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">장바구니</h1>
+        <Badge variant="outline" className="text-xs font-semibold">{items.length}</Badge>
       </div>
 
       {items.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground">
-          <ShoppingCart className="w-16 h-16 mx-auto mb-4 opacity-30" />
-          <p className="text-lg font-medium">장바구니가 비어있습니다</p>
-          <p className="text-sm mt-2 mb-6">마음에 드는 템플릿을 담아보세요</p>
+        <div className="text-center py-24 text-muted-foreground">
+          <ShoppingCart className="w-14 h-14 mx-auto mb-5 opacity-20" />
+          <p className="text-lg font-semibold text-foreground tracking-tight">장바구니가 비어있습니다</p>
+          <p className="text-sm mt-2 mb-8">마음에 드는 템플릿을 담아보세요</p>
           <Link
             href="/store"
-            className="inline-flex items-center h-10 px-6 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center h-11 px-6 rounded-full bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition-all duration-300 active:scale-[0.98]"
           >
             문서 스토어 둘러보기
           </Link>
@@ -160,7 +159,7 @@ export default function CartPage() {
           {/* Cart Items */}
           <div className="space-y-4">
             {items.map((item) => (
-              <div key={item.productId} className="flex gap-4 p-4 rounded-xl border border-border">
+              <div key={item.productId} className="flex gap-4 p-5 rounded-2xl border border-border/50 bg-card">
                 <Link href={`/store/${item.productId}`}>
                   <img
                     src={item.thumbnail}
@@ -197,7 +196,7 @@ export default function CartPage() {
           </div>
 
           {/* 쿠폰 코드 입력 */}
-          <div className="border border-border rounded-lg p-4">
+          <div className="border border-border/50 rounded-2xl p-5 bg-card">
             <h3 className="text-sm font-semibold mb-3">쿠폰 코드</h3>
             <div className="flex gap-2 mb-2">
               <input
@@ -205,7 +204,7 @@ export default function CartPage() {
                 value={couponCode}
                 onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                 placeholder="쿠폰 코드를 입력하세요"
-                className="flex-1 h-10 rounded-lg border border-border px-3 text-sm"
+                className="flex-1 h-11 rounded-xl border border-border px-4 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 maxLength={20}
                 disabled={appliedCoupon !== null}
               />
@@ -236,8 +235,8 @@ export default function CartPage() {
           </div>
 
           {/* Summary */}
-          <div className="bg-muted/30 rounded-xl p-6 space-y-4">
-            <h2 className="font-semibold">주문 요약</h2>
+          <div className="rounded-2xl border border-border/50 bg-card p-6 md:p-8 space-y-5">
+            <h2 className="font-semibold text-lg tracking-tight">주문 요약</h2>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">상품 금액</span>
@@ -266,7 +265,7 @@ export default function CartPage() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowClearConfirm(true)}
-                  className="h-11 px-4 rounded-lg border border-border text-sm font-medium hover:bg-muted transition-colors flex items-center gap-2 cursor-pointer"
+                  className="h-12 px-5 rounded-full border border-border text-sm font-medium hover:bg-muted transition-all duration-300 flex items-center gap-2 cursor-pointer active:scale-[0.98]"
                 >
                   <Trash2 className="w-4 h-4" />
                   비우기
@@ -319,7 +318,7 @@ export default function CartPage() {
                     }
                   }}
                   disabled={processing}
-                  className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50"
+                  className="flex-1 h-12 rounded-full bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition-all duration-300 cursor-pointer disabled:opacity-50 active:scale-[0.98]"
                 >
                   {processing ? '처리 중...' : allFree ? '무료 다운로드' : `결제하기 (${formatPrice(Math.max(0, getTotal() - getCouponDiscount()))})`}
                 </button>

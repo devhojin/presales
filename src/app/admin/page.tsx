@@ -192,10 +192,10 @@ function calcChange(current: number, previous: number): number | null {
 }
 
 function ChangeLabel({ pct, label }: { pct: number | null; label: string }) {
-  if (pct === null) return <p className="text-xs text-gray-400 mt-1">이전 기간 없음</p>
+  if (pct === null) return <p className="text-xs text-muted-foreground mt-1">이전 기간 없음</p>
   const positive = pct >= 0
   return (
-    <p className={`text-xs mt-1 font-medium ${positive ? 'text-emerald-600' : 'text-red-500'}`}>
+    <p className={`text-xs mt-1 font-medium ${positive ? 'text-primary' : 'text-red-500'}`}>
       {positive ? '+' : ''}{pct}% vs {label}
     </p>
   )
@@ -209,12 +209,12 @@ function KPISkeleton() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
       {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse">
+        <div key={i} className="bg-card rounded-2xl border border-border/50 p-6 animate-pulse">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-gray-200" />
-            <div className="h-4 w-16 bg-gray-200 rounded" />
+            <div className="w-10 h-10 rounded-xl bg-muted" />
+            <div className="h-4 w-16 bg-muted rounded" />
           </div>
-          <div className="h-7 w-20 bg-gray-200 rounded" />
+          <div className="h-7 w-20 bg-muted rounded" />
         </div>
       ))}
     </div>
@@ -226,9 +226,9 @@ function TableSkeleton({ rows = 5 }: { rows?: number }) {
     <div className="space-y-3">
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="flex items-center gap-3 animate-pulse">
-          <div className="h-4 bg-gray-200 rounded flex-1" />
-          <div className="h-4 bg-gray-200 rounded w-16" />
-          <div className="h-4 bg-gray-200 rounded w-12" />
+          <div className="h-4 bg-muted rounded flex-1" />
+          <div className="h-4 bg-muted rounded w-16" />
+          <div className="h-4 bg-muted rounded w-12" />
         </div>
       ))}
     </div>
@@ -240,10 +240,10 @@ function ListSkeleton({ rows = 5 }: { rows?: number }) {
     <div className="space-y-3">
       {Array.from({ length: rows }).map((_, i) => (
         <div key={i} className="flex items-center gap-3 animate-pulse">
-          <div className="w-8 h-8 rounded-full bg-gray-200 shrink-0" />
+          <div className="w-8 h-8 rounded-full bg-muted shrink-0" />
           <div className="flex-1 space-y-1.5">
-            <div className="h-3.5 bg-gray-200 rounded w-3/4" />
-            <div className="h-3 bg-gray-200 rounded w-1/2" />
+            <div className="h-3.5 bg-muted rounded w-3/4" />
+            <div className="h-3 bg-muted rounded w-1/2" />
           </div>
         </div>
       ))}
@@ -258,7 +258,7 @@ function ListSkeleton({ rows = 5 }: { rows?: number }) {
 function RevenueChart({ data, period }: { data: DailyRevenue[]; period: Period }) {
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-32 text-sm text-gray-400">
+      <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
         데이터가 없습니다
       </div>
     )
@@ -306,23 +306,23 @@ function RevenueChart({ data, period }: { data: DailyRevenue[]; period: Period }
       {/* Grid lines */}
       {yTicks.map(({ y, label }) => (
         <g key={label}>
-          <line x1={PAD_X} y1={y} x2={W - PAD_X} y2={y} stroke="#e5e7eb" strokeWidth="1" />
-          <text x={PAD_X - 6} y={y + 4} textAnchor="end" fontSize="10" fill="#9ca3af">
+          <line x1={PAD_X} y1={y} x2={W - PAD_X} y2={y} stroke="rgb(229, 229, 229)" strokeWidth="1" />
+          <text x={PAD_X - 6} y={y + 4} textAnchor="end" fontSize="10" fill="rgb(107, 114, 128)">
             {label}
           </text>
         </g>
       ))}
       {/* Area */}
-      <polygon points={areaPoints} fill="rgba(239,68,68,0.1)" />
+      <polygon points={areaPoints} fill="rgba(5, 150, 105, 0.1)" />
       {/* Line */}
-      <polyline points={points} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinejoin="round" />
+      <polyline points={points} fill="none" stroke="rgb(5, 150, 105)" strokeWidth="2.5" strokeLinejoin="round" />
       {/* Dots */}
       {data.map((d, i) => (
-        <circle key={i} cx={toX(i)} cy={toY(d.revenue)} r="3" fill="#ef4444" />
+        <circle key={i} cx={toX(i)} cy={toY(d.revenue)} r="3" fill="rgb(5, 150, 105)" />
       ))}
       {/* X labels */}
       {xIndices.map((i) => (
-        <text key={i} x={toX(i)} y={H - 4} textAnchor="middle" fontSize="10" fill="#6b7280">
+        <text key={i} x={toX(i)} y={H - 4} textAnchor="middle" fontSize="10" fill="rgb(107, 114, 128)">
           {data[i].date.slice(5).replace('-', '/')}
         </text>
       ))}
@@ -337,9 +337,9 @@ function RevenueChart({ data, period }: { data: DailyRevenue[]; period: Period }
 function SectionHeader({ title, href }: { title: string; href: string }) {
   return (
     <div className="flex items-center justify-between mb-4">
-      <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-      <Link href={href} className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-0.5">
-        전체보기 <ArrowUpRight className="w-3.5 h-3.5" />
+      <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">{title}</h2>
+      <Link href={href} className="text-xs text-primary hover:text-primary/80 flex items-center gap-0.5 font-medium">
+        전체보기 <ArrowUpRight className="w-3 h-3" />
       </Link>
     </div>
   )
@@ -351,7 +351,7 @@ function StarRating({ rating }: { rating: number }) {
       {[1, 2, 3, 4, 5].map((i) => (
         <Star
           key={i}
-          className={`w-3.5 h-3.5 ${i <= rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`}
+          className={`w-3.5 h-3.5 ${i <= rating ? 'text-primary fill-primary' : 'text-border'}`}
         />
       ))}
     </div>
@@ -361,7 +361,7 @@ function StarRating({ rating }: { rating: number }) {
 function AvatarInitial({ name }: { name: string }) {
   const initial = (name || '?')[0].toUpperCase()
   return (
-    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-semibold shrink-0">
+    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold shrink-0">
       {initial}
     </div>
   )
@@ -761,7 +761,7 @@ export default function AdminDashboard() {
       icon: Package,
       label: '등록상품',
       value: `${kpi.products}개`,
-      color: 'bg-blue-500',
+      color: 'bg-primary',
       href: '/admin/products',
       emphasis: false,
       change: null,
@@ -770,7 +770,7 @@ export default function AdminDashboard() {
       icon: ShoppingCart,
       label: '총 주문',
       value: `${kpi.orders}건`,
-      color: 'bg-emerald-500',
+      color: 'bg-primary',
       href: '/admin/orders',
       emphasis: false,
       change: kpiChange.orders,
@@ -779,7 +779,7 @@ export default function AdminDashboard() {
       icon: CreditCard,
       label: '결제완료',
       value: `${kpi.paidOrders}건`,
-      color: 'bg-teal-500',
+      color: 'bg-primary',
       href: '/admin/orders',
       emphasis: true,
       change: kpiChange.paidOrders,
@@ -788,7 +788,7 @@ export default function AdminDashboard() {
       icon: Users,
       label: '가입회원',
       value: `${kpi.members}명`,
-      color: 'bg-purple-500',
+      color: 'bg-primary',
       href: '/admin/members',
       emphasis: false,
       change: kpiChange.members,
@@ -800,7 +800,7 @@ export default function AdminDashboard() {
       icon: TrendingUp,
       label: '총 매출',
       value: `${formatAmount(kpi.revenue)}원`,
-      color: 'bg-red-500',
+      color: 'bg-primary',
       href: '/admin/orders',
       emphasis: true,
       change: kpiChange.revenue,
@@ -809,7 +809,7 @@ export default function AdminDashboard() {
       icon: Download,
       label: '총 다운로드',
       value: `${kpi.downloads}건`,
-      color: 'bg-cyan-500',
+      color: 'bg-primary',
       href: '/admin/downloads',
       emphasis: false,
       change: kpiChange.downloads,
@@ -818,7 +818,7 @@ export default function AdminDashboard() {
       icon: MessageSquare,
       label: '컨설팅신청',
       value: `${kpi.consulting}건`,
-      color: 'bg-amber-500',
+      color: 'bg-primary',
       href: '/admin/consulting',
       emphasis: false,
       change: kpiChange.consulting,
@@ -827,7 +827,7 @@ export default function AdminDashboard() {
       icon: Star,
       label: '리뷰',
       value: `${kpi.reviews}건`,
-      color: 'bg-yellow-500',
+      color: 'bg-primary',
       href: '/admin/reviews',
       emphasis: false,
       change: kpiChange.reviews,
@@ -840,10 +840,10 @@ export default function AdminDashboard() {
 
   function NotificationIcon({ type }: { type: Notification['type'] }) {
     const configs = {
-      order: { bg: 'bg-emerald-100', icon: <ShoppingCart className="w-4 h-4 text-emerald-600" /> },
-      consulting: { bg: 'bg-amber-100', icon: <MessageSquare className="w-4 h-4 text-amber-600" /> },
-      review: { bg: 'bg-yellow-100', icon: <Star className="w-4 h-4 text-yellow-600" /> },
-      member: { bg: 'bg-purple-100', icon: <Users className="w-4 h-4 text-purple-600" /> },
+      order: { bg: 'bg-primary/10', icon: <ShoppingCart className="w-4 h-4 text-primary" /> },
+      consulting: { bg: 'bg-amber-50', icon: <MessageSquare className="w-4 h-4 text-amber-600" /> },
+      review: { bg: 'bg-primary/10', icon: <Star className="w-4 h-4 text-primary" /> },
+      member: { bg: 'bg-primary/10', icon: <Users className="w-4 h-4 text-primary" /> },
     }
     const { bg, icon } = configs[type]
     return (
@@ -861,22 +861,22 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold">관리자 대시보드</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">관리자 대시보드</h1>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {/* Quick actions */}
           <Link
             href="/admin/products/new"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 transition-colors cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" />
             새 상품 등록
           </Link>
           <Link
             href="/admin/orders"
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-4 py-2 bg-card border border-border/50 text-foreground text-sm font-medium rounded-xl hover:bg-muted transition-colors cursor-pointer"
           >
-            <AlertCircle className="w-4 h-4 text-amber-500" />
+            <AlertCircle className="w-4 h-4 text-amber-600" />
             미처리 주문
           </Link>
 
@@ -885,10 +885,10 @@ export default function AdminDashboard() {
             <button
               type="button"
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+              className="relative p-2 rounded-xl hover:bg-muted transition-colors cursor-pointer"
               aria-label="알림"
             >
-              <Bell className="w-5 h-5 text-gray-600" />
+              <Bell className="w-5 h-5 text-foreground" />
               {notifications.length > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                   {notifications.length}
@@ -898,21 +898,21 @@ export default function AdminDashboard() {
 
             {/* Notification dropdown */}
             {showNotifications && (
-              <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl border border-gray-200 shadow-lg z-50">
-                <div className="p-3 border-b border-gray-100">
-                  <p className="text-sm font-semibold text-gray-900">실시간 알림</p>
+              <div className="absolute right-0 top-full mt-2 w-80 bg-card rounded-2xl border border-border/50 shadow-sm z-50">
+                <div className="p-4 border-b border-border/50">
+                  <p className="text-sm font-semibold text-foreground">실시간 알림</p>
                 </div>
                 {notifications.length === 0 ? (
-                  <div className="p-6 text-center text-sm text-gray-400">새 알림이 없습니다</div>
+                  <div className="p-6 text-center text-sm text-muted-foreground">새 알림이 없습니다</div>
                 ) : (
-                  <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+                  <div className="max-h-80 overflow-y-auto divide-y divide-border/50">
                     {notifications.map((n) => (
-                      <div key={n.id} className="p-3 hover:bg-gray-50 flex items-start gap-3">
+                      <div key={n.id} className="p-3 hover:bg-muted/50 flex items-start gap-3">
                         <NotificationIcon type={n.type} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900">{n.title}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">{n.message}</p>
-                          <p className="text-[10px] text-gray-300 mt-1">
+                          <p className="text-sm font-medium text-foreground">{n.title}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
+                          <p className="text-[10px] text-muted-foreground/60 mt-1">
                             {n.timestamp.toLocaleTimeString('ko-KR', {
                               hour: '2-digit',
                               minute: '2-digit',
@@ -926,7 +926,7 @@ export default function AdminDashboard() {
                             e.stopPropagation()
                             dismissNotification(n.id)
                           }}
-                          className="p-1 rounded hover:bg-gray-200 text-gray-400 hover:text-gray-600 shrink-0 cursor-pointer"
+                          className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
                           title="알림 닫기"
                         >
                           <X className="w-3.5 h-3.5" />
@@ -942,9 +942,9 @@ export default function AdminDashboard() {
       </div>
 
       {/* Period selector */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-gray-500 font-medium">기간:</span>
-        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+      <div className="flex items-center gap-3">
+        <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">기간</span>
+        <div className="flex items-center gap-1 bg-muted rounded-xl p-1">
           {PERIODS.map((p) => (
             <button
               key={p}
@@ -952,8 +952,8 @@ export default function AdminDashboard() {
               onClick={() => setPeriod(p)}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                 period === p
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
+                  ? 'bg-card text-foreground border border-border/50'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {p}
@@ -972,23 +972,23 @@ export default function AdminDashboard() {
               <Link
                 key={card.label}
                 href={card.href}
-                className={`rounded-xl p-5 hover:shadow-md transition-all group ${
+                className={`rounded-2xl p-6 border transition-all group cursor-pointer ${
                   card.emphasis
-                    ? 'bg-blue-50 border-2 border-blue-200 ring-2 ring-primary/20'
-                    : 'bg-white border border-gray-200 hover:border-gray-300'
+                    ? 'bg-card border-primary/30 ring-1 ring-primary/10'
+                    : 'bg-card border-border/50 hover:border-border'
                 }`}
               >
-                <div className="flex items-center gap-3 mb-2">
-                  <div className={`w-9 h-9 rounded-lg ${card.color} flex items-center justify-center`}>
-                    <card.icon className="w-4.5 h-4.5 text-white" />
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`w-10 h-10 rounded-xl ${card.color} flex items-center justify-center`}>
+                    <card.icon className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-sm text-gray-500 group-hover:text-gray-700">{card.label}</span>
+                  <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{card.label}</span>
                 </div>
-                <p className="text-xl font-bold text-gray-900">{card.value}</p>
+                <p className="text-2xl font-bold font-mono text-foreground">{card.value}</p>
                 {card.change !== undefined ? (
                   <ChangeLabel pct={card.change} label={prevLabel} />
                 ) : (
-                  <p className="text-xs text-gray-400 mt-1">{period === '전체' ? '전체 기간' : `최근 ${period}`}</p>
+                  <p className="text-xs text-muted-foreground mt-2">{period === '전체' ? '전체 기간' : `최근 ${period}`}</p>
                 )}
               </Link>
             ))}
@@ -998,23 +998,23 @@ export default function AdminDashboard() {
               <Link
                 key={card.label}
                 href={card.href}
-                className={`rounded-xl p-5 hover:shadow-md transition-all group ${
+                className={`rounded-2xl p-6 border transition-all group cursor-pointer ${
                   card.emphasis
-                    ? 'bg-blue-50 border-2 border-blue-200 ring-2 ring-primary/20'
-                    : 'bg-white border border-gray-200 hover:border-gray-300'
+                    ? 'bg-card border-primary/30 ring-1 ring-primary/10'
+                    : 'bg-card border-border/50 hover:border-border'
                 }`}
               >
-                <div className="flex items-center gap-3 mb-2">
-                  <div className={`w-9 h-9 rounded-lg ${card.color} flex items-center justify-center`}>
-                    <card.icon className="w-4.5 h-4.5 text-white" />
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`w-10 h-10 rounded-xl ${card.color} flex items-center justify-center`}>
+                    <card.icon className="w-5 h-5 text-white" />
                   </div>
-                  <span className="text-sm text-gray-500 group-hover:text-gray-700">{card.label}</span>
+                  <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{card.label}</span>
                 </div>
-                <p className="text-xl font-bold text-gray-900">{card.value}</p>
+                <p className="text-2xl font-bold font-mono text-foreground">{card.value}</p>
                 {card.change !== undefined ? (
                   <ChangeLabel pct={card.change} label={prevLabel} />
                 ) : (
-                  <p className="text-xs text-gray-400 mt-1">{period === '전체' ? '전체 기간' : `최근 ${period}`}</p>
+                  <p className="text-xs text-muted-foreground mt-2">{period === '전체' ? '전체 기간' : `최근 ${period}`}</p>
                 )}
               </Link>
             ))}
@@ -1024,10 +1024,10 @@ export default function AdminDashboard() {
 
       {/* Revenue chart */}
       {!loading && period !== '전체' && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <div className="bg-card rounded-2xl border border-border/50 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900">매출 추이 (최근 {period})</h2>
-            <span className="text-xs text-gray-400">결제완료 기준</span>
+            <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">매출 추이 (최근 {period})</h2>
+            <span className="text-xs text-muted-foreground">결제완료 기준</span>
           </div>
           <RevenueChart data={dailyRevenue} period={period} />
         </div>
@@ -1038,22 +1038,22 @@ export default function AdminDashboard() {
         {/* Left column (60%) */}
         <div className="lg:col-span-3 space-y-6">
           {/* 최근 주문 */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="bg-card rounded-2xl border border-border/50 p-6">
             <SectionHeader title="최근 주문" href="/admin/orders" />
             {loading ? (
               <TableSkeleton />
             ) : recentOrders.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">주문이 없습니다</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">주문이 없습니다</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100 text-gray-500">
-                      <th className="text-left py-2 font-medium">주문번호</th>
-                      <th className="text-left py-2 font-medium">주문자</th>
-                      <th className="text-right py-2 font-medium">금액</th>
-                      <th className="text-center py-2 font-medium">상태</th>
-                      <th className="text-right py-2 font-medium">일시</th>
+                    <tr className="border-b border-border/50 text-muted-foreground">
+                      <th className="text-left py-3 font-medium">주문번호</th>
+                      <th className="text-left py-3 font-medium">주문자</th>
+                      <th className="text-right py-3 font-medium">금액</th>
+                      <th className="text-center py-3 font-medium">상태</th>
+                      <th className="text-right py-3 font-medium">일시</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1062,18 +1062,18 @@ export default function AdminDashboard() {
                       const status =
                         statusLabels[order.status] || { label: order.status, variant: 'outline' as const }
                       return (
-                        <tr key={order.id} className="border-b border-gray-50 last:border-0">
-                          <td className="py-2.5 text-gray-700 font-mono text-xs">{order.order_number}</td>
-                          <td className="py-2.5 text-gray-700">{profile?.name || '-'}</td>
-                          <td className="py-2.5 text-right text-gray-900 font-medium">
+                        <tr key={order.id} className="border-b border-border/50 last:border-0">
+                          <td className="py-3 text-foreground font-mono text-xs">{order.order_number}</td>
+                          <td className="py-3 text-foreground">{profile?.name || '-'}</td>
+                          <td className="py-3 text-right text-foreground font-medium">
                             {formatAmount(order.total_amount)}원
                           </td>
-                          <td className="py-2.5 text-center">
+                          <td className="py-3 text-center">
                             <Badge variant={status.variant} className="text-xs">
                               {status.label}
                             </Badge>
                           </td>
-                          <td className="py-2.5 text-right text-gray-400 text-xs">
+                          <td className="py-3 text-right text-muted-foreground text-xs">
                             {formatDateTime(order.created_at)}
                           </td>
                         </tr>
@@ -1086,46 +1086,46 @@ export default function AdminDashboard() {
           </div>
 
           {/* 인기 상품 TOP 5 */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="bg-card rounded-2xl border border-border/50 p-6">
             <SectionHeader title="인기 상품 TOP 5" href="/admin/products" />
             {loading ? (
               <TableSkeleton />
             ) : topProducts.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">상품이 없습니다</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">상품이 없습니다</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-100 text-gray-500">
-                      <th className="text-center py-2 font-medium w-12">순위</th>
-                      <th className="text-left py-2 font-medium">상품명</th>
-                      <th className="text-right py-2 font-medium">다운로드수</th>
-                      <th className="text-right py-2 font-medium">가격</th>
+                    <tr className="border-b border-border/50 text-muted-foreground">
+                      <th className="text-center py-3 font-medium w-12">순위</th>
+                      <th className="text-left py-3 font-medium">상품명</th>
+                      <th className="text-right py-3 font-medium">다운로드수</th>
+                      <th className="text-right py-3 font-medium">가격</th>
                     </tr>
                   </thead>
                   <tbody>
                     {topProducts.map((product, index) => (
-                      <tr key={product.id} className="border-b border-gray-50 last:border-0">
-                        <td className="py-2.5 text-center">
+                      <tr key={product.id} className="border-b border-border/50 last:border-0">
+                        <td className="py-3 text-center">
                           <span
                             className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
                               index === 0
                                 ? 'bg-yellow-100 text-yellow-700'
                                 : index === 1
-                                ? 'bg-gray-100 text-gray-600'
+                                ? 'bg-stone-100 text-stone-600'
                                 : index === 2
                                 ? 'bg-orange-100 text-orange-700'
-                                : 'bg-gray-50 text-gray-400'
+                                : 'bg-muted text-muted-foreground'
                             }`}
                           >
                             {index + 1}
                           </span>
                         </td>
-                        <td className="py-2.5 text-gray-700 truncate max-w-[200px]">{product.title}</td>
-                        <td className="py-2.5 text-right text-gray-900 font-medium">
+                        <td className="py-3 text-foreground truncate max-w-[200px]">{product.title}</td>
+                        <td className="py-3 text-right text-foreground font-medium">
                           {formatAmount(product.download_count)}
                         </td>
-                        <td className="py-2.5 text-right text-gray-600">{formatPrice(product.price)}</td>
+                        <td className="py-3 text-right text-muted-foreground">{formatPrice(product.price)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1138,22 +1138,22 @@ export default function AdminDashboard() {
         {/* Right column (40%) */}
         <div className="lg:col-span-2 space-y-6">
           {/* 최근 가입 회원 */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="bg-card rounded-2xl border border-border/50 p-6">
             <SectionHeader title="최근 가입 회원" href="/admin/members" />
             {loading ? (
               <ListSkeleton />
             ) : recentMembers.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">회원이 없습니다</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">회원이 없습니다</p>
             ) : (
               <div className="space-y-3">
                 {recentMembers.map((member) => (
                   <div key={member.id} className="flex items-center gap-3">
                     <AvatarInitial name={member.name || member.email} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{member.name || '-'}</p>
-                      <p className="text-xs text-gray-400 truncate">{member.email}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{member.name || '-'}</p>
+                      <p className="text-xs text-muted-foreground truncate">{member.email}</p>
                     </div>
-                    <span className="text-xs text-gray-400 shrink-0">{formatDate(member.created_at)}</span>
+                    <span className="text-xs text-muted-foreground shrink-0">{formatDate(member.created_at)}</span>
                   </div>
                 ))}
               </div>
@@ -1161,12 +1161,12 @@ export default function AdminDashboard() {
           </div>
 
           {/* 최근 컨설팅 신청 */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="bg-card rounded-2xl border border-border/50 p-6">
             <SectionHeader title="최근 컨설팅 신청" href="/admin/consulting" />
             {loading ? (
               <ListSkeleton />
             ) : recentConsulting.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">신청이 없습니다</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">신청이 없습니다</p>
             ) : (
               <div className="space-y-3">
                 {recentConsulting.map((item) => {
@@ -1179,7 +1179,7 @@ export default function AdminDashboard() {
                     <div key={item.id} className="flex items-center gap-3">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
+                          <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
                           <Badge variant="secondary" className="text-[10px] shrink-0">
                             {packageLabels[item.package_type] || item.package_type}
                           </Badge>
@@ -1188,7 +1188,7 @@ export default function AdminDashboard() {
                       <Badge variant={status.variant} className="text-[10px] shrink-0">
                         {status.label}
                       </Badge>
-                      <span className="text-xs text-gray-400 shrink-0">{formatDate(item.created_at)}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">{formatDate(item.created_at)}</span>
                     </div>
                   )
                 })}
@@ -1197,12 +1197,12 @@ export default function AdminDashboard() {
           </div>
 
           {/* 최근 리뷰 */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="bg-card rounded-2xl border border-border/50 p-6">
             <SectionHeader title="최근 리뷰" href="/admin/reviews" />
             {loading ? (
               <ListSkeleton />
             ) : recentReviews.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">리뷰가 없습니다</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">리뷰가 없습니다</p>
             ) : (
               <div className="space-y-3">
                 {recentReviews.map((review) => {
@@ -1216,11 +1216,11 @@ export default function AdminDashboard() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
                           <StarRating rating={review.rating} />
-                          <span className="text-xs text-gray-400">{profile?.name || '-'}</span>
+                          <span className="text-xs text-muted-foreground">{profile?.name || '-'}</span>
                         </div>
-                        <p className="text-sm text-gray-700 truncate">{productTitle}</p>
+                        <p className="text-sm text-foreground truncate">{productTitle}</p>
                       </div>
-                      <span className="text-xs text-gray-400 shrink-0">{formatDate(review.created_at)}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">{formatDate(review.created_at)}</span>
                     </div>
                   )
                 })}
@@ -1229,12 +1229,12 @@ export default function AdminDashboard() {
           </div>
 
           {/* 최근 다운로드 */}
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <div className="bg-card rounded-2xl border border-border/50 p-6">
             <SectionHeader title="최근 다운로드" href="/admin/downloads" />
             {loading ? (
               <ListSkeleton />
             ) : recentDownloads.length === 0 ? (
-              <p className="text-sm text-gray-400 py-4 text-center">다운로드 기록이 없습니다</p>
+              <p className="text-sm text-muted-foreground py-4 text-center">다운로드 기록이 없습니다</p>
             ) : (
               <div className="space-y-3">
                 {recentDownloads.map((dl) => {
@@ -1242,12 +1242,12 @@ export default function AdminDashboard() {
                   const productTitle = downloadProducts[dl.product_id] || '-'
                   return (
                     <div key={dl.id} className="flex items-center gap-3">
-                      <Download className="w-4 h-4 text-gray-300 shrink-0" />
+                      <Download className="w-4 h-4 text-muted-foreground shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-700 truncate">{productTitle}</p>
-                        <p className="text-xs text-gray-400 truncate">{profile?.name || '-'}</p>
+                        <p className="text-sm text-foreground truncate">{productTitle}</p>
+                        <p className="text-xs text-muted-foreground truncate">{profile?.name || '-'}</p>
                       </div>
-                      <span className="text-xs text-gray-400 shrink-0">{formatDate(dl.downloaded_at)}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">{formatDate(dl.downloaded_at)}</span>
                     </div>
                   )
                 })}

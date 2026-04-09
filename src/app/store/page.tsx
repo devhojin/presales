@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback, type ReactNode } from 'react
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import { Badge } from '@/components/ui/badge'
-import { Search, ShoppingCart, Check, Star, RotateCcw, ChevronDown } from 'lucide-react'
+import { Search, ShoppingCart, Check, Star, RotateCcw, ChevronDown, FileText } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
 import Link from 'next/link'
@@ -93,46 +93,46 @@ function ProductCard({ product, onFileTypeClick, categoryNames, searchQuery }: {
 
   return (
     <Link href={`/store/${product.id}`} className="group">
-      <div className="border border-border rounded-xl overflow-hidden bg-card hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+      <div className="border border-border/50 rounded-2xl overflow-hidden bg-card hover:border-border hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {product.thumbnail_url ? (
             <Image src={product.thumbnail_url} alt={product.title} width={400} height={300} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center">
-              <span className="text-4xl">📄</span>
+            <div className="w-full h-full bg-gradient-to-br from-emerald-900 to-emerald-700 flex items-center justify-center">
+              <FileText className="w-12 h-12 text-emerald-100 opacity-60" />
             </div>
           )}
-          <Badge className={`absolute top-3 left-3 border text-xs ${product.is_free ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'}`}>
-            {product.is_free ? '무료' : '유료'}
+          <Badge className={`absolute top-3 left-3 border text-xs font-semibold uppercase tracking-widest ${product.is_free ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-zinc-100 text-zinc-700 border-zinc-200'}`}>
+            {product.is_free ? 'FREE' : 'PREMIUM'}
           </Badge>
           {!product.is_free && discount > 0 && (
-            <Badge className="absolute top-3 right-3 bg-red-500 text-white border-0 text-xs">-{discount}%</Badge>
+            <Badge className="absolute top-3 right-3 bg-red-500 text-white border-0 text-xs font-semibold">-{discount}%</Badge>
           )}
           <button
             onClick={handleCartToggle}
             aria-label={inCart ? '장바구니에서 빼기' : '장바구니에 담기'}
-            className={`absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md ${
-              inCart ? 'bg-primary text-primary-foreground' : 'bg-white/90 text-gray-600 hover:bg-white hover:text-primary'
+            className={`absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-md active:scale-[0.98] cursor-pointer ${
+              inCart ? 'bg-primary text-primary-foreground' : 'bg-white/90 text-foreground hover:bg-white hover:text-primary'
             }`}
           >
             {inCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
           </button>
         </div>
         <div className="p-4 space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex gap-1 flex-wrap">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex gap-1 flex-wrap text-xs font-semibold uppercase tracking-widest">
               {categoryNames.map((name) => (
-                <span key={name} className="text-xs text-muted-foreground">{name}</span>
+                <span key={name} className="text-muted-foreground">{name}</span>
               ))}
             </div>
             <FileTypeBadges format={product.format} onClick={onFileTypeClick} />
           </div>
-          <h3 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+          <h3 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors duration-300">
             {searchQuery ? highlightText(product.title, searchQuery) : product.title}
           </h3>
           <div className="flex items-center gap-2">
             {product.is_free ? (
-              <span className="text-base font-bold text-emerald-600">무료</span>
+              <span className="text-base font-bold text-primary">FREE</span>
             ) : (
               <>
                 <span className="text-base font-bold text-primary">{formatPrice(product.price)}</span>
@@ -152,7 +152,7 @@ function ProductCard({ product, onFileTypeClick, categoryNames, searchQuery }: {
           {product.tags && product.tags.length > 0 && (
             <div className="flex gap-1 flex-wrap">
               {product.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="text-[10px] text-blue-500">#{tag}</span>
+                <span key={tag} className="text-[10px] text-primary">#{tag}</span>
               ))}
               {product.tags.length > 3 && (
                 <span className="text-[10px] text-muted-foreground">+{product.tags.length - 3}</span>
@@ -341,14 +341,14 @@ export default function StorePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">문서 스토어</h1>
-        <p className="text-muted-foreground mt-1">공공조달 입찰에 필요한 모든 문서 템플릿</p>
+    <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-24">
+      <div className="mb-12">
+        <h1 className="text-3xl md:text-4xl font-bold tracking-tight">문서 스토어</h1>
+        <p className="text-muted-foreground mt-2">공공조달 입찰에 필요한 모든 문서 템플릿</p>
       </div>
 
-      <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+      <div className="relative mb-8">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input
           type="text"
           placeholder="템플릿 검색 (예: 기술제안서, IoT, 스마트시티...)"
@@ -357,11 +357,11 @@ export default function StorePage() {
             setSearchQuery(e.target.value)
             updateURL(selectedCategories, selectedPriceType, e.target.value, sortOrder)
           }}
-          className="w-full pl-10 pr-4 py-2.5 border border-border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+          className="w-full pl-12 pr-6 py-3 border border-border/50 rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
         />
       </div>
 
-      <div className="space-y-3 mb-8">
+      <div className="space-y-4 mb-10">
         {/* 카테고리 필터 */}
         <div className="flex flex-wrap gap-2">
           <button
@@ -369,8 +369,8 @@ export default function StorePage() {
               setSelectedCategories(new Set())
               updateURL(new Set(), selectedPriceType, searchQuery, sortOrder)
             }}
-            className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-medium border transition-colors ${
-              selectedCategories.size === 0 ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-muted'
+            className={`px-4 py-2 min-h-[40px] rounded-full text-xs font-semibold uppercase tracking-widest border transition-all duration-300 ${
+              selectedCategories.size === 0 ? 'bg-primary text-primary-foreground border-primary' : 'border-border/50 hover:border-border hover:bg-muted'
             }`}
           >
             전체
@@ -379,8 +379,8 @@ export default function StorePage() {
             <button
               key={cat.id}
               onClick={() => toggleCategory(cat.id)}
-              className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-medium border transition-colors ${
-                selectedCategories.has(cat.id) ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:bg-muted'
+              className={`px-4 py-2 min-h-[40px] rounded-full text-xs font-semibold uppercase tracking-widest border transition-all duration-300 ${
+                selectedCategories.has(cat.id) ? 'bg-primary text-primary-foreground border-primary' : 'border-border/50 hover:border-border hover:bg-muted'
               }`}
             >
               {cat.name}
@@ -391,7 +391,7 @@ export default function StorePage() {
         {/* 상세 필터 토글 */}
         <button
           onClick={() => setShowDetailFilter(!showDetailFilter)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-muted transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-widest border border-border/50 hover:border-border hover:bg-muted transition-all duration-300 cursor-pointer"
         >
           상세 필터
           {detailFilterCount > 0 && (
@@ -399,11 +399,11 @@ export default function StorePage() {
               {detailFilterCount}
             </span>
           )}
-          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showDetailFilter ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${showDetailFilter ? 'rotate-180' : ''}`} />
         </button>
 
         {showDetailFilter && (
-          <div className="space-y-3">
+          <div className="space-y-4 pl-4 border-l border-border/50">
             {/* 파일 형태 필터 */}
             <div className="flex flex-wrap gap-2">
               {allFileTypes.map((ft) => (
@@ -414,8 +414,8 @@ export default function StorePage() {
                     setSelectedFileType(newFileType)
                     updateURL(selectedCategories, selectedPriceType, searchQuery, sortOrder, newFileType)
                   }}
-                  className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-bold border transition-colors ${
-                    selectedFileType === ft.id ? ft.color : 'border-border hover:bg-muted text-muted-foreground'
+                  className={`px-4 py-2 min-h-[40px] rounded-full text-xs font-bold border transition-all duration-300 ${
+                    selectedFileType === ft.id ? ft.color : 'border-border/50 hover:border-border text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {ft.label}
@@ -438,10 +438,10 @@ export default function StorePage() {
                     const newRange = selectedPriceRange === pr.id ? null : pr.id
                     setSelectedPriceRange(newRange)
                   }}
-                  className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-medium border transition-colors ${
+                  className={`px-4 py-2 min-h-[40px] rounded-full text-xs font-semibold uppercase tracking-widest border transition-all duration-300 ${
                     selectedPriceRange === pr.id
                       ? 'bg-primary text-primary-foreground border-primary'
-                      : 'border-border hover:bg-muted'
+                      : 'border-border/50 hover:border-border hover:bg-muted'
                   }`}
                 >
                   {pr.label}
@@ -459,8 +459,8 @@ export default function StorePage() {
                     setSelectedPriceType(newPrice)
                     updateURL(selectedCategories, newPrice, searchQuery, sortOrder, selectedFileType)
                   }}
-                  className={`px-3 py-2 min-h-[36px] rounded-full text-xs font-medium border transition-colors ${
-                    selectedPriceType === pt.id ? pt.color : 'border-border hover:bg-muted'
+                  className={`px-4 py-2 min-h-[40px] rounded-full text-xs font-semibold uppercase tracking-widest border transition-all duration-300 ${
+                    selectedPriceType === pt.id ? pt.color : 'border-border/50 hover:border-border hover:bg-muted'
                   }`}
                 >
                   {pt.label}
@@ -471,7 +471,7 @@ export default function StorePage() {
         )}
       </div>
 
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
           <p className="text-sm text-muted-foreground">
             {filteredProducts.length}개 상품
@@ -480,7 +480,7 @@ export default function StorePage() {
           {hasActiveFilters && (
             <button
               onClick={resetFilters}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium border border-border hover:bg-muted transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-widest border border-border/50 hover:border-border hover:bg-muted transition-all duration-300 cursor-pointer active:scale-[0.98]"
             >
               <RotateCcw className="w-3 h-3" />
               필터 초기화
@@ -496,7 +496,7 @@ export default function StorePage() {
             setSortOrder(newSort)
             updateURL(selectedCategories, selectedPriceType, searchQuery, newSort)
           }}
-          className="text-xs border border-border rounded-lg px-3 py-1.5 bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer"
+          className="text-xs border border-border/50 rounded-xl px-4 py-2.5 bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-all"
         >
           <option value="recommended">기본순</option>
           <option value="price_asc">가격 낮은순</option>
@@ -508,7 +508,7 @@ export default function StorePage() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="border border-border rounded-xl overflow-hidden animate-pulse">
+            <div key={i} className="border border-border/50 rounded-2xl overflow-hidden animate-pulse">
               <div className="aspect-[4/3] bg-muted" />
               <div className="p-4 space-y-3">
                 <div className="h-3 bg-muted rounded w-1/3" />
@@ -527,27 +527,27 @@ export default function StorePage() {
       )}
 
       {!loading && filteredProducts.length === 0 && (
-        <div className="text-center py-16">
-          <p className="text-lg text-muted-foreground mb-2">검색 결과가 없습니다</p>
-          <p className="text-sm text-muted-foreground mb-6">다른 키워드로 검색하거나 필터를 초기화해보세요</p>
-          <div className="flex items-center justify-center gap-3 mb-10">
+        <div className="text-center py-24">
+          <p className="text-lg font-semibold text-foreground mb-2">검색 결과가 없습니다</p>
+          <p className="text-sm text-muted-foreground mb-8">다른 키워드로 검색하거나 필터를 초기화해보세요</p>
+          <div className="flex items-center justify-center gap-3 mb-12">
             <button
               onClick={resetFilters}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border hover:bg-muted text-sm font-medium transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-6 py-3 rounded-full border border-border/50 hover:border-border hover:bg-muted text-sm font-semibold uppercase tracking-widest transition-all duration-300 cursor-pointer active:scale-[0.98]"
             >
               <RotateCcw className="w-4 h-4" />
               필터 초기화
             </button>
             <Link
               href="/consulting"
-              className="inline-flex items-center px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+              className="inline-flex items-center px-6 py-3 rounded-full bg-primary text-primary-foreground text-sm font-semibold uppercase tracking-widest hover:bg-primary/90 transition-all duration-300 active:scale-[0.98]"
             >
-              원하는 문서를 찾지 못하셨나요? 컨설팅 문의
+              컨설팅 문의
             </Link>
           </div>
           {popularProducts.length > 0 && (
             <div>
-              <p className="text-sm font-semibold text-muted-foreground mb-4">인기 상품을 확인해보세요</p>
+              <p className="text-sm font-semibold text-muted-foreground mb-6">인기 상품을 확인해보세요</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {popularProducts.map((product) => (
                   <ProductCard key={product.id} product={product} onFileTypeClick={handleFileTypeClick} categoryNames={getCategoryNames(product)} />

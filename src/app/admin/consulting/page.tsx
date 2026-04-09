@@ -55,8 +55,8 @@ const statusConfig: Record<string, { label: string; class: string; bg: string }>
   },
   confirmed: {
     label: '확정',
-    class: 'bg-blue-50 text-blue-700 border border-blue-200',
-    bg: 'bg-blue-500',
+    class: 'bg-primary/8 text-primary border border-primary/20',
+    bg: 'bg-primary',
   },
   completed: {
     label: '완료',
@@ -65,7 +65,7 @@ const statusConfig: Record<string, { label: string; class: string; bg: string }>
   },
   cancelled: {
     label: '취소',
-    class: 'bg-gray-100 text-gray-500 border border-gray-200',
+    class: 'bg-muted text-muted-foreground border border-border',
     bg: 'bg-gray-400',
   },
 }
@@ -101,12 +101,12 @@ function formatDateTime(date: string) {
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="flex items-start gap-3 py-3">
-      <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">
+      <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-muted flex items-center justify-center text-muted-foreground">
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] text-gray-400 mb-0.5">{label}</p>
-        <p className="text-sm font-medium text-gray-900 break-all">{value || '-'}</p>
+        <p className="text-[11px] text-muted-foreground mb-0.5">{label}</p>
+        <p className="text-sm font-medium text-foreground break-all">{value || '-'}</p>
       </div>
     </div>
   )
@@ -144,30 +144,30 @@ function StatusConfirmModal({
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
       <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
-            <CheckCircle className="w-5 h-5 text-blue-600" />
+          <div className="w-10 h-10 rounded-full bg-primary/8 flex items-center justify-center">
+            <CheckCircle className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-gray-900">상태 변경 확인</h3>
-            <p className="text-xs text-gray-500">이 작업은 즉시 적용됩니다</p>
+            <h3 className="text-sm font-semibold text-foreground">상태 변경 확인</h3>
+            <p className="text-xs text-muted-foreground">이 작업은 즉시 적용됩니다</p>
           </div>
         </div>
-        <p className="text-sm text-gray-700 mb-6">
+        <p className="text-sm text-foreground mb-6">
           <span className="font-medium">{request.name}</span> 님의 상담 상태를{' '}
-          <span className="font-semibold text-blue-600">{targetLabel}</span>(으)로 변경하시겠습니까?
+          <span className="font-semibold text-primary">{targetLabel}</span>(으)로 변경하시겠습니까?
         </p>
         <div className="flex gap-3 justify-end">
           <button
             onClick={onCancel}
             disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-muted transition-colors disabled:opacity-50"
           >
             취소
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             {loading ? '처리 중...' : '변경'}
           </button>
@@ -232,19 +232,19 @@ function ConsultingDetailModal({
       {/* Modal */}
       <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
               {(request.name || '?')[0]}
             </div>
             <div>
-              <h2 className="text-base font-semibold text-gray-900">{request.name}</h2>
-              <p className="text-xs text-gray-500">{request.email}</p>
+              <h2 className="text-base font-semibold text-foreground">{request.name}</h2>
+              <p className="text-xs text-muted-foreground">{request.email}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+            className="w-8 h-8 rounded-xl hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-muted-foreground transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -254,10 +254,10 @@ function ConsultingDetailModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* 신청자 정보 */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               신청자 정보
             </h3>
-            <div className="bg-gray-50 rounded-xl p-4 space-y-0 divide-y divide-gray-200/60">
+            <div className="bg-muted rounded-xl p-4 space-y-0 divide-y divide-gray-200/60">
               <InfoRow icon={<User className="w-4 h-4" />} label="이름" value={request.name || '-'} />
               <InfoRow icon={<Mail className="w-4 h-4" />} label="이메일" value={request.email} />
               <InfoRow icon={<Phone className="w-4 h-4" />} label="연락처" value={request.phone || '-'} />
@@ -267,11 +267,11 @@ function ConsultingDetailModal({
 
           {/* 패키지 유형 */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               패키지 유형
             </h3>
-            <div className="bg-gray-50 rounded-xl p-4">
-              <Badge className="bg-blue-50 text-blue-700 border border-blue-200 text-sm px-3 py-1">
+            <div className="bg-muted rounded-xl p-4">
+              <Badge className="bg-primary/8 text-primary border border-primary/20 text-sm px-3 py-1">
                 {packageLabels[request.package_type] || request.package_type}
               </Badge>
             </div>
@@ -279,13 +279,13 @@ function ConsultingDetailModal({
 
           {/* 상담 메시지 */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               상담 메시지
             </h3>
-            <div className="bg-gray-50 rounded-xl p-4">
+            <div className="bg-muted rounded-xl p-4">
               <div className="flex items-start gap-2">
-                <MessageSquare className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                <MessageSquare className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
                   {request.message || '(메시지 없음)'}
                 </p>
               </div>
@@ -294,18 +294,18 @@ function ConsultingDetailModal({
 
           {/* 상태 관리 */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               상태 관리
             </h3>
-            <div className="bg-gray-50 rounded-xl p-4">
+            <div className="bg-muted rounded-xl p-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center">
-                    <Clock className="w-4 h-4 text-gray-500" />
+                  <div className="w-8 h-8 rounded-xl bg-white border border-border flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-900">현재 상태</p>
-                    <Badge className={`${cfg?.class || 'bg-gray-100 text-gray-600 border border-gray-200'} mt-1`}>
+                    <p className="text-sm font-medium text-foreground">현재 상태</p>
+                    <Badge className={`${cfg?.class || 'bg-muted text-muted-foreground border border-border'} mt-1`}>
                       {cfg?.label || request.status}
                     </Badge>
                   </div>
@@ -316,14 +316,14 @@ function ConsultingDetailModal({
                   <>
                     <button
                       onClick={() => handleStatusClick('confirmed')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors"
                     >
                       <CheckCircle className="w-4 h-4" />
                       확정
                     </button>
                     <button
                       onClick={() => handleStatusClick('cancelled')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-gray-300 transition-colors"
                     >
                       <XCircle className="w-4 h-4" />
                       취소
@@ -334,14 +334,14 @@ function ConsultingDetailModal({
                   <>
                     <button
                       onClick={() => handleStatusClick('completed')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors"
                     >
                       <CheckCircle className="w-4 h-4" />
                       완료 처리
                     </button>
                     <button
                       onClick={() => handleStatusClick('cancelled')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-gray-300 transition-colors"
                     >
                       <XCircle className="w-4 h-4" />
                       취소
@@ -349,7 +349,7 @@ function ConsultingDetailModal({
                   </>
                 )}
                 {(request.status === 'completed' || request.status === 'cancelled') && (
-                  <p className="text-sm text-gray-400">상태 변경이 불가능합니다</p>
+                  <p className="text-sm text-muted-foreground">상태 변경이 불가능합니다</p>
                 )}
               </div>
             </div>
@@ -357,10 +357,10 @@ function ConsultingDetailModal({
 
           {/* 일시 정보 */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               일시 정보
             </h3>
-            <div className="bg-gray-50 rounded-xl p-4 space-y-0 divide-y divide-gray-200/60">
+            <div className="bg-muted rounded-xl p-4 space-y-0 divide-y divide-gray-200/60">
               <InfoRow
                 icon={<Calendar className="w-4 h-4" />}
                 label="신청일"
@@ -484,21 +484,21 @@ export default function AdminConsulting() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-muted">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Page Header */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">컨설팅 신청 관리</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-foreground">컨설팅 신청 관리</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             전체 {totalCount}건의 컨설팅 신청을 관리합니다
           </p>
         </div>
 
         {/* Filter & Search Bar */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+        <div className="bg-white rounded-xl border border-border p-4 mb-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             {/* Filter Tabs */}
-            <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
+            <div className="flex items-center gap-1 bg-muted rounded-full p-1">
               {filterTabs.map((tab) => (
                 <button
                   key={tab.key}
@@ -506,13 +506,13 @@ export default function AdminConsulting() {
                   className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                     filterTab === tab.key
                       ? 'bg-gray-900 text-white shadow-sm'
-                      : 'text-gray-600 hover:text-gray-900'
+                      : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {tab.label}
                   <span
                     className={`ml-1.5 text-xs ${
-                      filterTab === tab.key ? 'text-gray-300' : 'text-gray-400'
+                      filterTab === tab.key ? 'text-muted-foreground' : 'text-muted-foreground'
                     }`}
                   >
                     {tab.count}
@@ -524,14 +524,14 @@ export default function AdminConsulting() {
             {/* Search + Page Size */}
             <div className="flex items-center gap-3 w-full sm:w-auto">
               <div className="relative flex-1 sm:flex-initial">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input
                   ref={searchRef}
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="이름, 이메일, 회사 검색"
-                  className="w-full sm:w-64 pl-9 pr-8 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 placeholder:text-gray-400"
+                  className="w-full sm:w-64 pl-9 pr-8 py-2 border border-border rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
                 />
                 {search && (
                   <button
@@ -539,7 +539,7 @@ export default function AdminConsulting() {
                       setSearch('')
                       searchRef.current?.focus()
                     }}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -548,7 +548,7 @@ export default function AdminConsulting() {
               <select
                 value={pageSize}
                 onChange={(e) => setPageSize(Number(e.target.value))}
-                className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:border-blue-500"
+                className="border border-border rounded-xl px-3 py-2 text-sm text-foreground bg-white focus:outline-none focus:border-primary"
               >
                 <option value={20}>20개</option>
                 <option value={50}>50개</option>
@@ -559,30 +559,30 @@ export default function AdminConsulting() {
         </div>
 
         {/* Consulting Table */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <tr className="border-b border-border bg-muted">
+                  <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     신청자
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                  <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
                     이메일
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell">
+                  <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden xl:table-cell">
                     연락처
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                  <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">
                     회사
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     패키지
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     상태
                   </th>
-                  <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                  <th className="text-left px-6 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
                     신청일
                   </th>
                 </tr>
@@ -592,8 +592,8 @@ export default function AdminConsulting() {
                   <tr>
                     <td colSpan={7} className="px-6 py-16 text-center">
                       <div className="flex flex-col items-center gap-3">
-                        <div className="w-8 h-8 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
-                        <p className="text-sm text-gray-400">신청 목록을 불러오는 중...</p>
+                        <div className="w-8 h-8 border-2 border-border border-t-blue-600 rounded-full animate-spin" />
+                        <p className="text-sm text-muted-foreground">신청 목록을 불러오는 중...</p>
                       </div>
                     </td>
                   </tr>
@@ -601,7 +601,7 @@ export default function AdminConsulting() {
                   <tr>
                     <td colSpan={7} className="px-6 py-16 text-center">
                       <MessageSquare className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                      <p className="text-sm text-gray-400">
+                      <p className="text-sm text-muted-foreground">
                         {search ? '검색 결과가 없습니다' : '컨설팅 신청이 없습니다'}
                       </p>
                     </td>
@@ -614,44 +614,44 @@ export default function AdminConsulting() {
                       <tr
                         key={req.id}
                         onClick={() => setSelectedRequest(req)}
-                        className="hover:bg-blue-50/40 cursor-pointer transition-colors"
+                        className="hover:bg-primary/8/40 cursor-pointer transition-colors"
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-gray-600 text-xs font-semibold flex-shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-muted-foreground text-xs font-semibold flex-shrink-0">
                               {(req.name || '?')[0]}
                             </div>
-                            <span className="text-sm font-medium text-gray-900">
+                            <span className="text-sm font-medium text-foreground">
                               {req.name || '-'}
                             </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm hidden lg:table-cell">
-                          <a href={`mailto:${req.email}`} className="text-blue-600 hover:underline" onClick={(e) => e.stopPropagation()}>
+                          <a href={`mailto:${req.email}`} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
                             {req.email}
                           </a>
                         </td>
                         <td className="px-6 py-4 text-sm hidden xl:table-cell">
                           {req.phone ? (
-                            <a href={`tel:${req.phone}`} className="text-blue-600 hover:underline" onClick={(e) => e.stopPropagation()}>
+                            <a href={`tel:${req.phone}`} className="text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
                               {req.phone}
                             </a>
                           ) : '-'}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500 hidden md:table-cell">
+                        <td className="px-6 py-4 text-sm text-muted-foreground hidden md:table-cell">
                           {req.company || '-'}
                         </td>
                         <td className="px-6 py-4">
-                          <Badge className="bg-blue-50 text-blue-700 border border-blue-200">
+                          <Badge className="bg-primary/8 text-primary border border-primary/20">
                             {pkgLabel}
                           </Badge>
                         </td>
                         <td className="px-6 py-4">
-                          <Badge className={cfg?.class || 'bg-gray-100 text-gray-600 border border-gray-200'}>
+                          <Badge className={cfg?.class || 'bg-muted text-muted-foreground border border-border'}>
                             {cfg?.label || req.status}
                           </Badge>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500 hidden sm:table-cell">
+                        <td className="px-6 py-4 text-sm text-muted-foreground hidden sm:table-cell">
                           {formatDate(req.created_at)}
                         </td>
                       </tr>
@@ -664,8 +664,8 @@ export default function AdminConsulting() {
 
           {/* Pagination */}
           {!loading && filtered.length > 0 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-gray-50/50">
-              <p className="text-xs text-gray-500">
+            <div className="flex items-center justify-between px-6 py-4 border-t border-border/50 bg-muted/50">
+              <p className="text-xs text-muted-foreground">
                 총 {filtered.length}건 중 {(safePage - 1) * pageSize + 1}-
                 {Math.min(safePage * pageSize, filtered.length)}건
               </p>
@@ -673,7 +673,7 @@ export default function AdminConsulting() {
                 <button
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={safePage <= 1}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="w-8 h-8 flex items-center justify-center rounded-xl text-muted-foreground hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -692,17 +692,17 @@ export default function AdminConsulting() {
                   }, [])
                   .map((item, idx) =>
                     item === 'ellipsis' ? (
-                      <span key={`e-${idx}`} className="w-8 h-8 flex items-center justify-center text-xs text-gray-400">
+                      <span key={`e-${idx}`} className="w-8 h-8 flex items-center justify-center text-xs text-muted-foreground">
                         ...
                       </span>
                     ) : (
                       <button
                         key={item}
                         onClick={() => setCurrentPage(item)}
-                        className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                        className={`w-8 h-8 flex items-center justify-center rounded-xl text-sm font-medium transition-colors ${
                           safePage === item
                             ? 'bg-gray-900 text-white'
-                            : 'text-gray-600 hover:bg-gray-200'
+                            : 'text-muted-foreground hover:bg-muted'
                         }`}
                       >
                         {item}
@@ -712,7 +712,7 @@ export default function AdminConsulting() {
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={safePage >= totalPages}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  className="w-8 h-8 flex items-center justify-center rounded-xl text-muted-foreground hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
