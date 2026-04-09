@@ -1,0 +1,1365 @@
+- generic [active] [ref=e1]:
+  - heading "프리세일즈 도큐멘토 나라장터 입찰 제안서 다운로드 제공, 공공기관 제안서, 시스템 구축 제안서 판매" [level=1] [ref=e2]
+  - generic:  
+  - text: 
+  - generic:
+    - list [ref=e4]:  
+    - text: 
+  - banner [ref=e5]:
+    - generic [ref=e6]:
+      - list [ref=e17]:
+        - generic [ref=e18]:
+          - listitem [ref=e19]:
+            - link "기획서,제안서" [ref=e20] [cursor=pointer]:
+              - /url: /shop
+          - listitem [ref=e21]:
+            - link "기획 인사이트" [ref=e22] [cursor=pointer]:
+              - /url: /notice
+          - listitem [ref=e23]:
+            - link "정부사업" [ref=e24] [cursor=pointer]:
+              - /url: /gov
+          - listitem [ref=e25]:
+            - link "제안서 작성법" [ref=e26] [cursor=pointer]:
+              - /url: /Proposal
+          - listitem [ref=e27]:
+            - link "씽크탱크" [ref=e28] [cursor=pointer]:
+              - /url: /23
+          - listitem [ref=e29]:
+            - link "같이쓰시죠" [ref=e30] [cursor=pointer]:
+              - /url: /98
+          - listitem [ref=e31]:
+            - link "풀케어 파트너" [ref=e32] [cursor=pointer]:
+              - /url: /amarans
+        - listitem [ref=e35]:
+          - generic [ref=e37] [cursor=pointer]: 
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - generic [ref=e44]:
+            - paragraph [ref=e57]:
+              - link "[공지] 아는 사람만 아는 '프리세일즈 도큐멘토'" [ref=e58] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/announce/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&bmode=view&idx=15662925&t=board
+              - link:
+                - /url: https://www.documento.co.kr/630410542/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&bmode=view&idx=15662925&t=board
+            - generic [ref=e59]:
+              - link "프리세일즈 도큐멘토 프리세일즈 도큐멘토 프리세일즈 도큐멘토" [ref=e65] [cursor=pointer]:
+                - /url: /
+                - generic [ref=e66]: 프리세일즈 도큐멘토
+                - img "프리세일즈 도큐멘토" [ref=e67]
+                - img "프리세일즈 도큐멘토" [ref=e68]
+              - link "프리세일즈 도큐멘토 프리세일즈 도큐멘토 프리세일즈 도큐멘토" [ref=e74] [cursor=pointer]:
+                - /url: /
+                - generic [ref=e75]: 프리세일즈 도큐멘토
+                - img "프리세일즈 도큐멘토" [ref=e76]
+                - img "프리세일즈 도큐멘토" [ref=e77]
+            - generic [ref=e83]:
+              - link "알립니다(공지사항)" [ref=e85] [cursor=pointer]:
+                - /url: /announce
+                - generic [ref=e86]: 알립니다(공지사항)
+              - link "로그인" [ref=e88] [cursor=pointer]:
+                - /url: /login?back_url=Lw%3D%3D&used_login_btn=Y
+                - generic [ref=e89]: 로그인
+              - link "회원가입" [ref=e91] [cursor=pointer]:
+                - /url: /site_join_pattern_choice?back_url=Lw%3D%3D
+                - generic [ref=e92]: 회원가입
+          - list [ref=e106]:
+            - generic [ref=e107]:
+              - listitem [ref=e108]:
+                - link "기획서,제안서" [ref=e109] [cursor=pointer]:
+                  - /url: /shop
+              - listitem [ref=e110]:
+                - link "기획 인사이트" [ref=e111] [cursor=pointer]:
+                  - /url: /notice
+              - listitem [ref=e112]:
+                - link "정부사업" [ref=e113] [cursor=pointer]:
+                  - /url: /gov
+              - listitem [ref=e114]:
+                - link "제안서 작성법" [ref=e115] [cursor=pointer]:
+                  - /url: /Proposal
+              - listitem [ref=e116]:
+                - link "씽크탱크" [ref=e117] [cursor=pointer]:
+                  - /url: /23
+              - listitem [ref=e118]:
+                - link "같이쓰시죠" [ref=e119] [cursor=pointer]:
+                  - /url: /98
+              - listitem [ref=e120]:
+                - link "풀케어 파트너" [ref=e121] [cursor=pointer]:
+                  - /url: /amarans
+            - listitem [ref=e124]:
+              - generic [ref=e126] [cursor=pointer]: 
+        - text:   
+  - text:  
+  - main [ref=e130]:
+    - generic [ref=e139]:
+      - textbox "site search" [ref=e140]:
+        - /placeholder: 제안서를 검색해보세요
+      - link "site search" [ref=e141] [cursor=pointer]:
+        - /url: javascript:;
+        - generic [ref=e142]: 
+        - generic [ref=e143]: site search
+  - main [ref=e147]:
+    - paragraph [ref=e156]: 네이버페이 같은 결제방식은 디지털컨텐츠에 적용할 수 없기 때문에 부득이하게 일반 결제방식으로 제공됩니다.
+  - main [ref=e160]:
+    - generic [ref=e174]:
+      - link "2026년 AX 인턴십 프로그램(채용연계형) 참여기업 모집 공고 2026년 AX 인턴십 프로그램(채용연계형) 참여기업 모집 안내 AI 인재를 채용과 동시에 육성할 수 있는 기회, 「2026년 AX 인턴십 프로그램(채용연계형)」이 참여기업을 모" [ref=e178] [cursor=pointer]:
+        - /url: /39/?idx=170092615&bmode=view
+        - generic [ref=e181]:
+          - generic [ref=e182]: 2026년 AX 인턴십 프로그램(채용연계형) 참여기업 모집 공고
+          - generic [ref=e183]: 2026년 AX 인턴십 프로그램(채용연계형) 참여기업 모집 안내 AI 인재를 채용과 동시에 육성할 수 있는 기회, 「2026년 AX 인턴십 프로그램(채용연계형)」이 참여기업을 모
+      - link "2026년 재도전성공패키지 예비재창업자 및 재창업기업 모집공고 중소벤처기업부 공고 제2026-87호 2026년 재도전성공패키지 예비재창업자 및 재창업기업 모집공고 성실한 실패 경험과 우수한 아이템을 바탕으로 성장 가능성이 높은 (예비)" [ref=e187] [cursor=pointer]:
+        - /url: /39/?idx=170092122&bmode=view
+        - generic [ref=e190]:
+          - generic [ref=e191]: 2026년 재도전성공패키지 예비재창업자 및 재창업기업 모집공고
+          - generic [ref=e192]: 중소벤처기업부 공고 제2026-87호 2026년 재도전성공패키지 예비재창업자 및 재창업기업 모집공고 성실한 실패 경험과 우수한 아이템을 바탕으로 성장 가능성이 높은 (예비)
+      - link "2026년 중소벤처기업 지원사업 완벽 가이드 들어가며 이 자료, 어떻게 활용하나요? 중소벤처기업부가 매년 발간하는 「중소벤처기업 지원사업」은 국내 중소기업·벤처·스타트업이 활용 가능한 정부 지원" [ref=e196] [cursor=pointer]:
+        - /url: /39/?idx=170052603&bmode=view
+        - generic [ref=e199]:
+          - generic [ref=e200]: 2026년 중소벤처기업 지원사업 완벽 가이드
+          - generic [ref=e201]: 들어가며 이 자료, 어떻게 활용하나요? 중소벤처기업부가 매년 발간하는 「중소벤처기업 지원사업」은 국내 중소기업·벤처·스타트업이 활용 가능한 정부 지원
+      - link "2026 정부지원금 완전 정복 가이드 2026 정부지원금 완전 정복 가이드 2026년 정부는 창업·혁신 생태계 전반에 걸쳐 수천억 원 규모의 지원사업을 편성했습니다. 지원 대상과 업력, 분야에 따라" [ref=e205] [cursor=pointer]:
+        - /url: /39/?idx=170052516&bmode=view
+        - generic [ref=e208]:
+          - generic [ref=e209]: 2026 정부지원금 완전 정복 가이드
+          - generic [ref=e210]: 2026 정부지원금 완전 정복 가이드 2026년 정부는 창업·혁신 생태계 전반에 걸쳐 수천억 원 규모의 지원사업을 편성했습니다. 지원 대상과 업력, 분야에 따라
+      - link "2026 예비창업패키지 2026 예비창업패키지는 2026년 2월 4주차에 공고 예정입니다. 예비 창업을 준비 중이라면 꼭 알아야 할 핵심 정리 예비 창업을 준비하다 보면 한 번쯤 이런 생각이 듭니다" [ref=e214] [cursor=pointer]:
+        - /url: /39/?idx=169913942&bmode=view
+        - generic [ref=e217]:
+          - generic [ref=e218]: 2026 예비창업패키지
+          - generic [ref=e219]: 2026 예비창업패키지는 2026년 2월 4주차에 공고 예정입니다. 예비 창업을 준비 중이라면 꼭 알아야 할 핵심 정리 예비 창업을 준비하다 보면 한 번쯤 이런 생각이 듭니다
+  - main [ref=e223]:
+    - generic [ref=e229]:
+      - generic [ref=e230]:
+        - generic [ref=e233]: Pre-sales Documento · 2026
+        - heading "기획과 제안의 경험을 문서로 증명합니다" [level=1] [ref=e234]:
+          - text: 기획과 제안의 경험을
+          - emphasis [ref=e235]: 문서
+          - text: 로 증명합니다
+        - paragraph [ref=e236]:
+          - text: 17년간 스마트시티·IoT·공공SI 현장에서 쌓은 수주 경험으로,
+          - text: 사업계획서부터 공공사업 제안서까지 직접 작성합니다.
+      - generic [ref=e237]:
+        - link "🚀 예비창업자 대상 창업패키지 사업계획서 예비창업패키지·초기창업패키지 지원을 위한 사업계획서를 구조 설계부터 최종 완성까지 전문가가 함께합니다. ✓ K-Startup 2026 공고 기준 최신 반영 ✓ TAM/SAM/SOM 시장규모 산출 가이드 ✓ 심사기준 기반 항목별 리터칭 ✓ Word·PDF 최종 제출 문서 제공 자세히 보기 →" [ref=e238] [cursor=pointer]:
+          - /url: /96
+          - generic [ref=e239]:
+            - generic [ref=e240]: 🚀
+            - generic [ref=e241]: 예비창업자 대상
+          - heading "창업패키지 사업계획서" [level=3] [ref=e242]:
+            - text: 창업패키지
+            - text: 사업계획서
+          - paragraph [ref=e243]: 예비창업패키지·초기창업패키지 지원을 위한 사업계획서를 구조 설계부터 최종 완성까지 전문가가 함께합니다.
+          - list [ref=e244]:
+            - listitem [ref=e245]: ✓ K-Startup 2026 공고 기준 최신 반영
+            - listitem [ref=e246]: ✓ TAM/SAM/SOM 시장규모 산출 가이드
+            - listitem [ref=e247]: ✓ 심사기준 기반 항목별 리터칭
+            - listitem [ref=e248]: ✓ Word·PDF 최종 제출 문서 제공
+          - generic [ref=e249]:
+            - text: 자세히 보기
+            - generic [ref=e250]: →
+        - link "📋 기업·기관 대상 공공사업 제안서 작성 공공 SI·ITS·스마트시티 등 나라장터 입찰 제안서를 전략 수립부터 발표까지 현직 전문가가 직접 수행합니다. ✓ 17년 경력 현직 제안 PM 직접 수행 ✓ 실제 수주 성공 로직 기반 전략 설계 ✓ RFP 분석 → 목차 → 작성 → 발표 총괄 ✓ A3 가로형 등 공공 맞춤 포맷 대응 자세히 보기 →" [ref=e251] [cursor=pointer]:
+          - /url: /97
+          - generic [ref=e252]:
+            - generic [ref=e253]: 📋
+            - generic [ref=e254]: 기업·기관 대상
+          - heading "공공사업 제안서 작성" [level=3] [ref=e255]:
+            - text: 공공사업
+            - text: 제안서 작성
+          - paragraph [ref=e256]: 공공 SI·ITS·스마트시티 등 나라장터 입찰 제안서를 전략 수립부터 발표까지 현직 전문가가 직접 수행합니다.
+          - list [ref=e257]:
+            - listitem [ref=e258]: ✓ 17년 경력 현직 제안 PM 직접 수행
+            - listitem [ref=e259]: ✓ 실제 수주 성공 로직 기반 전략 설계
+            - listitem [ref=e260]: ✓ RFP 분석 → 목차 → 작성 → 발표 총괄
+            - listitem [ref=e261]: ✓ A3 가로형 등 공공 맞춤 포맷 대응
+          - generic [ref=e262]:
+            - text: 자세히 보기
+            - generic [ref=e263]: →
+      - generic [ref=e264]:
+        - generic [ref=e265]:
+          - generic [ref=e266]: ✓
+          - text: 실제 수주 경험 기반
+        - generic [ref=e268]:
+          - generic [ref=e269]: ✓
+          - text: AI가 아닌 전문가 직접 작성
+        - generic [ref=e271]:
+          - generic [ref=e272]: ✓
+          - text: 문의 후 24시간 이내 답변
+  - main [ref=e276]:
+    - generic [ref=e285]:
+      - paragraph [ref=e293]:
+        - link "인기 제안서" [ref=e294] [cursor=pointer]:
+          - /url: https://www.documento.co.kr/shop
+          - strong [ref=e295]: 인기 제안서
+      - generic [ref=e303]:
+        - generic [ref=e305]:
+          - generic [ref=e307]:
+            - link "기획전 이미지 A3 가로형 제안서" [ref=e309] [cursor=pointer]:
+              - /url: /shop/?idx=190
+              - img "기획전 이미지" [ref=e310]
+              - generic [ref=e311]: A3 가로형 제안서
+            - link "(가로형) 45억 규모-공공 제안서-시스템 구축부문 PPT ★★★★★ 10.0 고퀄리티 G.D 적용 에너지효율진흥원, 45억 입찰 제안서 공개 A3 가로형태 제안서, 떡제본 필수" [ref=e313] [cursor=pointer]:
+              - /url: /shop/?idx=190
+              - heading "(가로형) 45억 규모-공공 제안서-시스템 구축부문 PPT" [level=2] [ref=e315]
+              - generic [ref=e316]:
+                - paragraph [ref=e317]:
+                  - text: ★★★★★
+                  - strong [ref=e319]: "10.0"
+                - paragraph [ref=e320]:
+                  - strong [ref=e321]: 고퀄리티 G.D 적용
+                - paragraph [ref=e322]: 에너지효율진흥원, 45억 입찰 제안서 공개
+                - paragraph [ref=e323]: A3 가로형태 제안서, 떡제본 필수
+          - generic [ref=e325]:
+            - link "기획전 이미지 무료 다운로드" [ref=e327] [cursor=pointer]:
+              - /url: /shop/?idx=196
+              - img "기획전 이미지" [ref=e328]
+              - generic [ref=e329]: 무료 다운로드
+            - link "공공정보화 사업유형별 제안요청서 작성가이드(일부수정본) ★★★★★ 10.0 RFP 표준 내용 RFP 작성 가이드" [ref=e331] [cursor=pointer]:
+              - /url: /shop/?idx=196
+              - heading "공공정보화 사업유형별 제안요청서 작성가이드(일부수정본)" [level=2] [ref=e333]
+              - generic [ref=e334]:
+                - paragraph [ref=e335]:
+                  - strong [ref=e337]: ★★★★★
+                  - strong [ref=e338]
+                  - strong [ref=e339]:
+                    - strong [ref=e341]: "10.0"
+                - paragraph [ref=e342]: RFP 표준 내용
+                - paragraph [ref=e343]: RFP 작성 가이드
+          - generic [ref=e345]:
+            - link "기획전 이미지 추천 상품 공공기관 수주 제안서" [ref=e347] [cursor=pointer]:
+              - /url: /shop/?idx=195
+              - img "기획전 이미지" [ref=e348]
+              - generic [ref=e349]: 추천 상품
+              - generic [ref=e350]: 공공기관 수주 제안서
+            - link "(세로형) 고퀄 45억 규모-공공 제안서-시스템 구축부문 (pdf) ★★★★★ 10.0 고퀄리티 G.D 적용 에너지효율진흥원, 45억 입찰 제안서 공개 A4 세로형태 제안서" [ref=e352] [cursor=pointer]:
+              - /url: /shop/?idx=195
+              - heading "(세로형) 고퀄 45억 규모-공공 제안서-시스템 구축부문 (pdf)" [level=2] [ref=e354]
+              - generic [ref=e355]:
+                - paragraph [ref=e356]:
+                  - text: ★★★★★
+                  - strong [ref=e358]: "10.0"
+                - paragraph [ref=e359]:
+                  - strong [ref=e360]: 고퀄리티 G.D 적용
+                - paragraph [ref=e361]: 에너지효율진흥원, 45억 입찰 제안서 공개
+                - paragraph [ref=e362]: A4 세로형태 제안서
+                - paragraph [ref=e363]
+          - generic [ref=e365]:
+            - link "기획전 이미지 무료 다운로드" [ref=e367] [cursor=pointer]:
+              - /url: /shop/?idx=193
+              - img "기획전 이미지" [ref=e368]
+              - generic [ref=e369]: 무료 다운로드
+            - link "제안서 목차 , 제안 일정 (2024) ★★★★★ 10.0 최근 사용중인 제안서 목차" [ref=e371] [cursor=pointer]:
+              - /url: /shop/?idx=193
+              - heading "제안서 목차 , 제안 일정 (2024)" [level=2] [ref=e373]
+              - generic [ref=e374]:
+                - paragraph [ref=e375]:
+                  - strong [ref=e377]: ★★★★★
+                  - strong [ref=e378]
+                  - strong [ref=e379]:
+                    - strong [ref=e381]: "10.0"
+                - paragraph [ref=e382]: 최근 사용중인 제안서 목차
+          - generic [ref=e384]:
+            - link "기획전 이미지 무료 다운로드" [ref=e386] [cursor=pointer]:
+              - /url: /shop/?idx=192
+              - img "기획전 이미지" [ref=e387]
+              - generic [ref=e388]: 무료 다운로드
+            - link "우선협상대상자 기술협상 문서 ★★★★★ 10.0 우선협상대상자 선정 시 기술협상 문서" [ref=e390] [cursor=pointer]:
+              - /url: /shop/?idx=192
+              - heading "우선협상대상자 기술협상 문서" [level=2] [ref=e392]
+              - generic [ref=e393]:
+                - paragraph [ref=e394]:
+                  - strong [ref=e396]: ★★★★★
+                  - strong [ref=e397]
+                  - strong [ref=e398]:
+                    - strong [ref=e400]: "10.0"
+                - paragraph [ref=e401]: 우선협상대상자 선정 시 기술협상 문서
+          - generic [ref=e403]:
+            - link "기획전 이미지" [ref=e405] [cursor=pointer]:
+              - /url: /shop/?idx=145
+              - img "기획전 이미지" [ref=e406]
+            - link "예비창업패키지 - 한의학 헬스케어 사업계획서 ★★★★★ 10.0 사업계획서 - 인공지능 동의보감 예비창업패키지 공개" [ref=e408] [cursor=pointer]:
+              - /url: /shop/?idx=145
+              - heading "예비창업패키지 - 한의학 헬스케어 사업계획서" [level=2] [ref=e410]
+              - generic [ref=e411]:
+                - paragraph [ref=e412]:
+                  - text: ★★★★★
+                  - strong [ref=e414]: "10.0"
+                - paragraph [ref=e415]: 사업계획서 - 인공지능 동의보감
+                - paragraph [ref=e416]: 예비창업패키지 공개
+          - generic [ref=e418]:
+            - link "기획전 이미지 최신 디자인 적용 정보화사업 ISP 제안서" [ref=e420] [cursor=pointer]:
+              - /url: /shop/?idx=200
+              - img "기획전 이미지" [ref=e421]
+              - generic [ref=e422]: 최신 디자인 적용
+              - generic [ref=e423]: 정보화사업 ISP 제안서
+            - link "ISP 제안서, 통합전산망구축 정보화전략계획 제안서-PPT ★★★★★ 10.0 고퀄리티 G.D 적용 ISP 사업 제안서 A4 세로형태 제안서" [ref=e425] [cursor=pointer]:
+              - /url: /shop/?idx=200
+              - heading "ISP 제안서, 통합전산망구축 정보화전략계획 제안서-PPT" [level=2] [ref=e427]
+              - generic [ref=e428]:
+                - paragraph [ref=e429]:
+                  - text: ★★★★★
+                  - strong [ref=e431]: "10.0"
+                - paragraph [ref=e432]:
+                  - strong [ref=e433]: 고퀄리티 G.D 적용
+                - paragraph [ref=e434]: ISP 사업 제안서
+                - paragraph [ref=e435]: A4 세로형태 제안서
+          - generic [ref=e437]:
+            - link "기획전 이미지 베스트 공공기관 수주 제안서" [ref=e439] [cursor=pointer]:
+              - /url: /shop/?idx=194
+              - img "기획전 이미지" [ref=e440]
+              - generic [ref=e441]: 베스트
+              - generic [ref=e442]: 공공기관 수주 제안서
+            - link "(세로형) 45억 규모-공공 제안서-시스템 구축부문 PPT ★★★★★ 10.0 고퀄리티 G.D 적용 에너지효율진흥원, 45억 입찰 제안서 공개 A4 세로형태 제안서" [ref=e444] [cursor=pointer]:
+              - /url: /shop/?idx=194
+              - heading "(세로형) 45억 규모-공공 제안서-시스템 구축부문 PPT" [level=2] [ref=e446]
+              - generic [ref=e447]:
+                - paragraph [ref=e448]:
+                  - text: ★★★★★
+                  - strong [ref=e450]: "10.0"
+                - paragraph [ref=e451]:
+                  - strong [ref=e452]: 고퀄리티 G.D 적용
+                - paragraph [ref=e453]: 에너지효율진흥원, 45억 입찰 제안서 공개
+                - paragraph [ref=e454]: A4 세로형태 제안서
+          - generic [ref=e456]:
+            - link "기획전 이미지 베스트 공공기관 수주 제안서" [ref=e458] [cursor=pointer]:
+              - /url: /shop/?idx=92
+              - img "기획전 이미지" [ref=e459]
+              - generic [ref=e460]: 베스트
+              - generic [ref=e461]: 공공기관 수주 제안서
+            - link "30억 규모 나라장터 입찰 제안서-시스템 구축부문 ★★★★★ 10.0 30억 입찰 제안서 공개 크몽 전문가들이 인정한 제안서 (댓글 확인)" [ref=e463] [cursor=pointer]:
+              - /url: /shop/?idx=92
+              - heading "30억 규모 나라장터 입찰 제안서-시스템 구축부문" [level=2] [ref=e465]
+              - generic [ref=e466]:
+                - paragraph [ref=e467]:
+                  - text: ★★★★★
+                  - strong [ref=e469]: "10.0"
+                - paragraph [ref=e470]: 30억 입찰 제안서 공개
+                - paragraph [ref=e471]: 크몽 전문가들이 인정한 제안서 (댓글 확인)
+          - generic [ref=e473]:
+            - link "기획전 이미지 수주 제안서" [ref=e475] [cursor=pointer]:
+              - /url: /shop/?idx=134
+              - img "기획전 이미지" [ref=e476]
+              - generic [ref=e477]: 수주 제안서
+            - link "청해시 홈페이지 통합 유지보수 및 고도화 사업 제안서 ★★★★★ 10.0 청해시 홈페이지 통합 유지보수 홈페이지 고도화 리뉴얼 제안서" [ref=e479] [cursor=pointer]:
+              - /url: /shop/?idx=134
+              - heading "청해시 홈페이지 통합 유지보수 및 고도화 사업 제안서" [level=2] [ref=e481]
+              - generic [ref=e482]:
+                - paragraph [ref=e483]:
+                  - text: ★★★★★
+                  - strong [ref=e485]: "10.0"
+                - paragraph [ref=e486]: 청해시 홈페이지 통합 유지보수
+                - paragraph [ref=e487]: 홈페이지 고도화 리뉴얼 제안서
+          - generic [ref=e489]:
+            - link "기획전 이미지 A3 가로형 제안서" [ref=e491] [cursor=pointer]:
+              - /url: /shop/?idx=190
+              - img "기획전 이미지" [ref=e492]
+              - generic [ref=e493]: A3 가로형 제안서
+            - link "(가로형) 45억 규모-공공 제안서-시스템 구축부문 PPT ★★★★★ 10.0 고퀄리티 G.D 적용 에너지효율진흥원, 45억 입찰 제안서 공개 A3 가로형태 제안서, 떡제본 필수" [ref=e495] [cursor=pointer]:
+              - /url: /shop/?idx=190
+              - heading "(가로형) 45억 규모-공공 제안서-시스템 구축부문 PPT" [level=2] [ref=e497]
+              - generic [ref=e498]:
+                - paragraph [ref=e499]:
+                  - text: ★★★★★
+                  - strong [ref=e501]: "10.0"
+                - paragraph [ref=e502]:
+                  - strong [ref=e503]: 고퀄리티 G.D 적용
+                - paragraph [ref=e504]: 에너지효율진흥원, 45억 입찰 제안서 공개
+                - paragraph [ref=e505]: A3 가로형태 제안서, 떡제본 필수
+          - generic [ref=e507]:
+            - link "기획전 이미지 무료 다운로드" [ref=e509] [cursor=pointer]:
+              - /url: /shop/?idx=196
+              - img "기획전 이미지" [ref=e510]
+              - generic [ref=e511]: 무료 다운로드
+            - link "공공정보화 사업유형별 제안요청서 작성가이드(일부수정본) ★★★★★ 10.0 RFP 표준 내용 RFP 작성 가이드" [ref=e513] [cursor=pointer]:
+              - /url: /shop/?idx=196
+              - heading "공공정보화 사업유형별 제안요청서 작성가이드(일부수정본)" [level=2] [ref=e515]
+              - generic [ref=e516]:
+                - paragraph [ref=e517]:
+                  - strong [ref=e519]: ★★★★★
+                  - strong [ref=e520]
+                  - strong [ref=e521]:
+                    - strong [ref=e523]: "10.0"
+                - paragraph [ref=e524]: RFP 표준 내용
+                - paragraph [ref=e525]: RFP 작성 가이드
+          - generic [ref=e527]:
+            - link "기획전 이미지 추천 상품 공공기관 수주 제안서" [ref=e529] [cursor=pointer]:
+              - /url: /shop/?idx=195
+              - img "기획전 이미지" [ref=e530]
+              - generic [ref=e531]: 추천 상품
+              - generic [ref=e532]: 공공기관 수주 제안서
+            - link "(세로형) 고퀄 45억 규모-공공 제안서-시스템 구축부문 (pdf) ★★★★★ 10.0 고퀄리티 G.D 적용 에너지효율진흥원, 45억 입찰 제안서 공개 A4 세로형태 제안서" [ref=e534] [cursor=pointer]:
+              - /url: /shop/?idx=195
+              - heading "(세로형) 고퀄 45억 규모-공공 제안서-시스템 구축부문 (pdf)" [level=2] [ref=e536]
+              - generic [ref=e537]:
+                - paragraph [ref=e538]:
+                  - text: ★★★★★
+                  - strong [ref=e540]: "10.0"
+                - paragraph [ref=e541]:
+                  - strong [ref=e542]: 고퀄리티 G.D 적용
+                - paragraph [ref=e543]: 에너지효율진흥원, 45억 입찰 제안서 공개
+                - paragraph [ref=e544]: A4 세로형태 제안서
+                - paragraph [ref=e545]
+          - generic [ref=e547]:
+            - link "기획전 이미지 무료 다운로드" [ref=e549] [cursor=pointer]:
+              - /url: /shop/?idx=193
+              - img "기획전 이미지" [ref=e550]
+              - generic [ref=e551]: 무료 다운로드
+            - link "제안서 목차 , 제안 일정 (2024) ★★★★★ 10.0 최근 사용중인 제안서 목차" [ref=e553] [cursor=pointer]:
+              - /url: /shop/?idx=193
+              - heading "제안서 목차 , 제안 일정 (2024)" [level=2] [ref=e555]
+              - generic [ref=e556]:
+                - paragraph [ref=e557]:
+                  - strong [ref=e559]: ★★★★★
+                  - strong [ref=e560]
+                  - strong [ref=e561]:
+                    - strong [ref=e563]: "10.0"
+                - paragraph [ref=e564]: 최근 사용중인 제안서 목차
+          - generic [ref=e566]:
+            - link "기획전 이미지 무료 다운로드" [ref=e568] [cursor=pointer]:
+              - /url: /shop/?idx=192
+              - img "기획전 이미지" [ref=e569]
+              - generic [ref=e570]: 무료 다운로드
+            - link "우선협상대상자 기술협상 문서 ★★★★★ 10.0 우선협상대상자 선정 시 기술협상 문서" [ref=e572] [cursor=pointer]:
+              - /url: /shop/?idx=192
+              - heading "우선협상대상자 기술협상 문서" [level=2] [ref=e574]
+              - generic [ref=e575]:
+                - paragraph [ref=e576]:
+                  - strong [ref=e578]: ★★★★★
+                  - strong [ref=e579]
+                  - strong [ref=e580]:
+                    - strong [ref=e582]: "10.0"
+                - paragraph [ref=e583]: 우선협상대상자 선정 시 기술협상 문서
+          - generic [ref=e585]:
+            - link "기획전 이미지" [ref=e587] [cursor=pointer]:
+              - /url: /shop/?idx=145
+              - img "기획전 이미지" [ref=e588]
+            - link "예비창업패키지 - 한의학 헬스케어 사업계획서 ★★★★★ 10.0 사업계획서 - 인공지능 동의보감 예비창업패키지 공개" [ref=e590] [cursor=pointer]:
+              - /url: /shop/?idx=145
+              - heading "예비창업패키지 - 한의학 헬스케어 사업계획서" [level=2] [ref=e592]
+              - generic [ref=e593]:
+                - paragraph [ref=e594]:
+                  - text: ★★★★★
+                  - strong [ref=e596]: "10.0"
+                - paragraph [ref=e597]: 사업계획서 - 인공지능 동의보감
+                - paragraph [ref=e598]: 예비창업패키지 공개
+          - generic [ref=e600]:
+            - link "기획전 이미지 최신 디자인 적용 정보화사업 ISP 제안서" [ref=e602] [cursor=pointer]:
+              - /url: /shop/?idx=200
+              - img "기획전 이미지" [ref=e603]
+              - generic [ref=e604]: 최신 디자인 적용
+              - generic [ref=e605]: 정보화사업 ISP 제안서
+            - link "ISP 제안서, 통합전산망구축 정보화전략계획 제안서-PPT ★★★★★ 10.0 고퀄리티 G.D 적용 ISP 사업 제안서 A4 세로형태 제안서" [ref=e607] [cursor=pointer]:
+              - /url: /shop/?idx=200
+              - heading "ISP 제안서, 통합전산망구축 정보화전략계획 제안서-PPT" [level=2] [ref=e609]
+              - generic [ref=e610]:
+                - paragraph [ref=e611]:
+                  - text: ★★★★★
+                  - strong [ref=e613]: "10.0"
+                - paragraph [ref=e614]:
+                  - strong [ref=e615]: 고퀄리티 G.D 적용
+                - paragraph [ref=e616]: ISP 사업 제안서
+                - paragraph [ref=e617]: A4 세로형태 제안서
+          - generic [ref=e619]:
+            - link "기획전 이미지 베스트 공공기관 수주 제안서" [ref=e621] [cursor=pointer]:
+              - /url: /shop/?idx=194
+              - img "기획전 이미지" [ref=e622]
+              - generic [ref=e623]: 베스트
+              - generic [ref=e624]: 공공기관 수주 제안서
+            - link "(세로형) 45억 규모-공공 제안서-시스템 구축부문 PPT ★★★★★ 10.0 고퀄리티 G.D 적용 에너지효율진흥원, 45억 입찰 제안서 공개 A4 세로형태 제안서" [ref=e626] [cursor=pointer]:
+              - /url: /shop/?idx=194
+              - heading "(세로형) 45억 규모-공공 제안서-시스템 구축부문 PPT" [level=2] [ref=e628]
+              - generic [ref=e629]:
+                - paragraph [ref=e630]:
+                  - text: ★★★★★
+                  - strong [ref=e632]: "10.0"
+                - paragraph [ref=e633]:
+                  - strong [ref=e634]: 고퀄리티 G.D 적용
+                - paragraph [ref=e635]: 에너지효율진흥원, 45억 입찰 제안서 공개
+                - paragraph [ref=e636]: A4 세로형태 제안서
+          - generic [ref=e638]:
+            - link "기획전 이미지 베스트 공공기관 수주 제안서" [ref=e640] [cursor=pointer]:
+              - /url: /shop/?idx=92
+              - img "기획전 이미지" [ref=e641]
+              - generic [ref=e642]: 베스트
+              - generic [ref=e643]: 공공기관 수주 제안서
+            - link "30억 규모 나라장터 입찰 제안서-시스템 구축부문 ★★★★★ 10.0 30억 입찰 제안서 공개 크몽 전문가들이 인정한 제안서 (댓글 확인)" [ref=e645] [cursor=pointer]:
+              - /url: /shop/?idx=92
+              - heading "30억 규모 나라장터 입찰 제안서-시스템 구축부문" [level=2] [ref=e647]
+              - generic [ref=e648]:
+                - paragraph [ref=e649]:
+                  - text: ★★★★★
+                  - strong [ref=e651]: "10.0"
+                - paragraph [ref=e652]: 30억 입찰 제안서 공개
+                - paragraph [ref=e653]: 크몽 전문가들이 인정한 제안서 (댓글 확인)
+          - generic [ref=e655]:
+            - link "기획전 이미지 수주 제안서" [ref=e657] [cursor=pointer]:
+              - /url: /shop/?idx=134
+              - img "기획전 이미지" [ref=e658]
+              - generic [ref=e659]: 수주 제안서
+            - link "청해시 홈페이지 통합 유지보수 및 고도화 사업 제안서 ★★★★★ 10.0 청해시 홈페이지 통합 유지보수 홈페이지 고도화 리뉴얼 제안서" [ref=e661] [cursor=pointer]:
+              - /url: /shop/?idx=134
+              - heading "청해시 홈페이지 통합 유지보수 및 고도화 사업 제안서" [level=2] [ref=e663]
+              - generic [ref=e664]:
+                - paragraph [ref=e665]:
+                  - text: ★★★★★
+                  - strong [ref=e667]: "10.0"
+                - paragraph [ref=e668]: 청해시 홈페이지 통합 유지보수
+                - paragraph [ref=e669]: 홈페이지 고도화 리뉴얼 제안서
+        - generic:
+          - generic:
+            - generic: 
+            - generic: 
+  - main [ref=e679]:
+    - generic [ref=e680]:
+      - generic [ref=e693]:
+        - link "Cinema Studio 2.5란 무엇인가? 📂 AI 영상 제작 | ⏱ 읽는 시간 약 6분 Cinema Studio 2.5란 무엇인가? Cinema Studio 2.5는 Higgsfield의 전작 Cinema Stud" [ref=e697] [cursor=pointer]:
+          - /url: /23/?idx=170535591&bmode=view
+          - generic [ref=e700]:
+            - generic [ref=e701]: Cinema Studio 2.5란 무엇인가?
+            - generic [ref=e702]: 📂 AI 영상 제작 | ⏱ 읽는 시간 약 6분 Cinema Studio 2.5란 무엇인가? Cinema Studio 2.5는 Higgsfield의 전작 Cinema Stud
+        - link "2026년 AI 툴 완전 정리 2026 AI TOOLS GUIDE 2026년 AI 툴 완전 정리 이미지 · 영상 · 코딩 · AI 에이전트용도별 최고의 도구를 한눈에 비교합" [ref=e706] [cursor=pointer]:
+          - /url: /23/?idx=170484338&bmode=view
+          - generic [ref=e709]:
+            - generic [ref=e710]: 2026년 AI 툴 완전 정리
+            - generic [ref=e711]: 2026 AI TOOLS GUIDE 2026년 AI 툴 완전 정리 이미지 · 영상 · 코딩 · AI 에이전트용도별 최고의 도구를 한눈에 비교합
+        - link "AI 이미지, 진짜처럼 만드는 법 AI 이미지 생성 가이드 AI 이미지, 진짜처럼 만드는 법 Higgsfield Soul Cinema로 영화급 AI 이미지를 만드는 4단계 완벽 튜토리얼 AI 툴 · 튜" [ref=e715] [cursor=pointer]:
+          - /url: /23/?idx=170484169&bmode=view
+          - generic [ref=e718]:
+            - generic [ref=e719]: AI 이미지, 진짜처럼 만드는 법
+            - generic [ref=e720]: AI 이미지 생성 가이드 AI 이미지, 진짜처럼 만드는 법 Higgsfield Soul Cinema로 영화급 AI 이미지를 만드는 4단계 완벽 튜토리얼 AI 툴 · 튜
+        - link "AI가 똑똑해질수록, 우리는 멍청해지고 있다 AI가 똑똑해질수록, 우리는 멍청해지고 있다 — \"인간 클립보드\"가 된 개발자 이야기에서 시작하는, AI 시대 학습 퇴보의 경고 제미나이가 짠 코" [ref=e724] [cursor=pointer]:
+          - /url: /23/?idx=170327359&bmode=view
+          - generic [ref=e727]:
+            - generic [ref=e728]: AI가 똑똑해질수록, 우리는 멍청해지고 있다
+            - generic [ref=e729]: AI가 똑똑해질수록, 우리는 멍청해지고 있다 — "인간 클립보드"가 된 개발자 이야기에서 시작하는, AI 시대 학습 퇴보의 경고 제미나이가 짠 코
+      - generic [ref=e736]:
+        - link "기획 인사이트 OpenClaw 완전 해부 AI 에이전트 시대의 빛과 그림자 Section 01 OpenClaw란 무엇인가 OpenClaw(오픈클로)는 오스트리아의 소프트웨어 엔지니어 피터 슈타인베르거(Peter Steinberger)가 개발한 오픈소" [ref=e740] [cursor=pointer]:
+          - /url: /notice/?idx=170071445&bmode=view
+          - generic [ref=e743]:
+            - generic [ref=e744]:
+              - emphasis [ref=e746]: 기획 인사이트
+              - text: OpenClaw 완전 해부 AI 에이전트 시대의 빛과 그림자
+            - generic [ref=e747]: Section 01 OpenClaw란 무엇인가 OpenClaw(오픈클로)는 오스트리아의 소프트웨어 엔지니어 피터 슈타인베르거(Peter Steinberger)가 개발한 오픈소
+        - link "제안의 수주, 3박자가 맞아야 성공한다 사업 제안의 성공, 즉 ‘수주(受注)’는 단순히 좋은 제안서를 쓴다고 되는 일이 아닙니다. 현장에서 수많은 제안 프로젝트를 경험하면서 깨달은 가장 중요한" [ref=e751] [cursor=pointer]:
+          - /url: /notice/?idx=166667442&bmode=view
+          - generic [ref=e754]:
+            - generic [ref=e755]: 제안의 수주, 3박자가 맞아야 성공한다
+            - generic [ref=e756]: 사업 제안의 성공, 즉 ‘수주(受注)’는 단순히 좋은 제안서를 쓴다고 되는 일이 아닙니다. 현장에서 수많은 제안 프로젝트를 경험하면서 깨달은 가장 중요한
+        - link "나라장터 제안서, 처음 도전하는 분들을 위한 RFP 분석과 실전 가이드 “수백 페이지짜리 제안요청서(RFP) 앞에서 막막했던 그 순간,어떻게 시작하고, 무엇에 집중해야 할까요?” 정부·공공기관 입찰이 처음인 분도," [ref=e760] [cursor=pointer]:
+          - /url: /notice/?idx=166506845&bmode=view
+          - generic [ref=e763]:
+            - generic [ref=e764]: 나라장터 제안서, 처음 도전하는 분들을 위한 RFP 분석과 실전 가이드
+            - generic [ref=e765]: “수백 페이지짜리 제안요청서(RFP) 앞에서 막막했던 그 순간,어떻게 시작하고, 무엇에 집중해야 할까요?” 정부·공공기관 입찰이 처음인 분도,
+        - link "나라장터 입찰 방법 (유튜브) AI 로 만든 음성이라 말이 느립니다. 재생속도를 올려서 보시면 좋습니다." [ref=e769] [cursor=pointer]:
+          - /url: /notice/?idx=166505670&bmode=view
+          - generic [ref=e772]:
+            - generic [ref=e773]: 나라장터 입찰 방법 (유튜브)
+            - generic [ref=e774]: AI 로 만든 음성이라 말이 느립니다. 재생속도를 올려서 보시면 좋습니다.
+  - main [ref=e778]:
+    - generic [ref=e780]:
+      - generic [ref=e781]:
+        - heading "베스트 후기" [level=6] [ref=e795]:
+          - strong [ref=e796]: 베스트 후기
+        - generic [ref=e803]:
+          - paragraph [ref=e804]: 도큐멘토는
+          - paragraph [ref=e805]: 후기조작을 하지 않습니다
+        - link "후기 전체 보기" [ref=e819] [cursor=pointer]:
+          - /url: /28
+      - generic [ref=e820]:
+        - heading "제안서를 활용하시고 만족하신 후기" [level=6] [ref=e834]:
+          - strong [ref=e835]: 제안서를 활용하시고 만족하신 후기
+        - generic [ref=e841]:
+          - generic:
+            - generic:
+              - generic: 
+              - generic: 
+  - main [ref=e944]:
+    - generic [ref=e946]:
+      - generic [ref=e959]:
+        - generic [ref=e961]:
+          - link [ref=e964] [cursor=pointer]:
+            - /url: https://www.documento.co.kr/shop/?idx=151
+            - paragraph [ref=e967]
+          - link [ref=e970] [cursor=pointer]:
+            - /url: https://www.documento.co.kr/shop/?idx=190
+            - paragraph [ref=e973]
+          - link [ref=e976] [cursor=pointer]:
+            - /url: https://www.documento.co.kr/shop/?idx=155
+            - paragraph [ref=e979]
+          - link [ref=e982] [cursor=pointer]:
+            - /url: https://www.documento.co.kr/shop/?idx=159
+            - paragraph [ref=e985]
+          - link [ref=e988] [cursor=pointer]:
+            - /url: https://www.documento.co.kr/shop/?idx=136
+            - paragraph [ref=e991]
+          - link [ref=e994] [cursor=pointer]:
+            - /url: https://www.documento.co.kr/shop/?idx=98
+            - paragraph [ref=e997]
+          - link [ref=e1000] [cursor=pointer]:
+            - /url: https://www.documento.co.kr/shop/?idx=134
+            - paragraph [ref=e1003]
+          - link [ref=e1006] [cursor=pointer]:
+            - /url: https://www.documento.co.kr/shop/?idx=162
+            - paragraph [ref=e1009]
+          - link [ref=e1012] [cursor=pointer]:
+            - /url: https://www.documento.co.kr/shop/?idx=194
+            - paragraph [ref=e1015]
+          - link [ref=e1018] [cursor=pointer]:
+            - /url: https://www.documento.co.kr/shop/?idx=151
+            - paragraph [ref=e1021]
+          - link [ref=e1024] [cursor=pointer]:
+            - /url: https://www.documento.co.kr/shop/?idx=190
+            - paragraph [ref=e1027]
+          - link [ref=e1030] [cursor=pointer]:
+            - /url: https://www.documento.co.kr/shop/?idx=155
+            - paragraph [ref=e1033]
+          - link [ref=e1036] [cursor=pointer]:
+            - /url: https://www.documento.co.kr/shop/?idx=159
+            - paragraph [ref=e1039]
+        - generic:
+          - generic:
+            - generic: 
+            - generic: 
+      - generic [ref=e1052]:
+        - link "디지털컨텐츠는 네이버페이 안됩니다" [ref=e1055] [cursor=pointer]:
+          - /url: /announce/?idx=168174651&bmode=view
+          - generic [ref=e1060]: 디지털컨텐츠는 네이버페이 안됩니다
+        - link "기다리지 말고 물어보세요" [ref=e1063] [cursor=pointer]:
+          - /url: /announce/?idx=15778846&bmode=view
+          - generic [ref=e1068]: 기다리지 말고 물어보세요
+      - generic [ref=e1083]:
+        - generic [ref=e1085]:
+          - generic [ref=e1087]:
+            - link "기획전 이미지 베스트 공공기관 수주 제안서" [ref=e1089] [cursor=pointer]:
+              - /url: /36/?idx=92
+              - img "기획전 이미지" [ref=e1090]
+              - generic [ref=e1091]: 베스트
+              - generic [ref=e1092]: 공공기관 수주 제안서
+            - link "30억 규모 나라장터 입찰 제안서-시스템 구축부문 ★★★★★ 10.0 30억 입찰 제안서 공개 크몽 전문가들이 인정한 제안서 (댓글 확인)" [ref=e1094] [cursor=pointer]:
+              - /url: /36/?idx=92
+              - heading "30억 규모 나라장터 입찰 제안서-시스템 구축부문" [level=2] [ref=e1096]
+              - generic [ref=e1097]:
+                - paragraph [ref=e1098]:
+                  - text: ★★★★★
+                  - strong [ref=e1100]: "10.0"
+                - paragraph [ref=e1101]: 30억 입찰 제안서 공개
+                - paragraph [ref=e1102]: 크몽 전문가들이 인정한 제안서 (댓글 확인)
+          - generic [ref=e1104]:
+            - link "기획전 이미지 수주 제안서" [ref=e1106] [cursor=pointer]:
+              - /url: /36/?idx=134
+              - img "기획전 이미지" [ref=e1107]
+              - generic [ref=e1108]: 수주 제안서
+            - link "청해시 홈페이지 통합 유지보수 및 고도화 사업 제안서 ★★★★★ 10.0 청해시 홈페이지 통합 유지보수 홈페이지 고도화 리뉴얼 제안서" [ref=e1110] [cursor=pointer]:
+              - /url: /36/?idx=134
+              - heading "청해시 홈페이지 통합 유지보수 및 고도화 사업 제안서" [level=2] [ref=e1112]
+              - generic [ref=e1113]:
+                - paragraph [ref=e1114]:
+                  - text: ★★★★★
+                  - strong [ref=e1116]: "10.0"
+                - paragraph [ref=e1117]: 청해시 홈페이지 통합 유지보수
+                - paragraph [ref=e1118]: 홈페이지 고도화 리뉴얼 제안서
+          - generic [ref=e1120]:
+            - link "기획전 이미지" [ref=e1122] [cursor=pointer]:
+              - /url: /36/?idx=145
+              - img "기획전 이미지" [ref=e1123]
+            - link "예비창업패키지 - 한의학 헬스케어 사업계획서 ★★★★★ 10.0 사업계획서 - 인공지능 동의보감 예비창업패키지 공개" [ref=e1125] [cursor=pointer]:
+              - /url: /36/?idx=145
+              - heading "예비창업패키지 - 한의학 헬스케어 사업계획서" [level=2] [ref=e1127]
+              - generic [ref=e1128]:
+                - paragraph [ref=e1129]:
+                  - text: ★★★★★
+                  - strong [ref=e1131]: "10.0"
+                - paragraph [ref=e1132]: 사업계획서 - 인공지능 동의보감
+                - paragraph [ref=e1133]: 예비창업패키지 공개
+          - generic [ref=e1135]:
+            - link "기획전 이미지 최신 디자인 적용 정보화사업 ISP 제안서" [ref=e1137] [cursor=pointer]:
+              - /url: /36/?idx=200
+              - img "기획전 이미지" [ref=e1138]
+              - generic [ref=e1139]: 최신 디자인 적용
+              - generic [ref=e1140]: 정보화사업 ISP 제안서
+            - link "ISP 제안서, 통합전산망구축 정보화전략계획 제안서-PPT ★★★★★ 10.0 고퀄리티 G.D 적용 ISP 사업 제안서 A4 세로형태 제안서" [ref=e1142] [cursor=pointer]:
+              - /url: /36/?idx=200
+              - heading "ISP 제안서, 통합전산망구축 정보화전략계획 제안서-PPT" [level=2] [ref=e1144]
+              - generic [ref=e1145]:
+                - paragraph [ref=e1146]:
+                  - text: ★★★★★
+                  - strong [ref=e1148]: "10.0"
+                - paragraph [ref=e1149]:
+                  - strong [ref=e1150]: 고퀄리티 G.D 적용
+                - paragraph [ref=e1151]: ISP 사업 제안서
+                - paragraph [ref=e1152]: A4 세로형태 제안서
+          - generic [ref=e1154]:
+            - link "기획전 이미지 베스트 공공기관 수주 제안서" [ref=e1156] [cursor=pointer]:
+              - /url: /36/?idx=194
+              - img "기획전 이미지" [ref=e1157]
+              - generic [ref=e1158]: 베스트
+              - generic [ref=e1159]: 공공기관 수주 제안서
+            - link "(세로형) 45억 규모-공공 제안서-시스템 구축부문 PPT ★★★★★ 10.0 고퀄리티 G.D 적용 에너지효율진흥원, 45억 입찰 제안서 공개 A4 세로형태 제안서" [ref=e1161] [cursor=pointer]:
+              - /url: /36/?idx=194
+              - heading "(세로형) 45억 규모-공공 제안서-시스템 구축부문 PPT" [level=2] [ref=e1163]
+              - generic [ref=e1164]:
+                - paragraph [ref=e1165]:
+                  - text: ★★★★★
+                  - strong [ref=e1167]: "10.0"
+                - paragraph [ref=e1168]:
+                  - strong [ref=e1169]: 고퀄리티 G.D 적용
+                - paragraph [ref=e1170]: 에너지효율진흥원, 45억 입찰 제안서 공개
+                - paragraph [ref=e1171]: A4 세로형태 제안서
+          - generic [ref=e1173]:
+            - link "기획전 이미지 베스트 공공기관 수주 제안서" [ref=e1175] [cursor=pointer]:
+              - /url: /36/?idx=92
+              - img "기획전 이미지" [ref=e1176]
+              - generic [ref=e1177]: 베스트
+              - generic [ref=e1178]: 공공기관 수주 제안서
+            - link "30억 규모 나라장터 입찰 제안서-시스템 구축부문 ★★★★★ 10.0 30억 입찰 제안서 공개 크몽 전문가들이 인정한 제안서 (댓글 확인)" [ref=e1180] [cursor=pointer]:
+              - /url: /36/?idx=92
+              - heading "30억 규모 나라장터 입찰 제안서-시스템 구축부문" [level=2] [ref=e1182]
+              - generic [ref=e1183]:
+                - paragraph [ref=e1184]:
+                  - text: ★★★★★
+                  - strong [ref=e1186]: "10.0"
+                - paragraph [ref=e1187]: 30억 입찰 제안서 공개
+                - paragraph [ref=e1188]: 크몽 전문가들이 인정한 제안서 (댓글 확인)
+          - generic [ref=e1190]:
+            - link "기획전 이미지 수주 제안서" [ref=e1192] [cursor=pointer]:
+              - /url: /36/?idx=134
+              - img "기획전 이미지" [ref=e1193]
+              - generic [ref=e1194]: 수주 제안서
+            - link "청해시 홈페이지 통합 유지보수 및 고도화 사업 제안서 ★★★★★ 10.0 청해시 홈페이지 통합 유지보수 홈페이지 고도화 리뉴얼 제안서" [ref=e1196] [cursor=pointer]:
+              - /url: /36/?idx=134
+              - heading "청해시 홈페이지 통합 유지보수 및 고도화 사업 제안서" [level=2] [ref=e1198]
+              - generic [ref=e1199]:
+                - paragraph [ref=e1200]:
+                  - text: ★★★★★
+                  - strong [ref=e1202]: "10.0"
+                - paragraph [ref=e1203]: 청해시 홈페이지 통합 유지보수
+                - paragraph [ref=e1204]: 홈페이지 고도화 리뉴얼 제안서
+          - generic [ref=e1206]:
+            - link "기획전 이미지" [ref=e1208] [cursor=pointer]:
+              - /url: /36/?idx=145
+              - img "기획전 이미지" [ref=e1209]
+            - link "예비창업패키지 - 한의학 헬스케어 사업계획서 ★★★★★ 10.0 사업계획서 - 인공지능 동의보감 예비창업패키지 공개" [ref=e1211] [cursor=pointer]:
+              - /url: /36/?idx=145
+              - heading "예비창업패키지 - 한의학 헬스케어 사업계획서" [level=2] [ref=e1213]
+              - generic [ref=e1214]:
+                - paragraph [ref=e1215]:
+                  - text: ★★★★★
+                  - strong [ref=e1217]: "10.0"
+                - paragraph [ref=e1218]: 사업계획서 - 인공지능 동의보감
+                - paragraph [ref=e1219]: 예비창업패키지 공개
+          - generic [ref=e1221]:
+            - link "기획전 이미지 최신 디자인 적용 정보화사업 ISP 제안서" [ref=e1223] [cursor=pointer]:
+              - /url: /36/?idx=200
+              - img "기획전 이미지" [ref=e1224]
+              - generic [ref=e1225]: 최신 디자인 적용
+              - generic [ref=e1226]: 정보화사업 ISP 제안서
+            - link "ISP 제안서, 통합전산망구축 정보화전략계획 제안서-PPT ★★★★★ 10.0 고퀄리티 G.D 적용 ISP 사업 제안서 A4 세로형태 제안서" [ref=e1228] [cursor=pointer]:
+              - /url: /36/?idx=200
+              - heading "ISP 제안서, 통합전산망구축 정보화전략계획 제안서-PPT" [level=2] [ref=e1230]
+              - generic [ref=e1231]:
+                - paragraph [ref=e1232]:
+                  - text: ★★★★★
+                  - strong [ref=e1234]: "10.0"
+                - paragraph [ref=e1235]:
+                  - strong [ref=e1236]: 고퀄리티 G.D 적용
+                - paragraph [ref=e1237]: ISP 사업 제안서
+                - paragraph [ref=e1238]: A4 세로형태 제안서
+        - generic:
+          - generic:
+            - generic: 
+            - generic: 
+  - main [ref=e1242]:
+    - generic [ref=e1243]:
+      - generic [ref=e1250]:
+        - heading "실무 기획 제안서" [level=6] [ref=e1251]:
+          - strong [ref=e1252]: 실무 기획 제안서
+        - paragraph [ref=e1253]: 실무에서 사용되고 나라장터 입찰에 투찰된 제안서, 기획서를 공개합니다
+      - generic [ref=e1261]:
+        - generic [ref=e1262]:
+          - link "기획전 이미지 최신 디자인 적용 정보화사업 ISP 제안서" [ref=e1264] [cursor=pointer]:
+            - /url: /shop_view/?idx=200
+            - img "기획전 이미지" [ref=e1265]
+            - generic [ref=e1266]: 최신 디자인 적용
+            - generic [ref=e1267]: 정보화사업 ISP 제안서
+          - link "도큐멘토 ISP 제안서, 통합전산망구축 정보화전략계획 제안서-PPT ★★★★★ 10.0 고퀄리티 G.D 적용 ISP 사업 제안서 A4 세로형태 제안서" [ref=e1269] [cursor=pointer]:
+            - /url: /shop_view/?idx=200
+            - generic [ref=e1270]:
+              - paragraph [ref=e1271]: 도큐멘토
+              - heading "ISP 제안서, 통합전산망구축 정보화전략계획 제안서-PPT" [level=2] [ref=e1272]
+            - generic [ref=e1273]:
+              - paragraph [ref=e1274]:
+                - text: ★★★★★
+                - strong [ref=e1276]: "10.0"
+              - paragraph [ref=e1277]:
+                - strong [ref=e1278]: 고퀄리티 G.D 적용
+              - paragraph [ref=e1279]: ISP 사업 제안서
+              - paragraph [ref=e1280]: A4 세로형태 제안서
+        - generic [ref=e1281]:
+          - link "기획전 이미지 베스트 공공기관 수주 제안서" [ref=e1283] [cursor=pointer]:
+            - /url: /shop_view/?idx=194
+            - img "기획전 이미지" [ref=e1284]
+            - generic [ref=e1285]: 베스트
+            - generic [ref=e1286]: 공공기관 수주 제안서
+          - link "도큐멘토 (세로형) 45억 규모-공공 제안서-시스템 구축부문 PPT ★★★★★ 10.0 고퀄리티 G.D 적용 에너지효율진흥원, 45억 입찰 제안서 공개 A4 세로형태 제안서" [ref=e1288] [cursor=pointer]:
+            - /url: /shop_view/?idx=194
+            - generic [ref=e1289]:
+              - paragraph [ref=e1290]: 도큐멘토
+              - heading "(세로형) 45억 규모-공공 제안서-시스템 구축부문 PPT" [level=2] [ref=e1291]
+            - generic [ref=e1292]:
+              - paragraph [ref=e1293]:
+                - text: ★★★★★
+                - strong [ref=e1295]: "10.0"
+              - paragraph [ref=e1296]:
+                - strong [ref=e1297]: 고퀄리티 G.D 적용
+              - paragraph [ref=e1298]: 에너지효율진흥원, 45억 입찰 제안서 공개
+              - paragraph [ref=e1299]: A4 세로형태 제안서
+        - generic [ref=e1300]:
+          - link "기획전 이미지 A3 가로형 제안서" [ref=e1302] [cursor=pointer]:
+            - /url: /shop_view/?idx=190
+            - img "기획전 이미지" [ref=e1303]
+            - generic [ref=e1304]: A3 가로형 제안서
+          - link "도큐멘토 (가로형) 45억 규모-공공 제안서-시스템 구축부문 PPT ★★★★★ 10.0 고퀄리티 G.D 적용 에너지효율진흥원, 45억 입찰 제안서 공개 A3 가로형태 제안서, 떡제본 필수" [ref=e1306] [cursor=pointer]:
+            - /url: /shop_view/?idx=190
+            - generic [ref=e1307]:
+              - paragraph [ref=e1308]: 도큐멘토
+              - heading "(가로형) 45억 규모-공공 제안서-시스템 구축부문 PPT" [level=2] [ref=e1309]
+            - generic [ref=e1310]:
+              - paragraph [ref=e1311]:
+                - text: ★★★★★
+                - strong [ref=e1313]: "10.0"
+              - paragraph [ref=e1314]:
+                - strong [ref=e1315]: 고퀄리티 G.D 적용
+              - paragraph [ref=e1316]: 에너지효율진흥원, 45억 입찰 제안서 공개
+              - paragraph [ref=e1317]: A3 가로형태 제안서, 떡제본 필수
+        - generic [ref=e1318]:
+          - link "기획전 이미지" [ref=e1320] [cursor=pointer]:
+            - /url: /shop_view/?idx=185
+            - img "기획전 이미지" [ref=e1321]
+          - link "도큐멘토 화영시 여객서비스 입주기업 지원 포털사이트 제안서 ★★★★★ 10.0 20억 규모 여객서비스 내 입주기업 대상 지원 포털 사이트 구축" [ref=e1323] [cursor=pointer]:
+            - /url: /shop_view/?idx=185
+            - generic [ref=e1324]:
+              - paragraph [ref=e1325]: 도큐멘토
+              - heading "화영시 여객서비스 입주기업 지원 포털사이트 제안서" [level=2] [ref=e1326]
+            - generic [ref=e1327]:
+              - paragraph [ref=e1328]:
+                - text: ★★★★★
+                - strong [ref=e1330]: "10.0"
+              - paragraph [ref=e1331]: 20억 규모
+              - paragraph [ref=e1332]: 여객서비스 내 입주기업 대상 지원 포털 사이트 구축
+        - generic [ref=e1333]:
+          - link "기획전 이미지" [ref=e1335] [cursor=pointer]:
+            - /url: /shop_view/?idx=183
+            - img "기획전 이미지" [ref=e1336]
+          - link "도큐멘토 농산물 물류 추적 및 관리 시스템 구축과 유지보수 용역 ★★★★★ 10.0 15억 규모 물류 추적 및 관리 시스템 구축과 유지보수" [ref=e1338] [cursor=pointer]:
+            - /url: /shop_view/?idx=183
+            - generic [ref=e1339]:
+              - paragraph [ref=e1340]: 도큐멘토
+              - heading "농산물 물류 추적 및 관리 시스템 구축과 유지보수 용역" [level=2] [ref=e1341]
+            - generic [ref=e1342]:
+              - paragraph [ref=e1343]:
+                - text: ★★★★★
+                - strong [ref=e1345]: "10.0"
+              - paragraph [ref=e1346]: 15억 규모
+              - paragraph [ref=e1347]: 물류 추적 및 관리 시스템 구축과 유지보수
+        - generic [ref=e1348]:
+          - link "기획전 이미지" [ref=e1350] [cursor=pointer]:
+            - /url: /shop_view/?idx=174
+            - img "기획전 이미지" [ref=e1351]
+          - link "도큐멘토 27억 규모 나라장터 입찰 제안서 - 정보보안 업무관리 시스템 구축 ★★★★★ 10.0 27억 입찰 제안서 공개 보안관리 + 업무관리 시스템 구축 UI/UX 고도화 적용" [ref=e1353] [cursor=pointer]:
+            - /url: /shop_view/?idx=174
+            - generic [ref=e1354]:
+              - paragraph [ref=e1355]: 도큐멘토
+              - heading "27억 규모 나라장터 입찰 제안서 - 정보보안 업무관리 시스템 구축" [level=2] [ref=e1356]
+            - generic [ref=e1357]:
+              - paragraph [ref=e1358]:
+                - text: ★★★★★
+                - strong [ref=e1360]: "10.0"
+              - paragraph [ref=e1361]: 27억 입찰 제안서 공개
+              - paragraph [ref=e1362]: 보안관리 + 업무관리 시스템 구축
+              - paragraph [ref=e1363]: UI/UX 고도화 적용
+        - generic [ref=e1364]:
+          - link "기획전 이미지" [ref=e1366] [cursor=pointer]:
+            - /url: /shop_view/?idx=165
+            - img "기획전 이미지" [ref=e1367]
+          - link "도큐멘토 교육플랫폼 구축 및 운영 제안서 ★★★★★ 10.0 네트워크 보안 인력 양성 플랫폼 시스템 구축 및 운영 제안서" [ref=e1369] [cursor=pointer]:
+            - /url: /shop_view/?idx=165
+            - generic [ref=e1370]:
+              - paragraph [ref=e1371]: 도큐멘토
+              - heading "교육플랫폼 구축 및 운영 제안서" [level=2] [ref=e1372]
+            - generic [ref=e1373]:
+              - paragraph [ref=e1374]:
+                - text: ★★★★★
+                - strong [ref=e1376]: "10.0"
+              - paragraph [ref=e1377]: 네트워크 보안 인력 양성 플랫폼
+              - paragraph [ref=e1378]: 시스템 구축 및 운영 제안서
+        - generic [ref=e1379]:
+          - link "기획전 이미지" [ref=e1381] [cursor=pointer]:
+            - /url: /shop_view/?idx=162
+            - img "기획전 이미지" [ref=e1382]
+          - link "도큐멘토 산업활용 데이터베이스 구축 제안서 ★★★★★ 10.0 산업활용 데이터베이스 구축 제안서 UI.UX 리뉴얼 포함" [ref=e1384] [cursor=pointer]:
+            - /url: /shop_view/?idx=162
+            - generic [ref=e1385]:
+              - paragraph [ref=e1386]: 도큐멘토
+              - heading "산업활용 데이터베이스 구축 제안서" [level=2] [ref=e1387]
+            - generic [ref=e1388]:
+              - paragraph [ref=e1389]:
+                - text: ★★★★★
+                - strong [ref=e1391]: "10.0"
+              - paragraph [ref=e1392]: 산업활용 데이터베이스 구축 제안서
+              - paragraph [ref=e1393]: UI.UX 리뉴얼 포함
+        - generic [ref=e1394]:
+          - link "기획전 이미지 베스트 공공기관 수주 제안서" [ref=e1396] [cursor=pointer]:
+            - /url: /shop_view/?idx=92
+            - img "기획전 이미지" [ref=e1397]
+            - generic [ref=e1398]: 베스트
+            - generic [ref=e1399]: 공공기관 수주 제안서
+          - link "도큐멘토 30억 규모 나라장터 입찰 제안서-시스템 구축부문 ★★★★★ 10.0 30억 입찰 제안서 공개 크몽 전문가들이 인정한 제안서 (댓글 확인)" [ref=e1401] [cursor=pointer]:
+            - /url: /shop_view/?idx=92
+            - generic [ref=e1402]:
+              - paragraph [ref=e1403]: 도큐멘토
+              - heading "30억 규모 나라장터 입찰 제안서-시스템 구축부문" [level=2] [ref=e1404]
+            - generic [ref=e1405]:
+              - paragraph [ref=e1406]:
+                - text: ★★★★★
+                - strong [ref=e1408]: "10.0"
+              - paragraph [ref=e1409]: 30억 입찰 제안서 공개
+              - paragraph [ref=e1410]: 크몽 전문가들이 인정한 제안서 (댓글 확인)
+        - generic [ref=e1411]:
+          - link "기획전 이미지" [ref=e1413] [cursor=pointer]:
+            - /url: /shop_view/?idx=169
+            - img "기획전 이미지" [ref=e1414]
+          - link "도큐멘토 프로젝트 수행 계획서 (29페이지) ★★★★★ 10.0 프로젝트 수행 계획서 29페이지, MS워드 세로형" [ref=e1416] [cursor=pointer]:
+            - /url: /shop_view/?idx=169
+            - generic [ref=e1417]:
+              - paragraph [ref=e1418]: 도큐멘토
+              - heading "프로젝트 수행 계획서 (29페이지)" [level=2] [ref=e1419]
+            - generic [ref=e1420]:
+              - paragraph [ref=e1421]:
+                - strong [ref=e1423]: ★★★★★
+                - strong [ref=e1424]: "10.0"
+              - paragraph [ref=e1425]: 프로젝트 수행 계획서
+              - paragraph [ref=e1426]: 29페이지, MS워드 세로형
+        - generic [ref=e1427]:
+          - link "기획전 이미지" [ref=e1429] [cursor=pointer]:
+            - /url: /shop_view/?idx=159
+            - img "기획전 이미지" [ref=e1430]
+          - link "도큐멘토 서비스 품질관리, 서비스 수준 운영 제안서 (SLA 제안서) ★★★★★ 10.0 서비스 품질관리 서비스 수준 운영 제안서 (SLA 제안서)" [ref=e1432] [cursor=pointer]:
+            - /url: /shop_view/?idx=159
+            - generic [ref=e1433]:
+              - paragraph [ref=e1434]: 도큐멘토
+              - heading "서비스 품질관리, 서비스 수준 운영 제안서 (SLA 제안서)" [level=2] [ref=e1435]
+            - generic [ref=e1436]:
+              - paragraph [ref=e1437]:
+                - text: ★★★★★
+                - strong [ref=e1439]: "10.0"
+              - paragraph [ref=e1440]: 서비스 품질관리
+              - paragraph [ref=e1441]: 서비스 수준 운영 제안서 (SLA 제안서)
+        - generic [ref=e1442]:
+          - link "기획전 이미지 무료 다운로드" [ref=e1444] [cursor=pointer]:
+            - /url: /shop_view/?idx=154
+            - img "기획전 이미지" [ref=e1445]
+            - generic [ref=e1446]: 무료 다운로드
+          - link "도큐멘토 사업비 세부내역 산출 (비목 산출표) ★★★★☆ 9.5 창업지원사업 세부내역 산출 (비목)" [ref=e1448] [cursor=pointer]:
+            - /url: /shop_view/?idx=154
+            - generic [ref=e1449]:
+              - paragraph [ref=e1450]: 도큐멘토
+              - heading "사업비 세부내역 산출 (비목 산출표)" [level=2] [ref=e1451]
+            - generic [ref=e1452]:
+              - paragraph [ref=e1453]:
+                - strong [ref=e1455]: ★★★★☆
+                - strong [ref=e1456]: "9"
+                - strong [ref=e1457]:
+                  - strong [ref=e1459]: ".5"
+              - paragraph [ref=e1460]: 창업지원사업 세부내역 산출 (비목)
+  - main [ref=e1464]:
+    - generic [ref=e1466]:
+      - generic [ref=e1467]:
+        - heading "월간 베스트 상품" [level=6] [ref=e1481]:
+          - strong [ref=e1482]: 월간 베스트 상품
+        - generic [ref=e1489]:
+          - paragraph [ref=e1490]: 월간 가장 많은 고객분들이
+          - paragraph [ref=e1491]: 만족하신 기획서입니다
+        - link "기획서 전체 보기" [ref=e1505] [cursor=pointer]:
+          - /url: /shop
+      - generic [ref=e1506]:
+        - heading "월간 기획서" [level=6] [ref=e1520]:
+          - strong [ref=e1521]: 월간 기획서
+        - generic [ref=e1527]:
+          - generic [ref=e1528]:
+            - generic:
+              - link [ref=e1531] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/shop/?idx=92
+              - link [ref=e1535] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/shop/?idx=136
+              - link [ref=e1539] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/shop/?idx=156
+              - link [ref=e1543] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/shop/?idx=162
+              - link [ref=e1547] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/shop/?idx=134
+              - link [ref=e1551] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/shop/?idx=92
+              - link [ref=e1555] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/shop/?idx=136
+              - link [ref=e1559] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/shop/?idx=156
+              - link [ref=e1563] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/shop/?idx=162
+              - link [ref=e1567] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/shop/?idx=134
+              - link [ref=e1571] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/shop/?idx=92
+              - link [ref=e1575] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/shop/?idx=136
+              - link [ref=e1579] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/shop/?idx=156
+              - link [ref=e1583] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/shop/?idx=162
+              - link [ref=e1587] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/shop/?idx=134
+          - generic:
+            - generic:
+              - generic: 
+              - generic: 
+  - generic [ref=e1599]:
+    - iframe [ref=e1600]:
+      - generic [active] [ref=f7e1]:
+        - generic "YouTube 동영상 플레이어" [ref=f7e3]
+        - button "재생 컨트롤 표시" [ref=f7e7] [cursor=pointer]
+    - generic [ref=e1604]:
+      - paragraph [ref=e1605]:
+        - strong [ref=e1607]: 매몰 시간을 줄여서,
+      - paragraph [ref=e1608]:
+        - strong [ref=e1610]:
+          - generic [ref=e1611]: 생각할 시간을 만들어야합니다
+  - main [ref=e1615]:
+    - generic [ref=e1616]:
+      - heading "사업 운영 문서" [level=6] [ref=e1630]:
+        - strong [ref=e1632]: 사업 운영 문서
+      - generic [ref=e1640]:
+        - generic [ref=e1641]:
+          - link "기획전 이미지 무료 다운로드" [ref=e1643] [cursor=pointer]:
+            - /url: /38/?idx=196
+            - img "기획전 이미지" [ref=e1644]
+            - generic [ref=e1645]: 무료 다운로드
+          - link "공공정보화 사업유형별 제안요청서 작성가이드(일부수정본) 무료 ★★★★★ 10.0 RFP 표준 내용 RFP 작성 가이드" [ref=e1647] [cursor=pointer]:
+            - /url: /38/?idx=196
+            - generic [ref=e1648]:
+              - heading "공공정보화 사업유형별 제안요청서 작성가이드(일부수정본)" [level=2] [ref=e1649]
+              - paragraph [ref=e1651]: 무료
+            - generic [ref=e1652]:
+              - paragraph [ref=e1653]:
+                - strong [ref=e1655]: ★★★★★
+                - strong [ref=e1656]
+                - strong [ref=e1657]:
+                  - strong [ref=e1659]: "10.0"
+              - paragraph [ref=e1660]: RFP 표준 내용
+              - paragraph [ref=e1661]: RFP 작성 가이드
+        - generic [ref=e1662]:
+          - link "기획전 이미지 무료 다운로드" [ref=e1664] [cursor=pointer]:
+            - /url: /38/?idx=193
+            - img "기획전 이미지" [ref=e1665]
+            - generic [ref=e1666]: 무료 다운로드
+          - link "제안서 목차 , 제안 일정 (2024) 무료 ★★★★★ 10.0 최근 사용중인 제안서 목차" [ref=e1668] [cursor=pointer]:
+            - /url: /38/?idx=193
+            - generic [ref=e1669]:
+              - heading "제안서 목차 , 제안 일정 (2024)" [level=2] [ref=e1670]
+              - paragraph [ref=e1672]: 무료
+            - generic [ref=e1673]:
+              - paragraph [ref=e1674]:
+                - strong [ref=e1676]: ★★★★★
+                - strong [ref=e1677]
+                - strong [ref=e1678]:
+                  - strong [ref=e1680]: "10.0"
+              - paragraph [ref=e1681]: 최근 사용중인 제안서 목차
+        - generic [ref=e1682]:
+          - link "기획전 이미지 무료 다운로드" [ref=e1684] [cursor=pointer]:
+            - /url: /38/?idx=192
+            - img "기획전 이미지" [ref=e1685]
+            - generic [ref=e1686]: 무료 다운로드
+          - link "우선협상대상자 기술협상 문서 무료 ★★★★★ 10.0 우선협상대상자 선정 시 기술협상 문서" [ref=e1688] [cursor=pointer]:
+            - /url: /38/?idx=192
+            - generic [ref=e1689]:
+              - heading "우선협상대상자 기술협상 문서" [level=2] [ref=e1690]
+              - paragraph [ref=e1692]: 무료
+            - generic [ref=e1693]:
+              - paragraph [ref=e1694]:
+                - strong [ref=e1696]: ★★★★★
+                - strong [ref=e1697]
+                - strong [ref=e1698]:
+                  - strong [ref=e1700]: "10.0"
+              - paragraph [ref=e1701]: 우선협상대상자 선정 시 기술협상 문서
+        - generic [ref=e1702]:
+          - link "기획전 이미지 무료 다운로드 회원에게 제공되는 무료 콘텐츠" [ref=e1704] [cursor=pointer]:
+            - /url: /38/?idx=187
+            - img "기획전 이미지" [ref=e1705]
+            - generic [ref=e1706]: 무료 다운로드
+            - generic [ref=e1707]: 회원에게 제공되는 무료 콘텐츠
+          - link "입찰 제안서 무료 다운로드 (템플릿-A3 가로형) 무료 ★★★★★ 10.0 A3 가로 제안서 제안서 템플릿 (무료) 인쇄소 인쇄 필수, 떡제본(무선제본)" [ref=e1709] [cursor=pointer]:
+            - /url: /38/?idx=187
+            - generic [ref=e1710]:
+              - heading "입찰 제안서 무료 다운로드 (템플릿-A3 가로형)" [level=2] [ref=e1711]
+              - paragraph [ref=e1713]: 무료
+            - generic [ref=e1714]:
+              - paragraph [ref=e1715]:
+                - strong [ref=e1717]: ★★★★★
+                - strong [ref=e1718]
+                - strong [ref=e1719]:
+                  - strong [ref=e1721]: "10.0"
+              - paragraph [ref=e1722]: A3 가로 제안서 제안서 템플릿 (무료)
+              - paragraph [ref=e1723]: 인쇄소 인쇄 필수, 떡제본(무선제본)
+        - generic [ref=e1724]:
+          - link "기획전 이미지 무료 다운로드" [ref=e1726] [cursor=pointer]:
+            - /url: /38/?idx=197
+            - img "기획전 이미지" [ref=e1727]
+            - generic [ref=e1728]: 무료 다운로드
+          - link "공공입찰 지분율 계산기 무료 ★★★★★ 10.0 공공입찰을 위해 컨소시엄사간 지분율 계산기" [ref=e1730] [cursor=pointer]:
+            - /url: /38/?idx=197
+            - generic [ref=e1731]:
+              - heading "공공입찰 지분율 계산기" [level=2] [ref=e1732]
+              - paragraph [ref=e1734]: 무료
+            - generic [ref=e1735]:
+              - paragraph [ref=e1736]:
+                - strong [ref=e1738]: ★★★★★
+                - strong [ref=e1739]
+                - strong [ref=e1740]:
+                  - strong [ref=e1742]: "10.0"
+              - paragraph [ref=e1743]: 공공입찰을 위해 컨소시엄사간 지분율 계산기
+              - paragraph [ref=e1744]
+        - generic [ref=e1745]:
+          - link "기획전 이미지 무료 다운로드" [ref=e1747] [cursor=pointer]:
+            - /url: /38/?idx=182
+            - img "기획전 이미지" [ref=e1748]
+            - generic [ref=e1749]: 무료 다운로드
+          - link "프로그램 목록 무료 ★★★★★ 10.0 웹사이트 구축 프로그램 목록" [ref=e1751] [cursor=pointer]:
+            - /url: /38/?idx=182
+            - generic [ref=e1752]:
+              - heading "프로그램 목록" [level=2] [ref=e1753]
+              - paragraph [ref=e1755]: 무료
+            - generic [ref=e1756]:
+              - paragraph [ref=e1757]:
+                - strong [ref=e1759]: ★★★★★
+                - strong [ref=e1760]
+                - strong [ref=e1761]:
+                  - strong [ref=e1763]: "10.0"
+              - paragraph [ref=e1764]: 웹사이트 구축 프로그램 목록
+        - generic [ref=e1765]:
+          - link "기획전 이미지 무료 다운로드" [ref=e1767] [cursor=pointer]:
+            - /url: /38/?idx=181
+            - img "기획전 이미지" [ref=e1768]
+            - generic [ref=e1769]: 무료 다운로드
+          - link "ERD (Entity-Relationship Diagram) 무료 ★★★★★ 10.0 ERD (Entity-Relationship Diagram)엔티티정의서 (Entity Definition)" [ref=e1771] [cursor=pointer]:
+            - /url: /38/?idx=181
+            - generic [ref=e1772]:
+              - heading "ERD (Entity-Relationship Diagram)" [level=2] [ref=e1773]
+              - paragraph [ref=e1775]: 무료
+            - generic [ref=e1776]:
+              - paragraph [ref=e1777]:
+                - strong [ref=e1779]: ★★★★★
+                - strong [ref=e1780]
+                - strong [ref=e1781]:
+                  - strong [ref=e1783]: "10.0"
+              - paragraph [ref=e1784]: ERD (Entity-Relationship Diagram)엔티티정의서 (Entity Definition)
+        - generic [ref=e1785]:
+          - link "기획전 이미지 무료 다운로드" [ref=e1787] [cursor=pointer]:
+            - /url: /38/?idx=180
+            - img "기획전 이미지" [ref=e1788]
+            - generic [ref=e1789]: 무료 다운로드
+          - link "엔티티정의서 (Entity Definition) 무료 ★★★★★ 10.0 엔티티정의서 (Entity Definition)" [ref=e1791] [cursor=pointer]:
+            - /url: /38/?idx=180
+            - generic [ref=e1792]:
+              - heading "엔티티정의서 (Entity Definition)" [level=2] [ref=e1793]
+              - paragraph [ref=e1795]: 무료
+            - generic [ref=e1796]:
+              - paragraph [ref=e1797]:
+                - strong [ref=e1799]: ★★★★★
+                - strong [ref=e1800]
+                - strong [ref=e1801]:
+                  - strong [ref=e1803]: "10.0"
+              - paragraph [ref=e1804]: 엔티티정의서 (Entity Definition)
+  - main [ref=e1808]:
+    - separator [ref=e1815]
+    - generic [ref=e1816]:
+      - paragraph [ref=e1824]:
+        - strong [ref=e1825]: 동영상 미리보기
+      - generic [ref=e1831]:
+        - generic [ref=e1832]:
+          - link "ISP 제안서, 통합전산망구축 정보화전략계획 제안서-PPT" [ref=e1836] [cursor=pointer]:
+            - /url: /52/?idx=168778751&bmode=view
+            - generic [ref=e1840]: ISP 제안서, 통합전산망구축 정보화전략계획 제안서-PPT
+          - link "IoT활용 에너지 효율 관리 시스템 구축" [ref=e1844] [cursor=pointer]:
+            - /url: /52/?idx=37603865&bmode=view
+            - generic [ref=e1848]: IoT활용 에너지 효율 관리 시스템 구축
+          - link "고퀄리티, 45억 규모 공공 제안서 - 시스템 구축 부문" [ref=e1852] [cursor=pointer]:
+            - /url: /52/?idx=24808956&bmode=view
+            - generic [ref=e1856]: 고퀄리티, 45억 규모 공공 제안서 - 시스템 구축 부문
+          - link "정보보안팀의 업무관리를 위한 업무관리 시스템 구축 제안서" [ref=e1860] [cursor=pointer]:
+            - /url: /52/?idx=16946666&bmode=view
+            - generic [ref=e1864]: 정보보안팀의 업무관리를 위한 업무관리 시스템 구축 제안서
+          - link "프로젝트 수행 계획서" [ref=e1868] [cursor=pointer]:
+            - /url: /52/?idx=15968492&bmode=view
+            - generic [ref=e1872]: 프로젝트 수행 계획서
+          - link "교육플랫폼 구축 및 운영 제안서" [ref=e1876] [cursor=pointer]:
+            - /url: /52/?idx=15744518&bmode=view
+            - generic [ref=e1880]: 교육플랫폼 구축 및 운영 제안서
+        - generic [ref=e1881]:
+          - link "산업활용 디자인 데이터베이스 구축 제안서" [ref=e1885] [cursor=pointer]:
+            - /url: /52/?idx=15705329&bmode=view
+            - generic [ref=e1889]: 산업활용 디자인 데이터베이스 구축 제안서
+          - link "나라장터 제안요청서 분석] 메타버스 여행 도서관 구축 사업" [ref=e1893] [cursor=pointer]:
+            - /url: /52/?idx=15522065&bmode=view
+            - generic [ref=e1897]: 나라장터 제안요청서 분석] 메타버스 여행 도서관 구축 사업
+          - link "2023년 예비창업패키지 사업계획서" [ref=e1901] [cursor=pointer]:
+            - /url: /52/?idx=15507846&bmode=view
+            - generic [ref=e1905]: 2023년 예비창업패키지 사업계획서
+          - link "UX, UI 설계 기획서, xxx사업 온라인 채널 Service User Interface 기획" [ref=e1909] [cursor=pointer]:
+            - /url: /52/?idx=15507843&bmode=view
+            - generic [ref=e1913]: UX, UI 설계 기획서, xxx사업 온라인 채널 Service User Interface 기획
+          - link "월 1억 매출, 금융 시스템 유지운영 제안서" [ref=e1917] [cursor=pointer]:
+            - /url: /52/?idx=15507839&bmode=view
+            - generic [ref=e1921]: 월 1억 매출, 금융 시스템 유지운영 제안서
+          - link "XX구 홈페이지 통합 유지보수 및 고도화 제안서" [ref=e1925] [cursor=pointer]:
+            - /url: /52/?idx=15507836&bmode=view
+            - generic [ref=e1929]: XX구 홈페이지 통합 유지보수 및 고도화 제안서
+  - main [ref=e1933]:
+    - table [ref=e1942]:
+      - rowgroup [ref=e1943]:
+        - row "제안서 전략 식스시그마 제안 전략 CORRELATE 전략 방법론 12개 제안서 전략 방법론 제안서 작성 A3 사이즈로 제안서 작성하면 깔끔하다 제안요청서 및 제안 목차 제안서 목차 만들기 시스템 구축 제안서 작성법 제안 업무 PDF 저장한 폰트가 깨질 때 추가 인사이트 남이 짜놓은 판? 하나만 제껴라 메시지는 간결해야 한다 B2B 시장은 다르다" [ref=e1944]:
+          - cell "제안서 전략 식스시그마 제안 전략 CORRELATE 전략 방법론 12개 제안서 전략 방법론" [ref=e1945]:
+            - strong [ref=e1946]: 제안서 전략
+            - link "식스시그마 제안 전략" [ref=e1947] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/87/?idx=21447737&bmode=view
+            - link "CORRELATE 전략 방법론" [ref=e1948] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/87/?idx=21548822&bmode=view
+            - link "12개 제안서 전략 방법론" [ref=e1949] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/87/?idx=22210640&bmode=view
+          - cell "제안서 작성 A3 사이즈로 제안서 작성하면 깔끔하다 제안요청서 및 제안 목차 제안서 목차 만들기 시스템 구축 제안서 작성법" [ref=e1950]:
+            - paragraph [ref=e1951]:
+              - strong [ref=e1952]: 제안서 작성
+            - paragraph [ref=e1953]:
+              - link "A3 사이즈로 제안서 작성하면 깔끔하다" [ref=e1954] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/87/?idx=18952054&bmode=view
+            - paragraph [ref=e1955]:
+              - link "제안요청서 및 제안 목차" [ref=e1956] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/87/?idx=15866267&bmode=view
+            - paragraph [ref=e1957]:
+              - link "제안서 목차 만들기" [ref=e1958] [cursor=pointer]:
+                - /url: https://www.documento.co.kr/87/?idx=15972385&bmode=view
+            - link "시스템 구축 제안서 작성법" [ref=e1959] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/87/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&bmode=view&idx=22994920&t=board
+          - cell "제안 업무 PDF 저장한 폰트가 깨질 때" [ref=e1960]:
+            - strong [ref=e1961]: 제안 업무
+            - link "PDF 저장한 폰트가 깨질 때" [ref=e1962] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/87/?idx=23504498&bmode=view
+          - cell "추가 인사이트 남이 짜놓은 판? 하나만 제껴라 메시지는 간결해야 한다 B2B 시장은 다르다" [ref=e1963]:
+            - strong [ref=e1964]: 추가 인사이트
+            - link "남이 짜놓은 판? 하나만 제껴라" [ref=e1965] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/87/?idx=14656030&bmode=view
+            - link "메시지는 간결해야 한다" [ref=e1966] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/87/?idx=16381702&bmode=view
+            - link "B2B 시장은 다르다" [ref=e1967] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/87/?idx=15087668&bmode=view
+  - main [ref=e1971]:
+    - table [ref=e1986]:
+      - rowgroup [ref=e1987]:
+        - row "제안서 전체보기 제안서 사본 (pdf) 제안서 원본 (PPT) 사업운영 단계 무료 상품 기획 인사이트 기획자로서 얻은 깨달음 공유합니다. 제안서 작성법 씽크탱크 최신 보도자료, 토픽을 정리하여 매일 업데이트합니다 구매후기 찐 리얼 후기 도움요청 사업계획서 작성, 예비창업계획서, 초기창업계획서, 사업고도화, 제안서 등 도움을 요청하세요 알립니다" [ref=e1988]:
+          - cell "제안서 전체보기 제안서 사본 (pdf) 제안서 원본 (PPT) 사업운영 단계 무료 상품" [ref=e1989]:
+            - link "제안서 전체보기" [ref=e1990] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/88
+              - strong [ref=e1991]: 제안서 전체보기
+            - link "제안서 사본 (pdf)" [ref=e1992] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/42
+            - link "제안서 원본 (PPT)" [ref=e1993] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/36
+            - link "사업운영 단계" [ref=e1994] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/22
+            - link "무료 상품" [ref=e1995] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/38
+          - cell "기획 인사이트 기획자로서 얻은 깨달음 공유합니다." [ref=e1996]:
+            - link "기획 인사이트" [ref=e1997] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/notice
+              - strong [ref=e1998]: 기획 인사이트
+            - text: 기획자로서 얻은 깨달음 공유합니다.
+          - cell "제안서 작성법" [ref=e1999]:
+            - link:
+              - /url: https://www.documento.co.kr/87
+            - link:
+              - /url: https://www.documento.co.kr/87
+            - link "제안서 작성법" [ref=e2000] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/Proposal
+              - strong [ref=e2001]: 제안
+              - strong [ref=e2002]: 서 작성법
+          - cell "씽크탱크 최신 보도자료, 토픽을 정리하여 매일 업데이트합니다" [ref=e2003]:
+            - link "씽크탱크" [ref=e2004] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/23
+              - strong [ref=e2005]: 씽크탱크
+            - text: 최신 보도자료, 토픽을 정리하여 매일 업데이트합니다
+          - cell "구매후기 찐 리얼 후기" [ref=e2006]:
+            - link "구매후기" [ref=e2007] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/28
+              - strong [ref=e2008]: 구매후기
+            - text: 찐 리얼 후기
+          - cell "도움요청 사업계획서 작성, 예비창업계획서, 초기창업계획서, 사업고도화, 제안서 등 도움을 요청하세요" [ref=e2009]:
+            - link "도움요청" [ref=e2010] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/96
+              - strong [ref=e2011]: 도움요청
+            - text: 사업계획서 작성, 예비창업계획서, 초기창업계획서, 사업고도화, 제안서 등 도움을 요청하세요
+          - cell "알립니다" [ref=e2012]:
+            - link "알립니다" [ref=e2013] [cursor=pointer]:
+              - /url: https://www.documento.co.kr/announce
+              - strong [ref=e2014]: 알립니다
+  - main [ref=e2024]:
+    - generic [ref=e2032]:
+      - link "공지사항" [ref=e2056] [cursor=pointer]:
+        - /url: /announce
+      - generic [ref=e2064]:
+        - paragraph [ref=e2065]:
+          - strong [ref=e2067]: 프리세일즈 도큐멘토 | 정부지원 나라장터 입찰 제안서 및 실무 기획서 등 제공
+        - paragraph [ref=e2068]:
+          - generic [ref=e2069]: 문서는 포멧만으로도 가이드가 된다, 문서에서 받는 멘토링은 사수보다 많다
+        - paragraph [ref=e2070]:
+          - generic [ref=e2071]: "---"
+        - paragraph [ref=e2072]:
+          - link "아마란스" [ref=e2075] [cursor=pointer]:
+            - /url: https://www.documento.co.kr/amarans
+            - strong [ref=e2076]: 아마란스
+          - generic [ref=e2077]: "| 682-53-00808 | 제2023-수원권선-0773호 | 대표자 : 채호진"
+        - paragraph [ref=e2078]:
+          - generic [ref=e2079]: "출판사 신고번호 : 제 2023-000074호"
+        - paragraph [ref=e2080]:
+          - generic [ref=e2081]: 경기도 광명시 소하로 190, 12층 비1216-50(소하동, 광명G타워)
+        - paragraph [ref=e2082]:
+          - generic [ref=e2083]: "전화번호 : 010-9940-7909 (11:00 ~ 16:00) , 주말 / 공휴일 휴무"
+        - paragraph [ref=e2084]:
+          - generic [ref=e2086]:
+            - text: "이 메 일 : sales"
+            - link:
+              - /url: mailto:korea@amarans.co
+          - link "@amarans.co.kr" [ref=e2087] [cursor=pointer]:
+            - /url: mailto:korea@amarans.co.kr
+            - generic [ref=e2088]: "@amarans.co.kr"
+          - generic [ref=e2090]: "입금계좌 : 카카오뱅크, 아마란스, 3333-26-7731937"
+        - paragraph [ref=e2091]
+      - generic [ref=e2103]:
+        - table [ref=e2104]:
+          - rowgroup [ref=e2105]:
+            - row "제안서 도큐멘토 브런치 게시글 바로가기" [ref=e2106]:
+              - cell [ref=e2107]:
+                - link [ref=e2108] [cursor=pointer]:
+                  - /url: https://mark.inicis.com/mark/popup_v3.php?mid=COCpmbook1
+                  - img [ref=e2109]
+              - cell "제안서 도큐멘토 브런치 게시글 바로가기" [ref=e2110]:
+                - link "제안서 도큐멘토 브런치 게시글 바로가기" [ref=e2111] [cursor=pointer]:
+                  - /url: https://brunch.co.kr/@presales
+                  - img "제안서 도큐멘토 브런치 게시글 바로가기" [ref=e2112]
+              - cell [ref=e2113]
+        - paragraph [ref=e2115]
+  - contentinfo [ref=e2122]:
+    - generic [ref=e2128]:
+      - list [ref=e2130]:
+        - generic [ref=e2131]:
+          - listitem [ref=e2132]:
+            - link "이용약관" [ref=e2133] [cursor=pointer]:
+              - /url: /?mode=policy
+          - listitem [ref=e2134]:
+            - link "개인정보처리방침" [ref=e2135] [cursor=pointer]:
+              - /url: /?mode=privacy
+      - generic [ref=e2136]: Copyright ⓒ 2026 프리세일즈 도큐멘토 All rights reserved.
+  - iframe [ref=e2137]:
+    

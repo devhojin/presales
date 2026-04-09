@@ -18,6 +18,10 @@ import {
   CheckCircle,
   Copy,
   Download,
+  DollarSign,
+  Loader2,
+  X,
+  Save,
 } from 'lucide-react'
 import {
   DndContext,
@@ -433,6 +437,10 @@ export default function AdminProducts() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
+  const [showBulkPrice, setShowBulkPrice] = useState(false)
+  const [bulkPriceData, setBulkPriceData] = useState<{ id: number; title: string; price: number; original_price: number; is_free: boolean }[]>([])
+  const [bulkPriceLoading, setBulkPriceLoading] = useState(false)
+  const [bulkPriceSaving, setBulkPriceSaving] = useState(false)
 
   const supabase = useMemo(() => createClient(), [])
 
@@ -670,6 +678,25 @@ export default function AdminProducts() {
             <p className="text-sm text-muted-foreground mt-1">전체 {products.length}개 상품</p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={async () => {
+                setShowBulkPrice(true)
+                setBulkPriceLoading(true)
+                try {
+                  const res = await fetch('/api/admin/bulk-price')
+                  const data = await res.json()
+                  if (data.products) {
+                    setBulkPriceData(data.products.filter((p: { is_free: boolean }) => !p.is_free))
+                  }
+                } catch { /* ignore */ }
+                setBulkPriceLoading(false)
+              }}
+              className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-border hover:bg-muted text-foreground text-sm font-medium rounded-xl transition-colors"
+              title="가격 일괄 수정"
+            >
+              <DollarSign className="w-4 h-4" />
+              가격 일괄수정
+            </button>
             <button
               onClick={handleCSVExport}
               className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-border hover:bg-muted text-foreground text-sm font-medium rounded-xl transition-colors"
@@ -1021,6 +1048,126 @@ export default function AdminProducts() {
 
         {/* Toast */}
         {toast && <Toast message={toast} onClose={() => setToast(null)} />}
+
+        {/* 가격 일괄 수정 모달 */}
+        {showBulkPrice && (
+          <div className="fixed inset-0 z-50 flex items-start justify-center pt-[5vh]" onClick={() => setShowBulkPrice(false)}>
+            <div className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" />
+            <div className="relative bg-card rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-full max-w-3xl mx-4 max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
+                <div>
+                  <h2 className="text-lg font-bold tracking-tight">가격 일괄 수정</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">유료 상품의 판매가/정가를 한 번에 수정합니다</p>
+                </div>
+                <button onClick={() => setShowBulkPrice(false)} className="w-8 h-8 rounded-xl hover:bg-muted flex items-center justify-center">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {bulkPriceLoading ? (
+                  <div className="flex items-center justify-center py-20">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/50">
+                        <th className="text-left py-2 px-2 text-xs text-muted-foreground font-medium w-8">ID</th>
+                        <th className="text-left py-2 px-2 text-xs text-muted-foreground font-medium">상품명</th>
+                        <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium w-28">판매가</th>
+                        <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium w-28">정가</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bulkPriceData.map((item, idx) => (
+                        <tr key={item.id} className={`border-b border-border/30 ${item.price > 99000 ? 'bg-red-50' : ''}`}>
+                          <td className="py-2 px-2 text-xs text-muted-foreground font-mono">{item.id}</td>
+                          <td className="py-2 px-2 text-sm truncate max-w-[250px]" title={item.title}>{item.title}</td>
+                          <td className="py-2 px-2">
+                            <input
+                              type="number"
+                              value={item.price}
+                              onChange={e => {
+                                const v = parseInt(e.target.value) || 0
+                                setBulkPriceData(prev => prev.map((p, i) => i === idx ? { ...p, price: v } : p))
+                              }}
+                              className={`w-full text-right px-2 py-1 rounded-lg border text-sm font-mono ${item.price > 99000 ? 'border-red-300 bg-red-50 text-red-700' : 'border-border'}`}
+                            />
+                          </td>
+                          <td className="py-2 px-2">
+                            <input
+                              type="number"
+                              value={item.original_price}
+                              onChange={e => {
+                                const v = parseInt(e.target.value) || 0
+                                setBulkPriceData(prev => prev.map((p, i) => i === idx ? { ...p, original_price: v } : p))
+                              }}
+                              className="w-full text-right px-2 py-1 rounded-lg border border-border text-sm font-mono"
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+
+                {/* 99,000원 초과 경고 */}
+                {bulkPriceData.some(p => p.price > 99000) && (
+                  <div className="mt-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">
+                    빨간색으로 표시된 상품은 판매가가 99,000원을 초과합니다
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-between px-6 py-4 border-t border-border/50 bg-muted/30">
+                <button
+                  onClick={() => {
+                    setBulkPriceData(prev => prev.map(p => p.price > 99000 ? { ...p, price: 99000 } : p))
+                  }}
+                  className="px-4 py-2 text-sm rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  99,000원 초과 일괄 조정
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowBulkPrice(false)}
+                    className="px-4 py-2 text-sm rounded-xl border border-border hover:bg-muted transition-colors"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setBulkPriceSaving(true)
+                      try {
+                        const res = await fetch('/api/admin/bulk-price', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ updates: bulkPriceData.map(p => ({ id: p.id, price: p.price, original_price: p.original_price })) }),
+                        })
+                        const result = await res.json()
+                        setToast(result.message || '저장 완료')
+                        setShowBulkPrice(false)
+                        loadProducts()
+                      } catch {
+                        setToast('저장 실패')
+                      }
+                      setBulkPriceSaving(false)
+                    }}
+                    disabled={bulkPriceSaving}
+                    className="inline-flex items-center gap-1.5 px-5 py-2 text-sm rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                  >
+                    {bulkPriceSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {bulkPriceSaving ? '저장 중...' : '전체 저장'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

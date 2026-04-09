@@ -1,0 +1,9 @@
+- generic [active] [ref=e1]:
+  - heading "404" [level=1] [ref=e2]
+  - heading "Page Not Found" [level=2] [ref=e3]
+  - generic [ref=e4]:
+    - paragraph [ref=e5]: The page you visited has an invalid or deleted address.(P)
+    - paragraph [ref=e6]: 방문하신 페이지의 주소가 잘못되었거나 삭제된 페이지입니다.
+    - paragraph [ref=e7]:
+      - link "홈으로 돌아가기" [ref=e8] [cursor=pointer]:
+        - /url: /
