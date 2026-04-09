@@ -13,6 +13,7 @@ const navLinks = [
   { href: '/consulting', label: '컨설팅' },
   { href: '/blog', label: '블로그' },
   { href: '/announcements', label: '공고 사업' },
+  { href: '/feeds', label: 'IT피드' },
   { href: '/about', label: '회사소개' },
   { href: '/faq', label: '고객지원' },
 ]

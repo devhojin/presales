@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/fetch-announcements",
       "schedule": "0 23 * * *"
+    },
+    {
+      "path": "/api/cron/fetch-feeds",
+      "schedule": "30 23 * * *"
     }
   ]
 }
