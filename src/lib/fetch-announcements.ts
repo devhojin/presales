@@ -195,14 +195,27 @@ async function fetchKStartupAnnouncements(): Promise<FetchResult> {
           governing_body: item.sprv_inst || item.pbanc_ntrp_nm || "",
         }
 
-        // 중복 체크
-        const { data: existing } = await supabase
+        // 중복 체크: external_id 또는 제목 기준
+        const { data: existById } = await supabase
           .from("announcements")
           .select("id")
           .eq("external_id", externalId)
           .limit(1)
 
-        if (existing && existing.length > 0) {
+        if (existById && existById.length > 0) {
+          result.skipped++
+          continue
+        }
+
+        // 제목+기관 동일한 공고도 중복으로 간주
+        const { data: existByTitle } = await supabase
+          .from("announcements")
+          .select("id")
+          .eq("title", title)
+          .eq("organization", dbRow.organization)
+          .limit(1)
+
+        if (existByTitle && existByTitle.length > 0) {
           result.skipped++
         } else {
           const { data: inserted, error } = await supabase
