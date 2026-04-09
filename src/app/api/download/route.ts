@@ -134,8 +134,19 @@ export async function POST(request: NextRequest) {
       }
     }
   } else if (file.file_url.startsWith(storageSignedPrefix)) {
-    // 이미 서명된 URL이면 그대로 사용 (갱신은 하지 않음)
-    downloadUrl = file.file_url
+    // 이미 서명된 URL → 재서명 (만료된 URL 재사용 방지)
+    const pathAfterSign = file.file_url.replace(storageSignedPrefix, '').split('?')[0]
+    const slashIdx = pathAfterSign.indexOf('/')
+    if (slashIdx !== -1) {
+      const bucket = pathAfterSign.substring(0, slashIdx)
+      const filePath = pathAfterSign.substring(slashIdx + 1)
+      const { data: signedData, error: signError } = await supabase.storage
+        .from(bucket)
+        .createSignedUrl(filePath, 60)
+      if (!signError && signedData?.signedUrl) {
+        downloadUrl = signedData.signedUrl
+      }
+    }
   }
   // 외부 URL(CDN 등)은 그대로 사용
 
