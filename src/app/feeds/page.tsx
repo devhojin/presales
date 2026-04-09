@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Search, ExternalLink, Loader2, AlertCircle, Rss, Clock, Newspaper } from 'lucide-react'
+import {
+  Search, ExternalLink, Loader2, Rss, Clock, Newspaper, ArrowLeft,
+  Bookmark, BookmarkCheck, Share2,
+} from 'lucide-react'
 import { getSourceBadgeStyle, getSourceName, getCategoryLabel, getCategoryColor, FEED_CATEGORIES } from '@/lib/feed-sources'
-
-// ===========================
-// Types
-// ===========================
+import { useToastStore } from '@/stores/toast-store'
+import DOMPurify from 'dompurify'
 
 interface FeedItem {
   id: string
@@ -23,27 +24,12 @@ interface FeedItem {
   status: string
 }
 
-// ===========================
-// Loading Skeleton
-// ===========================
+type ReadTab = 'unread' | 'read' | 'bookmarks'
 
-function FeedSkeleton() {
-  return (
-    <div className="bg-card rounded-2xl border border-border/50 p-6 space-y-3 animate-pulse">
-      <div className="h-3 bg-muted rounded-full w-1/4" />
-      <div className="h-5 bg-muted rounded w-3/4" />
-      <div className="h-4 bg-muted rounded w-full" />
-      <div className="h-4 bg-muted rounded w-5/6" />
-      <div className="h-3 bg-muted rounded w-1/3 mt-4" />
-    </div>
-  )
-}
-
-// ===========================
-// Page Component
-// ===========================
+const TWO_WEEKS = 14 * 24 * 60 * 60 * 1000
 
 export default function FeedsPage() {
+  const { addToast } = useToastStore()
   const supabase = useMemo(() => createClient(), [])
 
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
@@ -51,8 +37,23 @@ export default function FeedsPage() {
   const [feeds, setFeeds] = useState<FeedItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [showDetail, setShowDetail] = useState(false) // mobile
 
-  // Fetch published feeds
+  // Auth & bookmark/read
+  const [userId, setUserId] = useState<string | null>(null)
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
+  const [readMap, setReadMap] = useState<Map<string, string>>(new Map())
+  const [readTab, setReadTab] = useState<ReadTab>('unread')
+
+  // Load user
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUserId(user.id)
+    })
+  }, [supabase])
+
+  // Fetch feeds
   const fetchFeeds = useCallback(async () => {
     setLoading(true)
     setError('')
@@ -64,20 +65,15 @@ export default function FeedsPage() {
         .eq('status', 'published')
         .order('created_at', { ascending: false })
 
-      // Apply category filter
       if (selectedCategory !== 'all') {
         query = query.eq('category', selectedCategory)
       }
-
-      // Apply search
       if (search.trim()) {
         query = query.ilike('title', `%${search.trim()}%`)
       }
 
       const { data, error: fetchError } = await query
-
       if (fetchError) throw fetchError
-
       setFeeds((data || []) as FeedItem[])
     } catch (e) {
       setError(e instanceof Error ? e.message : '데이터를 불러오는 중 오류가 발생했습니다')
@@ -86,160 +82,395 @@ export default function FeedsPage() {
     }
   }, [supabase, selectedCategory, search])
 
-  useEffect(() => {
-    fetchFeeds()
-  }, [fetchFeeds])
+  useEffect(() => { fetchFeeds() }, [fetchFeeds])
 
-  // Filter counts
-  const feedsByCategory = useMemo(() => {
-    const counts: Record<string, number> = { all: feeds.length }
-    FEED_CATEGORIES.forEach((cat) => {
-      counts[cat.id] = feeds.filter((f) => f.category === cat.id).length
+  // Load bookmarks & reads
+  useEffect(() => {
+    if (!userId) return
+    Promise.all([
+      fetch('/api/bookmarks/feeds').then(r => r.json()),
+      supabase
+        .from('feed_reads')
+        .select('post_id, read_at')
+        .eq('user_id', userId),
+    ]).then(([bmRes, readsRes]) => {
+      if (bmRes.bookmarks) {
+        setBookmarkedIds(new Set(bmRes.bookmarks.map((b: { post_id: string }) => b.post_id)))
+      }
+      if (readsRes.data) {
+        const map = new Map<string, string>()
+        readsRes.data.forEach((r: { post_id: string; read_at: string }) => {
+          map.set(r.post_id, r.read_at)
+        })
+        setReadMap(map)
+      }
     })
-    return counts
-  }, [feeds])
+  }, [userId, supabase])
+
+  // Filter by read tab
+  const filteredFeeds = useMemo(() => {
+    if (!userId) return feeds
+    return feeds.filter(feed => {
+      const readAt = readMap.get(feed.id)
+      const isRead = readAt && (Date.now() - new Date(readAt).getTime() < TWO_WEEKS)
+      const isBookmarked = bookmarkedIds.has(feed.id)
+
+      if (readTab === 'unread' && isRead) return false
+      if (readTab === 'read' && !isRead) return false
+      if (readTab === 'bookmarks' && !isBookmarked) return false
+      return true
+    })
+  }, [feeds, userId, readMap, bookmarkedIds, readTab])
+
+  const selectedFeed = useMemo(
+    () => feeds.find(f => f.id === selectedId) || null,
+    [feeds, selectedId]
+  )
+
+  // Auto-select first
+  useEffect(() => {
+    if (!selectedId && filteredFeeds.length > 0) {
+      setSelectedId(filteredFeeds[0].id)
+    }
+  }, [filteredFeeds, selectedId])
+
+  const handleSelect = useCallback((id: string) => {
+    setSelectedId(id)
+    setShowDetail(true)
+
+    if (userId) {
+      setReadMap(prev => {
+        const next = new Map(prev)
+        next.set(id, new Date().toISOString())
+        return next
+      })
+      fetch('/api/reads/feeds', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ post_id: id }),
+      })
+    }
+  }, [userId])
+
+  const handleToggleBookmark = useCallback(async (id: string) => {
+    if (!userId) {
+      addToast('로그인 후 이용 가능합니다', 'error')
+      return
+    }
+
+    const wasBookmarked = bookmarkedIds.has(id)
+    setBookmarkedIds(prev => {
+      const next = new Set(prev)
+      if (wasBookmarked) next.delete(id)
+      else next.add(id)
+      return next
+    })
+
+    const res = await fetch('/api/bookmarks/feeds', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ post_id: id }),
+    })
+
+    if (res.ok) {
+      addToast(wasBookmarked ? '즐겨찾기에서 제거했습니다' : '즐겨찾기에 추가했습니다', 'success')
+    }
+  }, [userId, bookmarkedIds, addToast])
+
+  const handleShare = useCallback((feed: FeedItem) => {
+    const url = feed.external_url || window.location.href
+    navigator.clipboard.writeText(url).then(() => {
+      addToast('링크가 복사되었습니다', 'success')
+    })
+  }, [addToast])
+
+  // Tab counts
+  const tabCounts = useMemo(() => {
+    if (!userId) return { unread: 0, read: 0, bookmarks: 0 }
+    let unread = 0, read = 0, bookmarks = 0
+    feeds.forEach(feed => {
+      const readAt = readMap.get(feed.id)
+      const isR = readAt && (Date.now() - new Date(readAt).getTime() < TWO_WEEKS)
+      if (isR) read++
+      else unread++
+      if (bookmarkedIds.has(feed.id)) bookmarks++
+    })
+    return { unread, read, bookmarks }
+  }, [userId, feeds, readMap, bookmarkedIds])
 
   return (
-    <div className="space-y-8">
-      {/* Hero Section */}
-      <div className="space-y-3 text-center max-w-2xl mx-auto">
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <Rss className="w-6 h-6 text-primary" />
-          <h1 className="text-4xl font-bold text-foreground">IT피드</h1>
+    <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+      {/* Header */}
+      <div className="py-8 md:py-12">
+        <div className="flex items-center gap-3 mb-3">
+          <Rss className="w-7 h-7 text-primary" />
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">IT피드</h1>
         </div>
-        <p className="text-lg text-muted-foreground">스타트업, IT, 정책 뉴스를 매일 업데이트합니다</p>
+        <p className="text-muted-foreground">스타트업, IT, 정책 뉴스를 매일 업데이트합니다</p>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative max-w-xl mx-auto w-full">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-        <input
-          type="text"
-          placeholder="검색..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-12 pr-4 py-3 text-base rounded-xl border border-border/50 bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-        />
-      </div>
+      {/* Search + Filters */}
+      <div className="space-y-4 mb-6">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="검색..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-12 pr-6 py-3 border border-border/50 rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+          />
+        </div>
 
-      {/* Category Tabs */}
-      <div className="flex flex-wrap justify-center gap-2">
-        <button
-          onClick={() => setSelectedCategory('all')}
-          className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-            selectedCategory === 'all'
-              ? 'bg-primary text-primary-foreground shadow-md'
-              : 'bg-secondary text-foreground hover:bg-secondary/80 border border-border/50'
-          }`}
-        >
-          전체 ({feedsByCategory.all})
-        </button>
-        {FEED_CATEGORIES.map((cat) => (
+        {/* Category tabs */}
+        <div className="flex flex-wrap gap-2">
           <button
-            key={cat.id}
-            onClick={() => setSelectedCategory(cat.id)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-              selectedCategory === cat.id
-                ? 'bg-primary text-primary-foreground shadow-md'
+            onClick={() => { setSelectedCategory('all'); setSelectedId(null) }}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+              selectedCategory === 'all'
+                ? 'bg-primary text-primary-foreground'
                 : 'bg-secondary text-foreground hover:bg-secondary/80 border border-border/50'
             }`}
           >
-            {cat.label} ({feedsByCategory[cat.id] || 0})
+            전체
           </button>
-        ))}
+          {FEED_CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => { setSelectedCategory(cat.id); setSelectedId(null) }}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                selectedCategory === cat.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-secondary text-foreground hover:bg-secondary/80 border border-border/50'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Read tabs (logged-in) */}
+        {userId && (
+          <div className="flex gap-1 border-b border-border/50">
+            {([
+              { key: 'unread' as ReadTab, label: '읽지않음', count: tabCounts.unread },
+              { key: 'read' as ReadTab, label: '읽음', count: tabCounts.read },
+              { key: 'bookmarks' as ReadTab, label: '즐겨찾기', count: tabCounts.bookmarks },
+            ]).map(t => (
+              <button
+                key={t.key}
+                onClick={() => { setReadTab(t.key); setSelectedId(null) }}
+                className={`px-3 py-2 text-sm font-medium border-b-2 transition cursor-pointer ${
+                  readTab === t.key
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {t.label}
+                <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
+                  readTab === t.key ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
+                }`}>
+                  {t.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto w-full">
-        {loading ? (
-          <div className="space-y-4">
-            {[...Array(6)].map((_, i) => (
-              <FeedSkeleton key={i} />
-            ))}
-          </div>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center py-12 gap-3 bg-card rounded-2xl border border-border/50">
-            <AlertCircle className="w-10 h-10 text-destructive" />
-            <p className="text-sm text-destructive font-medium">{error}</p>
-            <button
-              onClick={fetchFeeds}
-              className="px-4 py-2 text-sm font-medium rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-            >
-              다시 시도
-            </button>
-          </div>
-        ) : feeds.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <Newspaper className="w-12 h-12 text-muted-foreground/30" />
-            <p className="text-muted-foreground">{search ? '검색 결과가 없습니다' : '등록된 피드가 없습니다'}</p>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {feeds.map((feed) => (
-              <div
-                key={feed.id}
-                className="group bg-card rounded-2xl border border-border/50 p-6 hover:border-primary/30 hover:shadow-md transition-all"
-              >
-                {/* Header with badges */}
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div className="flex items-center gap-2 flex-wrap flex-1">
-                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(feed.category)}`}>
-                      {getCategoryLabel(feed.category)}
-                    </span>
-                    <span className={`inline-block px-2.5 py-0.5 rounded text-[11px] font-semibold ${getSourceBadgeStyle(feed.source)}`}>
-                      {getSourceName(feed.source)}
-                    </span>
-                  </div>
-                  {feed.external_url && (
-                    <a
-                      href={feed.external_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-secondary transition-all shrink-0"
-                      title="원문 보기"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                  )}
-                </div>
-
-                {/* Title */}
-                {feed.external_url ? (
-                  <a
-                    href={feed.external_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block group/title hover:text-primary transition-colors mb-2"
+      {loading ? (
+        <div className="py-24 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : error ? (
+        <div className="text-center py-24">
+          <p className="text-sm text-destructive mb-3">{error}</p>
+          <button onClick={fetchFeeds} className="px-4 py-2 text-sm rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
+            다시 시도
+          </button>
+        </div>
+      ) : filteredFeeds.length === 0 ? (
+        <div className="text-center py-24">
+          <Newspaper className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+          <p className="text-muted-foreground">{search ? '검색 결과가 없습니다' : '등록된 피드가 없습니다'}</p>
+        </div>
+      ) : (
+        <div className="flex gap-0 border border-border/50 rounded-2xl overflow-hidden bg-card mb-12" style={{ minHeight: 'calc(100vh - 400px)' }}>
+          {/* LEFT: List */}
+          <div className={`${showDetail ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[38%] border-r border-border/50 overflow-hidden`}>
+            <div className="px-4 py-3 border-b border-border/50 bg-muted/30">
+              <p className="text-xs text-muted-foreground font-medium">{filteredFeeds.length}개 피드</p>
+            </div>
+            <div className="flex-1 overflow-y-auto divide-y divide-border/50">
+              {filteredFeeds.map((feed) => {
+                const isActive = feed.id === selectedId
+                const isRead = readMap.has(feed.id)
+                const isBookmarked = bookmarkedIds.has(feed.id)
+                return (
+                  <button
+                    key={feed.id}
+                    onClick={() => handleSelect(feed.id)}
+                    className={`w-full text-left px-4 py-3.5 transition-colors cursor-pointer ${
+                      isActive ? 'bg-primary/5 border-l-2 border-l-primary' : 'hover:bg-muted/50 border-l-2 border-l-transparent'
+                    } ${!isRead && userId ? 'font-semibold' : ''}`}
                   >
-                    <h3 className="text-lg font-bold text-foreground leading-snug group-hover/title:text-primary transition-colors">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${getCategoryColor(feed.category)}`}>
+                        {getCategoryLabel(feed.category)}
+                      </span>
+                      <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold ${getSourceBadgeStyle(feed.source)}`}>
+                        {getSourceName(feed.source)}
+                      </span>
+                      {isBookmarked && <BookmarkCheck className="w-3 h-3 text-primary ml-auto shrink-0" />}
+                    </div>
+                    <p className={`text-sm leading-snug line-clamp-2 mb-1 ${isActive ? 'text-foreground' : isRead ? 'text-muted-foreground' : 'text-foreground'}`}>
                       {feed.title}
-                    </h3>
-                  </a>
-                ) : (
-                  <h3 className="text-lg font-bold text-foreground leading-snug mb-2">{feed.title}</h3>
-                )}
+                    </p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>{new Date(feed.created_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}</span>
+                      <span>{feed.views.toLocaleString()} 조회</span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
 
-                {/* Content excerpt */}
-                {feed.content && (
-                  <p className="text-sm text-muted-foreground line-clamp-2 mb-4 leading-relaxed">
-                    {feed.content.replace(/<[^>]*>/g, '').substring(0, 200).trim()}
-                  </p>
-                )}
-
-                {/* Meta */}
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5" />
-                    {new Date(feed.created_at).toLocaleDateString('ko-KR', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </span>
-                  <span>{feed.views.toLocaleString()} 조회</span>
+          {/* RIGHT: Detail */}
+          <div className={`${showDetail ? 'flex' : 'hidden md:flex'} flex-col flex-1 overflow-hidden`}>
+            {selectedFeed ? (
+              <FeedDetail
+                feed={selectedFeed}
+                isBookmarked={bookmarkedIds.has(selectedFeed.id)}
+                onToggleBookmark={() => handleToggleBookmark(selectedFeed.id)}
+                onShare={() => handleShare(selectedFeed)}
+                onBack={() => setShowDetail(false)}
+              />
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <Rss className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">좌측에서 피드를 선택하세요</p>
                 </div>
               </div>
-            ))}
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================
+// Feed Detail Component
+// ============================
+
+function FeedDetail({
+  feed,
+  isBookmarked,
+  onToggleBookmark,
+  onShare,
+  onBack,
+}: {
+  feed: FeedItem
+  isBookmarked: boolean
+  onToggleBookmark: () => void
+  onShare: () => void
+  onBack: () => void
+}) {
+  return (
+    <div className="flex-1 overflow-y-auto">
+      {/* Mobile back */}
+      <div className="md:hidden px-4 py-3 border-b border-border/50">
+        <button onClick={onBack} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer">
+          <ArrowLeft className="w-4 h-4" />
+          목록으로
+        </button>
+      </div>
+
+      <div className="p-6 md:p-8">
+        {/* Badges + Actions */}
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(feed.category)}`}>
+              {getCategoryLabel(feed.category)}
+            </span>
+            <span className={`inline-block px-2.5 py-0.5 rounded text-[11px] font-semibold ${getSourceBadgeStyle(feed.source)}`}>
+              {getSourceName(feed.source)}
+            </span>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={onToggleBookmark}
+              className={`p-2 rounded-lg transition-colors cursor-pointer ${
+                isBookmarked ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-primary hover:bg-muted'
+              }`}
+              title={isBookmarked ? '즐겨찾기 해제' : '즐겨찾기'}
+            >
+              {isBookmarked ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
+            </button>
+            <button
+              onClick={onShare}
+              className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted transition-colors cursor-pointer"
+              title="링크 복사"
+            >
+              <Share2 className="w-5 h-5" />
+            </button>
+            {feed.external_url && (
+              <a
+                href={feed.external_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
+                title="원문 보기"
+              >
+                <ExternalLink className="w-5 h-5" />
+              </a>
+            )}
+          </div>
+        </div>
+
+        {/* Title */}
+        <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground mb-4 leading-tight">
+          {feed.title}
+        </h2>
+
+        {/* Meta */}
+        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6 pb-6 border-b border-border/50">
+          <span className="flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5" />
+            {new Date(feed.created_at).toLocaleDateString('ko-KR', {
+              year: 'numeric', month: 'long', day: 'numeric',
+            })}
+          </span>
+          <span>{feed.views.toLocaleString()} 조회</span>
+        </div>
+
+        {/* Content */}
+        {feed.content && (
+          <div
+            className="prose prose-sm max-w-none text-foreground/90 leading-relaxed"
+            dangerouslySetInnerHTML={{
+              __html: typeof window !== 'undefined'
+                ? DOMPurify.sanitize(feed.content)
+                : feed.content.replace(/<[^>]*>/g, ''),
+            }}
+          />
+        )}
+
+        {/* Source Link CTA */}
+        {feed.external_url && (
+          <div className="mt-8 pt-6 border-t border-border/50">
+            <a
+              href={feed.external_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-all cursor-pointer"
+            >
+              원문 보기
+              <ExternalLink className="w-4 h-4" />
+            </a>
           </div>
         )}
       </div>

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { FileText, Download, MessageSquare, User, Loader2, Mail, Phone, Building, Pencil, Save, X, Lock, Eye, EyeOff, ChevronDown, ShoppingBag, AlertTriangle, Heart, Clock } from 'lucide-react'
+import { FileText, Download, MessageSquare, User, Loader2, Mail, Phone, Building, Pencil, Save, X, Lock, Eye, EyeOff, ChevronDown, ShoppingBag, AlertTriangle, Heart, Clock, Bookmark, ExternalLink, Megaphone, Rss } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { validatePassword } from '@/lib/password-policy'
 import { useToastStore } from '@/stores/toast-store'
@@ -63,7 +63,7 @@ const statusMap: Record<string, { label: string; class: string }> = {
   pending_refund: { label: '환불문의', class: 'bg-orange-50 text-orange-700 border-orange-200' },
 }
 
-type TabId = 'orders' | 'downloads' | 'profile'
+type TabId = 'orders' | 'downloads' | 'bookmarks' | 'profile'
 
 export default function MyPage() {
   const router = useRouter()
@@ -307,6 +307,7 @@ export default function MyPage() {
   const tabs = [
     { id: 'orders' as TabId, icon: FileText, label: '주문 내역' },
     { id: 'downloads' as TabId, icon: Download, label: '다운로드' },
+    { id: 'bookmarks' as TabId, icon: Bookmark, label: '즐겨찾기' },
     { id: 'profile' as TabId, icon: User, label: '내 정보' },
   ]
 
@@ -562,6 +563,8 @@ export default function MyPage() {
               )}
             </div>
           )}
+
+          {activeTab === 'bookmarks' && <BookmarksTab />}
 
           {activeTab === 'profile' && profile && (
             <div className="space-y-6">
@@ -1011,6 +1014,194 @@ export default function MyPage() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ============================
+// Bookmarks Tab Component
+// ============================
+
+interface BookmarkAnnouncement {
+  id: string
+  title: string
+  organization: string | null
+  status: string
+  end_date: string | null
+  source: string
+  source_url: string | null
+}
+
+interface BookmarkFeed {
+  id: string
+  title: string
+  category: string
+  source: string
+  external_url: string | null
+}
+
+function BookmarksTab() {
+  const [annBookmarks, setAnnBookmarks] = useState<BookmarkAnnouncement[]>([])
+  const [feedBookmarks, setFeedBookmarks] = useState<BookmarkFeed[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setLoading(false); return }
+
+      // Load announcement bookmarks
+      const { data: annBm } = await supabase
+        .from('announcement_bookmarks')
+        .select('announcement_id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+      if (annBm && annBm.length > 0) {
+        const ids = annBm.map(b => b.announcement_id)
+        const { data: anns } = await supabase
+          .from('announcements')
+          .select('id, title, organization, status, end_date, source, source_url')
+          .in('id', ids)
+        if (anns) {
+          // Sort by bookmark order
+          const sorted = ids.map(id => anns.find(a => a.id === id)).filter(Boolean) as BookmarkAnnouncement[]
+          setAnnBookmarks(sorted)
+        }
+      }
+
+      // Load feed bookmarks
+      const { data: feedBm } = await supabase
+        .from('feed_bookmarks')
+        .select('post_id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+      if (feedBm && feedBm.length > 0) {
+        const ids = feedBm.map(b => b.post_id)
+        const { data: posts } = await supabase
+          .from('community_posts')
+          .select('id, title, category, source, external_url')
+          .in('id', ids)
+        if (posts) {
+          const sorted = ids.map(id => posts.find(p => p.id === id)).filter(Boolean) as BookmarkFeed[]
+          setFeedBookmarks(sorted)
+        }
+      }
+
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
+  const getCatLabel = (cat: string) => {
+    const map: Record<string, string> = { news: '뉴스', policy: '정책', bid: '입찰', task: '과제', event: '행사' }
+    return map[cat] || cat
+  }
+
+  const getCatColor = (cat: string) => {
+    const map: Record<string, string> = {
+      news: 'bg-blue-100 text-blue-700', policy: 'bg-emerald-100 text-emerald-700',
+      bid: 'bg-orange-100 text-orange-700', task: 'bg-purple-100 text-purple-700', event: 'bg-pink-100 text-pink-700',
+    }
+    return map[cat] || 'bg-muted text-muted-foreground'
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Announcement Bookmarks */}
+      <div className="border border-border rounded-xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Megaphone className="w-4 h-4 text-primary" />
+            <h2 className="font-semibold">즐겨찾기한 공고</h2>
+            <span className="text-xs text-muted-foreground">({annBookmarks.length}건)</span>
+          </div>
+          {annBookmarks.length > 0 && (
+            <Link href="/announcements?tab=bookmarks" className="text-xs text-primary hover:underline">전체보기</Link>
+          )}
+        </div>
+
+        {annBookmarks.length === 0 ? (
+          <div className="text-center py-10 text-muted-foreground">
+            <Bookmark className="w-10 h-10 mx-auto mb-3 opacity-30" />
+            <p className="text-sm">즐겨찾기한 공고가 없습니다</p>
+            <Link href="/announcements" className="inline-block mt-3 text-xs text-primary hover:underline">공고 둘러보기</Link>
+          </div>
+        ) : (
+          <div className="divide-y divide-border/50">
+            {annBookmarks.map(ann => {
+              const expired = ann.end_date ? new Date(ann.end_date) < new Date() : false
+              return (
+                <Link key={ann.id} href={`/announcements?selected=${ann.id}`}
+                  className="flex items-center gap-3 py-3 hover:bg-muted/50 rounded-lg px-2 -mx-2 transition-colors group">
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 ${expired || ann.status === 'closed' ? 'bg-zinc-100 text-zinc-500' : 'bg-emerald-50 text-emerald-700'}`}>
+                    {expired || ann.status === 'closed' ? '마감' : '모집중'}
+                  </span>
+                  <span className="text-sm text-foreground truncate flex-1 group-hover:text-primary transition-colors">{ann.title}</span>
+                  {ann.source_url && (
+                    <a href={ann.source_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                      className="p-1 rounded text-muted-foreground hover:text-primary shrink-0">
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </Link>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Feed Bookmarks */}
+      <div className="border border-border rounded-xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Rss className="w-4 h-4 text-primary" />
+            <h2 className="font-semibold">즐겨찾기한 피드</h2>
+            <span className="text-xs text-muted-foreground">({feedBookmarks.length}건)</span>
+          </div>
+          {feedBookmarks.length > 0 && (
+            <Link href="/feeds?tab=bookmarks" className="text-xs text-primary hover:underline">전체보기</Link>
+          )}
+        </div>
+
+        {feedBookmarks.length === 0 ? (
+          <div className="text-center py-10 text-muted-foreground">
+            <Bookmark className="w-10 h-10 mx-auto mb-3 opacity-30" />
+            <p className="text-sm">즐겨찾기한 피드가 없습니다</p>
+            <Link href="/feeds" className="inline-block mt-3 text-xs text-primary hover:underline">IT피드 둘러보기</Link>
+          </div>
+        ) : (
+          <div className="divide-y divide-border/50">
+            {feedBookmarks.map(feed => (
+              <Link key={feed.id} href={`/feeds?selected=${feed.id}`}
+                className="flex items-center gap-3 py-3 hover:bg-muted/50 rounded-lg px-2 -mx-2 transition-colors group">
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold shrink-0 ${getCatColor(feed.category)}`}>
+                  {getCatLabel(feed.category)}
+                </span>
+                <span className="text-sm text-foreground truncate flex-1 group-hover:text-primary transition-colors">{feed.title}</span>
+                {feed.external_url && (
+                  <a href={feed.external_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                    className="p-1 rounded text-muted-foreground hover:text-primary shrink-0">
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
