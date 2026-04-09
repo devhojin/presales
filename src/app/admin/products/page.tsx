@@ -22,6 +22,9 @@ import {
   Loader2,
   X,
   Save,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react'
 import {
   DndContext,
@@ -68,6 +71,8 @@ interface Product {
 }
 
 type StatusFilter = 'all' | 'published' | 'unpublished'
+type SortField = 'title' | 'category' | 'price' | 'is_free' | 'is_published' | 'download_count' | 'created_at' | null
+type SortDir = 'asc' | 'desc'
 
 const PAGE_SIZES = [20, 50, 100] as const
 
@@ -397,13 +402,13 @@ function ProductRowCells({
           </button>
           <button
             onClick={() => onTogglePublish(product.id, product.is_published)}
-            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-muted-foreground transition-colors"
-            title={product.is_published ? '비공개로 변경' : '공개로 변경'}
+            className={`p-1.5 rounded-md transition-colors ${product.is_published ? 'text-primary hover:bg-primary/8' : 'text-muted-foreground hover:bg-muted'}`}
+            title={product.is_published ? '공개 중 (클릭하면 비공개)' : '비공개 (클릭하면 공개)'}
           >
             {product.is_published ? (
-              <EyeOff className="w-4 h-4" />
-            ) : (
               <Eye className="w-4 h-4" />
+            ) : (
+              <EyeOff className="w-4 h-4" />
             )}
           </button>
           <button
@@ -437,6 +442,8 @@ export default function AdminProducts() {
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false)
+  const [sortField, setSortField] = useState<SortField>(null)
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [showBulkPrice, setShowBulkPrice] = useState(false)
   const [bulkPriceData, setBulkPriceData] = useState<{ id: number; title: string; price: number; original_price: number; is_free: boolean }[]>([])
   const [bulkPriceLoading, setBulkPriceLoading] = useState(false)
@@ -453,6 +460,15 @@ export default function AdminProducts() {
     if (data) setProducts(data as Product[])
     setLoading(false)
   }, [supabase])
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDir('asc')
+    }
+  }
 
   const loadCategories = useCallback(async () => {
     const { data } = await supabase
@@ -625,6 +641,33 @@ export default function AdminProducts() {
     return list
   }, [products, statusFilter, categoryFilter, search])
 
+  // Sort
+  const sorted = useMemo(() => {
+    if (!sortField) return filtered
+    const list = [...filtered]
+    list.sort((a, b) => {
+      let va: string | number | boolean = ''
+      let vb: string | number | boolean = ''
+      switch (sortField) {
+        case 'title': va = a.title.toLowerCase(); vb = b.title.toLowerCase(); break
+        case 'category': {
+          const ca = Array.isArray(a.categories) ? a.categories[0]?.name || '' : a.categories?.name || ''
+          const cb = Array.isArray(b.categories) ? b.categories[0]?.name || '' : b.categories?.name || ''
+          va = ca.toLowerCase(); vb = cb.toLowerCase(); break
+        }
+        case 'price': va = a.is_free ? 0 : a.price; vb = b.is_free ? 0 : b.price; break
+        case 'is_free': va = a.is_free ? 0 : 1; vb = b.is_free ? 0 : 1; break
+        case 'is_published': va = a.is_published ? 0 : 1; vb = b.is_published ? 0 : 1; break
+        case 'download_count': va = a.download_count; vb = b.download_count; break
+        case 'created_at': va = a.created_at; vb = b.created_at; break
+      }
+      if (va < vb) return sortDir === 'asc' ? -1 : 1
+      if (va > vb) return sortDir === 'asc' ? 1 : -1
+      return 0
+    })
+    return list
+  }, [filtered, sortField, sortDir])
+
   // CSV export (must be after `filtered`)
   const handleCSVExport = useCallback(() => {
     const target = selectedIds.size > 0
@@ -654,8 +697,8 @@ export default function AdminProducts() {
     URL.revokeObjectURL(url)
   }, [filtered, selectedIds])
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
-  const paginated = filtered.slice((page - 1) * pageSize, page * pageSize)
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize))
+  const paginated = sorted.slice((page - 1) * pageSize, page * pageSize)
   const isDragEnabled =
     statusFilter === 'all' && categoryFilter === null && !search.trim() && totalPages <= 1
 
@@ -891,24 +934,29 @@ export default function AdminProducts() {
                     />
                   </th>
                   <th className="w-10" />
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground min-w-[260px]">
-                    상품명
-                  </th>
-                  <th className="px-3 py-3 text-left text-xs font-semibold text-muted-foreground w-28">
-                    카테고리
-                  </th>
-                  <th className="px-3 py-3 text-right text-xs font-semibold text-muted-foreground w-28">
-                    가격
-                  </th>
-                  <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-20">
-                    구분
-                  </th>
-                  <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-20">
-                    상태
-                  </th>
-                  <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-20">
-                    다운로드
-                  </th>
+                  {[
+                    { field: 'title' as SortField, label: '상품명', align: 'left', cls: 'min-w-[260px]' },
+                    { field: 'category' as SortField, label: '카테고리', align: 'left', cls: 'w-28' },
+                    { field: 'price' as SortField, label: '가격', align: 'right', cls: 'w-28' },
+                    { field: 'is_free' as SortField, label: '구분', align: 'center', cls: 'w-20' },
+                    { field: 'is_published' as SortField, label: '상태', align: 'center', cls: 'w-20' },
+                    { field: 'download_count' as SortField, label: '다운로드', align: 'center', cls: 'w-20' },
+                  ].map(col => (
+                    <th
+                      key={col.field}
+                      className={`px-3 py-3 text-${col.align} text-xs font-semibold text-muted-foreground ${col.cls} cursor-pointer hover:text-foreground transition-colors select-none`}
+                      onClick={() => toggleSort(col.field)}
+                    >
+                      <span className="inline-flex items-center gap-1">
+                        {col.label}
+                        {sortField === col.field ? (
+                          sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 opacity-30" />
+                        )}
+                      </span>
+                    </th>
+                  ))}
                   <th className="px-3 py-3 text-center text-xs font-semibold text-muted-foreground w-24">
                     등록일
                   </th>

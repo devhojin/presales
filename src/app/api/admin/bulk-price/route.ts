@@ -17,14 +17,17 @@ export async function GET() {
     }
   )
 
-  const { data: { user } } = await supabaseAuth.auth.getUser()
-  if (!user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
+  const { data: { user }, error: authError } = await supabaseAuth.auth.getUser()
+  if (authError || !user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
 
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceKey) return NextResponse.json({ error: '서버 설정 오류' }, { status: 500 })
+
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, { auth: { persistSession: false } })
 
   // Admin check
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'admin') return NextResponse.json({ error: '권한 없음' }, { status: 403 })
+  const { data: profile, error: profileError } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (profileError || profile?.role !== 'admin') return NextResponse.json({ error: '관리자 권한이 필요합니다' }, { status: 403 })
 
   const { data, error } = await supabase
     .from('products')
@@ -49,13 +52,16 @@ export async function POST(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabaseAuth.auth.getUser()
-  if (!user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
+  const { data: { user }, error: authErr } = await supabaseAuth.auth.getUser()
+  if (authErr || !user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
 
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceKey) return NextResponse.json({ error: '서버 설정 오류' }, { status: 500 })
+
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, { auth: { persistSession: false } })
 
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-  if (profile?.role !== 'admin') return NextResponse.json({ error: '권한 없음' }, { status: 403 })
+  if (profile?.role !== 'admin') return NextResponse.json({ error: '관리자 권한이 필요합니다' }, { status: 403 })
 
   const body = await request.json()
   const updates: { id: number; price: number; original_price: number }[] = body.updates

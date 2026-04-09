@@ -1,0 +1,841 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - complementary [ref=e4]:
+        - button "사이드바 접기" [ref=e5] [cursor=pointer]:
+          - img [ref=e6]
+        - generic [ref=e8]:
+          - link "사이트로 돌아가기" [ref=e10] [cursor=pointer]:
+            - /url: /
+            - img [ref=e11]
+            - text: 사이트로 돌아가기
+          - generic [ref=e13]:
+            - generic [ref=e15]: PS
+            - generic [ref=e16]:
+              - paragraph [ref=e17]: 프리세일즈
+              - paragraph [ref=e18]: 관리자
+        - navigation [ref=e19]:
+          - link "대시보드" [ref=e20] [cursor=pointer]:
+            - /url: /admin
+            - img [ref=e21]
+            - generic [ref=e26]: 대시보드
+          - link "상품 관리" [ref=e27] [cursor=pointer]:
+            - /url: /admin/products
+            - img [ref=e28]
+            - generic [ref=e32]: 상품 관리
+          - link "주문 관리" [ref=e33] [cursor=pointer]:
+            - /url: /admin/orders
+            - img [ref=e34]
+            - generic [ref=e38]: 주문 관리
+          - link "회원 관리" [ref=e39] [cursor=pointer]:
+            - /url: /admin/members
+            - img [ref=e40]
+            - generic [ref=e45]: 회원 관리
+          - link "컨설팅 신청" [ref=e46] [cursor=pointer]:
+            - /url: /admin/consulting
+            - img [ref=e47]
+            - generic [ref=e49]: 컨설팅 신청
+          - link "다운로드 관리" [ref=e50] [cursor=pointer]:
+            - /url: /admin/downloads
+            - img [ref=e51]
+            - generic [ref=e54]: 다운로드 관리
+          - link "리뷰 관리" [ref=e55] [cursor=pointer]:
+            - /url: /admin/reviews
+            - img [ref=e56]
+            - generic [ref=e58]: 리뷰 관리
+          - link "통계 분석" [ref=e59] [cursor=pointer]:
+            - /url: /admin/analytics
+            - img [ref=e60]
+            - generic [ref=e62]: 통계 분석
+          - link "FAQ 관리" [ref=e63] [cursor=pointer]:
+            - /url: /admin/faq
+            - img [ref=e64]
+            - generic [ref=e67]: FAQ 관리
+          - link "쿠폰 관리" [ref=e68] [cursor=pointer]:
+            - /url: /admin/coupons
+            - img [ref=e69]
+            - generic [ref=e72]: 쿠폰 관리
+          - link "할인 매칭" [ref=e73] [cursor=pointer]:
+            - /url: /admin/discount-matches
+            - img [ref=e74]
+            - generic [ref=e77]: 할인 매칭
+          - link "블로그" [ref=e78] [cursor=pointer]:
+            - /url: /admin/blog
+            - img [ref=e79]
+            - generic [ref=e82]: 블로그
+          - link "사이트 설정" [ref=e83] [cursor=pointer]:
+            - /url: /admin/settings
+            - img [ref=e84]
+            - generic [ref=e87]: 사이트 설정
+      - main [ref=e88]:
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic [ref=e94]:
+              - heading "상품 관리" [level=1] [ref=e95]
+              - paragraph [ref=e96]: 전체 59개 상품
+            - generic [ref=e97]:
+              - button "가격 일괄수정" [ref=e98] [cursor=pointer]:
+                - img [ref=e99]
+                - text: 가격 일괄수정
+              - button "CSV" [ref=e101] [cursor=pointer]:
+                - img [ref=e102]
+                - text: CSV
+              - link "상품 등록" [ref=e105] [cursor=pointer]:
+                - /url: /admin/products/new
+                - img [ref=e106]
+                - text: 상품 등록
+          - generic [ref=e107]:
+            - button "전체" [ref=e108] [cursor=pointer]
+            - button "가격제안 (2)" [ref=e212] [cursor=pointer]
+            - button "기술제안서 (40)" [ref=e213] [cursor=pointer]
+            - button "발표자료 (4)" [ref=e214] [cursor=pointer]
+            - button "사업계획서 (3)" [ref=e215] [cursor=pointer]
+            - button "입찰 가이드 (8)" [ref=e216] [cursor=pointer]
+            - button "풀 패키지 (2)" [ref=e217] [cursor=pointer]
+          - generic [ref=e109]:
+            - generic [ref=e110]:
+              - button "전체59" [ref=e218] [cursor=pointer]
+              - button "공개51" [ref=e219] [cursor=pointer]
+              - button "비공개8" [ref=e220] [cursor=pointer]
+            - generic [ref=e115]:
+              - img [ref=e116]
+              - searchbox "상품명 검색..." [ref=e119]
+            - generic [ref=e120]:
+              - generic [ref=e121]: 보기
+              - button "20개" [ref=e122] [cursor=pointer]
+              - button "50개" [ref=e123] [cursor=pointer]
+              - button "100개" [ref=e124] [cursor=pointer]
+          - generic [ref=e133]:
+            - table [ref=e135]:
+              - rowgroup [ref=e136]:
+                - row "상품명 카테고리 가격 구분 상태 다운로드 등록일 관리" [ref=e137]:
+                  - columnheader [ref=e138]:
+                    - checkbox [ref=e139] [cursor=pointer]
+                  - columnheader [ref=e140]
+                  - columnheader "상품명" [ref=e141]
+                  - columnheader "카테고리" [ref=e142]
+                  - columnheader "가격" [ref=e143]
+                  - columnheader "구분" [ref=e144]
+                  - columnheader "상태" [ref=e145]
+                  - columnheader "다운로드" [ref=e146]
+                  - columnheader "등록일" [ref=e147]
+                  - columnheader "관리" [ref=e148]
+              - rowgroup [ref=e149]:
+                - row "공공정보화 제안요청서 작성가이드 (2024) 입찰 가이드 무료 무료 공개 0 2026-04-07" [ref=e221]:
+                  - cell [ref=e222]:
+                    - checkbox [ref=e223] [cursor=pointer]
+                  - cell [ref=e224]:
+                    - img [ref=e226]
+                  - cell "공공정보화 제안요청서 작성가이드 (2024)" [ref=e233]:
+                    - generic [ref=e234]:
+                      - link "공공정보화 제안요청서 작성가이드 (2024)" [ref=e235] [cursor=pointer]:
+                        - /url: /admin/products/59
+                      - link "스토어 페이지 열기" [ref=e236] [cursor=pointer]:
+                        - /url: /store/59
+                        - img [ref=e237]
+                  - cell "입찰 가이드" [ref=e241]
+                  - cell "무료" [ref=e242]
+                  - cell "무료" [ref=e243]:
+                    - generic [ref=e244]: 무료
+                  - cell "공개" [ref=e245]:
+                    - generic [ref=e246]: 공개
+                  - cell "0" [ref=e247]
+                  - cell "2026-04-07" [ref=e248]
+                  - cell [ref=e249]:
+                    - generic [ref=e250]:
+                      - link "수정" [ref=e251] [cursor=pointer]:
+                        - /url: /admin/products/59
+                        - img [ref=e252]
+                      - button "상품 복제" [ref=e255] [cursor=pointer]:
+                        - img [ref=e256]
+                      - button "비공개로 변경" [ref=e259] [cursor=pointer]:
+                        - img [ref=e260]
+                      - button "삭제" [ref=e265] [cursor=pointer]:
+                        - img [ref=e266]
+                - row "상품이력제 정보시스템 구축 용역 제안서 기술제안서 99,000원 199,000원 유료 공개 0 2026-04-07" [ref=e269]:
+                  - cell [ref=e270]:
+                    - checkbox [ref=e271] [cursor=pointer]
+                  - cell [ref=e272]:
+                    - img [ref=e274]
+                  - cell "상품이력제 정보시스템 구축 용역 제안서" [ref=e281]:
+                    - generic [ref=e282]:
+                      - link "상품이력제 정보시스템 구축 용역 제안서" [ref=e283] [cursor=pointer]:
+                        - /url: /admin/products/58
+                      - link "스토어 페이지 열기" [ref=e284] [cursor=pointer]:
+                        - /url: /store/58
+                        - img [ref=e285]
+                  - cell "기술제안서" [ref=e289]
+                  - cell "99,000원 199,000원" [ref=e290]:
+                    - generic [ref=e291]:
+                      - text: 99,000원
+                      - paragraph [ref=e292]: 199,000원
+                  - cell "유료" [ref=e293]:
+                    - generic [ref=e294]: 유료
+                  - cell "공개" [ref=e295]:
+                    - generic [ref=e296]: 공개
+                  - cell "0" [ref=e297]
+                  - cell "2026-04-07" [ref=e298]
+                  - cell [ref=e299]:
+                    - generic [ref=e300]:
+                      - link "수정" [ref=e301] [cursor=pointer]:
+                        - /url: /admin/products/58
+                        - img [ref=e302]
+                      - button "상품 복제" [ref=e305] [cursor=pointer]:
+                        - img [ref=e306]
+                      - button "비공개로 변경" [ref=e309] [cursor=pointer]:
+                        - img [ref=e310]
+                      - button "삭제" [ref=e315] [cursor=pointer]:
+                        - img [ref=e316]
+                - row "IA(정보구조) 기획서 템플릿 발표자료 무료 무료 공개 0 2026-04-07" [ref=e319]:
+                  - cell [ref=e320]:
+                    - checkbox [ref=e321] [cursor=pointer]
+                  - cell [ref=e322]:
+                    - img [ref=e324]
+                  - cell "IA(정보구조) 기획서 템플릿" [ref=e331]:
+                    - generic [ref=e332]:
+                      - link "IA(정보구조) 기획서 템플릿" [ref=e333] [cursor=pointer]:
+                        - /url: /admin/products/57
+                      - link "스토어 페이지 열기" [ref=e334] [cursor=pointer]:
+                        - /url: /store/57
+                        - img [ref=e335]
+                  - cell "발표자료" [ref=e339]
+                  - cell "무료" [ref=e340]
+                  - cell "무료" [ref=e341]:
+                    - generic [ref=e342]: 무료
+                  - cell "공개" [ref=e343]:
+                    - generic [ref=e344]: 공개
+                  - cell "0" [ref=e345]
+                  - cell "2026-04-07" [ref=e346]
+                  - cell [ref=e347]:
+                    - generic [ref=e348]:
+                      - link "수정" [ref=e349] [cursor=pointer]:
+                        - /url: /admin/products/57
+                        - img [ref=e350]
+                      - button "상품 복제" [ref=e353] [cursor=pointer]:
+                        - img [ref=e354]
+                      - button "비공개로 변경" [ref=e357] [cursor=pointer]:
+                        - img [ref=e358]
+                      - button "삭제" [ref=e363] [cursor=pointer]:
+                        - img [ref=e364]
+                - row "프로그램 목록 템플릿 기술제안서 무료 무료 공개 0 2026-04-07" [ref=e367]:
+                  - cell [ref=e368]:
+                    - checkbox [ref=e369] [cursor=pointer]
+                  - cell [ref=e370]:
+                    - img [ref=e372]
+                  - cell "프로그램 목록 템플릿" [ref=e379]:
+                    - generic [ref=e380]:
+                      - link "프로그램 목록 템플릿" [ref=e381] [cursor=pointer]:
+                        - /url: /admin/products/56
+                      - link "스토어 페이지 열기" [ref=e382] [cursor=pointer]:
+                        - /url: /store/56
+                        - img [ref=e383]
+                  - cell "기술제안서" [ref=e387]
+                  - cell "무료" [ref=e388]
+                  - cell "무료" [ref=e389]:
+                    - generic [ref=e390]: 무료
+                  - cell "공개" [ref=e391]:
+                    - generic [ref=e392]: 공개
+                  - cell "0" [ref=e393]
+                  - cell "2026-04-07" [ref=e394]
+                  - cell [ref=e395]:
+                    - generic [ref=e396]:
+                      - link "수정" [ref=e397] [cursor=pointer]:
+                        - /url: /admin/products/56
+                        - img [ref=e398]
+                      - button "상품 복제" [ref=e401] [cursor=pointer]:
+                        - img [ref=e402]
+                      - button "비공개로 변경" [ref=e405] [cursor=pointer]:
+                        - img [ref=e406]
+                      - button "삭제" [ref=e411] [cursor=pointer]:
+                        - img [ref=e412]
+                - row "특허청 소프트웨어(SW) 개발방법론 입찰 가이드 무료 무료 공개 0 2026-04-07" [ref=e415]:
+                  - cell [ref=e416]:
+                    - checkbox [ref=e417] [cursor=pointer]
+                  - cell [ref=e418]:
+                    - img [ref=e420]
+                  - cell "특허청 소프트웨어(SW) 개발방법론" [ref=e427]:
+                    - generic [ref=e428]:
+                      - link "특허청 소프트웨어(SW) 개발방법론" [ref=e429] [cursor=pointer]:
+                        - /url: /admin/products/55
+                      - link "스토어 페이지 열기" [ref=e430] [cursor=pointer]:
+                        - /url: /store/55
+                        - img [ref=e431]
+                  - cell "입찰 가이드" [ref=e435]
+                  - cell "무료" [ref=e436]
+                  - cell "무료" [ref=e437]:
+                    - generic [ref=e438]: 무료
+                  - cell "공개" [ref=e439]:
+                    - generic [ref=e440]: 공개
+                  - cell "0" [ref=e441]
+                  - cell "2026-04-07" [ref=e442]
+                  - cell [ref=e443]:
+                    - generic [ref=e444]:
+                      - link "수정" [ref=e445] [cursor=pointer]:
+                        - /url: /admin/products/55
+                        - img [ref=e446]
+                      - button "상품 복제" [ref=e449] [cursor=pointer]:
+                        - img [ref=e450]
+                      - button "비공개로 변경" [ref=e453] [cursor=pointer]:
+                        - img [ref=e454]
+                      - button "삭제" [ref=e459] [cursor=pointer]:
+                        - img [ref=e460]
+                - row "투찰가 산정 및 지분율 계산기 가격제안 무료 무료 공개 0 2026-04-07" [ref=e463]:
+                  - cell [ref=e464]:
+                    - checkbox [ref=e465] [cursor=pointer]
+                  - cell [ref=e466]:
+                    - img [ref=e468]
+                  - cell "투찰가 산정 및 지분율 계산기" [ref=e475]:
+                    - generic [ref=e476]:
+                      - link "투찰가 산정 및 지분율 계산기" [ref=e477] [cursor=pointer]:
+                        - /url: /admin/products/54
+                      - link "스토어 페이지 열기" [ref=e478] [cursor=pointer]:
+                        - /url: /store/54
+                        - img [ref=e479]
+                  - cell "가격제안" [ref=e483]
+                  - cell "무료" [ref=e484]
+                  - cell "무료" [ref=e485]:
+                    - generic [ref=e486]: 무료
+                  - cell "공개" [ref=e487]:
+                    - generic [ref=e488]: 공개
+                  - cell "0" [ref=e489]
+                  - cell "2026-04-07" [ref=e490]
+                  - cell [ref=e491]:
+                    - generic [ref=e492]:
+                      - link "수정" [ref=e493] [cursor=pointer]:
+                        - /url: /admin/products/54
+                        - img [ref=e494]
+                      - button "상품 복제" [ref=e497] [cursor=pointer]:
+                        - img [ref=e498]
+                      - button "비공개로 변경" [ref=e501] [cursor=pointer]:
+                        - img [ref=e502]
+                      - button "삭제" [ref=e507] [cursor=pointer]:
+                        - img [ref=e508]
+                - row "제안서 목차 템플릿 (2024) 입찰 가이드 무료 무료 공개 0 2026-04-07" [ref=e511]:
+                  - cell [ref=e512]:
+                    - checkbox [ref=e513] [cursor=pointer]
+                  - cell [ref=e514]:
+                    - img [ref=e516]
+                  - cell "제안서 목차 템플릿 (2024)" [ref=e523]:
+                    - generic [ref=e524]:
+                      - link "제안서 목차 템플릿 (2024)" [ref=e525] [cursor=pointer]:
+                        - /url: /admin/products/53
+                      - link "스토어 페이지 열기" [ref=e526] [cursor=pointer]:
+                        - /url: /store/53
+                        - img [ref=e527]
+                  - cell "입찰 가이드" [ref=e531]
+                  - cell "무료" [ref=e532]
+                  - cell "무료" [ref=e533]:
+                    - generic [ref=e534]: 무료
+                  - cell "공개" [ref=e535]:
+                    - generic [ref=e536]: 공개
+                  - cell "0" [ref=e537]
+                  - cell "2026-04-07" [ref=e538]
+                  - cell [ref=e539]:
+                    - generic [ref=e540]:
+                      - link "수정" [ref=e541] [cursor=pointer]:
+                        - /url: /admin/products/53
+                        - img [ref=e542]
+                      - button "상품 복제" [ref=e545] [cursor=pointer]:
+                        - img [ref=e546]
+                      - button "비공개로 변경" [ref=e549] [cursor=pointer]:
+                        - img [ref=e550]
+                      - button "삭제" [ref=e555] [cursor=pointer]:
+                        - img [ref=e556]
+                - row "제안서 목차 참조 템플릿 입찰 가이드 무료 무료 공개 0 2026-04-07" [ref=e559]:
+                  - cell [ref=e560]:
+                    - checkbox [ref=e561] [cursor=pointer]
+                  - cell [ref=e562]:
+                    - img [ref=e564]
+                  - cell "제안서 목차 참조 템플릿" [ref=e571]:
+                    - generic [ref=e572]:
+                      - link "제안서 목차 참조 템플릿" [ref=e573] [cursor=pointer]:
+                        - /url: /admin/products/52
+                      - link "스토어 페이지 열기" [ref=e574] [cursor=pointer]:
+                        - /url: /store/52
+                        - img [ref=e575]
+                  - cell "입찰 가이드" [ref=e579]
+                  - cell "무료" [ref=e580]
+                  - cell "무료" [ref=e581]:
+                    - generic [ref=e582]: 무료
+                  - cell "공개" [ref=e583]:
+                    - generic [ref=e584]: 공개
+                  - cell "0" [ref=e585]
+                  - cell "2026-04-07" [ref=e586]
+                  - cell [ref=e587]:
+                    - generic [ref=e588]:
+                      - link "수정" [ref=e589] [cursor=pointer]:
+                        - /url: /admin/products/52
+                        - img [ref=e590]
+                      - button "상품 복제" [ref=e593] [cursor=pointer]:
+                        - img [ref=e594]
+                      - button "비공개로 변경" [ref=e597] [cursor=pointer]:
+                        - img [ref=e598]
+                      - button "삭제" [ref=e603] [cursor=pointer]:
+                        - img [ref=e604]
+                - row "우선협상대상자 기술협상안 입찰 가이드 무료 무료 공개 0 2026-04-07" [ref=e607]:
+                  - cell [ref=e608]:
+                    - checkbox [ref=e609] [cursor=pointer]
+                  - cell [ref=e610]:
+                    - img [ref=e612]
+                  - cell "우선협상대상자 기술협상안" [ref=e619]:
+                    - generic [ref=e620]:
+                      - link "우선협상대상자 기술협상안" [ref=e621] [cursor=pointer]:
+                        - /url: /admin/products/51
+                      - link "스토어 페이지 열기" [ref=e622] [cursor=pointer]:
+                        - /url: /store/51
+                        - img [ref=e623]
+                  - cell "입찰 가이드" [ref=e627]
+                  - cell "무료" [ref=e628]
+                  - cell "무료" [ref=e629]:
+                    - generic [ref=e630]: 무료
+                  - cell "공개" [ref=e631]:
+                    - generic [ref=e632]: 공개
+                  - cell "0" [ref=e633]
+                  - cell "2026-04-07" [ref=e634]
+                  - cell [ref=e635]:
+                    - generic [ref=e636]:
+                      - link "수정" [ref=e637] [cursor=pointer]:
+                        - /url: /admin/products/51
+                        - img [ref=e638]
+                      - button "상품 복제" [ref=e641] [cursor=pointer]:
+                        - img [ref=e642]
+                      - button "비공개로 변경" [ref=e645] [cursor=pointer]:
+                        - img [ref=e646]
+                      - button "삭제" [ref=e651] [cursor=pointer]:
+                        - img [ref=e652]
+                - row "엔티티 정의서 (DB 설계 문서) 기술제안서 무료 무료 공개 0 2026-04-07" [ref=e655]:
+                  - cell [ref=e656]:
+                    - checkbox [ref=e657] [cursor=pointer]
+                  - cell [ref=e658]:
+                    - img [ref=e660]
+                  - cell "엔티티 정의서 (DB 설계 문서)" [ref=e667]:
+                    - generic [ref=e668]:
+                      - link "엔티티 정의서 (DB 설계 문서)" [ref=e669] [cursor=pointer]:
+                        - /url: /admin/products/50
+                      - link "스토어 페이지 열기" [ref=e670] [cursor=pointer]:
+                        - /url: /store/50
+                        - img [ref=e671]
+                  - cell "기술제안서" [ref=e675]
+                  - cell "무료" [ref=e676]
+                  - cell "무료" [ref=e677]:
+                    - generic [ref=e678]: 무료
+                  - cell "공개" [ref=e679]:
+                    - generic [ref=e680]: 공개
+                  - cell "0" [ref=e681]
+                  - cell "2026-04-07" [ref=e682]
+                  - cell [ref=e683]:
+                    - generic [ref=e684]:
+                      - link "수정" [ref=e685] [cursor=pointer]:
+                        - /url: /admin/products/50
+                        - img [ref=e686]
+                      - button "상품 복제" [ref=e689] [cursor=pointer]:
+                        - img [ref=e690]
+                      - button "비공개로 변경" [ref=e693] [cursor=pointer]:
+                        - img [ref=e694]
+                      - button "삭제" [ref=e699] [cursor=pointer]:
+                        - img [ref=e700]
+                - row "프로젝트 수행계획서 템플릿 입찰 가이드 무료 무료 공개 0 2026-04-07" [ref=e703]:
+                  - cell [ref=e704]:
+                    - checkbox [ref=e705] [cursor=pointer]
+                  - cell [ref=e706]:
+                    - img [ref=e708]
+                  - cell "프로젝트 수행계획서 템플릿" [ref=e715]:
+                    - generic [ref=e716]:
+                      - link "프로젝트 수행계획서 템플릿" [ref=e717] [cursor=pointer]:
+                        - /url: /admin/products/49
+                      - link "스토어 페이지 열기" [ref=e718] [cursor=pointer]:
+                        - /url: /store/49
+                        - img [ref=e719]
+                  - cell "입찰 가이드" [ref=e723]
+                  - cell "무료" [ref=e724]
+                  - cell "무료" [ref=e725]:
+                    - generic [ref=e726]: 무료
+                  - cell "공개" [ref=e727]:
+                    - generic [ref=e728]: 공개
+                  - cell "0" [ref=e729]
+                  - cell "2026-04-07" [ref=e730]
+                  - cell [ref=e731]:
+                    - generic [ref=e732]:
+                      - link "수정" [ref=e733] [cursor=pointer]:
+                        - /url: /admin/products/49
+                        - img [ref=e734]
+                      - button "상품 복제" [ref=e737] [cursor=pointer]:
+                        - img [ref=e738]
+                      - button "비공개로 변경" [ref=e741] [cursor=pointer]:
+                        - img [ref=e742]
+                      - button "삭제" [ref=e747] [cursor=pointer]:
+                        - img [ref=e748]
+                - row "MOU(양해각서) 양식 템플릿 입찰 가이드 무료 무료 공개 0 2026-04-07" [ref=e751]:
+                  - cell [ref=e752]:
+                    - checkbox [ref=e753] [cursor=pointer]
+                  - cell [ref=e754]:
+                    - img [ref=e756]
+                  - cell "MOU(양해각서) 양식 템플릿" [ref=e763]:
+                    - generic [ref=e764]:
+                      - link "MOU(양해각서) 양식 템플릿" [ref=e765] [cursor=pointer]:
+                        - /url: /admin/products/48
+                      - link "스토어 페이지 열기" [ref=e766] [cursor=pointer]:
+                        - /url: /store/48
+                        - img [ref=e767]
+                  - cell "입찰 가이드" [ref=e771]
+                  - cell "무료" [ref=e772]
+                  - cell "무료" [ref=e773]:
+                    - generic [ref=e774]: 무료
+                  - cell "공개" [ref=e775]:
+                    - generic [ref=e776]: 공개
+                  - cell "0" [ref=e777]
+                  - cell "2026-04-07" [ref=e778]
+                  - cell [ref=e779]:
+                    - generic [ref=e780]:
+                      - link "수정" [ref=e781] [cursor=pointer]:
+                        - /url: /admin/products/48
+                        - img [ref=e782]
+                      - button "상품 복제" [ref=e785] [cursor=pointer]:
+                        - img [ref=e786]
+                      - button "비공개로 변경" [ref=e789] [cursor=pointer]:
+                        - img [ref=e790]
+                      - button "삭제" [ref=e795] [cursor=pointer]:
+                        - img [ref=e796]
+                - row "LMS 학습관리시스템 분석설계서 발표자료 58,900원 79,000원 유료 공개 0 2026-04-07" [ref=e799]:
+                  - cell [ref=e800]:
+                    - checkbox [ref=e801] [cursor=pointer]
+                  - cell [ref=e802]:
+                    - img [ref=e804]
+                  - cell "LMS 학습관리시스템 분석설계서" [ref=e811]:
+                    - generic [ref=e812]:
+                      - link "LMS 학습관리시스템 분석설계서" [ref=e813] [cursor=pointer]:
+                        - /url: /admin/products/47
+                      - link "스토어 페이지 열기" [ref=e814] [cursor=pointer]:
+                        - /url: /store/47
+                        - img [ref=e815]
+                  - cell "발표자료" [ref=e819]
+                  - cell "58,900원 79,000원" [ref=e820]:
+                    - generic [ref=e821]:
+                      - text: 58,900원
+                      - paragraph [ref=e822]: 79,000원
+                  - cell "유료" [ref=e823]:
+                    - generic [ref=e824]: 유료
+                  - cell "공개" [ref=e825]:
+                    - generic [ref=e826]: 공개
+                  - cell "0" [ref=e827]
+                  - cell "2026-04-07" [ref=e828]
+                  - cell [ref=e829]:
+                    - generic [ref=e830]:
+                      - link "수정" [ref=e831] [cursor=pointer]:
+                        - /url: /admin/products/47
+                        - img [ref=e832]
+                      - button "상품 복제" [ref=e835] [cursor=pointer]:
+                        - img [ref=e836]
+                      - button "비공개로 변경" [ref=e839] [cursor=pointer]:
+                        - img [ref=e840]
+                      - button "삭제" [ref=e845] [cursor=pointer]:
+                        - img [ref=e846]
+                - row "SLA 서비스품질관리 부문 제안서 기술제안서 49,000원 69,000원 유료 공개 0 2026-04-07" [ref=e849]:
+                  - cell [ref=e850]:
+                    - checkbox [ref=e851] [cursor=pointer]
+                  - cell [ref=e852]:
+                    - img [ref=e854]
+                  - cell "SLA 서비스품질관리 부문 제안서" [ref=e861]:
+                    - generic [ref=e862]:
+                      - link "SLA 서비스품질관리 부문 제안서" [ref=e863] [cursor=pointer]:
+                        - /url: /admin/products/46
+                      - link "스토어 페이지 열기" [ref=e864] [cursor=pointer]:
+                        - /url: /store/46
+                        - img [ref=e865]
+                  - cell "기술제안서" [ref=e869]
+                  - cell "49,000원 69,000원" [ref=e870]:
+                    - generic [ref=e871]:
+                      - text: 49,000원
+                      - paragraph [ref=e872]: 69,000원
+                  - cell "유료" [ref=e873]:
+                    - generic [ref=e874]: 유료
+                  - cell "공개" [ref=e875]:
+                    - generic [ref=e876]: 공개
+                  - cell "0" [ref=e877]
+                  - cell "2026-04-07" [ref=e878]
+                  - cell [ref=e879]:
+                    - generic [ref=e880]:
+                      - link "수정" [ref=e881] [cursor=pointer]:
+                        - /url: /admin/products/46
+                        - img [ref=e882]
+                      - button "상품 복제" [ref=e885] [cursor=pointer]:
+                        - img [ref=e886]
+                      - button "비공개로 변경" [ref=e889] [cursor=pointer]:
+                        - img [ref=e890]
+                      - button "삭제" [ref=e895] [cursor=pointer]:
+                        - img [ref=e896]
+                - row "정보보안 업무관리 시스템 구축 (27억 규모) 기술제안서 149,000원 199,000원 유료 공개 0 2026-04-04" [ref=e899]:
+                  - cell [ref=e900]:
+                    - checkbox [ref=e901] [cursor=pointer]
+                  - cell [ref=e902]:
+                    - img [ref=e904]
+                  - cell "정보보안 업무관리 시스템 구축 (27억 규모)" [ref=e911]:
+                    - generic [ref=e912]:
+                      - link "정보보안 업무관리 시스템 구축 (27억 규모)" [ref=e913] [cursor=pointer]:
+                        - /url: /admin/products/37
+                      - link "스토어 페이지 열기" [ref=e914] [cursor=pointer]:
+                        - /url: /store/37
+                        - img [ref=e915]
+                  - cell "기술제안서" [ref=e919]
+                  - cell "149,000원 199,000원" [ref=e920]:
+                    - generic [ref=e921]:
+                      - text: 149,000원
+                      - paragraph [ref=e922]: 199,000원
+                  - cell "유료" [ref=e923]:
+                    - generic [ref=e924]: 유료
+                  - cell "공개" [ref=e925]:
+                    - generic [ref=e926]: 공개
+                  - cell "0" [ref=e927]
+                  - cell "2026-04-04" [ref=e928]
+                  - cell [ref=e929]:
+                    - generic [ref=e930]:
+                      - link "수정" [ref=e931] [cursor=pointer]:
+                        - /url: /admin/products/37
+                        - img [ref=e932]
+                      - button "상품 복제" [ref=e935] [cursor=pointer]:
+                        - img [ref=e936]
+                      - button "비공개로 변경" [ref=e939] [cursor=pointer]:
+                        - img [ref=e940]
+                      - button "삭제" [ref=e945] [cursor=pointer]:
+                        - img [ref=e946]
+                - row "화영시 여객서비스 입주기업 지원 포털사이트 제안서 기술제안서 129,000원 169,000원 유료 공개 0 2026-04-04" [ref=e949]:
+                  - cell [ref=e950]:
+                    - checkbox [ref=e951] [cursor=pointer]
+                  - cell [ref=e952]:
+                    - img [ref=e954]
+                  - cell "화영시 여객서비스 입주기업 지원 포털사이트 제안서" [ref=e961]:
+                    - generic [ref=e962]:
+                      - link "화영시 여객서비스 입주기업 지원 포털사이트 제안서" [ref=e963] [cursor=pointer]:
+                        - /url: /admin/products/39
+                      - link "스토어 페이지 열기" [ref=e964] [cursor=pointer]:
+                        - /url: /store/39
+                        - img [ref=e965]
+                  - cell "기술제안서" [ref=e969]
+                  - cell "129,000원 169,000원" [ref=e970]:
+                    - generic [ref=e971]:
+                      - text: 129,000원
+                      - paragraph [ref=e972]: 169,000원
+                  - cell "유료" [ref=e973]:
+                    - generic [ref=e974]: 유료
+                  - cell "공개" [ref=e975]:
+                    - generic [ref=e976]: 공개
+                  - cell "0" [ref=e977]
+                  - cell "2026-04-04" [ref=e978]
+                  - cell [ref=e979]:
+                    - generic [ref=e980]:
+                      - link "수정" [ref=e981] [cursor=pointer]:
+                        - /url: /admin/products/39
+                        - img [ref=e982]
+                      - button "상품 복제" [ref=e985] [cursor=pointer]:
+                        - img [ref=e986]
+                      - button "비공개로 변경" [ref=e989] [cursor=pointer]:
+                        - img [ref=e990]
+                      - button "삭제" [ref=e995] [cursor=pointer]:
+                        - img [ref=e996]
+                - row "[A3] 45억 규모 공공 제안서 - 시스템 구축부문 기술제안서 199,000원 249,000원 유료 공개 0 2026-04-04" [ref=e999]:
+                  - cell [ref=e1000]:
+                    - checkbox [ref=e1001] [cursor=pointer]
+                  - cell [ref=e1002]:
+                    - img [ref=e1004]
+                  - cell "[A3] 45억 규모 공공 제안서 - 시스템 구축부문" [ref=e1011]:
+                    - generic [ref=e1012]:
+                      - link "[A3] 45억 규모 공공 제안서 - 시스템 구축부문" [ref=e1013] [cursor=pointer]:
+                        - /url: /admin/products/40
+                      - link "스토어 페이지 열기" [ref=e1014] [cursor=pointer]:
+                        - /url: /store/40
+                        - img [ref=e1015]
+                  - cell "기술제안서" [ref=e1019]
+                  - cell "199,000원 249,000원" [ref=e1020]:
+                    - generic [ref=e1021]:
+                      - text: 199,000원
+                      - paragraph [ref=e1022]: 249,000원
+                  - cell "유료" [ref=e1023]:
+                    - generic [ref=e1024]: 유료
+                  - cell "공개" [ref=e1025]:
+                    - generic [ref=e1026]: 공개
+                  - cell "0" [ref=e1027]
+                  - cell "2026-04-04" [ref=e1028]
+                  - cell [ref=e1029]:
+                    - generic [ref=e1030]:
+                      - link "수정" [ref=e1031] [cursor=pointer]:
+                        - /url: /admin/products/40
+                        - img [ref=e1032]
+                      - button "상품 복제" [ref=e1035] [cursor=pointer]:
+                        - img [ref=e1036]
+                      - button "비공개로 변경" [ref=e1039] [cursor=pointer]:
+                        - img [ref=e1040]
+                      - button "삭제" [ref=e1045] [cursor=pointer]:
+                        - img [ref=e1046]
+                - row "[세로/A4] 45억 규모 공공 제안서 - 시스템 구축부문 기술제안서 199,000원 249,000원 유료 공개 0 2026-04-04" [ref=e1049]:
+                  - cell [ref=e1050]:
+                    - checkbox [ref=e1051] [cursor=pointer]
+                  - cell [ref=e1052]:
+                    - img [ref=e1054]
+                  - cell "[세로/A4] 45억 규모 공공 제안서 - 시스템 구축부문" [ref=e1061]:
+                    - generic [ref=e1062]:
+                      - link "[세로/A4] 45억 규모 공공 제안서 - 시스템 구축부문" [ref=e1063] [cursor=pointer]:
+                        - /url: /admin/products/41
+                      - link "스토어 페이지 열기" [ref=e1064] [cursor=pointer]:
+                        - /url: /store/41
+                        - img [ref=e1065]
+                  - cell "기술제안서" [ref=e1069]
+                  - cell "199,000원 249,000원" [ref=e1070]:
+                    - generic [ref=e1071]:
+                      - text: 199,000원
+                      - paragraph [ref=e1072]: 249,000원
+                  - cell "유료" [ref=e1073]:
+                    - generic [ref=e1074]: 유료
+                  - cell "공개" [ref=e1075]:
+                    - generic [ref=e1076]: 공개
+                  - cell "0" [ref=e1077]
+                  - cell "2026-04-04" [ref=e1078]
+                  - cell [ref=e1079]:
+                    - generic [ref=e1080]:
+                      - link "수정" [ref=e1081] [cursor=pointer]:
+                        - /url: /admin/products/41
+                        - img [ref=e1082]
+                      - button "상품 복제" [ref=e1085] [cursor=pointer]:
+                        - img [ref=e1086]
+                      - button "비공개로 변경" [ref=e1089] [cursor=pointer]:
+                        - img [ref=e1090]
+                      - button "삭제" [ref=e1095] [cursor=pointer]:
+                        - img [ref=e1096]
+                - row "예비창업패키지 사업계획서 사업계획서 89,000원 119,000원 유료 공개 0 2026-04-04" [ref=e1099]:
+                  - cell [ref=e1100]:
+                    - checkbox [ref=e1101] [cursor=pointer]
+                  - cell [ref=e1102]:
+                    - img [ref=e1104]
+                  - cell "예비창업패키지 사업계획서" [ref=e1111]:
+                    - generic [ref=e1112]:
+                      - link "예비창업패키지 사업계획서" [ref=e1113] [cursor=pointer]:
+                        - /url: /admin/products/45
+                      - link "스토어 페이지 열기" [ref=e1114] [cursor=pointer]:
+                        - /url: /store/45
+                        - img [ref=e1115]
+                  - cell "사업계획서" [ref=e1119]
+                  - cell "89,000원 119,000원" [ref=e1120]:
+                    - generic [ref=e1121]:
+                      - text: 89,000원
+                      - paragraph [ref=e1122]: 119,000원
+                  - cell "유료" [ref=e1123]:
+                    - generic [ref=e1124]: 유료
+                  - cell "공개" [ref=e1125]:
+                    - generic [ref=e1126]: 공개
+                  - cell "0" [ref=e1127]
+                  - cell "2026-04-04" [ref=e1128]
+                  - cell [ref=e1129]:
+                    - generic [ref=e1130]:
+                      - link "수정" [ref=e1131] [cursor=pointer]:
+                        - /url: /admin/products/45
+                        - img [ref=e1132]
+                      - button "상품 복제" [ref=e1135] [cursor=pointer]:
+                        - img [ref=e1136]
+                      - button "비공개로 변경" [ref=e1139] [cursor=pointer]:
+                        - img [ref=e1140]
+                      - button "삭제" [ref=e1145] [cursor=pointer]:
+                        - img [ref=e1146]
+                - row "산업활용 디자인DB 구축 (박물관 제안서) 기술제안서 89,000원 119,000원 유료 공개 0 2026-04-04" [ref=e1149]:
+                  - cell [ref=e1150]:
+                    - checkbox [ref=e1151] [cursor=pointer]
+                  - cell [ref=e1152]:
+                    - img [ref=e1154]
+                  - cell "산업활용 디자인DB 구축 (박물관 제안서)" [ref=e1161]:
+                    - generic [ref=e1162]:
+                      - link "산업활용 디자인DB 구축 (박물관 제안서)" [ref=e1163] [cursor=pointer]:
+                        - /url: /admin/products/35
+                      - link "스토어 페이지 열기" [ref=e1164] [cursor=pointer]:
+                        - /url: /store/35
+                        - img [ref=e1165]
+                  - cell "기술제안서" [ref=e1169]
+                  - cell "89,000원 119,000원" [ref=e1170]:
+                    - generic [ref=e1171]:
+                      - text: 89,000원
+                      - paragraph [ref=e1172]: 119,000원
+                  - cell "유료" [ref=e1173]:
+                    - generic [ref=e1174]: 유료
+                  - cell "공개" [ref=e1175]:
+                    - generic [ref=e1176]: 공개
+                  - cell "0" [ref=e1177]
+                  - cell "2026-04-04" [ref=e1178]
+                  - cell [ref=e1179]:
+                    - generic [ref=e1180]:
+                      - link "수정" [ref=e1181] [cursor=pointer]:
+                        - /url: /admin/products/35
+                        - img [ref=e1182]
+                      - button "상품 복제" [ref=e1185] [cursor=pointer]:
+                        - img [ref=e1186]
+                      - button "비공개로 변경" [ref=e1189] [cursor=pointer]:
+                        - img [ref=e1190]
+                      - button "삭제" [ref=e1195] [cursor=pointer]:
+                        - img [ref=e1196]
+            - generic [ref=e152]:
+              - generic [ref=e153]: 총 59개 중 1-20개
+              - generic [ref=e1199]:
+                - button [disabled] [ref=e1200] [cursor=pointer]:
+                  - img [ref=e1201]
+                - button "1" [ref=e1203] [cursor=pointer]
+                - button "2" [ref=e1204] [cursor=pointer]
+                - button "3" [ref=e1205] [cursor=pointer]
+                - button [ref=e1206] [cursor=pointer]:
+                  - img [ref=e1207]
+  - contentinfo [ref=e154]:
+    - generic [ref=e155]:
+      - generic [ref=e157]:
+        - generic [ref=e158]:
+          - generic [ref=e159]:
+            - generic [ref=e161]: PS
+            - generic [ref=e162]: 프리세일즈
+          - paragraph [ref=e163]: 공공조달 제안서 전문 플랫폼. 나라장터, 조달청 입찰에 최적화된 기술제안서, 가격제안서, 발표PT 템플릿과 전문가 컨설팅을 제공합니다.
+        - generic [ref=e164]:
+          - heading "서비스" [level=4] [ref=e165]
+          - list [ref=e166]:
+            - listitem [ref=e167]:
+              - link "문서 스토어" [ref=e168] [cursor=pointer]:
+                - /url: /store
+                - text: 문서 스토어
+                - img [ref=e169]
+            - listitem [ref=e172]:
+              - link "전문가 컨설팅" [ref=e173] [cursor=pointer]:
+                - /url: /consulting
+                - text: 전문가 컨설팅
+                - img [ref=e174]
+            - listitem [ref=e177]:
+              - link "무료 가이드" [ref=e178] [cursor=pointer]:
+                - /url: /store?price=free
+                - text: 무료 가이드
+                - img [ref=e179]
+            - listitem [ref=e182]:
+              - link "블로그" [ref=e183] [cursor=pointer]:
+                - /url: /blog
+                - text: 블로그
+                - img [ref=e184]
+        - generic [ref=e187]:
+          - heading "지원" [level=4] [ref=e188]
+          - list [ref=e189]:
+            - listitem [ref=e190]:
+              - link "회사소개" [ref=e191] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e192]:
+              - link "자주 묻는 질문" [ref=e193] [cursor=pointer]:
+                - /url: /faq
+            - listitem [ref=e194]:
+              - link "문의하기" [ref=e195] [cursor=pointer]:
+                - /url: /consulting
+        - generic [ref=e196]:
+          - heading "법적 고지" [level=4] [ref=e197]
+          - list [ref=e198]:
+            - listitem [ref=e199]:
+              - link "이용약관" [ref=e200] [cursor=pointer]:
+                - /url: /terms
+            - listitem [ref=e201]:
+              - link "개인정보처리방침" [ref=e202] [cursor=pointer]:
+                - /url: /privacy
+            - listitem [ref=e203]:
+              - link "환불정책" [ref=e204] [cursor=pointer]:
+                - /url: /refund
+      - generic [ref=e206]:
+        - generic [ref=e207]:
+          - paragraph [ref=e208]: "AMARANS Partners|대표: 채호진|사업자등록번호: 확인 필요|통신판매업신고: 준비 중"
+          - paragraph [ref=e209]: 서울특별시 강남구 테헤란로 123|contact@presales.co.kr
+        - paragraph [ref=e210]: © 2026 AMARANS Partners
+  - alert [ref=e211]
