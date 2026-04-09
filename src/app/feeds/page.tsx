@@ -58,7 +58,7 @@ export default function FeedsPage() {
     setError('')
     try {
       let query = supabase
-        .from('feeds')
+        .from('community_posts')
         .select('*')
         .eq('is_published', true)
         .eq('status', 'published')

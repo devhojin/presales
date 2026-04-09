@@ -175,7 +175,7 @@ export default function AdminFeedsPage() {
     setLoading(true)
     setError('')
     try {
-      let query = supabase.from('feeds').select('*').order('created_at', { ascending: false })
+      let query = supabase.from('community_posts').select('*').order('created_at', { ascending: false })
 
       // Apply tab filter
       if (tab !== 'all') {
@@ -247,7 +247,7 @@ export default function AdminFeedsPage() {
   // Toggle publish
   const handleTogglePublish = async (id: string, publish: boolean) => {
     try {
-      const { error: updateError } = await supabase.from('feeds').update({ is_published: publish }).eq('id', id)
+      const { error: updateError } = await supabase.from('community_posts').update({ is_published: publish }).eq('id', id)
       if (updateError) throw updateError
       setFeeds((prev) => prev.map((f) => (f.id === id ? { ...f, is_published: publish } : f)))
       showToast(publish ? '공개로 전환되었습니다' : '비공개로 전환되었습니다')
@@ -261,7 +261,7 @@ export default function AdminFeedsPage() {
     setDeleting(true)
     try {
       const ids = Array.from(selectedIds)
-      const { error: delError } = await supabase.from('feeds').delete().in('id', ids)
+      const { error: delError } = await supabase.from('community_posts').delete().in('id', ids)
       if (delError) throw delError
       setSelectedIds(new Set())
       showToast(`${ids.length}건 삭제되었습니다`)
@@ -293,12 +293,12 @@ export default function AdminFeedsPage() {
 
       if (toBlock.length > 0) {
         const { error: blockError } = await supabase
-          .from('blocked_feeds')
+          .from('blocked_community_posts')
           .upsert(toBlock, { onConflict: 'source,external_id' })
         if (blockError) throw blockError
       }
 
-      const { error: delError } = await supabase.from('feeds').delete().in('id', ids)
+      const { error: delError } = await supabase.from('community_posts').delete().in('id', ids)
       if (delError) throw delError
 
       setSelectedIds(new Set())
