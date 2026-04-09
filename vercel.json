@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/fetch-announcements",
+      "schedule": "0 23 * * *"
+    }
+  ]
+}

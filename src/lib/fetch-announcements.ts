@@ -1,0 +1,256 @@
+/**
+ * K-Startup 공공데이터 API 공고 자동 수집 모듈
+ * SPC 프로젝트에서 이식 — 프리세일즈 버전
+ */
+
+import { createClient } from '@supabase/supabase-js'
+
+// ===========================
+// Types
+// ===========================
+
+interface KStartupItem {
+  pbanc_sn: number
+  biz_pbanc_nm: string
+  intg_pbanc_biz_nm: string | null
+  pbanc_ctnt: string
+  supt_biz_clsfc: string
+  supt_regin: string
+  aply_trgt: string
+  aply_trgt_ctnt: string
+  biz_trgt_age: string
+  biz_enyy: string
+  pbanc_rcpt_bgng_dt: string
+  pbanc_rcpt_end_dt: string
+  pbanc_ntrp_nm: string
+  sprv_inst: string
+  biz_prch_dprt_nm: string
+  prch_cnpl_no: string
+  detl_pg_url: string
+  rcrt_prgs_yn: string
+  intg_pbanc_yn: string
+  aply_mthd_onli_rcpt_istc: string | null
+  aply_mthd_etc_istc: string | null
+  aply_excl_trgt_ctnt: string | null
+  biz_gdnc_url: string | null
+  biz_aply_url: string | null
+}
+
+export interface FetchResult {
+  source: string
+  fetched: number
+  inserted: number
+  skipped: number
+  blocked: number
+  errors: string[]
+}
+
+// ===========================
+// Normalization
+// ===========================
+
+const REGION_NORMALIZE: Record<string, string> = {
+  "서울": "서울특별시", "부산": "부산광역시", "대구": "대구광역시",
+  "인천": "인천광역시", "광주": "광주광역시", "대전": "대전광역시",
+  "울산": "울산광역시", "세종": "세종특별자치시", "경기": "경기도",
+  "강원": "강원도", "충북": "충청북도", "충남": "충청남도",
+  "전북": "전라북도", "전남": "전라남도", "경북": "경상북도",
+  "경남": "경상남도", "제주": "제주특별자치도",
+}
+
+function normalizeTargetType(raw: string): string {
+  const t = raw.trim()
+  return t === "1인 창조기업" ? "1인창조기업" : t
+}
+
+function normalizeAgeRange(raw: string): string {
+  return raw.trim().replace(/\s*~\s*/g, "~")
+}
+
+function normalizeRegion(raw: string): string {
+  const t = raw.trim()
+  if (t.includes("시") || t.includes("도") || t === "전국") return t
+  return REGION_NORMALIZE[t] || t
+}
+
+function splitAndNormalize(val: string, fn?: (s: string) => string): string[] {
+  if (!val) return []
+  return val.split(",").map(s => fn ? fn(s) : s.trim()).filter(Boolean)
+}
+
+function formatDate(raw: string): string | null {
+  if (!raw || raw.length < 8) return null
+  const c = raw.replace(/[^0-9]/g, "")
+  if (c.length !== 8) return null
+  return `${c.slice(0, 4)}-${c.slice(4, 6)}-${c.slice(6, 8)}`
+}
+
+function getServiceClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  )
+}
+
+// ===========================
+// Fetch K-Startup Announcements
+// ===========================
+
+async function fetchKStartupAnnouncements(): Promise<FetchResult> {
+  const result: FetchResult = { source: "K-Startup", fetched: 0, inserted: 0, skipped: 0, blocked: 0, errors: [] }
+  const apiKey = process.env.KSTARTUP_API_KEY
+
+  if (!apiKey) {
+    result.errors.push("KSTARTUP_API_KEY 환경변수가 설정되지 않았습니다")
+    return result
+  }
+
+  const supabase = getServiceClient()
+
+  // 차단 목록
+  const blockedSet = new Set<string>()
+  const { data: blockedRows } = await supabase
+    .from("blocked_announcements")
+    .select("external_id")
+    .limit(5000)
+  if (blockedRows) {
+    for (const row of blockedRows) blockedSet.add(row.external_id)
+  }
+
+  let page = 1
+  const perPage = 100
+  let hasMore = true
+
+  while (hasMore) {
+    try {
+      const url = `https://apis.data.go.kr/B552735/kisedKstartupService01/getAnnouncementInformation01?ServiceKey=${encodeURIComponent(apiKey)}&returnType=json&page=${page}&perPage=${perPage}&Rcrt_prgs_yn=Y`
+
+      const res = await fetch(url, { cache: "no-store" })
+      if (!res.ok) {
+        const text = await res.text()
+        result.errors.push(`API HTTP ${res.status}: ${text.substring(0, 200)}`)
+        break
+      }
+
+      const json = await res.json()
+      const items: KStartupItem[] = json.data || []
+      const totalCount: number = json.totalCount || 0
+
+      result.fetched += items.length
+
+      for (const item of items) {
+        const title = item.biz_pbanc_nm || ""
+        if (!title) continue
+
+        const externalId = String(item.pbanc_sn)
+
+        if (blockedSet.has(externalId)) {
+          result.blocked++
+          continue
+        }
+
+        const startDate = formatDate(item.pbanc_rcpt_bgng_dt)
+        const endDate = formatDate(item.pbanc_rcpt_end_dt)
+
+        const supportAreas = splitAndNormalize(item.supt_biz_clsfc)
+        const regions = splitAndNormalize(item.supt_regin, normalizeRegion)
+        const targetTypes = splitAndNormalize(item.aply_trgt, normalizeTargetType)
+        const ageRanges = splitAndNormalize(item.biz_trgt_age, normalizeAgeRange)
+        const businessYears = splitAndNormalize(item.biz_enyy)
+
+        if (supportAreas.length === 0) supportAreas.push("사업화")
+        if (regions.length === 0) regions.push("전국")
+        if (targetTypes.length === 0) targetTypes.push("일반기업")
+        if (ageRanges.length === 0) ageRanges.push("제한없음")
+        if (businessYears.length === 0) businessYears.push("제한없음")
+
+        const status = item.rcrt_prgs_yn === "Y" ? "active" : "closed"
+        const sourceUrl = item.detl_pg_url || item.biz_gdnc_url || ""
+
+        const dbRow = {
+          title,
+          organization: item.pbanc_ntrp_nm || item.sprv_inst || "창업진흥원",
+          type: "public",
+          budget: "",
+          start_date: startDate,
+          end_date: endDate,
+          application_method: item.aply_mthd_onli_rcpt_istc || item.aply_mthd_etc_istc || "K-Startup 홈페이지",
+          target: item.aply_trgt_ctnt || item.aply_trgt || "",
+          description: (item.pbanc_ctnt || "").substring(0, 2000),
+          eligibility: item.aply_trgt_ctnt || "",
+          department: item.biz_prch_dprt_nm || "",
+          contact: item.prch_cnpl_no || "",
+          source_url: sourceUrl,
+          field: item.supt_biz_clsfc || "",
+          status,
+          source: "K-Startup",
+          external_id: externalId,
+          matching_keywords: supportAreas,
+          support_areas: supportAreas,
+          regions,
+          target_types: targetTypes,
+          age_ranges: ageRanges,
+          business_years: businessYears,
+          governing_body: item.sprv_inst || item.pbanc_ntrp_nm || "",
+        }
+
+        // 중복 체크
+        const { data: existing } = await supabase
+          .from("announcements")
+          .select("id")
+          .eq("external_id", externalId)
+          .limit(1)
+
+        if (existing && existing.length > 0) {
+          result.skipped++
+        } else {
+          const { data: inserted, error } = await supabase
+            .from("announcements")
+            .insert({ ...dbRow, is_published: false })
+            .select("id")
+            .maybeSingle()
+          if (error) {
+            result.errors.push(`INSERT [${externalId}]: ${error.message}`)
+          } else {
+            result.inserted++
+            await supabase.from("announcement_logs").insert({
+              action: "collected",
+              announcement_id: inserted?.id || null,
+              announcement_title: dbRow.title,
+              source: "K-Startup API",
+              detail: `비공개로 자동 수집됨 (${dbRow.organization || ""})`,
+            })
+          }
+        }
+      }
+
+      if (items.length < perPage || page * perPage >= totalCount) {
+        hasMore = false
+      } else {
+        page++
+      }
+
+      if (page > 3) hasMore = false
+    } catch (err) {
+      result.errors.push(`페이지 ${page} 오류: ${err instanceof Error ? err.message : String(err)}`)
+      hasMore = false
+    }
+  }
+
+  return result
+}
+
+// ===========================
+// Main Export
+// ===========================
+
+export async function fetchAllAnnouncements(): Promise<{ results: FetchResult[]; totalInserted: number; totalSkipped: number; totalBlocked: number }> {
+  const kstartup = await fetchKStartupAnnouncements()
+  const results = [kstartup]
+  const totalInserted = results.reduce((s, r) => s + r.inserted, 0)
+  const totalSkipped = results.reduce((s, r) => s + r.skipped, 0)
+  const totalBlocked = results.reduce((s, r) => s + r.blocked, 0)
+
+  return { results, totalInserted, totalSkipped, totalBlocked }
+}
