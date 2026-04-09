@@ -40,7 +40,14 @@ export async function POST() {
     .single()
 
   if (profileError || profile?.role !== 'admin') {
-    return NextResponse.json({ error: '관리자 권한이 필요합니다' }, { status: 403 })
+    return NextResponse.json({
+      error: '관리자 권한이 필요합니다',
+      debug: {
+        userId: user.id,
+        profileRole: profile?.role || null,
+        profileError: profileError?.message || null,
+      }
+    }, { status: 403 })
   }
 
   try {
