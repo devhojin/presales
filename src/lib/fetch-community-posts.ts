@@ -65,15 +65,20 @@ function stripHtml(html: string): string {
     .trim()
 }
 
-/** link URL에서 고유 해시 생성 (external_id용) */
+/** link URL에서 고유 ID 생성 (external_id용) */
 function urlToExternalId(url: string): string {
-  const cleaned = url.replace(/[?#].*$/, '').replace(/\/+$/, '')
-  const segments = cleaned.split('/')
+  if (!url) return `no-url-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  // URL에서 숫자 ID 추출 시도 (article/12345, ?p=12345 등)
+  const idMatch = url.match(/(?:\/|[?&](?:p|id|no|sn)=)(\d{4,})/)
+  if (idMatch) return idMatch[1]
+  // URL 끝의 숫자 segment
+  const segments = url.replace(/\/+$/, '').split('/')
   const last = segments[segments.length - 1] || ''
-  if (/^\d+$/.test(last)) return last
+  if (/^\d+$/.test(last) && last.length >= 4) return last
+  // 전체 URL 해시 (쿼리스트링 포함)
   let hash = 0
-  for (let i = 0; i < cleaned.length; i++) {
-    hash = ((hash << 5) - hash + cleaned.charCodeAt(i)) | 0
+  for (let i = 0; i < url.length; i++) {
+    hash = ((hash << 5) - hash + url.charCodeAt(i)) | 0
   }
   return Math.abs(hash).toString(36)
 }
