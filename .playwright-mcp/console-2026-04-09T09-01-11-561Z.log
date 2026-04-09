@@ -1,3 +1,4 @@
 [   10452ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://presales-zeta.vercel.app/api/admin/announcements/trigger-fetch:0
 [   29301ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://presales-zeta.vercel.app/api/download:0
 [   44581ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://presales-zeta.vercel.app/api/admin/announcements/trigger-fetch:0
+[  119763ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://presales-zeta.vercel.app/api/admin/announcements/trigger-fetch:0
