@@ -273,9 +273,14 @@ export default function AnnouncementsPage() {
     setFetchingNow(true)
     try {
       const res = await fetch('/api/admin/announcements/trigger-fetch', { method: 'POST' })
-      if (!res.ok) throw new Error('수집 실패')
-      showToast('공고를 수집하고 있습니다')
-      setTimeout(() => fetchAnnouncements(), 2000)
+      const data = await res.json()
+      if (!res.ok) {
+        showToast(`수집 실패: ${data.error || res.statusText}`)
+        return
+      }
+      const { totalInserted = 0, totalSkipped = 0, totalBlocked = 0 } = data.summary || {}
+      showToast(`수집 완료: 신규 ${totalInserted}건, 중복 ${totalSkipped}건, 차단 ${totalBlocked}건`)
+      setTimeout(() => fetchAnnouncements(), 1000)
     } catch (e) {
       showToast(e instanceof Error ? e.message : '수집 중 오류가 발생했습니다')
     } finally {

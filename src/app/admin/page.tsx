@@ -252,81 +252,105 @@ function ListSkeleton({ rows = 5 }: { rows?: number }) {
 }
 
 // ===========================
-// Revenue Line Chart
+// Revenue Bar Chart (Vercel Consumption Breakdown style)
 // ===========================
 
-function RevenueChart({ data, period }: { data: DailyRevenue[]; period: Period }) {
+function RevenueChart({ data }: { data: DailyRevenue[]; period: Period }) {
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
+
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
+      <div className="flex items-center justify-center h-48 text-sm text-muted-foreground">
         데이터가 없습니다
       </div>
     )
   }
 
-  const W = 700
-  const H = 160
-  const PAD_X = 50
-  const PAD_Y = 20
-  const BOTTOM = 24
-  const plotW = W - PAD_X * 2
-  const plotH = H - PAD_Y - BOTTOM
-
   const maxRev = Math.max(...data.map((d) => d.revenue), 1)
-  const lastIdx = Math.max(data.length - 1, 1)
 
-  function toX(i: number) {
-    return PAD_X + (i / lastIdx) * plotW
-  }
-  function toY(v: number) {
-    return PAD_Y + plotH - (v / maxRev) * plotH
+  function formatAmount(v: number): string {
+    if (v >= 1_000_000) return `${(v / 10000).toFixed(0)}만`
+    if (v >= 1_000) return `${(v / 1000).toFixed(0)}천`
+    return String(v)
   }
 
-  const points = data.map((d, i) => `${toX(i)},${toY(d.revenue)}`).join(' ')
-  const areaPoints = `${toX(0)},${PAD_Y + plotH} ${points} ${toX(lastIdx)},${PAD_Y + plotH}`
-
-  // Y-axis ticks
-  const yTicks = [0, 0.5, 1].map((r) => ({
-    y: toY(maxRev * r),
-    label:
-      maxRev * r >= 1_000_000
-        ? `${Math.round((maxRev * r) / 10000)}만`
-        : maxRev * r >= 1000
-        ? `${Math.round(maxRev * r / 1000)}천`
-        : String(Math.round(maxRev * r)),
+  // Y-axis ticks: $0, mid, max
+  const yTicks = [0, maxRev * 0.5, maxRev].map(v => ({
+    value: v,
+    label: `${formatAmount(v)}원`,
+    pct: maxRev > 0 ? (v / maxRev) * 100 : 0,
   }))
 
-  // X-axis: show first, middle, last labels
-  const xIndices = [0, Math.floor(data.length / 2), data.length - 1].filter(
-    (v, i, arr) => arr.indexOf(v) === i
-  )
-
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 180 }}>
-      {/* Grid lines */}
-      {yTicks.map(({ y, label }) => (
-        <g key={label}>
-          <line x1={PAD_X} y1={y} x2={W - PAD_X} y2={y} stroke="rgb(229, 229, 229)" strokeWidth="1" />
-          <text x={PAD_X - 6} y={y + 4} textAnchor="end" fontSize="10" fill="rgb(107, 114, 128)">
-            {label}
-          </text>
-        </g>
-      ))}
-      {/* Area */}
-      <polygon points={areaPoints} fill="rgba(5, 150, 105, 0.1)" />
-      {/* Line */}
-      <polyline points={points} fill="none" stroke="rgb(5, 150, 105)" strokeWidth="2.5" strokeLinejoin="round" />
-      {/* Dots */}
-      {data.map((d, i) => (
-        <circle key={i} cx={toX(i)} cy={toY(d.revenue)} r="3" fill="rgb(5, 150, 105)" />
-      ))}
-      {/* X labels */}
-      {xIndices.map((i) => (
-        <text key={i} x={toX(i)} y={H - 4} textAnchor="middle" fontSize="10" fill="rgb(107, 114, 128)">
-          {data[i].date.slice(5).replace('-', '/')}
-        </text>
-      ))}
-    </svg>
+    <div className="relative">
+      {/* Y-axis labels */}
+      <div className="absolute left-0 top-0 bottom-8 w-12 flex flex-col justify-between text-right pr-2 py-1">
+        {yTicks.reverse().map((t) => (
+          <span key={t.label} className="text-[10px] text-muted-foreground font-mono">{t.label}</span>
+        ))}
+      </div>
+
+      {/* Chart area */}
+      <div className="ml-12 relative">
+        {/* Grid lines */}
+        <div className="absolute inset-0 bottom-8 flex flex-col justify-between pointer-events-none">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="border-b border-border/40" />
+          ))}
+        </div>
+
+        {/* Bars */}
+        <div className="flex items-end gap-[2px] h-48 relative">
+          {data.map((d, i) => {
+            const pct = maxRev > 0 ? (d.revenue / maxRev) * 100 : 0
+            const isHovered = hoveredIdx === i
+            return (
+              <div
+                key={d.date}
+                className="flex-1 flex flex-col items-center justify-end relative group"
+                onMouseEnter={() => setHoveredIdx(i)}
+                onMouseLeave={() => setHoveredIdx(null)}
+              >
+                {/* Bar */}
+                <div
+                  className={`w-full rounded-t-sm transition-all duration-300 ${
+                    d.revenue > 0
+                      ? isHovered ? 'bg-primary' : 'bg-primary/70'
+                      : 'bg-border/30'
+                  }`}
+                  style={{ height: `${Math.max(pct, d.revenue > 0 ? 2 : 0)}%`, minHeight: d.revenue > 0 ? 4 : 0 }}
+                />
+
+                {/* Hover tooltip */}
+                {isHovered && d.revenue > 0 && (
+                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-foreground text-background px-3 py-2 rounded-lg shadow-lg text-xs whitespace-nowrap z-10 font-mono">
+                    <p className="font-semibold">{d.date.replace(/-/g, '.')}</p>
+                    <p className="text-primary-foreground/80 mt-0.5">{d.revenue.toLocaleString()}원</p>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* X-axis labels */}
+        <div className="flex h-8 items-center">
+          {data.map((d, i) => {
+            // Show labels sparsely: first, every ~5th, last
+            const showLabel = i === 0 || i === data.length - 1 || (data.length > 10 ? i % Math.ceil(data.length / 6) === 0 : true)
+            return (
+              <div key={d.date} className="flex-1 text-center">
+                {showLabel && (
+                  <span className="text-[10px] text-muted-foreground font-mono">
+                    {d.date.slice(5).replace('-', '/')}
+                  </span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </div>
   )
 }
 
