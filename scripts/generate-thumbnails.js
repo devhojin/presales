@@ -112,16 +112,33 @@ function generateSVG(product) {
   const lines = wrapTitle(product.title, 16);
   const fontSize = lines.length > 2 ? 38 : lines.some(l => l.length > 10) ? 40 : 46;
   const lineHeight = fontSize * 1.3;
-  const titleY = 600 - 60 - (fileTypes.length > 0 ? 40 : 0) - lines.length * lineHeight - 50;
   const accentColor = product.isFree ? '#71717A' : '#34D399';
+
+  // Calculate total content block height for vertical centering
+  const badgeH = 28;
+  const badgeGap = 14;
+  const catH = 14;
+  const catGap = 14;
+  const titleBlockH = lines.length * lineHeight;
+  const ftGap = fileTypes.length > 0 ? 20 : 0;
+  const ftH = fileTypes.length > 0 ? 26 : 0;
+  const totalH = badgeH + badgeGap + catH + catGap + titleBlockH + ftGap + ftH;
+  // Center within area below brand (top 80px reserved for brand)
+  const availableTop = 80;
+  const startY = availableTop + (600 - availableTop - totalH) / 2;
+
+  const badgeY = startY;
+  const catY = badgeY + badgeH + badgeGap;
+  const titleStartY = catY + catH + catGap;
+  const ftY = titleStartY + titleBlockH + ftGap;
 
   // File type badges
   let ftBadges = '';
   let ftX = 52;
   fileTypes.forEach(ft => {
     const color = FT_COLORS[ft] || '#52525B';
-    ftBadges += `<rect x="${ftX}" y="${600 - 60}" width="${ft.length * 12 + 20}" height="26" rx="6" fill="${color}"/>`;
-    ftBadges += `<text x="${ftX + ft.length * 6 + 10}" y="${600 - 42}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff" font-family="system-ui,sans-serif" letter-spacing="0.5">${ft}</text>`;
+    ftBadges += `<rect x="${ftX}" y="${ftY}" width="${ft.length * 12 + 20}" height="26" rx="6" fill="${color}"/>`;
+    ftBadges += `<text x="${ftX + ft.length * 6 + 10}" y="${ftY + 18}" text-anchor="middle" font-size="11" font-weight="700" fill="#fff" font-family="system-ui,sans-serif" letter-spacing="0.5">${ft}</text>`;
     ftX += ft.length * 12 + 28;
   });
 
@@ -150,14 +167,14 @@ function generateSVG(product) {
   <text x="90" y="57" font-size="13" font-weight="700" fill="rgba(255,255,255,0.4)" font-family="system-ui,sans-serif" letter-spacing="0.5">PRESALES</text>
 
   <!-- Badge (FREE / PREMIUM) -->
-  <rect x="52" y="${titleY - 55}" width="${product.isFree ? 62 : 95}" height="28" rx="14" fill="${product.isFree ? 'rgba(255,255,255,0.08)' : 'rgba(52,211,153,0.12)'}" stroke="${product.isFree ? 'rgba(255,255,255,0.06)' : 'rgba(52,211,153,0.2)'}" stroke-width="1"/>
-  <text x="${product.isFree ? 83 : 99.5}" y="${titleY - 36}" text-anchor="middle" font-size="10" font-weight="700" fill="${product.isFree ? '#A1A1AA' : '#34D399'}" font-family="system-ui,sans-serif" letter-spacing="1.5">${product.isFree ? 'FREE' : 'PREMIUM'}</text>
+  <rect x="52" y="${badgeY}" width="${product.isFree ? 62 : 95}" height="28" rx="14" fill="${product.isFree ? 'rgba(255,255,255,0.08)' : 'rgba(52,211,153,0.12)'}" stroke="${product.isFree ? 'rgba(255,255,255,0.06)' : 'rgba(52,211,153,0.2)'}" stroke-width="1"/>
+  <text x="${product.isFree ? 83 : 99.5}" y="${badgeY + 19}" text-anchor="middle" font-size="10" font-weight="700" fill="${product.isFree ? '#A1A1AA' : '#34D399'}" font-family="system-ui,sans-serif" letter-spacing="1.5">${product.isFree ? 'FREE' : 'PREMIUM'}</text>
 
   <!-- Category -->
-  <text x="52" y="${titleY - 10}" font-size="12" font-weight="600" fill="rgba(255,255,255,0.35)" font-family="system-ui,sans-serif" letter-spacing="2">${escapeXml(product.cat.toUpperCase())}</text>
+  <text x="52" y="${catY + 12}" font-size="12" font-weight="600" fill="rgba(255,255,255,0.35)" font-family="system-ui,sans-serif" letter-spacing="2">${escapeXml(product.cat.toUpperCase())}</text>
 
   <!-- Title -->
-  ${lines.map((line, i) => `<text x="52" y="${titleY + 30 + i * lineHeight}" font-size="${fontSize}" font-weight="800" fill="#FAFAFA" font-family="system-ui,sans-serif" letter-spacing="-0.5">${escapeXml(line)}</text>`).join('\n  ')}
+  ${lines.map((line, i) => `<text x="52" y="${titleStartY + i * lineHeight + fontSize * 0.85}" font-size="${fontSize}" font-weight="800" fill="#FAFAFA" font-family="system-ui,sans-serif" letter-spacing="-0.5">${escapeXml(line)}</text>`).join('\n  ')}
 
   <!-- File type badges -->
   ${ftBadges}
