@@ -25,6 +25,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  ArrowRight,
 } from 'lucide-react'
 import {
   DndContext,
@@ -445,7 +446,7 @@ export default function AdminProducts() {
   const [sortField, setSortField] = useState<SortField>(null)
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [showBulkPrice, setShowBulkPrice] = useState(false)
-  const [bulkPriceData, setBulkPriceData] = useState<{ id: number; title: string; price: number; original_price: number; is_free: boolean }[]>([])
+  const [bulkPriceData, setBulkPriceData] = useState<{ id: number; title: string; price: number; original_price: number; is_free: boolean; newPrice: number }[]>([])
   const [bulkPriceLoading, setBulkPriceLoading] = useState(false)
   const [bulkPriceSaving, setBulkPriceSaving] = useState(false)
 
@@ -722,23 +723,23 @@ export default function AdminProducts() {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
-              onClick={async () => {
+              onClick={() => {
+                // 선택된 상품이 있으면 선택된 것만, 없으면 유료 상품 전체
+                const target = selectedIds.size > 0
+                  ? products.filter(p => selectedIds.has(p.id) && !p.is_free)
+                  : products.filter(p => !p.is_free)
+                if (target.length === 0) {
+                  setToast('수정할 유료 상품이 없습니다')
+                  return
+                }
+                setBulkPriceData(target.map(p => ({ id: p.id, title: p.title, price: p.price, original_price: p.original_price, is_free: p.is_free, newPrice: p.price })))
                 setShowBulkPrice(true)
-                setBulkPriceLoading(true)
-                try {
-                  const res = await fetch('/api/admin/bulk-price')
-                  const data = await res.json()
-                  if (data.products) {
-                    setBulkPriceData(data.products.filter((p: { is_free: boolean }) => !p.is_free))
-                  }
-                } catch { /* ignore */ }
-                setBulkPriceLoading(false)
               }}
               className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-border hover:bg-muted text-foreground text-sm font-medium rounded-xl transition-colors"
               title="가격 일괄 수정"
             >
               <DollarSign className="w-4 h-4" />
-              가격 일괄수정
+              가격 일괄수정{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}
             </button>
             <button
               onClick={handleCSVExport}
@@ -1101,12 +1102,14 @@ export default function AdminProducts() {
         {showBulkPrice && (
           <div className="fixed inset-0 z-50 flex items-start justify-center pt-[5vh]" onClick={() => setShowBulkPrice(false)}>
             <div className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" />
-            <div className="relative bg-card rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-full max-w-3xl mx-4 max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="relative bg-card rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
                 <div>
                   <h2 className="text-lg font-bold tracking-tight">가격 일괄 수정</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">유료 상품의 판매가/정가를 한 번에 수정합니다</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {selectedIds.size > 0 ? `선택한 ${bulkPriceData.length}개` : `유료 ${bulkPriceData.length}개`} 상품의 판매가를 수정합니다
+                  </p>
                 </div>
                 <button onClick={() => setShowBulkPrice(false)} className="w-8 h-8 rounded-xl hover:bg-muted flex items-center justify-center">
                   <X className="w-4 h-4" />
@@ -1114,38 +1117,50 @@ export default function AdminProducts() {
               </div>
 
               {/* Body */}
-              <div className="flex-1 overflow-y-auto p-6">
-                {bulkPriceLoading ? (
-                  <div className="flex items-center justify-center py-20">
-                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : (
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border/50">
-                        <th className="text-left py-2 px-2 text-xs text-muted-foreground font-medium w-8">ID</th>
-                        <th className="text-left py-2 px-2 text-xs text-muted-foreground font-medium">상품명</th>
-                        <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium w-28">판매가</th>
-                        <th className="text-right py-2 px-2 text-xs text-muted-foreground font-medium w-28">정가</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {bulkPriceData.map((item, idx) => (
-                        <tr key={item.id} className={`border-b border-border/30 ${item.price > 99000 ? 'bg-red-50' : ''}`}>
-                          <td className="py-2 px-2 text-xs text-muted-foreground font-mono">{item.id}</td>
-                          <td className="py-2 px-2 text-sm truncate max-w-[250px]" title={item.title}>{item.title}</td>
-                          <td className="py-2 px-2">
+              <div className="flex-1 overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 sticky top-0">
+                    <tr className="border-b border-border/50">
+                      <th className="text-left py-3 px-4 text-xs text-muted-foreground font-semibold w-10">ID</th>
+                      <th className="text-left py-3 px-4 text-xs text-muted-foreground font-semibold">상품명</th>
+                      <th className="text-right py-3 px-4 text-xs text-muted-foreground font-semibold w-28">현재 판매가</th>
+                      <th className="text-center py-3 px-4 text-xs text-muted-foreground font-semibold w-10"></th>
+                      <th className="text-right py-3 px-4 text-xs text-muted-foreground font-semibold w-32">변경할 판매가</th>
+                      <th className="text-right py-3 px-4 text-xs text-muted-foreground font-semibold w-28">정가</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bulkPriceData.map((item, idx) => {
+                      const changed = item.newPrice !== item.price
+                      const over99k = item.newPrice > 99000
+                      return (
+                        <tr key={item.id} className={`border-b border-border/30 ${over99k ? 'bg-red-50/50' : changed ? 'bg-amber-50/50' : ''}`}>
+                          <td className="py-3 px-4 text-xs text-muted-foreground font-mono">{item.id}</td>
+                          <td className="py-3 px-4 text-sm max-w-[280px]">
+                            <span className="truncate block" title={item.title}>{item.title}</span>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <span className={`text-sm font-mono ${changed ? 'line-through text-muted-foreground' : 'text-foreground font-medium'}`}>
+                              {item.price.toLocaleString()}원
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-center text-muted-foreground">
+                            <ArrowRight className="w-3.5 h-3.5 mx-auto" />
+                          </td>
+                          <td className="py-3 px-4">
                             <input
                               type="number"
-                              value={item.price}
+                              value={item.newPrice}
                               onChange={e => {
                                 const v = parseInt(e.target.value) || 0
-                                setBulkPriceData(prev => prev.map((p, i) => i === idx ? { ...p, price: v } : p))
+                                setBulkPriceData(prev => prev.map((p, i) => i === idx ? { ...p, newPrice: v } : p))
                               }}
-                              className={`w-full text-right px-2 py-1 rounded-lg border text-sm font-mono ${item.price > 99000 ? 'border-red-300 bg-red-50 text-red-700' : 'border-border'}`}
+                              className={`w-full text-right px-3 py-1.5 rounded-lg border text-sm font-mono font-medium ${
+                                over99k ? 'border-red-300 bg-red-50 text-red-700' : changed ? 'border-amber-300 bg-amber-50 text-amber-700' : 'border-border'
+                              }`}
                             />
                           </td>
-                          <td className="py-2 px-2">
+                          <td className="py-3 px-4">
                             <input
                               type="number"
                               value={item.original_price}
@@ -1153,33 +1168,33 @@ export default function AdminProducts() {
                                 const v = parseInt(e.target.value) || 0
                                 setBulkPriceData(prev => prev.map((p, i) => i === idx ? { ...p, original_price: v } : p))
                               }}
-                              className="w-full text-right px-2 py-1 rounded-lg border border-border text-sm font-mono"
+                              className="w-full text-right px-3 py-1.5 rounded-lg border border-border text-sm font-mono"
                             />
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
-
-                {/* 99,000원 초과 경고 */}
-                {bulkPriceData.some(p => p.price > 99000) && (
-                  <div className="mt-4 p-3 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700">
-                    빨간색으로 표시된 상품은 판매가가 99,000원을 초과합니다
-                  </div>
-                )}
+                      )
+                    })}
+                  </tbody>
+                </table>
               </div>
 
               {/* Footer */}
               <div className="flex items-center justify-between px-6 py-4 border-t border-border/50 bg-muted/30">
-                <button
-                  onClick={() => {
-                    setBulkPriceData(prev => prev.map(p => p.price > 99000 ? { ...p, price: 99000 } : p))
-                  }}
-                  className="px-4 py-2 text-sm rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
-                >
-                  99,000원 초과 일괄 조정
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setBulkPriceData(prev => prev.map(p => p.newPrice > 99000 ? { ...p, newPrice: 99000 } : p))
+                    }}
+                    className="px-4 py-2 text-sm rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    99,000원 초과 일괄 조정
+                  </button>
+                  {bulkPriceData.some(p => p.newPrice !== p.price) && (
+                    <span className="text-xs text-amber-600 flex items-center">
+                      {bulkPriceData.filter(p => p.newPrice !== p.price).length}개 변경됨
+                    </span>
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowBulkPrice(false)}
@@ -1189,15 +1204,23 @@ export default function AdminProducts() {
                   </button>
                   <button
                     onClick={async () => {
+                      const changed = bulkPriceData.filter(p => p.newPrice !== p.price)
+                      if (changed.length === 0) {
+                        setToast('변경된 항목이 없습니다')
+                        return
+                      }
                       setBulkPriceSaving(true)
                       try {
-                        const res = await fetch('/api/admin/bulk-price', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ updates: bulkPriceData.map(p => ({ id: p.id, price: p.price, original_price: p.original_price })) }),
-                        })
-                        const result = await res.json()
-                        setToast(result.message || '저장 완료')
+                        // 직접 Supabase로 업데이트
+                        let successCount = 0
+                        for (const item of changed) {
+                          const { error } = await supabase
+                            .from('products')
+                            .update({ price: item.newPrice, original_price: item.original_price })
+                            .eq('id', item.id)
+                          if (!error) successCount++
+                        }
+                        setToast(`${successCount}/${changed.length}개 가격 수정 완료`)
                         setShowBulkPrice(false)
                         loadProducts()
                       } catch {
@@ -1205,11 +1228,11 @@ export default function AdminProducts() {
                       }
                       setBulkPriceSaving(false)
                     }}
-                    disabled={bulkPriceSaving}
+                    disabled={bulkPriceSaving || !bulkPriceData.some(p => p.newPrice !== p.price)}
                     className="inline-flex items-center gap-1.5 px-5 py-2 text-sm rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors"
                   >
                     {bulkPriceSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    {bulkPriceSaving ? '저장 중...' : '전체 저장'}
+                    {bulkPriceSaving ? '저장 중...' : `${bulkPriceData.filter(p => p.newPrice !== p.price).length}개 저장`}
                   </button>
                 </div>
               </div>
