@@ -158,7 +158,7 @@ export function FaqClient() {
             <p className="text-sm text-muted-foreground">다른 키워드로 검색해보세요</p>
           </div>
         ) : (
-          <div className="max-w-3xl space-y-8">
+          <div className="max-w-3xl mx-auto space-y-8">
             {filteredData.map((section, idx) => (
               <div key={section.id}>
                 <div className="flex items-center gap-2.5 mb-3">
@@ -186,7 +186,7 @@ export function FaqClient() {
         )}
 
         {/* CTA */}
-        <div className="max-w-3xl mt-12 rounded-2xl bg-zinc-900 p-8 md:p-10 text-center text-white">
+        <div className="max-w-3xl mx-auto mt-12 rounded-2xl bg-zinc-900 p-8 md:p-10 text-center text-white">
           <MessageCircle className="w-10 h-10 text-emerald-400 mx-auto mb-4" />
           <h3 className="text-lg font-bold tracking-tight mb-2">원하는 답변을 찾지 못하셨나요?</h3>
           <p className="text-sm text-zinc-400 mb-6">전문 컨설턴트가 직접 도와드립니다</p>
