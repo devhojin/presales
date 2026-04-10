@@ -18,8 +18,6 @@ DECLARE
   product_ids INT[];
   picked_ids INT[];
   picked_id INT;
-  random_qty INT;
-  random_price INT;
 BEGIN
   -- 1) 타겟 사용자 확인
   SELECT id INTO target_user_id FROM auth.users WHERE email = 'user01@test.com' LIMIT 1;
@@ -88,9 +86,8 @@ BEGIN
     FOR selected_products IN
       SELECT id, price FROM products WHERE id = ANY(picked_ids)
     LOOP
-      random_qty := 1;  -- 디지털 상품이므로 수량 1 고정
-      INSERT INTO order_items (order_id, product_id, quantity, unit_price)
-      VALUES (new_order_id, selected_products.id, random_qty, selected_products.price);
+      INSERT INTO order_items (order_id, product_id, price, original_price)
+      VALUES (new_order_id, selected_products.id, selected_products.price, selected_products.price);
 
       -- 5) paid/completed 주문의 상품에 대해 다운로드 이력 생성 (1~4회 랜덤)
       IF order_status = 'paid' THEN

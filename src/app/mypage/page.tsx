@@ -30,8 +30,9 @@ interface Profile {
 
 interface OrderItem {
   id: number
-  quantity: number
-  unit_price: number
+  price: number
+  original_price?: number | null
+  discount_amount?: number | null
   products: { id: number; title: string; price: number } | { id: number; title: string; price: number }[] | null
 }
 
@@ -172,7 +173,7 @@ export default function MyConsolePage() {
         { data: feedBmData },
       ] = await Promise.all([
         supabase.from('profiles').select('name, email, phone, company, role, created_at').eq('id', user.id).single(),
-        supabase.from('orders').select('id, order_number, total_amount, status, created_at, paid_at, refund_reason, order_items(id, quantity, unit_price, products(id, title, price))').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('orders').select('id, order_number, total_amount, status, created_at, paid_at, refund_reason, order_items(id, price, original_price, discount_amount, products(id, title, price))').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(title)').eq('user_id', user.id).order('downloaded_at', { ascending: false }).limit(50),
         supabase.from('announcement_bookmarks').select('announcement_id').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
         supabase.from('feed_bookmarks').select('post_id').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
@@ -271,7 +272,7 @@ export default function MyConsolePage() {
     const receiptDate = order.paid_at ? new Date(order.paid_at).toLocaleDateString('ko-KR') : new Date(order.created_at).toLocaleDateString('ko-KR')
     const itemsHtml = (order.order_items || []).map(item => {
       const prod = Array.isArray(item.products) ? item.products[0] : item.products
-      return `<tr><td>${prod?.title || '상품'}${item.quantity > 1 ? ' x' + item.quantity : ''}</td><td style="text-align:right">${(item.unit_price * item.quantity).toLocaleString()}원</td></tr>`
+      return `<tr><td>${prod?.title || '상품'}</td><td style="text-align:right">${item.price.toLocaleString()}원</td></tr>`
     }).join('')
     printWindow.document.write(`<html><head><meta charset="UTF-8"/><title>거래 영수증</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:40px;max-width:500px;margin:0 auto;color:#333}h1{text-align:center;font-size:24px;border-bottom:2px solid #333;padding-bottom:16px}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left;font-size:14px}th{background:#f5f5f5;font-weight:600}.total{font-weight:bold;font-size:18px;text-align:right;padding-top:16px;border-top:2px solid #333}.footer{margin-top:40px;text-align:center;color:#666;font-size:12px}.info dt{color:#999;font-size:12px;margin:8px 0 4px}.info dd{margin:0 0 12px;font-weight:500;font-size:14px}.company-info{margin-top:32px;padding:16px;background:#fafafa;border-radius:4px;font-size:13px}@media print{body{padding:0}}</style></head><body><h1>거래 영수증</h1><dl class="info"><dt>주문번호</dt><dd>${order.order_number || order.id}</dd><dt>발행일</dt><dd>${receiptDate}</dd></dl><table><thead><tr><th>상품명</th><th style="text-align:right">금액</th></tr></thead><tbody>${itemsHtml}</tbody></table><p class="total">합계: ${order.total_amount?.toLocaleString()}원</p><hr/><div class="company-info"><dl class="info"><dt>공급자</dt><dd>주식회사 아마란스</dd><dt>대표</dt><dd>채호진</dd><dt>이메일</dt><dd>hojin@amarans.co.kr</dd></dl></div><div class="footer"><p>이 영수증은 전자상거래 거래증빙용입니다.</p><button onclick="window.print()" style="margin-top:16px;padding:8px 24px;cursor:pointer;border:1px solid #999;background:#fff;border-radius:4px">인쇄</button></div></body></html>`)
     printWindow.document.close()
@@ -509,9 +510,9 @@ export default function MyConsolePage() {
                             const prod = Array.isArray(item.products) ? item.products[0] : item.products
                             return (
                               <div key={item.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-background border border-border/50">
-                                <div className="min-w-0"><p className="text-sm font-medium truncate">{prod?.title || '-'}</p>{item.quantity > 1 && <p className="text-xs text-muted-foreground">x{item.quantity}</p>}</div>
+                                <div className="min-w-0"><p className="text-sm font-medium truncate">{prod?.title || '-'}</p></div>
                                 <div className="flex items-center gap-2 shrink-0 ml-3">
-                                  <p className="text-sm font-medium">{formatPrice(item.unit_price)}</p>
+                                  <p className="text-sm font-medium">{formatPrice(item.price)}</p>
                                   {(order.status === 'paid' || order.status === 'completed') && prod && (
                                     <button type="button" onClick={e => { e.stopPropagation(); handleProductDownload(prod.id, prod.title) }} className="px-3 py-1 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 flex items-center gap-1 cursor-pointer"><Download className="w-3 h-3" />다운로드</button>
                                   )}
