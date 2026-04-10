@@ -11,7 +11,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/announcements`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
     { url: `${BASE_URL}/feeds`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
     { url: `${BASE_URL}/consulting`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
-    { url: `${BASE_URL}/blog`, lastModified: new Date(), changeFrequency: "daily", priority: 0.7 },
     { url: `${BASE_URL}/about`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
     { url: `${BASE_URL}/faq`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
   ];
@@ -50,20 +49,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-    // 블로그 포스트
-    const { data: posts } = await supabase
-      .from("blog_posts")
-      .select("slug, published_at")
-      .eq("is_published", true);
-
-    const blogPages: MetadataRoute.Sitemap = (posts ?? []).map((p) => ({
-      url: `${BASE_URL}/blog/${p.slug}`,
-      lastModified: p.published_at ? new Date(p.published_at) : new Date(),
-      changeFrequency: "weekly" as const,
-      priority: 0.6,
-    }));
-
-    return [...staticPages, ...productPages, ...announcementPages, ...blogPages];
+    return [...staticPages, ...productPages, ...announcementPages];
   } catch {
     return staticPages;
   }
