@@ -2,7 +2,7 @@
  * IT피드 커뮤니티 게시글 외부 수집 모듈
  * SPC fetch-community-posts.ts 이식 — 프리세일즈 버전
  * - FEED_SOURCES에 등록된 RSS 소스를 순회하며 수집
- * - 수집 → 비공개(is_published=false) → 관리자 검토 → 공개
+ * - 수집 → 공개(is_published=true) → 관리자가 필요 시 비공개 전환
  */
 
 import { createClient } from '@supabase/supabase-js'
