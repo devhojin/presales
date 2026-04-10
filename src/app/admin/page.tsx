@@ -255,44 +255,42 @@ function ListSkeleton({ rows = 5 }: { rows?: number }) {
 // Revenue Bar Chart (Recharts)
 // ===========================
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 
-function RevenueChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
+function RevenueChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string }>; label?: string }) {
   if (!active || !payload || !payload.length) return null
-  const val = payload[0].value
   return (
-    <div className="bg-zinc-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm">
-      <p className="font-semibold font-mono">{String(label).replace(/-/g, '.')}</p>
-      <div className="flex items-center gap-2 mt-1">
-        <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" />
-        <span className="text-zinc-300">{val.toLocaleString()}원</span>
-      </div>
+    <div className="bg-white border border-zinc-200 px-4 py-3 rounded-lg shadow-lg text-sm">
+      <p className="font-bold text-zinc-800 mb-1.5">{String(label).replace(/-/g, '.')}</p>
+      {payload.map((p, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <span className={`w-3 h-3 rounded-sm inline-block ${p.dataKey === 'revenue' ? 'bg-emerald-400' : 'bg-zinc-300'}`} />
+          <span className="text-zinc-600">{p.dataKey === 'revenue' ? '주문 완료' : '주문취소'}</span>
+          <span className="font-semibold text-zinc-900 ml-auto pl-4">{p.value.toLocaleString()}</span>
+        </div>
+      ))}
     </div>
   )
 }
 
 function formatYAxis(value: number): string {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`
+  if (value >= 10_000) return `${(value / 10_000).toFixed(0)}만`
   if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`
-  return String(value)
+  return value.toLocaleString()
 }
 
 function RevenueChart({ data, period }: { data: DailyRevenue[]; period: Period }) {
-  const [viewMode, setViewMode] = useState<'daily' | 'monthly'>('daily')
+  const [viewMode, setViewMode] = useState<'daily' | 'monthly'>(period === '전체' ? 'monthly' : 'daily')
 
   const chartData = useMemo(() => {
     if (viewMode === 'monthly' && period !== '전체') {
-      // Aggregate daily data into monthly
       const monthMap: Record<string, number> = {}
       for (const d of data) {
         const key = d.date.slice(0, 7)
         monthMap[key] = (monthMap[key] || 0) + d.revenue
       }
       return Object.entries(monthMap).sort(([a], [b]) => a.localeCompare(b)).map(([date, revenue]) => ({ date, revenue }))
-    }
-    if (period === '전체') {
-      // Already monthly from data builder
-      return data
     }
     return data
   }, [data, viewMode, period])
@@ -307,43 +305,51 @@ function RevenueChart({ data, period }: { data: DailyRevenue[]; period: Period }
 
   return (
     <div>
-      {/* View mode toggle */}
-      {period !== '전체' && (
-        <div className="flex justify-end mb-3">
-          <div className="flex items-center gap-1 text-xs">
+      {/* Header: Legend + Toggle */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-5 text-xs text-zinc-500">
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-emerald-400 inline-block" /> 주문 완료</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-zinc-200 inline-block" /> 주문취소</span>
+        </div>
+        {period !== '전체' && (
+          <div className="flex items-center gap-0.5 text-xs text-primary">
             {(['daily', 'monthly'] as const).map(m => (
               <button key={m} onClick={() => setViewMode(m)}
-                className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${viewMode === m ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}`}>
+                className={`px-2 py-1 rounded font-medium transition-colors cursor-pointer ${
+                  viewMode === m ? 'text-primary underline underline-offset-4' : 'text-zinc-400 hover:text-zinc-600'
+                }`}>
                 {m === 'daily' ? '일별' : '월별'}
               </button>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      <ResponsiveContainer width="100%" height={320}>
-        <BarChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} vertical={false} />
+      <ResponsiveContainer width="100%" height={340}>
+        <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }} barCategoryGap="20%">
+          <CartesianGrid stroke="#f0f0f0" vertical={false} />
           <XAxis
             dataKey="date"
-            tickFormatter={(v: string) => period === '전체' || viewMode === 'monthly' ? v : v.slice(5).replace('-', '/')}
-            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-            axisLine={{ stroke: 'hsl(var(--border))' }}
+            tickFormatter={(v: string) => viewMode === 'monthly' || period === '전체' ? v : v.slice(5).replace('-', '/')}
+            tick={{ fontSize: 12, fill: '#999' }}
+            axisLine={{ stroke: '#e5e5e5' }}
             tickLine={false}
+            dy={8}
           />
           <YAxis
             tickFormatter={formatYAxis}
-            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+            tick={{ fontSize: 12, fill: '#999' }}
             axisLine={false}
             tickLine={false}
-            width={60}
+            width={65}
           />
-          <Tooltip content={<RevenueChartTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.5 }} />
+          <Tooltip content={<RevenueChartTooltip />} cursor={{ fill: '#f5f5f5' }} />
           <Bar
             dataKey="revenue"
-            fill="hsl(var(--primary))"
-            radius={[4, 4, 0, 0]}
-            maxBarSize={50}
+            fill="#6ee7b7"
+            radius={[3, 3, 0, 0]}
+            maxBarSize={48}
+            animationDuration={600}
           />
         </BarChart>
       </ResponsiveContainer>
@@ -1059,12 +1065,14 @@ export default function AdminDashboard() {
 
       {/* Revenue chart */}
       {!loading && dailyRevenue.length > 0 && (
-        <div className="bg-card rounded-2xl border border-border/50 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-              매출 추이 ({period === '전체' ? '월별' : `최근 ${period}`})
+        <div className="bg-card rounded-2xl border border-border/50 p-6 md:p-8">
+          <div className="mb-2">
+            <h2 className="text-base font-bold text-foreground">
+              매출 추이
             </h2>
-            <span className="text-xs text-muted-foreground">결제완료 기준</span>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {period === '전체' ? '전체 기간 월별' : `최근 ${period}`} · 결제완료 기준
+            </p>
           </div>
           <RevenueChart data={dailyRevenue} period={period} />
         </div>
