@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
+import { Building2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
 interface TeamMember {
@@ -91,24 +92,21 @@ export default function AboutPage() {
 
   return (
     <div className="bg-background">
-      {/* Hero - Left-aligned asymmetric */}
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-24 md:py-32">
-        <div className="max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-4">회사소개</p>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-6">
-            공공조달의 복잡함을 문서로 단순하게
-          </h1>
-          <p className="text-lg text-muted-foreground leading-relaxed">
-            나라장터·조달청 입찰의 실전 경험을 가진 전문가들이
-            만든 공공조달 제안서 전문 플랫폼입니다.
-          </p>
+      {/* Header */}
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+        <div className="py-8 md:py-12">
+          <div className="flex items-center gap-3 mb-3">
+            <Building2 className="w-7 h-7 text-primary" />
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">회사소개</h1>
+          </div>
+          <p className="text-muted-foreground">공공조달의 복잡함을 문서로 단순하게 — 나라장터·조달청 입찰 전문 플랫폼</p>
         </div>
       </div>
 
       {/* Mission / Vision / Values */}
       {(loading || mission || vision || value) && (
         <div className="bg-muted/30">
-          <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-24 md:py-32">
+          <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-12 md:py-16">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {loading
                 ? Array.from({ length: 3 }).map((_, i) => (
@@ -136,7 +134,7 @@ export default function AboutPage() {
       )}
 
       {/* Team */}
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-24 md:py-32">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-12 md:py-16">
         <div className="max-w-2xl mx-auto text-center mb-16">
           <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">전문가 팀</p>
           <h2 className="text-3xl font-bold tracking-tight text-foreground mb-3">전문가 팀</h2>
@@ -209,7 +207,7 @@ export default function AboutPage() {
       {/* Timeline - Editorial feel */}
       {(loading || timeline.length > 0) && (
         <div className="bg-muted/30">
-          <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-24 md:py-32">
+          <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-12 md:py-16">
             <div className="max-w-2xl mx-auto text-center mb-16">
               <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">연혁</p>
               <h2 className="text-3xl font-bold tracking-tight text-foreground">연혁</h2>
