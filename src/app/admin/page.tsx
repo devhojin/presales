@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { formatPrice } from '@/lib/types'
 import Link from 'next/link'
@@ -252,104 +252,101 @@ function ListSkeleton({ rows = 5 }: { rows?: number }) {
 }
 
 // ===========================
-// Revenue Bar Chart (Vercel Consumption Breakdown style)
+// Revenue Bar Chart (Recharts)
 // ===========================
 
-function RevenueChart({ data }: { data: DailyRevenue[]; period: Period }) {
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+
+function RevenueChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
+  if (!active || !payload || !payload.length) return null
+  const val = payload[0].value
+  return (
+    <div className="bg-zinc-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm">
+      <p className="font-semibold font-mono">{String(label).replace(/-/g, '.')}</p>
+      <div className="flex items-center gap-2 mt-1">
+        <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500 inline-block" />
+        <span className="text-zinc-300">{val.toLocaleString()}원</span>
+      </div>
+    </div>
+  )
+}
+
+function formatYAxis(value: number): string {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`
+  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`
+  return String(value)
+}
+
+function RevenueChart({ data, period }: { data: DailyRevenue[]; period: Period }) {
+  const [viewMode, setViewMode] = useState<'daily' | 'monthly'>('daily')
+
+  const chartData = useMemo(() => {
+    if (viewMode === 'monthly' && period !== '전체') {
+      // Aggregate daily data into monthly
+      const monthMap: Record<string, number> = {}
+      for (const d of data) {
+        const key = d.date.slice(0, 7)
+        monthMap[key] = (monthMap[key] || 0) + d.revenue
+      }
+      return Object.entries(monthMap).sort(([a], [b]) => a.localeCompare(b)).map(([date, revenue]) => ({ date, revenue }))
+    }
+    if (period === '전체') {
+      // Already monthly from data builder
+      return data
+    }
+    return data
+  }, [data, viewMode, period])
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-72 text-sm text-muted-foreground">
+      <div className="flex items-center justify-center h-80 text-sm text-muted-foreground">
         데이터가 없습니다
       </div>
     )
   }
 
-  const maxRev = Math.max(...data.map((d) => d.revenue), 1)
-
-  function formatAmount(v: number): string {
-    if (v >= 1_000_000) return `${(v / 10000).toFixed(0)}만`
-    if (v >= 1_000) return `${(v / 1000).toFixed(0)}천`
-    return String(v)
-  }
-
-  // Y-axis ticks: $0, mid, max
-  const yTicks = [0, maxRev * 0.5, maxRev].map(v => ({
-    value: v,
-    label: `${formatAmount(v)}원`,
-    pct: maxRev > 0 ? (v / maxRev) * 100 : 0,
-  }))
-
   return (
-    <div className="relative">
-      {/* Y-axis labels */}
-      <div className="absolute left-0 top-0 bottom-8 w-12 flex flex-col justify-between text-right pr-2 py-1">
-        {yTicks.reverse().map((t) => (
-          <span key={t.label} className="text-[10px] text-muted-foreground font-mono">{t.label}</span>
-        ))}
-      </div>
-
-      {/* Chart area */}
-      <div className="ml-12 relative">
-        {/* Grid lines */}
-        <div className="absolute inset-0 bottom-8 flex flex-col justify-between pointer-events-none">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="border-b border-border/40" />
-          ))}
+    <div>
+      {/* View mode toggle */}
+      {period !== '전체' && (
+        <div className="flex justify-end mb-3">
+          <div className="flex items-center gap-1 text-xs">
+            {(['daily', 'monthly'] as const).map(m => (
+              <button key={m} onClick={() => setViewMode(m)}
+                className={`px-2.5 py-1 rounded-md font-medium transition-colors cursor-pointer ${viewMode === m ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}`}>
+                {m === 'daily' ? '일별' : '월별'}
+              </button>
+            ))}
+          </div>
         </div>
+      )}
 
-        {/* Bars */}
-        <div className="flex items-end gap-[2px] h-72 relative">
-          {data.map((d, i) => {
-            const pct = maxRev > 0 ? (d.revenue / maxRev) * 100 : 0
-            const isHovered = hoveredIdx === i
-            return (
-              <div
-                key={d.date}
-                className="flex-1 flex flex-col items-center justify-end relative group"
-                onMouseEnter={() => setHoveredIdx(i)}
-                onMouseLeave={() => setHoveredIdx(null)}
-              >
-                {/* Bar */}
-                <div
-                  className={`w-full rounded-t-sm transition-all duration-300 ${
-                    d.revenue > 0
-                      ? isHovered ? 'bg-primary' : 'bg-primary/70'
-                      : 'bg-border/30'
-                  }`}
-                  style={{ height: `${Math.max(pct, d.revenue > 0 ? 15 : 0)}%`, minHeight: d.revenue > 0 ? 20 : 0 }}
-                />
-
-                {/* Hover tooltip */}
-                {isHovered && d.revenue > 0 && (
-                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-foreground text-background px-3 py-2 rounded-lg shadow-lg text-xs whitespace-nowrap z-10 font-mono">
-                    <p className="font-semibold">{d.date.replace(/-/g, '.')}</p>
-                    <p className="text-primary-foreground/80 mt-0.5">{d.revenue.toLocaleString()}원</p>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        {/* X-axis labels */}
-        <div className="flex h-8 items-center">
-          {data.map((d, i) => {
-            // Show labels sparsely: first, every ~5th, last
-            const showLabel = i === 0 || i === data.length - 1 || (data.length > 10 ? i % Math.ceil(data.length / 6) === 0 : true)
-            return (
-              <div key={d.date} className="flex-1 text-center">
-                {showLabel && (
-                  <span className="text-[10px] text-muted-foreground font-mono">
-                    {d.date.slice(5).replace('-', '/')}
-                  </span>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </div>
+      <ResponsiveContainer width="100%" height={320}>
+        <BarChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.5} vertical={false} />
+          <XAxis
+            dataKey="date"
+            tickFormatter={(v: string) => period === '전체' || viewMode === 'monthly' ? v : v.slice(5).replace('-', '/')}
+            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+            axisLine={{ stroke: 'hsl(var(--border))' }}
+            tickLine={false}
+          />
+          <YAxis
+            tickFormatter={formatYAxis}
+            tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+            axisLine={false}
+            tickLine={false}
+            width={60}
+          />
+          <Tooltip content={<RevenueChartTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.5 }} />
+          <Bar
+            dataKey="revenue"
+            fill="hsl(var(--primary))"
+            radius={[4, 4, 0, 0]}
+            maxBarSize={50}
+          />
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   )
 }
