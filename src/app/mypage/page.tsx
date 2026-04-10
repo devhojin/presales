@@ -70,8 +70,8 @@ interface ActivityItem {
   raw: Date
 }
 
-interface BookmarkAnn { id: string; title: string; organization: string | null; status: string; end_date: string | null; source_url: string | null; content?: string | null; start_date?: string | null }
-interface BookmarkFeed { id: string; title: string; category: string; external_url: string | null; content?: string | null; source?: string | null; published_at?: string | null }
+interface BookmarkAnn { id: string; title: string; organization: string | null; status: string; end_date: string | null; source_url: string | null; description?: string | null; start_date?: string | null }
+interface BookmarkFeed { id: string; title: string; category: string; external_url: string | null; content?: string | null; source_name?: string | null; created_at?: string | null }
 type BookmarkModalItem =
   | { type: 'announcement'; data: BookmarkAnn }
   | { type: 'feed'; data: BookmarkFeed }
@@ -119,7 +119,7 @@ export default function MyConsolePage() {
   const [bookmarkModal, setBookmarkModal] = useState<BookmarkModalItem | null>(null)
 
   // KPI counts
-  const [kpi, setKpi] = useState({ orders: 0, bookmarks: 0, activeAnns: 0, downloads: 0 })
+  const [kpi, setKpi] = useState({ orders: 0, bookmarks: 0, downloads: 0, chats: 0 })
 
   // UI state
   const [overlay, setOverlay] = useState<'profile' | null>(null)
@@ -170,15 +170,15 @@ export default function MyConsolePage() {
         { data: logsData },
         { data: annBmData },
         { data: feedBmData },
-        { count: activeAnnCount },
       ] = await Promise.all([
         supabase.from('profiles').select('name, email, phone, company, role, created_at').eq('id', user.id).single(),
         supabase.from('orders').select('id, order_number, total_amount, status, created_at, paid_at, refund_reason, order_items(id, quantity, unit_price, products(id, title, price))').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(title)').eq('user_id', user.id).order('downloaded_at', { ascending: false }).limit(50),
         supabase.from('announcement_bookmarks').select('announcement_id').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
         supabase.from('feed_bookmarks').select('post_id').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
-        supabase.from('announcements').select('id', { count: 'exact' }).eq('is_published', true).eq('status', 'active'),
       ])
+
+      if (ordersData === null) console.error('orders query failed')
 
       // Purchased products
       const { data: paidOrders } = await supabase
@@ -201,14 +201,16 @@ export default function MyConsolePage() {
       // Announcement bookmarks details
       if (annBmData && annBmData.length > 0) {
         const ids = annBmData.map(b => b.announcement_id)
-        const { data: anns } = await supabase.from('announcements').select('id, title, organization, status, end_date, start_date, source_url, content').in('id', ids)
+        const { data: anns, error: annErr } = await supabase.from('announcements').select('id, title, organization, status, end_date, start_date, source_url, description').in('id', ids)
+        if (annErr) console.error('annErr', annErr)
         if (anns) setAnnBookmarks(ids.map(id => anns.find(a => a.id === id)).filter(Boolean) as BookmarkAnn[])
       }
 
       // Feed bookmarks details
       if (feedBmData && feedBmData.length > 0) {
         const ids = feedBmData.map(b => b.post_id)
-        const { data: posts } = await supabase.from('community_posts').select('id, title, category, external_url, content, source, published_at').in('id', ids)
+        const { data: posts, error: feedErr } = await supabase.from('community_posts').select('id, title, category, external_url, content, source_name, created_at').in('id', ids)
+        if (feedErr) console.error('feedErr', feedErr)
         if (posts) setFeedBookmarks(ids.map(id => posts.find(p => p.id === id)).filter(Boolean) as BookmarkFeed[])
       }
 
@@ -218,10 +220,17 @@ export default function MyConsolePage() {
       setKpi({
         orders: ordersData?.length || 0,
         bookmarks: (annBmData?.length || 0) + (feedBmData?.length || 0),
-        activeAnns: activeAnnCount || 0,
         downloads: logsData?.length || 0,
+        chats: 0,
       })
       setLoading(false)
+
+      // 채팅방 수 로드
+      try {
+        const res = await fetch('/api/chat/rooms')
+        const data = await res.json()
+        if (data.rooms) setKpi(k => ({ ...k, chats: data.rooms.length }))
+      } catch { /* ignore */ }
     }
     load()
   }, [router])
@@ -428,10 +437,10 @@ export default function MyConsolePage() {
       {/* Row 2: KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {[
-          { label: '구매 상품', value: kpi.orders, icon: Package, color: 'text-primary bg-primary/10', href: '#orders' },
-          { label: '즐겨찾기', value: kpi.bookmarks, icon: BookmarkCheck, color: 'text-emerald-600 bg-emerald-50', href: '#bookmarks' },
-          { label: '모집중 공고', value: kpi.activeAnns, icon: Megaphone, color: 'text-blue-600 bg-blue-50', href: '/announcements' },
-          { label: '다운로드', value: kpi.downloads, icon: Download, color: 'text-orange-600 bg-orange-50', href: '#downloads' },
+          { label: '내 주문', value: kpi.orders, icon: Package, color: 'text-primary bg-primary/10', href: '#orders' },
+          { label: '다운로드', value: kpi.downloads, icon: Download, color: 'text-orange-600 bg-orange-50', href: '#orders' },
+          { label: '즐겨찾기', value: kpi.bookmarks, icon: Bookmark, color: 'text-emerald-600 bg-emerald-50', href: '#bookmarks' },
+          { label: '나의 채팅', value: kpi.chats, icon: MessageCircle, color: 'text-teal-600 bg-teal-50', href: '#chat' },
         ].map(card => (
           <Link key={card.label} href={card.href}
             className="group bg-card border border-border/50 rounded-2xl p-5 hover:shadow-md transition-all cursor-pointer">
@@ -660,7 +669,7 @@ export default function MyConsolePage() {
                   <>
                     <div className="flex items-center gap-2 mb-2">
                       <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${catColor(bookmarkModal.data.category)}`}>{catLabel(bookmarkModal.data.category)}</span>
-                      {bookmarkModal.data.source && <span className="text-xs text-muted-foreground">{bookmarkModal.data.source}</span>}
+                      {bookmarkModal.data.source_name && <span className="text-xs text-muted-foreground">{bookmarkModal.data.source_name}</span>}
                     </div>
                     <h3 className="text-lg font-semibold leading-snug">{bookmarkModal.data.title}</h3>
                   </>
@@ -682,16 +691,16 @@ export default function MyConsolePage() {
                       {bookmarkModal.data.end_date && <span>마감: {formatDate(bookmarkModal.data.end_date)}</span>}
                     </div>
                   )}
-                  {bookmarkModal.data.content ? (
-                    <div className="prose prose-sm max-w-none text-sm text-foreground whitespace-pre-wrap leading-relaxed">{bookmarkModal.data.content}</div>
+                  {bookmarkModal.data.description ? (
+                    <div className="prose prose-sm max-w-none text-sm text-foreground whitespace-pre-wrap leading-relaxed">{bookmarkModal.data.description}</div>
                   ) : (
                     <p className="text-sm text-muted-foreground">상세 내용이 없습니다.</p>
                   )}
                 </>
               ) : (
                 <>
-                  {bookmarkModal.data.published_at && (
-                    <div className="mb-4 text-xs text-muted-foreground">게시일: {formatDate(bookmarkModal.data.published_at)}</div>
+                  {bookmarkModal.data.created_at && (
+                    <div className="mb-4 text-xs text-muted-foreground">게시일: {formatDate(bookmarkModal.data.created_at)}</div>
                   )}
                   {bookmarkModal.data.content ? (
                     <div className="prose prose-sm max-w-none text-sm text-foreground whitespace-pre-wrap leading-relaxed">{bookmarkModal.data.content}</div>
