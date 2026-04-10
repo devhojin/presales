@@ -1,6 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient, getAuthUser, isAdmin } from '@/lib/chat'
 
+/** DELETE: 채팅방 삭제 (hide | full) */
+export async function DELETE(request: NextRequest) {
+  const user = await getAuthUser()
+  if (!user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
+  const admin = await isAdmin(user.id)
+  if (!admin) return NextResponse.json({ error: '관리자만 가능' }, { status: 403 })
+
+  const { searchParams } = new URL(request.url)
+  const id = searchParams.get('id')
+  const mode = searchParams.get('mode') || 'hide'
+  if (!id) return NextResponse.json({ error: 'id 필요' }, { status: 400 })
+
+  const supabase = getServiceClient()
+
+  if (mode === 'full') {
+    // 완전 삭제 (cascade로 messages도 삭제됨)
+    const { error } = await supabase.from('chat_rooms').delete().eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true, mode: 'full' })
+  }
+
+  // 리스트에서만 숨김
+  const { error } = await supabase
+    .from('chat_rooms')
+    .update({ hidden_by_admin: true, updated_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true, mode: 'hide' })
+}
+
 /** GET: 내 채팅방 목록 (회원) / 전체 (관리자) */
 export async function GET() {
   const user = await getAuthUser()
@@ -13,6 +43,7 @@ export async function GET() {
       const { data: rooms, error } = await supabase
         .from('chat_rooms')
         .select('*')
+        .eq('hidden_by_admin', false)
         .order('last_message_at', { ascending: false })
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

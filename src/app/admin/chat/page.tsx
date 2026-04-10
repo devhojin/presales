@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   MessageCircle, Send, Paperclip, Loader2, X, Search, FileText, Download,
   User, Mail, Phone, Building, CreditCard, AlertTriangle, Clock,
-  ChevronDown, Image as ImageIcon, XCircle,
+  ChevronDown, Image as ImageIcon, XCircle, Trash2,
 } from 'lucide-react'
 import type { ChatRoom, ChatMessage } from '@/lib/chat'
 
@@ -191,6 +191,80 @@ function PaymentRequestModal({ roomId, userId, onClose, onSent }: {
 }
 
 // ============================================
+// 삭제 확인 모달
+// ============================================
+function DeleteConfirmModal({ roomName, onCancel, onConfirm }: {
+  roomName: string
+  onCancel: () => void
+  onConfirm: (mode: 'hide' | 'full') => void
+}) {
+  const [deleting, setDeleting] = useState<'hide' | 'full' | null>(null)
+
+  const handleClick = async (mode: 'hide' | 'full') => {
+    setDeleting(mode)
+    await onConfirm(mode)
+    setDeleting(null)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/20 backdrop-blur-sm" onClick={onCancel}>
+      <div className="bg-background border border-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold flex items-center gap-2">
+            <Trash2 className="w-4 h-4 text-red-500" /> 채팅방 삭제
+          </h3>
+          <button onClick={onCancel} className="text-muted-foreground hover:text-foreground cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <p className="text-sm text-muted-foreground mb-5">
+          <span className="font-medium text-foreground">{roomName}</span> 채팅방을 어떻게 삭제하시겠습니까?
+        </p>
+
+        <div className="space-y-2">
+          <button
+            onClick={() => handleClick('hide')}
+            disabled={deleting !== null}
+            className="w-full p-4 border border-border rounded-xl hover:bg-muted/50 transition-colors text-left cursor-pointer disabled:opacity-50"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-yellow-50 text-yellow-600 flex items-center justify-center shrink-0">
+                {deleting === 'hide' ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium">리스트에서 삭제</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  채팅방을 목록에서 숨깁니다. 대화 내역은 DB에 남아있습니다.
+                </p>
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => handleClick('full')}
+            disabled={deleting !== null}
+            className="w-full p-4 border border-red-200 rounded-xl hover:bg-red-50 transition-colors text-left cursor-pointer disabled:opacity-50"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center shrink-0">
+                {deleting === 'full' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-600">완전 삭제</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  채팅방과 모든 대화 내역을 DB에서 영구 삭제합니다. 복구할 수 없습니다.
+                </p>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
 // 관리자 채팅 메인
 // ============================================
 export default function AdminChatPage() {
@@ -206,6 +280,7 @@ export default function AdminChatPage() {
   const [filter, setFilter] = useState<'all' | 'unread' | 'member' | 'guest'>('all')
   const [showMemberModal, setShowMemberModal] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<ChatRoom | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -419,6 +494,22 @@ export default function AdminChatPage() {
 
   const totalUnread = rooms.reduce((s, r) => s + r.admin_unread_count, 0)
 
+  // 삭제 처리
+  const handleDelete = async (mode: 'hide' | 'full') => {
+    if (!deleteTarget) return
+    try {
+      await fetch(`/api/chat/rooms?id=${deleteTarget.id}&mode=${mode}`, { method: 'DELETE' })
+      setDeleteTarget(null)
+      if (selectedRoom?.id === deleteTarget.id) {
+        setSelectedRoom(null)
+        setMessages([])
+      }
+      loadRooms()
+    } catch {
+      setError('삭제에 실패했습니다')
+    }
+  }
+
   // 메시지 렌더
   const renderMessage = (msg: ChatMessage) => {
     const isAdmin = msg.sender_type === 'admin'
@@ -541,37 +632,47 @@ export default function AdminChatPage() {
               <div className="text-center py-12 text-sm text-muted-foreground">채팅이 없습니다</div>
             ) : (
               filteredRooms.map((room) => (
-                <button
+                <div
                   key={room.id}
                   onClick={() => selectRoom(room)}
-                  className={`w-full text-left px-4 py-3 border-b border-border/30 hover:bg-muted/30 transition-colors cursor-pointer ${
+                  className={`group relative px-4 py-3 border-b border-border/30 hover:bg-muted/30 transition-colors cursor-pointer ${
                     selectedRoom?.id === room.id ? 'bg-muted/50' : ''
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium shrink-0 ${
                         room.room_type === 'member'
                           ? 'bg-emerald-50 text-emerald-700'
                           : 'bg-zinc-100 text-zinc-600'
                       }`}>
                         {room.room_type === 'member' ? <User className="w-3.5 h-3.5" /> : 'G'}
                       </div>
-                      <div>
-                        <p className="text-sm font-medium truncate max-w-[140px]">{getRoomName(room)}</p>
-                        <p className="text-xs text-muted-foreground truncate max-w-[140px]">{room.last_message || '새 대화'}</p>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{getRoomName(room)}</p>
+                        <p className="text-xs text-muted-foreground truncate">{room.last_message || '새 대화'}</p>
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-[10px] text-muted-foreground">{formatTime(room.last_message_at)}</p>
-                      {room.admin_unread_count > 0 && (
-                        <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold bg-emerald-600 text-white rounded-full mt-0.5">
-                          {room.admin_unread_count}
-                        </span>
-                      )}
+                    <div className="text-right shrink-0 ml-2 flex items-center gap-2">
+                      <div className="group-hover:hidden">
+                        <p className="text-[10px] text-muted-foreground">{formatTime(room.last_message_at)}</p>
+                        {room.admin_unread_count > 0 && (
+                          <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold bg-emerald-600 text-white rounded-full mt-0.5">
+                            {room.admin_unread_count}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(room) }}
+                        className="hidden group-hover:flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground hover:bg-red-50 hover:text-red-500 cursor-pointer transition-colors"
+                        title="채팅방 삭제"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
-                </button>
+                </div>
               ))
             )}
           </div>
@@ -703,6 +804,13 @@ export default function AdminChatPage() {
           userId={selectedRoom.user_id}
           onClose={() => setShowPaymentModal(false)}
           onSent={() => loadMessages(selectedRoom.id)}
+        />
+      )}
+      {deleteTarget && (
+        <DeleteConfirmModal
+          roomName={getRoomName(deleteTarget)}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={handleDelete}
         />
       )}
     </div>
