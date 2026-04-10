@@ -11,7 +11,6 @@ import type { User as SupabaseUser } from '@supabase/supabase-js'
 const navLinks = [
   { href: '/store', label: '문서 스토어' },
   { href: '/consulting', label: '컨설팅' },
-  { href: '/blog', label: '블로그' },
   { href: '/announcements', label: '공고 사업' },
   { href: '/feeds', label: 'IT피드' },
   { href: '/about', label: '회사소개' },

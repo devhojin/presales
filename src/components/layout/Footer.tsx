@@ -63,7 +63,6 @@ export function Footer() {
                   { href: '/store', label: '문서 스토어' },
                   { href: '/consulting', label: '전문가 컨설팅' },
                   { href: '/store?price=free', label: '무료 가이드' },
-                  { href: '/blog', label: '블로그' },
                 ].map((link) => (
                   <li key={link.href}>
                     <Link href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 inline-flex items-center gap-1 group">
