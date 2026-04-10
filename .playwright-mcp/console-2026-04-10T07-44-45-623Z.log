@@ -1,0 +1,3 @@
+[    1909ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://presales-zeta.vercel.app/auth/login:0
+[   91139ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://vswkrbemigyclgjrpgqt.supabase.co/storage/v1/object/public/product-files/products/47/file_001.pptx:0
+[  199294ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://vswkrbemigyclgjrpgqt.supabase.co/storage/v1/object/public/product-files/products/47/file_001.pptx:0
