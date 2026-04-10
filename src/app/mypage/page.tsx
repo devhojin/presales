@@ -9,7 +9,7 @@ import {
   FileText, Download, User, Loader2, Mail, Phone, Building, Pencil, Save, X,
   Lock, Eye, EyeOff, ChevronDown, ShoppingBag, AlertTriangle, Clock, Bookmark,
   ExternalLink, Megaphone, Rss, Package, ArrowRight, Store, BookOpen,
-  ArrowLeft, BookmarkCheck, MessageCircle, CreditCard,
+  ArrowLeft, BookmarkCheck, MessageCircle, CreditCard, HelpCircle,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { validatePassword } from '@/lib/password-policy'
@@ -118,6 +118,7 @@ export default function MyConsolePage() {
   const [annBookmarks, setAnnBookmarks] = useState<BookmarkAnn[]>([])
   const [feedBookmarks, setFeedBookmarks] = useState<BookmarkFeed[]>([])
   const [bookmarkModal, setBookmarkModal] = useState<BookmarkModalItem | null>(null)
+  const [bookmarkTab, setBookmarkTab] = useState<'announcement' | 'feed'>('announcement')
 
   // KPI counts
   const [kpi, setKpi] = useState({ orders: 0, bookmarks: 0, downloads: 0, chats: 0 })
@@ -440,8 +441,8 @@ export default function MyConsolePage() {
         {[
           { label: '내 주문', value: kpi.orders, icon: Package, color: 'text-primary bg-primary/10', href: '#orders' },
           { label: '다운로드', value: kpi.downloads, icon: Download, color: 'text-orange-600 bg-orange-50', href: '#orders' },
-          { label: '즐겨찾기', value: kpi.bookmarks, icon: Bookmark, color: 'text-emerald-600 bg-emerald-50', href: '#bookmarks' },
-          { label: '나의 채팅', value: kpi.chats, icon: MessageCircle, color: 'text-teal-600 bg-teal-50', href: '#chat' },
+          { label: '공고 즐겨찾기', value: annBookmarks.length, icon: Megaphone, color: 'text-blue-600 bg-blue-50', href: '#bookmarks' },
+          { label: '피드 즐겨찾기', value: feedBookmarks.length, icon: Rss, color: 'text-emerald-600 bg-emerald-50', href: '#bookmarks' },
         ].map(card => (
           <Link key={card.label} href={card.href}
             className="group bg-card border border-border/50 rounded-2xl p-5 hover:shadow-md transition-all cursor-pointer">
@@ -563,20 +564,6 @@ export default function MyConsolePage() {
             )}
           </div>
 
-          {/* Chat Section */}
-          <div id="chat" className="bg-card border border-border/50 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2"><MessageCircle className="w-4 h-4 text-teal-600" /><h2 className="font-semibold">나의 채팅</h2></div>
-            </div>
-            <p className="text-sm text-muted-foreground mb-3">우측 하단의 채팅 버튼을 통해 상담을 시작할 수 있습니다.</p>
-            <button type="button" onClick={() => {
-              const event = new CustomEvent('open-chat-widget')
-              window.dispatchEvent(event)
-            }} className="px-4 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition-colors flex items-center gap-2 cursor-pointer">
-              <MessageCircle className="w-4 h-4" /> 채팅 시작하기
-            </button>
-          </div>
-
         </div>
 
         {/* RIGHT Column (1/3) - Sticky */}
@@ -588,7 +575,7 @@ export default function MyConsolePage() {
             <div className="grid grid-cols-2 gap-2">
               {[
                 { label: '스토어', href: '/store', icon: Store, color: 'from-primary to-emerald-600' },
-                { label: '나의 채팅', href: '#chat', icon: MessageCircle, color: 'from-teal-500 to-teal-600' },
+                { label: '컨설팅', href: '/consulting', icon: HelpCircle, color: 'from-violet-500 to-violet-600' },
                 { label: '공고사업', href: '/announcements', icon: Megaphone, color: 'from-blue-500 to-blue-600' },
                 { label: 'IT피드', href: '/feeds', icon: Rss, color: 'from-orange-400 to-orange-500' },
               ].map(link => (
@@ -600,50 +587,94 @@ export default function MyConsolePage() {
                 </Link>
               ))}
             </div>
+            {/* Chat Open Button */}
+            <button
+              type="button"
+              onClick={() => {
+                const event = new CustomEvent('open-chat-widget')
+                window.dispatchEvent(event)
+              }}
+              className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 text-white text-sm font-medium hover:shadow-md transition-all cursor-pointer"
+            >
+              <MessageCircle className="w-4 h-4" /> 나의 채팅 열기
+            </button>
           </div>
 
           {/* Bookmarks Widget */}
           <div id="bookmarks" className="bg-card border border-border/50 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Bookmark className="w-4 h-4 text-primary" />
-                <h3 className="text-sm font-semibold">즐겨찾기</h3>
-                <span className="text-xs text-muted-foreground">{annBookmarks.length + feedBookmarks.length}건</span>
-              </div>
+            <div className="flex items-center gap-2 mb-3">
+              <Bookmark className="w-4 h-4 text-primary" />
+              <h3 className="text-sm font-semibold">즐겨찾기</h3>
             </div>
 
-            {annBookmarks.length === 0 && feedBookmarks.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Bookmark className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                <p className="text-xs">즐겨찾기한 항목이 없습니다</p>
-              </div>
+            {/* Tabs */}
+            <div className="flex gap-1 mb-3 border-b border-border/50">
+              <button
+                type="button"
+                onClick={() => setBookmarkTab('announcement')}
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition cursor-pointer ${
+                  bookmarkTab === 'announcement' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Megaphone className="w-3.5 h-3.5" /> 공고 <span className="text-[10px] text-muted-foreground">{annBookmarks.length}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setBookmarkTab('feed')}
+                className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 transition cursor-pointer ${
+                  bookmarkTab === 'feed' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <Rss className="w-3.5 h-3.5" /> 피드 <span className="text-[10px] text-muted-foreground">{feedBookmarks.length}</span>
+              </button>
+            </div>
+
+            {bookmarkTab === 'announcement' ? (
+              annBookmarks.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Megaphone className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-xs">즐겨찾기한 공고가 없습니다</p>
+                </div>
+              ) : (
+                <div className="space-y-1 max-h-[400px] overflow-y-auto">
+                  {annBookmarks.map(ann => {
+                    const expired = ann.end_date ? new Date(ann.end_date) < new Date() : false
+                    return (
+                      <button type="button" key={`a-${ann.id}`} onClick={() => setBookmarkModal({ type: 'announcement', data: ann })} className="w-full flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors group cursor-pointer text-left">
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${expired || ann.status === 'closed' ? 'bg-zinc-100 text-zinc-500' : 'bg-emerald-50 text-emerald-700'}`}>
+                          {expired || ann.status === 'closed' ? '마감' : '공고'}
+                        </span>
+                        <span className="text-xs text-foreground truncate flex-1 group-hover:text-primary transition-colors">{ann.title}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )
             ) : (
-              <div className="space-y-1 max-h-[400px] overflow-y-auto">
-                {/* Announcement bookmarks */}
-                {annBookmarks.map(ann => {
-                  const expired = ann.end_date ? new Date(ann.end_date) < new Date() : false
-                  return (
-                    <button type="button" key={`a-${ann.id}`} onClick={() => setBookmarkModal({ type: 'announcement', data: ann })} className="w-full flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors group cursor-pointer text-left">
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${expired || ann.status === 'closed' ? 'bg-zinc-100 text-zinc-500' : 'bg-emerald-50 text-emerald-700'}`}>
-                        {expired || ann.status === 'closed' ? '마감' : '공고'}
-                      </span>
-                      <span className="text-xs text-foreground truncate flex-1 group-hover:text-primary transition-colors">{ann.title}</span>
+              feedBookmarks.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Rss className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-xs">즐겨찾기한 피드가 없습니다</p>
+                </div>
+              ) : (
+                <div className="space-y-1 max-h-[400px] overflow-y-auto">
+                  {feedBookmarks.map(feed => (
+                    <button type="button" key={`f-${feed.id}`} onClick={() => setBookmarkModal({ type: 'feed', data: feed })} className="w-full flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors group cursor-pointer text-left">
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${catColor(feed.category)}`}>{catLabel(feed.category)}</span>
+                      <span className="text-xs text-foreground truncate flex-1 group-hover:text-primary transition-colors">{feed.title}</span>
                     </button>
-                  )
-                })}
-                {/* Feed bookmarks */}
-                {feedBookmarks.map(feed => (
-                  <button type="button" key={`f-${feed.id}`} onClick={() => setBookmarkModal({ type: 'feed', data: feed })} className="w-full flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors group cursor-pointer text-left">
-                    <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${catColor(feed.category)}`}>{catLabel(feed.category)}</span>
-                    <span className="text-xs text-foreground truncate flex-1 group-hover:text-primary transition-colors">{feed.title}</span>
-                  </button>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )
             )}
 
-            <div className="flex gap-2 mt-3 pt-3 border-t border-border/50">
-              <Link href="/announcements?tab=bookmarks" className="text-xs text-primary hover:underline flex-1">공고 전체보기</Link>
-              <Link href="/feeds?tab=bookmarks" className="text-xs text-primary hover:underline flex-1 text-right">피드 전체보기</Link>
+            <div className="mt-3 pt-3 border-t border-border/50">
+              <Link
+                href={bookmarkTab === 'announcement' ? '/announcements?tab=bookmarks' : '/feeds?tab=bookmarks'}
+                className="text-xs text-primary hover:underline"
+              >
+                {bookmarkTab === 'announcement' ? '공고' : '피드'} 전체보기 →
+              </Link>
             </div>
           </div>
         </div>
