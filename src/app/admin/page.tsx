@@ -318,7 +318,7 @@ function RevenueChart({ data }: { data: DailyRevenue[]; period: Period }) {
                       ? isHovered ? 'bg-primary' : 'bg-primary/70'
                       : 'bg-border/30'
                   }`}
-                  style={{ height: `${Math.max(pct, d.revenue > 0 ? 2 : 0)}%`, minHeight: d.revenue > 0 ? 4 : 0 }}
+                  style={{ height: `${Math.max(pct, d.revenue > 0 ? 15 : 0)}%`, minHeight: d.revenue > 0 ? 20 : 0 }}
                 />
 
                 {/* Hover tooltip */}
