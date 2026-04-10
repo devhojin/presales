@@ -144,7 +144,7 @@ export default function Home() {
         supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_published', true),
         supabase
           .from('reviews')
-          .select('comment, rating, profiles(name)')
+          .select('content, rating, profiles(name)')
           .gte('rating', 4)
           .order('created_at', { ascending: false })
           .limit(3),
@@ -190,7 +190,7 @@ export default function Home() {
           const profiles = r.profiles as { name?: string } | null
           const name = profiles?.name || '익명'
           return {
-            text: (r.comment as string) || '',
+            text: (r.content as string) || '',
             author: name.length > 1 ? name[0] + 'OO' : name,
             role: '고객',
             rating: r.rating as number,
