@@ -15,6 +15,7 @@ import {
   FileText,
   Calendar,
   Eye as EyeIcon,
+  ExternalLink,
 } from 'lucide-react'
 
 interface BlogPost {
@@ -257,6 +258,15 @@ export default function AdminBlogPage() {
                   </td>
                   <td className="px-5 py-3.5 text-center">
                     <div className="flex items-center justify-center gap-1.5">
+                      <a
+                        href={`/blog/${post.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
+                        title="프론트 보기"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
                       <Link
                         href={`/admin/blog/${post.id}`}
                         className="p-1.5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
