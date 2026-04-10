@@ -832,6 +832,11 @@ export default function AdminDashboard() {
   const prevLabel =
     period === '전체' ? '' : `이전 ${period}`
 
+  const todayAnnCount = fetchStatus.annLogs.reduce((s, l) => s + l.count, 0)
+  const todayFeedCount = fetchStatus.feedLogs.reduce((s, l) => s + l.count, 0)
+  const todayAnnTime = fetchStatus.annLogs.length > 0 ? new Date(fetchStatus.annLogs[0].time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'
+  const todayFeedTime = fetchStatus.feedLogs.length > 0 ? new Date(fetchStatus.feedLogs[0].time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '-'
+
   const kpiRow1 = [
     {
       icon: Package,
@@ -841,6 +846,7 @@ export default function AdminDashboard() {
       href: '/admin/products',
       emphasis: false,
       change: null,
+      subtext: null,
     },
     {
       icon: ShoppingCart,
@@ -850,6 +856,7 @@ export default function AdminDashboard() {
       href: '/admin/orders',
       emphasis: false,
       change: kpiChange.orders,
+      subtext: null,
     },
     {
       icon: CreditCard,
@@ -859,6 +866,7 @@ export default function AdminDashboard() {
       href: '/admin/orders',
       emphasis: true,
       change: kpiChange.paidOrders,
+      subtext: null,
     },
     {
       icon: Users,
@@ -868,6 +876,17 @@ export default function AdminDashboard() {
       href: '/admin/members',
       emphasis: false,
       change: kpiChange.members,
+      subtext: null,
+    },
+    {
+      icon: Megaphone,
+      label: '오늘 배포 공고',
+      value: `${todayAnnCount}건`,
+      color: 'bg-blue-600',
+      href: '/admin/announcements',
+      emphasis: false,
+      change: null,
+      subtext: todayAnnCount > 0 ? `${todayAnnTime} 수집` : null,
     },
   ]
 
@@ -880,6 +899,7 @@ export default function AdminDashboard() {
       href: '/admin/orders',
       emphasis: true,
       change: kpiChange.revenue,
+      subtext: null,
     },
     {
       icon: Download,
@@ -889,6 +909,7 @@ export default function AdminDashboard() {
       href: '/admin/downloads',
       emphasis: false,
       change: kpiChange.downloads,
+      subtext: null,
     },
     {
       icon: MessageSquare,
@@ -898,6 +919,7 @@ export default function AdminDashboard() {
       href: '/admin/consulting',
       emphasis: false,
       change: kpiChange.consulting,
+      subtext: null,
     },
     {
       icon: Star,
@@ -907,6 +929,17 @@ export default function AdminDashboard() {
       href: '/admin/reviews',
       emphasis: false,
       change: kpiChange.reviews,
+      subtext: null,
+    },
+    {
+      icon: Rss,
+      label: '오늘 배포 피드',
+      value: `${todayFeedCount}건`,
+      color: 'bg-orange-500',
+      href: '/admin/feeds',
+      emphasis: false,
+      change: null,
+      subtext: todayFeedCount > 0 ? `${todayFeedTime} 수집` : null,
     },
   ]
 
@@ -1038,63 +1071,41 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards — 5 columns x 2 rows */}
       {loading ? (
         <KPISkeleton />
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {kpiRow1.map((card) => (
-              <Link
-                key={card.label}
-                href={card.href}
-                className={`rounded-2xl p-6 border transition-all group cursor-pointer ${
-                  card.emphasis
-                    ? 'bg-card border-primary/30 ring-1 ring-primary/10'
-                    : 'bg-card border-border/50 hover:border-border'
-                }`}
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-10 h-10 rounded-xl ${card.color} flex items-center justify-center`}>
-                    <card.icon className="w-5 h-5 text-white" />
+          {[kpiRow1, kpiRow2].map((row, rowIdx) => (
+            <div key={rowIdx} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+              {row.map((card) => (
+                <Link
+                  key={card.label}
+                  href={card.href}
+                  className={`rounded-2xl p-5 border transition-all group cursor-pointer ${
+                    card.emphasis
+                      ? 'bg-card border-primary/30 ring-1 ring-primary/10'
+                      : 'bg-card border-border/50 hover:border-border'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className={`w-9 h-9 rounded-xl ${card.color} flex items-center justify-center`}>
+                      <card.icon className="w-4.5 h-4.5 text-white" />
+                    </div>
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-tight">{card.label}</span>
                   </div>
-                  <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{card.label}</span>
-                </div>
-                <p className="text-2xl font-bold font-mono text-foreground">{card.value}</p>
-                {card.change !== undefined ? (
-                  <ChangeLabel pct={card.change} label={prevLabel} />
-                ) : (
-                  <p className="text-xs text-muted-foreground mt-2">{period === '전체' ? '전체 기간' : `최근 ${period}`}</p>
-                )}
-              </Link>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {kpiRow2.map((card) => (
-              <Link
-                key={card.label}
-                href={card.href}
-                className={`rounded-2xl p-6 border transition-all group cursor-pointer ${
-                  card.emphasis
-                    ? 'bg-card border-primary/30 ring-1 ring-primary/10'
-                    : 'bg-card border-border/50 hover:border-border'
-                }`}
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`w-10 h-10 rounded-xl ${card.color} flex items-center justify-center`}>
-                    <card.icon className="w-5 h-5 text-white" />
-                  </div>
-                  <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{card.label}</span>
-                </div>
-                <p className="text-2xl font-bold font-mono text-foreground">{card.value}</p>
-                {card.change !== undefined ? (
-                  <ChangeLabel pct={card.change} label={prevLabel} />
-                ) : (
-                  <p className="text-xs text-muted-foreground mt-2">{period === '전체' ? '전체 기간' : `최근 ${period}`}</p>
-                )}
-              </Link>
-            ))}
-          </div>
+                  <p className="text-xl font-bold font-mono text-foreground">{card.value}</p>
+                  {card.subtext ? (
+                    <p className="text-[10px] text-muted-foreground mt-1.5">{card.subtext}</p>
+                  ) : card.change !== undefined && card.change !== null ? (
+                    <ChangeLabel pct={card.change} label={prevLabel} />
+                  ) : (
+                    <p className="text-[10px] text-muted-foreground mt-1.5">{period === '전체' ? '전체 기간' : `최근 ${period}`}</p>
+                  )}
+                </Link>
+              ))}
+            </div>
+          ))}
         </div>
       )}
 
