@@ -207,6 +207,7 @@ export default function AdminChatPage() {
   const [showMemberModal, setShowMemberModal] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -271,7 +272,11 @@ export default function AdminChatPage() {
   }, [selectedRoom])
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    // 컨테이너 내부에서만 스크롤 (페이지 전체 스크롤 방지)
+    const container = messagesContainerRef.current
+    if (container) {
+      container.scrollTop = container.scrollHeight
+    }
   }, [messages])
 
   // 전송
@@ -627,7 +632,7 @@ export default function AdminChatPage() {
               </div>
 
               {/* 메시지 영역 */}
-              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1">
+              <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-1">
                 {messages.length === 0 ? (
                   <div className="flex items-center justify-center h-full text-sm text-muted-foreground">대화 내용이 없습니다</div>
                 ) : (
