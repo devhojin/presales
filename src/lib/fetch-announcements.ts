@@ -577,6 +577,273 @@ async function fetchNipaAnnouncements(onProgress?: ProgressCallback): Promise<Fe
 }
 
 // ===========================
+// Fetch 과학기술정보통신부 사업공고 (data.go.kr)
+// ===========================
+
+async function fetchMsitAnnouncements(onProgress?: ProgressCallback): Promise<FetchResult> {
+  const result: FetchResult = { source: "과기부 사업공고", fetched: 0, inserted: 0, skipped: 0, blocked: 0, errors: [] }
+  const apiKey = process.env.KSTARTUP_API_KEY // 공공데이터포털 동일 키 사용
+
+  if (!apiKey) { result.errors.push("공공데이터 API 키 미설정"); return result }
+
+  const supabase = getServiceClient()
+  const blockedSet = new Set<string>()
+  const { data: blockedRows } = await supabase.from("blocked_announcements").select("external_id").limit(5000)
+  if (blockedRows) for (const row of blockedRows) blockedSet.add(row.external_id)
+
+  onProgress?.({ source: result.source, status: "수집 시작...", fetched: 0, inserted: 0, skipped: 0 })
+
+  try {
+    for (let page = 1; page <= 2; page++) {
+      const url = `http://apis.data.go.kr/1721000/msitannouncementinfo/businessAnnouncMentList?serviceKey=${encodeURIComponent(apiKey)}&numOfRows=50&pageNo=${page}&type=json`
+      const res = await fetch(url, { cache: "no-store" })
+      if (!res.ok) { result.errors.push(`과기부 API HTTP ${res.status}`); break }
+
+      const json = await res.json()
+      const items = json?.response?.body?.items || json?.items || []
+      if (!Array.isArray(items) || items.length === 0) break
+
+      result.fetched += items.length
+
+      for (const item of items) {
+        const title = (item.title || item.announcementTitle || "").trim()
+        if (!title) continue
+
+        const externalId = `msit-${item.announcementId || item.id || title.substring(0, 50)}`
+        if (blockedSet.has(externalId)) { result.blocked++; continue }
+
+        const dbRow = {
+          title,
+          organization: "과학기술정보통신부",
+          type: "public",
+          budget: "",
+          start_date: item.startDate?.slice(0, 10) || null,
+          end_date: item.endDate?.slice(0, 10) || null,
+          application_method: "과기부 홈페이지",
+          target: item.target || "",
+          description: (item.content || item.description || "").replace(/<[^>]*>/g, " ").trim().substring(0, 2000),
+          eligibility: "",
+          department: "과학기술정보통신부",
+          contact: "",
+          source_url: item.url || item.link || `https://www.msit.go.kr`,
+          field: "R&D/과학기술",
+          status: item.endDate && new Date(item.endDate) < new Date() ? "closed" : "active",
+          source: "과기부 사업공고",
+          external_id: externalId,
+          matching_keywords: ["R&D", "과학기술"],
+          support_areas: ["R&D", "과학기술"],
+          regions: ["전국"],
+          target_types: ["중소기업"],
+          age_ranges: ["제한없음"],
+          business_years: ["제한없음"],
+          governing_body: "과학기술정보통신부",
+        }
+
+        const { data: exist } = await supabase.from("announcements").select("id").eq("external_id", externalId).limit(1)
+        if (exist && exist.length > 0) { result.skipped++; continue }
+
+        const { error } = await supabase.from("announcements").insert({ ...dbRow, is_published: true })
+        if (error) result.errors.push(`과기부 INSERT: ${error.message}`)
+        else result.inserted++
+      }
+
+      onProgress?.({ source: result.source, status: `페이지 ${page} 완료`, fetched: result.fetched, inserted: result.inserted, skipped: result.skipped })
+    }
+  } catch (err) {
+    result.errors.push(`과기부 오류: ${err instanceof Error ? err.message : String(err)}`)
+  }
+
+  onProgress?.({ source: result.source, status: "완료", fetched: result.fetched, inserted: result.inserted, skipped: result.skipped })
+  return result
+}
+
+// ===========================
+// Fetch 씽굿 (thinkcontest.com) — HTML Scraping
+// ===========================
+
+async function fetchThinkcontestAnnouncements(onProgress?: ProgressCallback): Promise<FetchResult> {
+  const result: FetchResult = { source: "씽굿 공모전", fetched: 0, inserted: 0, skipped: 0, blocked: 0, errors: [] }
+  const supabase = getServiceClient()
+
+  const blockedSet = new Set<string>()
+  const { data: blockedRows } = await supabase.from("blocked_announcements").select("external_id").limit(5000)
+  if (blockedRows) for (const row of blockedRows) blockedSet.add(row.external_id)
+
+  onProgress?.({ source: result.source, status: "수집 시작...", fetched: 0, inserted: 0, skipped: 0 })
+
+  try {
+    for (let page = 1; page <= 2; page++) {
+      const url = `https://www.thinkcontest.com/thinkgood/user/contest/list.do?article.offset=${(page - 1) * 20}`
+      const res = await fetch(url, { cache: "no-store", headers: { "User-Agent": "Mozilla/5.0 PRESALES Bot" } })
+      if (!res.ok) { result.errors.push(`씽굿 HTTP ${res.status}`); break }
+
+      const html = await res.text()
+
+      // Extract contest items from table rows
+      const trRegex = /<tr[^>]*class="(ing|soon|yet)"[^>]*>[\s\S]*?<\/tr>/gi
+      const rows = html.match(trRegex) || []
+
+      for (const row of rows) {
+        // Title & link
+        const linkMatch = row.match(/href="([^"]*contest[^"]*ix=(\d+)[^"]*)"/)
+        const titleMatch = row.match(/class="tit"[^>]*>([^<]+)</)
+        if (!titleMatch) continue
+
+        const title = titleMatch[1].trim()
+        const contestId = linkMatch ? linkMatch[2] : title.substring(0, 30)
+        const externalId = `thinkcontest-${contestId}`
+        const detailUrl = linkMatch ? `https://www.thinkcontest.com${linkMatch[1]}` : `https://www.thinkcontest.com/thinkgood/user/contest/list.do`
+
+        result.fetched++
+        if (blockedSet.has(externalId)) { result.blocked++; continue }
+
+        // Organization
+        const orgMatch = row.match(/주최[^<]*<[^>]*>([^<]+)</) || row.match(/<td[^>]*>([^<]{2,30})<\/td>/)
+        const org = orgMatch ? orgMatch[1].trim() : "씽굿"
+
+        // D-day
+        const ddayMatch = row.match(/D-(\d+)/)
+        const status = ddayMatch ? "active" : "active"
+
+        const dbRow = {
+          title,
+          organization: org,
+          type: "public",
+          budget: "",
+          start_date: null,
+          end_date: null,
+          application_method: "씽굿 홈페이지",
+          target: "",
+          description: "",
+          eligibility: "",
+          department: org,
+          contact: "",
+          source_url: detailUrl,
+          field: "공모전",
+          status,
+          source: "씽굿 공모전",
+          external_id: externalId,
+          matching_keywords: ["공모전"],
+          support_areas: ["공모전"],
+          regions: ["전국"],
+          target_types: ["일반"],
+          age_ranges: ["제한없음"],
+          business_years: ["제한없음"],
+          governing_body: org,
+        }
+
+        const { data: exist } = await supabase.from("announcements").select("id").eq("external_id", externalId).limit(1)
+        if (exist && exist.length > 0) { result.skipped++; continue }
+
+        const { error } = await supabase.from("announcements").insert({ ...dbRow, is_published: true })
+        if (error) result.errors.push(`씽굿 INSERT: ${error.message}`)
+        else result.inserted++
+      }
+
+      onProgress?.({ source: result.source, status: `페이지 ${page} 완료`, fetched: result.fetched, inserted: result.inserted, skipped: result.skipped })
+    }
+  } catch (err) {
+    result.errors.push(`씽굿 오류: ${err instanceof Error ? err.message : String(err)}`)
+  }
+
+  onProgress?.({ source: result.source, status: "완료", fetched: result.fetched, inserted: result.inserted, skipped: result.skipped })
+  return result
+}
+
+// ===========================
+// Fetch 위비티 (wevity.com) — HTML Scraping
+// ===========================
+
+async function fetchWevityAnnouncements(onProgress?: ProgressCallback): Promise<FetchResult> {
+  const result: FetchResult = { source: "위비티 공모전", fetched: 0, inserted: 0, skipped: 0, blocked: 0, errors: [] }
+  const supabase = getServiceClient()
+
+  const blockedSet = new Set<string>()
+  const { data: blockedRows } = await supabase.from("blocked_announcements").select("external_id").limit(5000)
+  if (blockedRows) for (const row of blockedRows) blockedSet.add(row.external_id)
+
+  onProgress?.({ source: result.source, status: "수집 시작...", fetched: 0, inserted: 0, skipped: 0 })
+
+  try {
+    for (let page = 1; page <= 2; page++) {
+      const url = `https://www.wevity.com/index_university.php?c=find&s=_university&gub=1&cidx=22&gbn=list&gp=${page}`
+      const res = await fetch(url, { cache: "no-store", headers: { "User-Agent": "Mozilla/5.0 PRESALES Bot" } })
+      if (!res.ok) { result.errors.push(`위비티 HTTP ${res.status}`); break }
+
+      const html = await res.text()
+
+      // Extract contest links with ix= parameter
+      const itemRegex = /href="[^"]*ix=(\d+)[^"]*"[^>]*>[\s\S]*?<\/a>/gi
+      const matches = [...html.matchAll(/href="([^"]*ix=(\d+)[^"]*)"[^>]*>([\s\S]*?)<\/a>/gi)]
+
+      const seen = new Set<string>()
+      for (const match of matches) {
+        const contestId = match[2]
+        if (seen.has(contestId)) continue
+        seen.add(contestId)
+
+        // Clean title
+        let title = match[3].replace(/<[^>]*>/g, '').trim()
+        if (!title || title.length < 5 || title.length > 200) continue
+        // Skip navigation/UI links
+        if (title.includes('이전') || title.includes('다음') || title.includes('페이지')) continue
+
+        const externalId = `wevity-${contestId}`
+        const detailUrl = `https://www.wevity.com/index_university.php?c=find&s=_university&gbn=viewok&ix=${contestId}`
+
+        result.fetched++
+        if (blockedSet.has(externalId)) { result.blocked++; continue }
+
+        // D-day from nearby text
+        const ddayPattern = new RegExp(`ix=${contestId}[\\s\\S]{0,500}?D-(\\d+)`)
+        const ddayMatch = html.match(ddayPattern)
+
+        const dbRow = {
+          title,
+          organization: "위비티",
+          type: "public",
+          budget: "",
+          start_date: null,
+          end_date: null,
+          application_method: "위비티 홈페이지",
+          target: "",
+          description: "",
+          eligibility: "",
+          department: "",
+          contact: "",
+          source_url: detailUrl,
+          field: "공모전",
+          status: ddayMatch ? "active" : "active",
+          source: "위비티 공모전",
+          external_id: externalId,
+          matching_keywords: ["공모전"],
+          support_areas: ["공모전"],
+          regions: ["전국"],
+          target_types: ["일반"],
+          age_ranges: ["제한없음"],
+          business_years: ["제한없음"],
+          governing_body: "",
+        }
+
+        const { data: exist } = await supabase.from("announcements").select("id").eq("external_id", externalId).limit(1)
+        if (exist && exist.length > 0) { result.skipped++; continue }
+
+        const { error } = await supabase.from("announcements").insert({ ...dbRow, is_published: true })
+        if (error) result.errors.push(`위비티 INSERT: ${error.message}`)
+        else result.inserted++
+      }
+
+      onProgress?.({ source: result.source, status: `페이지 ${page} 완료`, fetched: result.fetched, inserted: result.inserted, skipped: result.skipped })
+    }
+  } catch (err) {
+    result.errors.push(`위비티 오류: ${err instanceof Error ? err.message : String(err)}`)
+  }
+
+  onProgress?.({ source: result.source, status: "완료", fetched: result.fetched, inserted: result.inserted, skipped: result.skipped })
+  return result
+}
+
+// ===========================
 // Main Export
 // ===========================
 
@@ -596,6 +863,18 @@ export async function fetchAllAnnouncements(onProgress?: ProgressCallback): Prom
   // 3. NIPA (사업공고 + 입찰공고)
   const nipaResults = await fetchNipaAnnouncements(onProgress)
   results.push(...nipaResults)
+
+  // 4. 과기부 사업공고
+  const msit = await fetchMsitAnnouncements(onProgress)
+  results.push(msit)
+
+  // 5. 씽굿 공모전
+  const thinkcontest = await fetchThinkcontestAnnouncements(onProgress)
+  results.push(thinkcontest)
+
+  // 6. 위비티 공모전
+  const wevity = await fetchWevityAnnouncements(onProgress)
+  results.push(wevity)
 
   const totalInserted = results.reduce((s, r) => s + r.inserted, 0)
   const totalSkipped = results.reduce((s, r) => s + r.skipped, 0)

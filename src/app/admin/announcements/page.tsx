@@ -110,7 +110,7 @@ export default function AdminAnnouncementsPage() {
 
   useEffect(() => { fetchAnnouncements() }, [fetchAnnouncements])
 
-  const FETCH_SOURCES = ['K-Startup', '중소벤처24', 'NIPA 사업공고', 'NIPA 입찰공고']
+  const FETCH_SOURCES = ['K-Startup', '중소벤처24', 'NIPA 사업공고', 'NIPA 입찰공고', '과기부 사업공고', '씽굿 공모전', '위비티 공모전']
 
   const handleFetchNow = () => {
     setFetchingNow(true)
