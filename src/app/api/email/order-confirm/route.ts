@@ -173,12 +173,12 @@ export async function POST(request: NextRequest) {
 
       <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:16px;margin-bottom:24px;">
         <p style="margin:0;font-size:13px;color:#1e40af;">
-          구매하신 문서는 <strong>마이페이지 &gt; 주문내역</strong>에서 다운로드하실 수 있습니다.
+          구매하신 문서는 <strong>나의콘솔 &gt; 주문내역</strong>에서 다운로드하실 수 있습니다.
         </p>
       </div>
 
       <a href="https://presales.co.kr/mypage" style="display:inline-block;background:#1e40af;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;">
-        마이페이지 바로가기
+        나의콘솔 바로가기
       </a>
     `
 

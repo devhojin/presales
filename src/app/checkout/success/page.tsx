@@ -100,14 +100,14 @@ export default function CheckoutSuccessPage() {
       <h1 className="text-2xl font-bold mb-2">결제 완료!</h1>
       <p className="text-muted-foreground mb-8">
         주문이 성공적으로 처리되었습니다.<br />
-        마이페이지에서 문서를 다운로드하세요.
+        나의콘솔에서 문서를 다운로드하세요.
       </p>
       <div className="flex gap-3 justify-center">
         <Link
           href="/mypage"
           className="h-11 px-6 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors inline-flex items-center"
         >
-          마이페이지로 이동
+          나의콘솔로 이동
         </Link>
         <Link
           href="/store"
