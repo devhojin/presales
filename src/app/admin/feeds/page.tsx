@@ -155,6 +155,12 @@ export default function AdminFeedsPage() {
     if (!error) { showToast(`${ids.length}건 공개`); setSelectedIds(new Set()); fetchFeeds() }
   }
 
+  const handleBulkUnpublish = async () => {
+    const ids = Array.from(selectedIds)
+    const { error } = await supabase.from('community_posts').update({ is_published: false }).in('id', ids)
+    if (!error) { showToast(`${ids.length}건 비공개`); setSelectedIds(new Set()); fetchFeeds() }
+  }
+
   const handlePublishAll = async () => {
     const { error } = await supabase.from('community_posts').update({ is_published: true }).eq('is_published', false)
     if (!error) { showToast('전체 공개 완료'); setSelectedIds(new Set()); fetchFeeds() }
@@ -251,6 +257,7 @@ export default function AdminFeedsPage() {
         <div className="flex items-center gap-2 flex-wrap bg-secondary p-3 rounded-xl">
           <span className="text-xs font-medium">{selectedIds.size}건 선택</span>
           <button onClick={handleBulkPublish} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-primary text-primary-foreground flex items-center gap-1 cursor-pointer"><Eye className="w-3.5 h-3.5" />선택 공개</button>
+          <button onClick={handleBulkUnpublish} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-zinc-500 text-white flex items-center gap-1 cursor-pointer"><EyeOff className="w-3.5 h-3.5" />선택 비공개</button>
           <button onClick={handlePublishAll} className="px-3 py-1.5 text-xs font-medium rounded-lg border border-primary text-primary cursor-pointer">전체 공개</button>
           <button onClick={() => setModalType('delete')} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-destructive text-primary-foreground flex items-center gap-1 cursor-pointer"><Trash2 className="w-3.5 h-3.5" />삭제</button>
           <button onClick={() => setModalType('permanentDelete')} className="px-3 py-1.5 text-xs font-medium rounded-lg bg-destructive/80 text-primary-foreground flex items-center gap-1 cursor-pointer"><Trash2 className="w-3.5 h-3.5" />완전삭제</button>

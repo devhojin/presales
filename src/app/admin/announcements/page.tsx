@@ -23,7 +23,7 @@ const TYPE_LABELS: Record<string, string> = { government: '정부지원', privat
 const TYPE_COLORS: Record<string, string> = { government: 'bg-primary/10 text-primary', private: 'bg-blue-100 text-blue-700', poc: 'bg-purple-100 text-purple-700' }
 
 function ConfirmModal({ type, count, onConfirm, onCancel }: {
-  type: 'delete' | 'permanent-delete' | 'publish' | null; count: number; onConfirm: () => void; onCancel: () => void
+  type: 'delete' | 'permanent-delete' | 'publish' | 'unpublish' | null; count: number; onConfirm: () => void; onCancel: () => void
 }) {
   useEffect(() => {
     if (!type) return
@@ -34,18 +34,21 @@ function ConfirmModal({ type, count, onConfirm, onCancel }: {
   if (!type) return null
   const isPermanent = type === 'permanent-delete'
   const isPublish = type === 'publish'
+  const isUnpublish = type === 'unpublish'
+  const label = isPermanent ? '완전삭제' : isPublish ? '공개' : isUnpublish ? '비공개' : '삭제'
+  const btnColor = isPermanent ? 'bg-red-600' : isPublish ? 'bg-primary' : isUnpublish ? 'bg-zinc-600' : 'bg-orange-500'
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onCancel}>
       <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" onClick={e => e.stopPropagation()}>
-        <h3 className="text-lg font-bold mb-3">{isPermanent ? '완전삭제 확인' : isPublish ? '공개 확인' : '삭제 확인'}</h3>
+        <h3 className="text-lg font-bold mb-3">{label} 확인</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          선택한 <strong>{count}건</strong>을 {isPermanent ? '완전삭제' : isPublish ? '공개' : '삭제'}하시겠습니까?
+          선택한 <strong>{count}건</strong>을 {label} 처리하시겠습니까?
           {isPermanent && <span className="block text-red-600 mt-1">완전삭제된 공고는 복구할 수 없습니다.</span>}
         </p>
         <div className="flex justify-end gap-2">
           <button onClick={onCancel} className="px-4 py-2 text-sm bg-muted rounded-xl cursor-pointer">취소</button>
-          <button onClick={onConfirm} className={`px-4 py-2 text-sm text-white rounded-xl cursor-pointer ${isPermanent ? 'bg-red-600' : isPublish ? 'bg-primary' : 'bg-orange-500'}`}>
-            {isPermanent ? '완전삭제' : isPublish ? '공개' : '삭제'}
+          <button onClick={onConfirm} className={`px-4 py-2 text-sm text-white rounded-xl cursor-pointer ${btnColor}`}>
+            {label}
           </button>
         </div>
       </div>
@@ -60,7 +63,7 @@ export default function AdminAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [modalType, setModalType] = useState<'delete' | 'permanent-delete' | 'publish' | null>(null)
+  const [modalType, setModalType] = useState<'delete' | 'permanent-delete' | 'publish' | 'unpublish' | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [pageSize, setPageSize] = useState(50)
   const [currentPage, setCurrentPage] = useState(1)
@@ -154,14 +157,14 @@ export default function AdminAnnouncementsPage() {
     if (res.ok) { showToast(publish ? '공개 전환' : '비공개 전환'); await fetchAnnouncements() }
   }
 
-  const handleBulkAction = async (action: 'publish' | 'delete' | 'permanent-delete') => {
+  const handleBulkAction = async (action: 'publish' | 'unpublish' | 'delete' | 'permanent-delete') => {
     if (selectedIds.size === 0) return
     setDeleting(true)
     try {
       const ids = Array.from(selectedIds)
-      if (action === 'publish') {
-        await fetch('/api/admin/announcements', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, is_published: true }) })
-        showToast(`${ids.length}건 공개`)
+      if (action === 'publish' || action === 'unpublish') {
+        await fetch('/api/admin/announcements', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, is_published: action === 'publish' }) })
+        showToast(`${ids.length}건 ${action === 'publish' ? '공개' : '비공개'}`)
       } else {
         await fetch('/api/admin/announcements', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, permanent: action === 'permanent-delete' }) })
         showToast(`${ids.length}건 ${action === 'permanent-delete' ? '완전삭제' : '삭제'}`)
@@ -249,6 +252,7 @@ export default function AdminAnnouncementsPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs text-muted-foreground">{selectedIds.size}건 선택</span>
           <button onClick={() => setModalType('publish')} className="px-3 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-xl cursor-pointer"><Eye className="w-4 h-4 inline mr-1" />선택 공개</button>
+          <button onClick={() => setModalType('unpublish')} className="px-3 py-2 bg-zinc-500 text-white text-sm font-semibold rounded-xl cursor-pointer"><EyeOff className="w-4 h-4 inline mr-1" />선택 비공개</button>
           <button onClick={() => setModalType('delete')} className="px-3 py-2 bg-orange-500 text-white text-sm font-semibold rounded-xl cursor-pointer"><Trash2 className="w-4 h-4 inline mr-1" />선택 삭제</button>
           <button onClick={() => setModalType('permanent-delete')} className="px-3 py-2 bg-red-600 text-white text-sm font-semibold rounded-xl cursor-pointer"><Trash2 className="w-4 h-4 inline mr-1" />완전삭제</button>
         </div>
@@ -333,7 +337,7 @@ export default function AdminAnnouncementsPage() {
       )}
 
       <ConfirmModal type={modalType} count={selectedIds.size}
-        onConfirm={() => handleBulkAction(modalType === 'publish' ? 'publish' : modalType === 'permanent-delete' ? 'permanent-delete' : 'delete')}
+        onConfirm={() => handleBulkAction(modalType === 'publish' ? 'publish' : modalType === 'unpublish' ? 'unpublish' : modalType === 'permanent-delete' ? 'permanent-delete' : 'delete')}
         onCancel={() => { if (!deleting) setModalType(null) }} />
 
       {/* Fetch Progress Modal */}
