@@ -195,20 +195,26 @@ export default function AdminBlogPage() {
                 <th className="px-5 py-3 text-left text-xs font-semibold text-foreground">작성일</th>
                 <th className="px-5 py-3 text-center text-xs font-semibold text-foreground">조회</th>
                 <th className="px-5 py-3 text-center text-xs font-semibold text-foreground">상태</th>
-                <th className="px-5 py-3 text-center text-xs font-semibold text-foreground">작업</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredPosts.map((post) => (
-                <tr key={post.id} className="hover:bg-muted/50 transition-colors">
+                <tr key={post.id} className="group hover:bg-muted/50 transition-colors">
                   <td className="px-5 py-3.5">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {post.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">
-                        {post.excerpt}
-                      </p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {post.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">
+                          {post.excerpt}
+                        </p>
+                      </div>
+                      <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
+                        <a href={`/blog/${post.slug}`} target="_blank" rel="noopener noreferrer" className="p-1.5 text-muted-foreground hover:text-primary cursor-pointer transition-colors rounded-lg hover:bg-muted" title="프론트 보기"><ExternalLink className="w-3.5 h-3.5" /></a>
+                        <Link href={`/admin/blog/${post.id}`} className="p-1.5 text-muted-foreground hover:text-primary cursor-pointer transition-colors rounded-lg hover:bg-muted" title="수정"><Pencil className="w-3.5 h-3.5" /></Link>
+                        <button type="button" onClick={() => setDeletingPost(post)} className="p-1.5 text-muted-foreground hover:text-red-600 cursor-pointer transition-colors rounded-lg hover:bg-muted" title="삭제"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
                     </div>
                   </td>
                   <td className="px-5 py-3.5">
@@ -255,34 +261,6 @@ export default function AdminBlogPage() {
                     >
                       {post.is_published ? '발행' : '초안'}
                     </button>
-                  </td>
-                  <td className="px-5 py-3.5 text-center">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <a
-                        href={`/blog/${post.slug}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-1.5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
-                        title="프론트 보기"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                      <Link
-                        href={`/admin/blog/${post.id}`}
-                        className="p-1.5 text-muted-foreground hover:text-primary cursor-pointer transition-colors"
-                        title="수정"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => setDeletingPost(post)}
-                        className="p-1.5 text-muted-foreground hover:text-red-600 cursor-pointer transition-colors"
-                        title="삭제"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
                   </td>
                 </tr>
               ))}
