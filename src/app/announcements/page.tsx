@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { Badge } from '@/components/ui/badge'
 import {
   Search, Megaphone, Calendar, ArrowLeft, ExternalLink,
-  Clock, Loader2, Bookmark, BookmarkCheck, Building2, Phone,
+  Clock, Loader2, Star, Building2, Phone,
 } from 'lucide-react'
 import {
   type Announcement,
@@ -329,7 +329,7 @@ export default function AnnouncementsPage() {
                         {getStatusLabel(ann.status, ann.end_date)}
                       </Badge>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {isBookmarked && <BookmarkCheck className="w-3.5 h-3.5 text-primary" />}
+                        {isBookmarked && <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />}
                         <DayBadge dday={dday} />
                       </div>
                     </div>
@@ -413,7 +413,7 @@ function AnnouncementDetail({
               }`}
               title={isBookmarked ? '즐겨찾기 해제' : '즐겨찾기'}
             >
-              {isBookmarked ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
+              {isBookmarked ? <Star className="w-5 h-5 text-amber-500 fill-amber-500" /> : <Star className="w-5 h-5" />}
             </button>
             {ann.source_url && (
               <a

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import {
   Search, ExternalLink, Loader2, Rss, Clock, Newspaper, ArrowLeft,
-  Bookmark, BookmarkCheck, Share2,
+  Star, Share2,
 } from 'lucide-react'
 import { getSourceBadgeStyle, getSourceName, getCategoryLabel, getCategoryColor, FEED_CATEGORIES } from '@/lib/feed-sources'
 import { useToastStore } from '@/stores/toast-store'
@@ -326,7 +326,7 @@ export default function FeedsPage() {
                       <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold ${getSourceBadgeStyle(feed.source)}`}>
                         {getSourceName(feed.source)}
                       </span>
-                      {isBookmarked && <BookmarkCheck className="w-3 h-3 text-primary ml-auto shrink-0" />}
+                      {isBookmarked && <Star className="w-3 h-3 text-amber-500 fill-amber-500 ml-auto shrink-0" />}
                     </div>
                     <p className={`text-sm leading-snug line-clamp-2 mb-1 ${isActive ? 'text-foreground' : isRead ? 'text-muted-foreground' : 'text-foreground'}`}>
                       {feed.title}
@@ -412,7 +412,7 @@ function FeedDetail({
               }`}
               title={isBookmarked ? '즐겨찾기 해제' : '즐겨찾기'}
             >
-              {isBookmarked ? <BookmarkCheck className="w-5 h-5" /> : <Bookmark className="w-5 h-5" />}
+              {isBookmarked ? <Star className="w-5 h-5 text-amber-500 fill-amber-500" /> : <Star className="w-5 h-5" />}
             </button>
             <button
               onClick={onShare}
