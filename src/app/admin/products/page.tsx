@@ -435,6 +435,7 @@ export default function AdminProducts() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [priceFilter, setPriceFilter] = useState<'all' | 'paid' | 'free'>('all')
   const [categoryFilter, setCategoryFilter] = useState<number | null>(null)
   const [pageSize, setPageSize] = useState<number>(20)
   const [page, setPage] = useState(1)
@@ -629,6 +630,8 @@ export default function AdminProducts() {
     let list = products
     if (statusFilter === 'published') list = list.filter((p) => p.is_published)
     if (statusFilter === 'unpublished') list = list.filter((p) => !p.is_published)
+    if (priceFilter === 'paid') list = list.filter((p) => !p.is_free)
+    if (priceFilter === 'free') list = list.filter((p) => p.is_free)
     if (categoryFilter !== null) list = list.filter((p) => {
       const ids = Array.isArray(p.category_ids) && p.category_ids.length > 0
         ? p.category_ids
@@ -640,7 +643,7 @@ export default function AdminProducts() {
       list = list.filter((p) => p.title.toLowerCase().includes(q))
     }
     return list
-  }, [products, statusFilter, categoryFilter, search])
+  }, [products, statusFilter, priceFilter, categoryFilter, search])
 
   // Sort
   const sorted = useMemo(() => {
@@ -701,7 +704,7 @@ export default function AdminProducts() {
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize))
   const paginated = sorted.slice((page - 1) * pageSize, page * pageSize)
   const isDragEnabled =
-    statusFilter === 'all' && categoryFilter === null && !search.trim() && totalPages <= 1
+    statusFilter === 'all' && priceFilter === 'all' && categoryFilter === null && !search.trim() && totalPages <= 1
 
   // Pagination range
   const getPageRange = () => {
@@ -835,6 +838,30 @@ export default function AdminProducts() {
             ))}
           </div>
 
+          {/* Price filter */}
+          <div className="flex items-center gap-1">
+            {([
+              { key: 'all' as const, label: '전체' },
+              { key: 'paid' as const, label: '유료' },
+              { key: 'free' as const, label: '무료' },
+            ]).map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => { setPriceFilter(tab.key); setPage(1) }}
+                className={`px-3 py-2 text-sm font-medium rounded-xl transition cursor-pointer ${
+                  priceFilter === tab.key
+                    ? tab.key === 'paid' ? 'bg-emerald-600 text-white' : tab.key === 'free' ? 'bg-blue-600 text-white' : 'bg-gray-900 text-white'
+                    : 'text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                {tab.label}
+                <span className={`ml-1 text-xs ${priceFilter === tab.key ? 'opacity-70' : 'text-muted-foreground'}`}>
+                  {tab.key === 'all' ? products.length : tab.key === 'paid' ? products.filter(p => !p.is_free).length : products.filter(p => p.is_free).length}
+                </span>
+              </button>
+            ))}
+          </div>
+
           {/* Search */}
           <div className="flex-1">
             <div className="relative">
@@ -881,7 +908,7 @@ export default function AdminProducts() {
             좌측 핸들을 드래그하여 순서 변경 (위쪽 = 스토어 상단 노출)
             {saving && <span className="ml-2 text-primary">저장 중...</span>}
           </p>
-        ) : (statusFilter !== 'all' || categoryFilter !== null || search.trim()) && (
+        ) : (statusFilter !== 'all' || priceFilter !== 'all' || categoryFilter !== null || search.trim()) && (
           <p className="text-xs text-amber-600 flex items-center gap-1">
             필터를 해제하면 순서를 변경할 수 있습니다
           </p>

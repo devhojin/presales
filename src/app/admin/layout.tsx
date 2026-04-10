@@ -6,21 +6,33 @@ import { usePathname, useRouter } from 'next/navigation'
 import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, Star, ArrowLeft, ChevronLeft, ChevronRight, Loader2, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, FileText, Megaphone, Rss } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
-const adminNav = [
+type NavItem = { href: string; icon: typeof LayoutDashboard; label: string } | { divider: true; label: string }
+
+const adminNav: NavItem[] = [
+  // 핵심
   { href: '/admin', icon: LayoutDashboard, label: '대시보드' },
   { href: '/admin/products', icon: Package, label: '상품 관리' },
   { href: '/admin/orders', icon: ShoppingCart, label: '주문 관리' },
   { href: '/admin/members', icon: Users, label: '회원 관리' },
-  { href: '/admin/consulting', icon: MessageSquare, label: '컨설팅 신청' },
-  { href: '/admin/downloads', icon: Download, label: '다운로드 관리' },
-  { href: '/admin/reviews', icon: Star, label: '리뷰 관리' },
-  { href: '/admin/analytics', icon: BarChart3, label: '통계 분석' },
-  { href: '/admin/faq', icon: HelpCircle, label: 'FAQ 관리' },
-  { href: '/admin/coupons', icon: Tag, label: '쿠폰 관리' },
-  { href: '/admin/discount-matches', icon: Link2, label: '할인 매칭' },
+
+  // 콘텐츠
+  { divider: true, label: '콘텐츠' },
   { href: '/admin/announcements', icon: Megaphone, label: '공고 관리' },
   { href: '/admin/feeds', icon: Rss, label: 'IT피드 관리' },
   { href: '/admin/blog', icon: FileText, label: '블로그' },
+  { href: '/admin/faq', icon: HelpCircle, label: 'FAQ 관리' },
+
+  // 마케팅
+  { divider: true, label: '마케팅' },
+  { href: '/admin/coupons', icon: Tag, label: '쿠폰 관리' },
+  { href: '/admin/discount-matches', icon: Link2, label: '할인 매칭' },
+  { href: '/admin/reviews', icon: Star, label: '리뷰 관리' },
+
+  // 운영
+  { divider: true, label: '운영' },
+  { href: '/admin/consulting', icon: MessageSquare, label: '컨설팅 신청' },
+  { href: '/admin/downloads', icon: Download, label: '다운로드 관리' },
+  { href: '/admin/analytics', icon: BarChart3, label: '통계 분석' },
   { href: '/admin/settings', icon: Settings, label: '사이트 설정' },
 ]
 
@@ -112,7 +124,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Nav */}
       <nav className={`flex-1 ${!isMobile && collapsed ? 'p-2' : 'p-3'} space-y-0.5 transition-all duration-300 overflow-y-auto`}>
-        {adminNav.map((item) => {
+        {adminNav.map((item, idx) => {
+          if ('divider' in item) {
+            if (!isMobile && collapsed) {
+              return <div key={`div-${idx}`} className="my-2 border-t border-border/50" />
+            }
+            return (
+              <div key={`div-${idx}`} className="pt-4 pb-1.5 px-3">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">{item.label}</p>
+              </div>
+            )
+          }
           const isActive = pathname === item.href ||
             (item.href !== '/admin' && pathname?.startsWith(item.href))
           return (
