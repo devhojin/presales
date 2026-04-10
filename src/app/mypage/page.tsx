@@ -9,7 +9,7 @@ import {
   FileText, Download, User, Loader2, Mail, Phone, Building, Pencil, Save, X,
   Lock, Eye, EyeOff, ChevronDown, ShoppingBag, AlertTriangle, Clock, Bookmark,
   ExternalLink, Megaphone, Rss, Package, ArrowRight, Store, BookOpen,
-  ArrowLeft, BookmarkCheck, MessageCircle, CreditCard, HelpCircle,
+  ArrowLeft, BookmarkCheck, MessageCircle, CreditCard, HelpCircle, Tag, Copy, Check,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { validatePassword } from '@/lib/password-policy'
@@ -71,6 +71,19 @@ interface ActivityItem {
   raw: Date
 }
 
+interface DbCoupon {
+  id: string
+  code: string
+  discount_type: 'percentage' | 'fixed'
+  discount_value: number
+  min_order_amount: number
+  valid_from: string | null
+  valid_until: string | null
+  usage_count: number
+  max_usage: number | null
+  is_active: boolean
+}
+
 interface BookmarkAnn { id: string; title: string; organization: string | null; status: string; end_date: string | null; source_url: string | null; description?: string | null; start_date?: string | null }
 interface BookmarkFeed { id: string; title: string; category: string; external_url: string | null; content?: string | null; source_name?: string | null; created_at?: string | null }
 type BookmarkModalItem =
@@ -120,6 +133,8 @@ export default function MyConsolePage() {
   const [bookmarkModal, setBookmarkModal] = useState<BookmarkModalItem | null>(null)
   const [bookmarkTab, setBookmarkTab] = useState<'announcement' | 'feed'>('announcement')
   const [receiptOrder, setReceiptOrder] = useState<Order | null>(null)
+  const [coupons, setCoupons] = useState<DbCoupon[]>([])
+  const [showCouponModal, setShowCouponModal] = useState(false)
 
   // KPI counts
   const [kpi, setKpi] = useState({ orders: 0, bookmarks: 0, downloads: 0, chats: 0 })
@@ -234,6 +249,19 @@ export default function MyConsolePage() {
         const data = await res.json()
         if (data.rooms) setKpi(k => ({ ...k, chats: data.rooms.length }))
       } catch { /* ignore */ }
+
+      // 쿠폰 로드 (활성 + 유효 기간 내)
+      const nowIso = new Date().toISOString()
+      const { data: couponData } = await supabase
+        .from('coupons')
+        .select('id, code, discount_type, discount_value, min_order_amount, valid_from, valid_until, usage_count, max_usage, is_active')
+        .eq('is_active', true)
+        .or(`valid_from.is.null,valid_from.lte.${nowIso}`)
+        .or(`valid_until.is.null,valid_until.gte.${nowIso}`)
+        .order('created_at', { ascending: false })
+
+      const available = (couponData || []).filter(c => !c.max_usage || c.usage_count < c.max_usage)
+      setCoupons(available as DbCoupon[])
     }
     load()
   }, [router])
@@ -438,7 +466,19 @@ export default function MyConsolePage() {
       </div>
 
       {/* Row 2: KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        {/* 내 쿠폰 (맨 앞, 버튼) */}
+        <button
+          type="button"
+          onClick={() => setShowCouponModal(true)}
+          className="group bg-card border border-border/50 rounded-2xl p-5 hover:shadow-md transition-all cursor-pointer text-left"
+        >
+          <div className="w-10 h-10 rounded-xl text-pink-600 bg-pink-50 flex items-center justify-center mb-3">
+            <Tag className="w-5 h-5" />
+          </div>
+          <p className="text-2xl font-bold text-foreground">{coupons.length}<span className="text-sm font-normal text-muted-foreground ml-1">장</span></p>
+          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 group-hover:text-pink-600 transition-colors">내 쿠폰 <ArrowRight className="w-3 h-3" /></p>
+        </button>
         {[
           { label: '내 주문', value: kpi.orders, icon: Package, color: 'text-primary bg-primary/10', href: '#orders' },
           { label: '다운로드', value: kpi.downloads, icon: Download, color: 'text-orange-600 bg-orange-50', href: '#orders' },
@@ -683,6 +723,78 @@ export default function MyConsolePage() {
           </div>
         </div>
       </div>
+
+      {/* Coupon Modal */}
+      {showCouponModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowCouponModal(false)}>
+          <div className="bg-background rounded-2xl max-w-md w-full max-h-[85vh] shadow-xl flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-border/50 shrink-0">
+              <div className="flex items-center gap-2">
+                <Tag className="w-5 h-5 text-pink-600" />
+                <h3 className="text-lg font-semibold">내 쿠폰</h3>
+                <span className="text-xs text-muted-foreground">{coupons.length}장</span>
+              </div>
+              <button type="button" onClick={() => setShowCouponModal(false)} className="text-muted-foreground hover:text-foreground cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {coupons.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground">
+                  <Tag className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">사용 가능한 쿠폰이 없습니다</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {coupons.map(c => {
+                    const discountLabel = c.discount_type === 'percentage'
+                      ? `${c.discount_value}%`
+                      : `${c.discount_value.toLocaleString()}원`
+                    const minOrderLabel = c.min_order_amount > 0
+                      ? `${c.min_order_amount.toLocaleString()}원 이상`
+                      : '제한 없음'
+                    const validLabel = c.valid_until
+                      ? `${formatDate(c.valid_until)}까지`
+                      : '무제한'
+                    return (
+                      <div key={c.id} className="relative border border-border/50 rounded-xl p-4 bg-gradient-to-br from-pink-50 to-white">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-white border border-pink-200 text-pink-700">
+                                {c.code}
+                                <button
+                                  type="button"
+                                  onClick={() => { navigator.clipboard.writeText(c.code); addToast('쿠폰 코드가 복사되었습니다', 'success') }}
+                                  className="text-pink-500 hover:text-pink-700 cursor-pointer"
+                                  title="코드 복사"
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </button>
+                              </span>
+                            </div>
+                            <p className="text-2xl font-bold text-pink-600 leading-none">{discountLabel}<span className="text-xs font-normal text-muted-foreground ml-1">할인</span></p>
+                            <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+                              <p className="flex items-center gap-1.5"><Check className="w-3 h-3 text-emerald-500" /> 최소 주문: {minOrderLabel}</p>
+                              <p className="flex items-center gap-1.5"><Clock className="w-3 h-3 text-muted-foreground" /> 유효 기간: {validLabel}</p>
+                              {c.max_usage && <p className="flex items-center gap-1.5"><User className="w-3 h-3 text-muted-foreground" /> {c.max_usage}회 사용 가능</p>}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end p-4 border-t border-border/50 shrink-0">
+              <button type="button" onClick={() => setShowCouponModal(false)} className="px-4 py-2 text-xs font-medium border border-border rounded-lg hover:bg-muted cursor-pointer">닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Receipt/Order Detail Modal */}
       {receiptOrder && (() => {
