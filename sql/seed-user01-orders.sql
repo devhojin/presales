@@ -49,9 +49,9 @@ BEGIN
     order_items_count := 1 + (RANDOM() * 2)::INT;
     days_ago := (RANDOM() * 90)::INT;  -- 최근 90일 내
 
-    -- 상태 분포: 9건 paid/completed, 2건 cancelled, 1건 pending
+    -- 상태 분포: 9건 paid, 2건 cancelled, 1건 pending
     IF i <= 9 THEN
-      order_status := CASE WHEN RANDOM() < 0.5 THEN 'paid' ELSE 'completed' END;
+      order_status := 'paid';
     ELSIF i <= 11 THEN
       order_status := 'cancelled';
     ELSE
@@ -79,7 +79,7 @@ BEGIN
       order_total,
       order_status,
       NOW() - (days_ago || ' days')::INTERVAL,
-      CASE WHEN order_status IN ('paid', 'completed') THEN NOW() - (days_ago || ' days')::INTERVAL + INTERVAL '5 minutes' ELSE NULL END,
+      CASE WHEN order_status = 'paid' THEN NOW() - (days_ago || ' days')::INTERVAL + INTERVAL '5 minutes' ELSE NULL END,
       'card'
     )
     RETURNING id INTO new_order_id;
@@ -93,7 +93,7 @@ BEGIN
       VALUES (new_order_id, selected_products.id, random_qty, selected_products.price);
 
       -- 5) paid/completed 주문의 상품에 대해 다운로드 이력 생성 (1~4회 랜덤)
-      IF order_status IN ('paid', 'completed') THEN
+      IF order_status = 'paid' THEN
         FOR j IN 1..(1 + (RANDOM() * 3)::INT) LOOP
           INSERT INTO download_logs (user_id, product_id, file_name, downloaded_at, user_name)
           SELECT
@@ -116,4 +116,4 @@ SELECT
   (SELECT COUNT(*) FROM orders WHERE user_id = (SELECT id FROM auth.users WHERE email = 'user01@test.com')) AS 주문수,
   (SELECT COUNT(*) FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE user_id = (SELECT id FROM auth.users WHERE email = 'user01@test.com'))) AS 주문아이템수,
   (SELECT COUNT(*) FROM download_logs WHERE user_id = (SELECT id FROM auth.users WHERE email = 'user01@test.com')) AS 다운로드이력수,
-  (SELECT SUM(total_amount) FROM orders WHERE user_id = (SELECT id FROM auth.users WHERE email = 'user01@test.com') AND status IN ('paid','completed')) AS 실결제총액;
+  (SELECT SUM(total_amount) FROM orders WHERE user_id = (SELECT id FROM auth.users WHERE email = 'user01@test.com') AND status = 'paid') AS 실결제총액;
