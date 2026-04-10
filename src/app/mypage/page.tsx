@@ -568,8 +568,6 @@ export default function MyConsolePage() {
                                 <FileText className="w-3 h-3" /> 주문서 보기
                               </button>
                               {(order.status === 'paid' || order.status === 'completed') && <button type="button" onClick={e => { e.stopPropagation(); printReceipt(order) }} className="px-3 py-1.5 rounded-lg border border-blue-300 text-primary text-xs font-medium hover:bg-primary/8 cursor-pointer">영수증 인쇄</button>}
-                              {order.status === 'paid' && !order.refund_reason && <button type="button" onClick={e => { e.stopPropagation(); setRefundOrderId(order.id); setRefundReason('') }} className="px-3 py-1.5 rounded-lg border border-orange-300 text-orange-600 text-xs font-medium hover:bg-orange-50 cursor-pointer">환불 문의</button>}
-                              {order.refund_reason && <p className="text-xs text-orange-600">환불 문의 접수됨</p>}
                             </div>
                             <p className="text-sm font-semibold">합계: {formatPrice(order.total_amount)}</p>
                           </div>
