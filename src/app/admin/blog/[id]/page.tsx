@@ -167,15 +167,22 @@ export default function AdminBlogEditPage() {
 
     setSaving(true)
 
+    // Auto-generate excerpt from content
+    const autoExcerpt = excerpt.trim() || (() => {
+      const div = document.createElement('div')
+      div.innerHTML = contentHtml
+      return (div.textContent || '').trim().substring(0, 200)
+    })()
+
     const postData = {
       title: title.trim(),
       slug: slug.trim() || generateSlug(title),
-      excerpt: excerpt.trim(),
+      excerpt: autoExcerpt,
       content_html: contentHtml,
       thumbnail_url: thumbnailUrl || null,
       tags: tags,
       category: category,
-      author: author,
+      author: '프리세일즈',
       is_published: isPublished,
       updated_at: new Date().toISOString(),
     }
@@ -251,40 +258,7 @@ export default function AdminBlogEditPage() {
           />
         </div>
 
-        {/* Slug */}
-        <div className="bg-white rounded-xl border border-border p-6">
-          <label className="block text-sm font-semibold text-foreground mb-3">
-            슬러그 (자동 생성)
-          </label>
-          <input
-            type="text"
-            value={slug}
-            onChange={(e) => setSlug(e.target.value)}
-            placeholder="url-friendly-slug"
-            className="w-full px-4 py-2 border border-border rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/40"
-          />
-          <p className="text-xs text-muted-foreground mt-2">
-            URL: /blog/{slug}
-          </p>
-        </div>
-
-        {/* Excerpt */}
-        <div className="bg-white rounded-xl border border-border p-6">
-          <label className="block text-sm font-semibold text-foreground mb-3">
-            요약 (2-3줄)
-          </label>
-          <textarea
-            value={excerpt}
-            onChange={(e) => setExcerpt(e.target.value)}
-            placeholder="글에 대한 짧은 요약을 입력하세요"
-            rows={3}
-            maxLength={200}
-            className="w-full px-4 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 resize-none"
-          />
-          <p className="text-xs text-muted-foreground mt-2">
-            {excerpt.length}/200자
-          </p>
-        </div>
+        {/* Slug — hidden, auto-generated */}
 
         {/* Content Editor */}
         <div className="bg-white rounded-xl border border-border p-6">
@@ -394,18 +368,10 @@ export default function AdminBlogEditPage() {
           </select>
         </div>
 
-        {/* Author */}
+        {/* Author — fixed */}
         <div className="bg-white rounded-xl border border-border p-6">
-          <label className="block text-sm font-semibold text-foreground mb-3">
-            작성자
-          </label>
-          <input
-            type="text"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            placeholder="작성자 이름"
-            className="w-full px-4 py-2 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-          />
+          <label className="block text-sm font-semibold text-foreground mb-3">작성자</label>
+          <p className="px-4 py-2 bg-muted rounded-xl text-sm font-medium">프리세일즈</p>
         </div>
 
         {/* Tags */}

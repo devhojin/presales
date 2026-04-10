@@ -6,11 +6,14 @@ import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
 import TextAlign from '@tiptap/extension-text-align'
 import Placeholder from '@tiptap/extension-placeholder'
+import Image from '@tiptap/extension-image'
+import { useRef } from 'react'
+import { createClient } from '@/lib/supabase'
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
   List, ListOrdered, Heading2, Heading3,
   AlignLeft, AlignCenter, AlignRight,
-  Link as LinkIcon, Minus, Undo, Redo, Code
+  Link as LinkIcon, Minus, Undo, Redo, Code, ImageIcon,
 } from 'lucide-react'
 
 interface RichTextEditorProps {
@@ -30,7 +33,7 @@ function ToolbarButton({ onClick, active, children, title }: {
       type="button"
       onClick={onClick}
       title={title}
-      className={`p-1.5 rounded hover:bg-gray-200 transition-colors ${active ? 'bg-gray-200 text-blue-600' : 'text-gray-600'}`}
+      className={`p-1.5 rounded hover:bg-gray-200 transition-colors cursor-pointer ${active ? 'bg-gray-200 text-blue-600' : 'text-gray-600'}`}
     >
       {children}
     </button>
@@ -38,6 +41,8 @@ function ToolbarButton({ onClick, active, children, title }: {
 }
 
 export function RichTextEditor({ content, onChange, placeholder }: RichTextEditorProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -45,6 +50,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
       Link.configure({ openOnClick: false }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Placeholder.configure({ placeholder: placeholder || '내용을 입력하세요...' }),
+      Image.configure({ inline: false, allowBase64: false }),
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -59,6 +65,26 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     if (url) {
       editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
     }
+  }
+
+  const handleImageUpload = async (file: File) => {
+    if (file.size > 5 * 1024 * 1024) {
+      alert('이미지 크기는 5MB 이하여야 합니다.')
+      return
+    }
+
+    const supabase = createClient()
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
+    const fileName = `blog/inline/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+
+    const { error } = await supabase.storage.from('product-thumbnails').upload(fileName, file)
+    if (error) {
+      alert('이미지 업로드 실패: ' + error.message)
+      return
+    }
+
+    const { data: urlData } = supabase.storage.from('product-thumbnails').getPublicUrl(fileName)
+    editor.chain().focus().setImage({ src: urlData.publicUrl }).run()
   }
 
   return (
@@ -113,6 +139,9 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
         <ToolbarButton onClick={addLink} active={editor.isActive('link')} title="링크">
           <LinkIcon className="w-4 h-4" />
         </ToolbarButton>
+        <ToolbarButton onClick={() => fileInputRef.current?.click()} title="이미지 삽입">
+          <ImageIcon className="w-4 h-4" />
+        </ToolbarButton>
         <ToolbarButton onClick={() => editor.chain().focus().setHorizontalRule().run()} title="구분선">
           <Minus className="w-4 h-4" />
         </ToolbarButton>
@@ -130,10 +159,23 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
         </ToolbarButton>
       </div>
 
+      {/* Hidden file input for image upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file) handleImageUpload(file)
+          e.target.value = ''
+        }}
+      />
+
       {/* Editor */}
       <EditorContent
         editor={editor}
-        className="min-h-[400px] p-4 product-description [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[380px] [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-gray-400 [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none"
+        className="min-h-[400px] p-4 product-description [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-[380px] [&_.ProseMirror_p.is-editor-empty:first-child::before]:text-gray-400 [&_.ProseMirror_p.is-editor-empty:first-child::before]:content-[attr(data-placeholder)] [&_.ProseMirror_p.is-editor-empty:first-child::before]:float-left [&_.ProseMirror_p.is-editor-empty:first-child::before]:pointer-events-none [&_.ProseMirror_img]:max-w-full [&_.ProseMirror_img]:h-auto [&_.ProseMirror_img]:rounded-lg [&_.ProseMirror_img]:my-4"
       />
     </div>
   )
