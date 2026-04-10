@@ -13,10 +13,11 @@ interface ChatWidgetState {
 
 function getOrCreateGuestId(): string {
   if (typeof window === 'undefined') return ''
-  let id = localStorage.getItem('presales_guest_id')
+  // sessionStorage 사용: 탭 닫으면 자동 초기화 → 매 세션마다 새 비회원 ID
+  let id = sessionStorage.getItem('presales_guest_id')
   if (!id) {
     id = 'guest_' + crypto.randomUUID().slice(0, 8)
-    localStorage.setItem('presales_guest_id', id)
+    sessionStorage.setItem('presales_guest_id', id)
   }
   return id
 }
