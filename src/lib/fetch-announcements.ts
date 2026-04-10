@@ -255,12 +255,193 @@ async function fetchKStartupAnnouncements(): Promise<FetchResult> {
 }
 
 // ===========================
+// Fetch 기업마당 (bizinfo.go.kr) — 중소벤처24 공고
+// ===========================
+
+interface BizinfoItem {
+  pblancId: string
+  title: string
+  jrsdInsttNm: string  // 지원기관
+  bsnsSumryCn: string  // 사업요약
+  reqstBeginEndDe: string // 접수기간 (예: "2026-04-01 ~ 2026-05-31")
+  pubDate: string
+  link: string
+  trgetNm: string // 지원대상
+  lcategory: string // 분야
+  hashTags: string
+  reqstDt: string // 신청상태
+}
+
+async function fetchBizinfoAnnouncements(): Promise<FetchResult> {
+  const result: FetchResult = { source: "중소벤처24", fetched: 0, inserted: 0, skipped: 0, blocked: 0, errors: [] }
+  const apiKey = process.env.BIZINFO_API_KEY
+
+  if (!apiKey) {
+    result.errors.push("BIZINFO_API_KEY 미설정 — 기업마당 수집 건너뜀")
+    return result
+  }
+
+  const supabase = getServiceClient()
+
+  // 차단 목록
+  const blockedSet = new Set<string>()
+  const { data: blockedRows } = await supabase
+    .from("blocked_announcements")
+    .select("external_id")
+    .limit(5000)
+  if (blockedRows) {
+    for (const row of blockedRows) blockedSet.add(row.external_id)
+  }
+
+  try {
+    // 최대 3페이지 수집 (각 50건)
+    for (let pageIndex = 1; pageIndex <= 3; pageIndex++) {
+      const url = `https://www.bizinfo.go.kr/uss/rss/bizinfoApi.do?crtfcKey=${encodeURIComponent(apiKey)}&dataType=json&pageUnit=50&pageIndex=${pageIndex}`
+
+      const res = await fetch(url, { cache: "no-store" })
+      if (!res.ok) {
+        result.errors.push(`기업마당 API HTTP ${res.status}`)
+        break
+      }
+
+      const json = await res.json()
+
+      // 에러 응답 처리
+      if (json.reqErr) {
+        result.errors.push(`기업마당 API 오류: ${json.reqErr}`)
+        break
+      }
+
+      const items: BizinfoItem[] = json.jsonArray || json.items || []
+      if (items.length === 0) break
+
+      result.fetched += items.length
+
+      for (const item of items) {
+        const title = item.title?.trim()
+        if (!title) continue
+
+        const externalId = `bizinfo-${item.pblancId || title.substring(0, 50)}`
+
+        if (blockedSet.has(externalId)) {
+          result.blocked++
+          continue
+        }
+
+        // 접수기간 파싱 ("2026-04-01 ~ 2026-05-31")
+        let startDate: string | null = null
+        let endDate: string | null = null
+        if (item.reqstBeginEndDe) {
+          const parts = item.reqstBeginEndDe.split("~").map(s => s.trim())
+          if (parts[0]) startDate = parts[0].slice(0, 10)
+          if (parts[1]) endDate = parts[1].slice(0, 10)
+        }
+
+        // 분야 매핑
+        const supportAreas: string[] = []
+        if (item.lcategory) supportAreas.push(item.lcategory)
+        if (item.hashTags) {
+          item.hashTags.split(",").map(t => t.trim().replace(/^#/, "")).filter(Boolean).forEach(t => supportAreas.push(t))
+        }
+        if (supportAreas.length === 0) supportAreas.push("지원사업")
+
+        const isRecruiting = item.reqstDt?.includes("접수중") || item.reqstDt?.includes("모집중")
+        const status = isRecruiting ? "active" : endDate && new Date(endDate) < new Date() ? "closed" : "active"
+
+        const dbRow = {
+          title,
+          organization: item.jrsdInsttNm || "중소벤처기업부",
+          type: "public",
+          budget: "",
+          start_date: startDate,
+          end_date: endDate,
+          application_method: "기업마당 홈페이지",
+          target: item.trgetNm || "",
+          description: (item.bsnsSumryCn || "").substring(0, 2000),
+          eligibility: item.trgetNm || "",
+          department: item.jrsdInsttNm || "",
+          contact: "",
+          source_url: item.link || `https://www.bizinfo.go.kr/web/lay1/bbs/S1T122C128/AS/74/view.do?pblancId=${item.pblancId}`,
+          field: item.lcategory || "",
+          status,
+          source: "중소벤처24",
+          external_id: externalId,
+          matching_keywords: supportAreas,
+          support_areas: supportAreas,
+          regions: ["전국"],
+          target_types: item.trgetNm ? [item.trgetNm] : ["중소기업"],
+          age_ranges: ["제한없음"],
+          business_years: ["제한없음"],
+          governing_body: item.jrsdInsttNm || "",
+        }
+
+        // 중복 체크
+        const { data: existById } = await supabase
+          .from("announcements")
+          .select("id")
+          .eq("external_id", externalId)
+          .limit(1)
+
+        if (existById && existById.length > 0) {
+          result.skipped++
+          continue
+        }
+
+        const { data: existByTitle } = await supabase
+          .from("announcements")
+          .select("id")
+          .eq("title", title)
+          .eq("organization", dbRow.organization)
+          .limit(1)
+
+        if (existByTitle && existByTitle.length > 0) {
+          result.skipped++
+        } else {
+          const { data: inserted, error } = await supabase
+            .from("announcements")
+            .insert({ ...dbRow, is_published: false })
+            .select("id")
+            .maybeSingle()
+          if (error) {
+            result.errors.push(`INSERT [${externalId}]: ${error.message}`)
+          } else {
+            result.inserted++
+            await supabase.from("announcement_logs").insert({
+              action: "collected",
+              announcement_id: inserted?.id || null,
+              announcement_title: dbRow.title,
+              source: "기업마당 API",
+              detail: `비공개로 자동 수집됨 (${dbRow.organization || ""})`,
+            })
+          }
+        }
+      }
+
+      const totCnt = json.totCnt || json.totalCount || 0
+      if (pageIndex * 50 >= totCnt || items.length < 50) break
+    }
+  } catch (err) {
+    result.errors.push(`기업마당 수집 오류: ${err instanceof Error ? err.message : String(err)}`)
+  }
+
+  return result
+}
+
+// ===========================
 // Main Export
 // ===========================
 
 export async function fetchAllAnnouncements(): Promise<{ results: FetchResult[]; totalInserted: number; totalSkipped: number; totalBlocked: number }> {
+  const results: FetchResult[] = []
+
+  // K-Startup 수집
   const kstartup = await fetchKStartupAnnouncements()
-  const results = [kstartup]
+  results.push(kstartup)
+
+  // 기업마당(중소벤처24) 수집
+  const bizinfo = await fetchBizinfoAnnouncements()
+  results.push(bizinfo)
+
   const totalInserted = results.reduce((s, r) => s + r.inserted, 0)
   const totalSkipped = results.reduce((s, r) => s + r.skipped, 0)
   const totalBlocked = results.reduce((s, r) => s + r.blocked, 0)

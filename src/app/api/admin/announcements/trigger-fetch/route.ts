@@ -44,15 +44,10 @@ export async function POST() {
   }
 
   try {
-    // 2. Check env vars
-    if (!process.env.KSTARTUP_API_KEY) {
-      return NextResponse.json({ success: false, error: 'KSTARTUP_API_KEY 환경변수가 설정되지 않았습니다' }, { status: 500 })
-    }
-
-    // 3. Fetch announcements
+    // 2. Fetch announcements (K-Startup + 기업마당)
     const fetchResult = await fetchAllAnnouncements()
 
-    // 4. Check for errors in results
+    // 3. Check for errors
     const errors = fetchResult.results.flatMap(r => r.errors)
     if (errors.length > 0 && fetchResult.totalInserted === 0) {
       return NextResponse.json({
@@ -62,11 +57,13 @@ export async function POST() {
       }, { status: 500 })
     }
 
-    // 5. Return results
+    // 4. Build source summary
+    const sources = fetchResult.results.map(r => `${r.source}: 신규 ${r.inserted}, 중복 ${r.skipped}`).join(' / ')
+
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
-      message: `K-Startup 공고 수집: 신규 ${fetchResult.totalInserted}건, 중복 ${fetchResult.totalSkipped}건, 차단 ${fetchResult.totalBlocked}건`,
+      message: `공고 수집 완료 — ${sources}`,
       results: fetchResult.results,
       summary: {
         totalInserted: fetchResult.totalInserted,
