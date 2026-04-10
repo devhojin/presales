@@ -45,7 +45,8 @@ export default function AnnouncementsPage() {
   // Auth & bookmark/read state
   const [userId, setUserId] = useState<string | null>(null)
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
-  const [readMap, setReadMap] = useState<Map<string, string>>(new Map()) // id → read_at
+  const [readMap, setReadMap] = useState<Map<string, string>>(new Map()) // id → read_at (실시간, 회색 스타일용)
+  const [initialReadSet, setInitialReadSet] = useState<Set<string>>(new Set()) // 페이지 진입 시점 읽음 (탭 필터용)
   const [readTab, setReadTab] = useState<ReadTab>('unread')
 
   // Load user session
@@ -88,10 +89,15 @@ export default function AnnouncementsPage() {
       }
       if (readsRes.data) {
         const map = new Map<string, string>()
+        const initSet = new Set<string>()
         readsRes.data.forEach((r: { announcement_id: string; read_at: string }) => {
           map.set(r.announcement_id, r.read_at)
+          if (Date.now() - new Date(r.read_at).getTime() < TWO_WEEKS) {
+            initSet.add(r.announcement_id)
+          }
         })
         setReadMap(map)
+        setInitialReadSet(initSet)
       }
     })
   }, [userId])
@@ -121,20 +127,19 @@ export default function AnnouncementsPage() {
         }
       }
 
-      // Read tab filter (only for logged-in users)
+      // Read tab filter (only for logged-in users) — uses initialReadSet (page-load snapshot)
       if (userId) {
-        const readAt = readMap.get(ann.id)
-        const isRead = readAt && (Date.now() - new Date(readAt).getTime() < TWO_WEEKS)
+        const wasReadOnLoad = initialReadSet.has(ann.id)
         const isBookmarked = bookmarkedIds.has(ann.id)
 
-        if (readTab === 'unread' && isRead) return false
-        if (readTab === 'read' && !isRead) return false
+        if (readTab === 'unread' && wasReadOnLoad) return false
+        if (readTab === 'read' && !wasReadOnLoad) return false
         if (readTab === 'bookmarks' && !isBookmarked) return false
       }
 
       return true
     })
-  }, [sortedAnnouncements, searchQuery, filterStatus, userId, readMap, bookmarkedIds, readTab])
+  }, [sortedAnnouncements, searchQuery, filterStatus, userId, initialReadSet, bookmarkedIds, readTab])
 
   const selectedAnnouncement = useMemo(
     () => announcements.find(a => a.id === selectedId) || null,
@@ -205,14 +210,13 @@ export default function AnnouncementsPage() {
         if (!ann.title.toLowerCase().includes(q) && !(ann.organization || '').toLowerCase().includes(q)) return
       }
 
-      const readAt = readMap.get(ann.id)
-      const isR = readAt && (Date.now() - new Date(readAt).getTime() < TWO_WEEKS)
-      if (isR) read++
+      const wasReadOnLoad = initialReadSet.has(ann.id)
+      if (wasReadOnLoad) read++
       else unread++
       if (bookmarkedIds.has(ann.id)) bookmarks++
     })
     return { unread, read, bookmarks }
-  }, [userId, sortedAnnouncements, readMap, bookmarkedIds, filterStatus, searchQuery])
+  }, [userId, sortedAnnouncements, initialReadSet, bookmarkedIds, filterStatus, searchQuery])
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 md:px-8">

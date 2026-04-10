@@ -43,7 +43,8 @@ export default function FeedsPage() {
   // Auth & bookmark/read
   const [userId, setUserId] = useState<string | null>(null)
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
-  const [readMap, setReadMap] = useState<Map<string, string>>(new Map())
+  const [readMap, setReadMap] = useState<Map<string, string>>(new Map()) // 실시간 (회색 스타일용)
+  const [initialReadSet, setInitialReadSet] = useState<Set<string>>(new Set()) // 페이지 진입 시점 (탭 필터용)
   const [readTab, setReadTab] = useState<ReadTab>('unread')
 
   // Load user
@@ -99,28 +100,32 @@ export default function FeedsPage() {
       }
       if (readsRes.data) {
         const map = new Map<string, string>()
+        const initSet = new Set<string>()
         readsRes.data.forEach((r: { post_id: string; read_at: string }) => {
           map.set(r.post_id, r.read_at)
+          if (Date.now() - new Date(r.read_at).getTime() < TWO_WEEKS) {
+            initSet.add(r.post_id)
+          }
         })
         setReadMap(map)
+        setInitialReadSet(initSet)
       }
     })
   }, [userId, supabase])
 
-  // Filter by read tab
+  // Filter by read tab — uses initialReadSet (page-load snapshot) for tab filtering
   const filteredFeeds = useMemo(() => {
     if (!userId) return feeds
     return feeds.filter(feed => {
-      const readAt = readMap.get(feed.id)
-      const isRead = readAt && (Date.now() - new Date(readAt).getTime() < TWO_WEEKS)
+      const wasReadOnLoad = initialReadSet.has(feed.id)
       const isBookmarked = bookmarkedIds.has(feed.id)
 
-      if (readTab === 'unread' && isRead) return false
-      if (readTab === 'read' && !isRead) return false
+      if (readTab === 'unread' && wasReadOnLoad) return false
+      if (readTab === 'read' && !wasReadOnLoad) return false
       if (readTab === 'bookmarks' && !isBookmarked) return false
       return true
     })
-  }, [feeds, userId, readMap, bookmarkedIds, readTab])
+  }, [feeds, userId, initialReadSet, bookmarkedIds, readTab])
 
   const selectedFeed = useMemo(
     () => feeds.find(f => f.id === selectedId) || null,
@@ -189,14 +194,13 @@ export default function FeedsPage() {
     if (!userId) return { unread: 0, read: 0, bookmarks: 0 }
     let unread = 0, read = 0, bookmarks = 0
     feeds.forEach(feed => {
-      const readAt = readMap.get(feed.id)
-      const isR = readAt && (Date.now() - new Date(readAt).getTime() < TWO_WEEKS)
-      if (isR) read++
+      const wasReadOnLoad = initialReadSet.has(feed.id)
+      if (wasReadOnLoad) read++
       else unread++
       if (bookmarkedIds.has(feed.id)) bookmarks++
     })
     return { unread, read, bookmarks }
-  }, [userId, feeds, readMap, bookmarkedIds])
+  }, [userId, feeds, initialReadSet, bookmarkedIds])
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 md:px-8">
