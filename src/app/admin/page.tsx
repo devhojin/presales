@@ -260,7 +260,7 @@ function RevenueChart({ data }: { data: DailyRevenue[]; period: Period }) {
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-48 text-sm text-muted-foreground">
+      <div className="flex items-center justify-center h-72 text-sm text-muted-foreground">
         데이터가 없습니다
       </div>
     )
@@ -300,7 +300,7 @@ function RevenueChart({ data }: { data: DailyRevenue[]; period: Period }) {
         </div>
 
         {/* Bars */}
-        <div className="flex items-end gap-[2px] h-48 relative">
+        <div className="flex items-end gap-[2px] h-72 relative">
           {data.map((d, i) => {
             const pct = maxRev > 0 ? (d.revenue / maxRev) * 100 : 0
             const isHovered = hoveredIdx === i
@@ -692,24 +692,38 @@ export default function AdminDashboard() {
       })
     }
 
-    // Build daily revenue chart data
-    if (period !== '전체' && paidOrdersData.data) {
-      const dayMap: Record<string, number> = {}
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      for (let i = days - 1; i >= 0; i--) {
-        const d = new Date(today)
-        d.setDate(d.getDate() - i)
-        const key = d.toISOString().slice(0, 10)
-        dayMap[key] = 0
+    // Build revenue chart data
+    if (paidOrdersData.data) {
+      if (period !== '전체') {
+        // Daily aggregation for specific periods
+        const dayMap: Record<string, number> = {}
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        for (let i = days - 1; i >= 0; i--) {
+          const d = new Date(today)
+          d.setDate(d.getDate() - i)
+          const key = d.toISOString().slice(0, 10)
+          dayMap[key] = 0
+        }
+        for (const o of paidOrdersData.data) {
+          const key = o.created_at?.slice(0, 10)
+          if (key && key in dayMap) dayMap[key] += o.total_amount || 0
+        }
+        setDailyRevenue(
+          Object.entries(dayMap).map(([date, rev]) => ({ date, revenue: rev }))
+        )
+      } else {
+        // Monthly aggregation for "전체" period
+        const monthMap: Record<string, number> = {}
+        for (const o of paidOrdersData.data) {
+          const key = o.created_at?.slice(0, 7) // YYYY-MM
+          if (key) monthMap[key] = (monthMap[key] || 0) + (o.total_amount || 0)
+        }
+        const sorted = Object.entries(monthMap).sort(([a], [b]) => a.localeCompare(b))
+        setDailyRevenue(
+          sorted.map(([date, rev]) => ({ date, revenue: rev }))
+        )
       }
-      for (const o of paidOrdersData.data) {
-        const key = o.created_at?.slice(0, 10)
-        if (key && key in dayMap) dayMap[key] += o.total_amount || 0
-      }
-      setDailyRevenue(
-        Object.entries(dayMap).map(([date, rev]) => ({ date, revenue: rev }))
-      )
     } else {
       setDailyRevenue([])
     }
@@ -1047,10 +1061,12 @@ export default function AdminDashboard() {
       )}
 
       {/* Revenue chart */}
-      {!loading && period !== '전체' && (
+      {!loading && dailyRevenue.length > 0 && (
         <div className="bg-card rounded-2xl border border-border/50 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">매출 추이 (최근 {period})</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+              매출 추이 ({period === '전체' ? '월별' : `최근 ${period}`})
+            </h2>
             <span className="text-xs text-muted-foreground">결제완료 기준</span>
           </div>
           <RevenueChart data={dailyRevenue} period={period} />
