@@ -517,13 +517,13 @@ export default function AdminDashboard() {
 
     // Build queries with optional date filter
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    function applyPeriod(q: any) {
-      return periodStart ? q.gte('created_at', periodStart) : q
+    function applyPeriod(q: any, col: string = 'created_at') {
+      return periodStart ? q.gte(col, periodStart) : q
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    function applyPrevPeriod(q: any) {
+    function applyPrevPeriod(q: any, col: string = 'created_at') {
       if (!prevPeriodStart || !periodStart) return q
-      return q.gte('created_at', prevPeriodStart).lt('created_at', periodStart)
+      return q.gte(col, prevPeriodStart).lt(col, periodStart)
     }
 
     // Current period queries
@@ -563,7 +563,7 @@ export default function AdminDashboard() {
       applyPeriod(membersQ),
       applyPeriod(consultingQ),
       applyPeriod(reviewsQ),
-      applyPeriod(downloadsQ),
+      applyPeriod(downloadsQ, 'downloaded_at'),
       applyPeriod(paidAmountQ),
       supabase
         .from('orders')
@@ -637,7 +637,8 @@ export default function AdminDashboard() {
           supabase.from('reviews').select('id', { count: 'exact', head: true })
         ),
         applyPrevPeriod(
-          supabase.from('download_logs').select('id', { count: 'exact', head: true })
+          supabase.from('download_logs').select('id', { count: 'exact', head: true }),
+          'downloaded_at'
         ),
         applyPrevPeriod(
           supabase

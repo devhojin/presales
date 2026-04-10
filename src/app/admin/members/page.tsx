@@ -95,7 +95,7 @@ interface DownloadLog {
   id: string
   user_id: string
   product_id: string
-  created_at: string
+  downloaded_at: string
   products: { title: string } | null
 }
 
@@ -553,9 +553,9 @@ function MemberDetailModal({
       const supabase = createClient()
       supabase
         .from('download_logs')
-        .select('id, user_id, product_id, created_at, products ( title )')
+        .select('id, user_id, product_id, downloaded_at, products ( title )')
         .eq('user_id', member.id)
-        .order('created_at', { ascending: false })
+        .order('downloaded_at', { ascending: false })
         .then(({ data }) => {
           setDownloads((data as unknown as DownloadLog[]) || [])
           setLoadingDownloads(false)
@@ -862,7 +862,7 @@ function MemberDetailModal({
                           {dl.products?.title || '상품명 없음'}
                         </span>
                       </div>
-                      <span className="text-xs text-muted-foreground">{formatDateTime(dl.created_at)}</span>
+                      <span className="text-xs text-muted-foreground">{formatDateTime(dl.downloaded_at)}</span>
                     </div>
                   ))}
                 </div>

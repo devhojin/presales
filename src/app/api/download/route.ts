@@ -117,6 +117,9 @@ export async function POST(request: NextRequest) {
   const storagePublicPrefix = `${supabaseUrl}/storage/v1/object/public/`
   const storageSignedPrefix = `${supabaseUrl}/storage/v1/object/sign/`
 
+  // 사용자가 받을 파일명 (한글 지원) — DB의 file_name 또는 상품명
+  const downloadFileName = file.file_name || `${product.title}.pdf`
+
   if (file.file_url.startsWith(storagePublicPrefix)) {
     // public URL → storage path 추출
     const storagePath = file.file_url.replace(storagePublicPrefix, '')
@@ -125,16 +128,23 @@ export async function POST(request: NextRequest) {
       const bucket = storagePath.substring(0, slashIdx)
       const filePath = storagePath.substring(slashIdx + 1)
 
+      // download 옵션으로 한글 파일명 지정 (Content-Disposition 헤더 설정)
       const { data: signedData, error: signError } = await supabase.storage
         .from(bucket)
-        .createSignedUrl(filePath, 60)
+        .createSignedUrl(filePath, 60, { download: downloadFileName })
 
       if (!signError && signedData?.signedUrl) {
         downloadUrl = signedData.signedUrl
+      } else if (signError) {
+        logger.error(`Signed URL 생성 실패: ${signError.message}`, 'download')
+        return NextResponse.json({
+          error: '파일을 찾을 수 없습니다. 관리자에게 문의해주세요.',
+          detail: signError.message,
+        }, { status: 404 })
       }
     }
   } else if (file.file_url.startsWith(storageSignedPrefix)) {
-    // 이미 서명된 URL → 재서명 (만료된 URL 재사용 방지)
+    // 이미 서명된 URL → 재서명
     const pathAfterSign = file.file_url.replace(storageSignedPrefix, '').split('?')[0]
     const slashIdx = pathAfterSign.indexOf('/')
     if (slashIdx !== -1) {
@@ -142,9 +152,15 @@ export async function POST(request: NextRequest) {
       const filePath = pathAfterSign.substring(slashIdx + 1)
       const { data: signedData, error: signError } = await supabase.storage
         .from(bucket)
-        .createSignedUrl(filePath, 60)
+        .createSignedUrl(filePath, 60, { download: downloadFileName })
       if (!signError && signedData?.signedUrl) {
         downloadUrl = signedData.signedUrl
+      } else if (signError) {
+        logger.error(`Signed URL 재서명 실패: ${signError.message}`, 'download')
+        return NextResponse.json({
+          error: '파일을 찾을 수 없습니다. 관리자에게 문의해주세요.',
+          detail: signError.message,
+        }, { status: 404 })
       }
     }
   }

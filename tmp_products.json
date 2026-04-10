@@ -1,0 +1,592 @@
+[
+  {
+    "id": 1,
+    "title": "프로젝트 산출물 목록",
+    "is_published": false,
+    "is_free": true,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 2,
+    "title": "3개년 수주 ARPU",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 6,
+    "category_ids": [
+      6
+    ]
+  },
+  {
+    "id": 3,
+    "title": "IoT 서버 시스템 디바이스 연동 시나리오",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 4,
+    "title": "WBS PPT 템플릿",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 5,
+    "title": "개인정보보호법 적용사례 시나리오 100건",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 6,
+    "title": "건설현장 공종 분류",
+    "is_published": false,
+    "is_free": true,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 7,
+    "title": "기능 및 기술요건 정의서",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 8,
+    "title": "대형쇼핑몰 서비스정책서",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 9,
+    "title": "데이터전환 계획서",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 10,
+    "title": "디바이스 배포 프로세스",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 11,
+    "title": "PMO 문서관리지침서",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 12,
+    "title": "프로젝트 변경요청서 템플릿",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 13,
+    "title": "설계문서 ERD",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 14,
+    "title": "요구사항 추적표",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 15,
+    "title": "통합테스트 시나리오 및 결과서",
+    "is_published": false,
+    "is_free": true,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 16,
+    "title": "프로젝트 산출물 템플릿 세트 (무료)",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 5,
+    "category_ids": [
+      5
+    ]
+  },
+  {
+    "id": 17,
+    "title": "프로젝트 평가서",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 18,
+    "title": "건설현장 공종분류체계 (프리미엄)",
+    "is_published": false,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 19,
+    "title": "나라장터 입찰 제안서 - 시스템 구축부문 (30억 규모)",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 20,
+    "title": "안전플랫폼 관제 시스템 MMI",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 21,
+    "title": "노션(Notion) 영업기회관리",
+    "is_published": false,
+    "is_free": false,
+    "category_id": 6,
+    "category_ids": [
+      6
+    ]
+  },
+  {
+    "id": 22,
+    "title": "산출물 템플릿 프리미엄 (11종 번들)",
+    "is_published": false,
+    "is_free": false,
+    "category_id": 5,
+    "category_ids": [
+      5
+    ]
+  },
+  {
+    "id": 23,
+    "title": "국내 Top tier 쇼핑몰 BM 개선 및 차세대 제안서",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 24,
+    "title": "IoT 서버 시스템 디바이스 연동 시나리오 (유료버전)",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 25,
+    "title": "금융 시스템 유지운영 제안서 (월 1억 매출)",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 26,
+    "title": "온라인 채용관리시스템 및 경영정보시스템 구축 용역",
+    "is_published": false,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 27,
+    "title": "군부대 IoT 시설물 원격감시체계 구축 제안서",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 28,
+    "title": "대형쇼핑몰 서비스정책서 통합본 (유료버전)",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 29,
+    "title": "정부 지자체 홈페이지 통합 유지보수 및 고도화",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 30,
+    "title": "청해시 홈페이지 통합 유지보수 및 고도화 제안서",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 31,
+    "title": "UI/UX 기획서",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 3,
+    "category_ids": [
+      3
+    ]
+  },
+  {
+    "id": 32,
+    "title": "악성코드 은닉사이트 조치 및 기술지원 용역",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 33,
+    "title": "사업비 세부내역 산출 (비목 산출표)",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 4,
+    "category_ids": [
+      4
+    ]
+  },
+  {
+    "id": 34,
+    "title": "광고플랫폼 스토리보드",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 3,
+    "category_ids": [
+      3
+    ]
+  },
+  {
+    "id": 35,
+    "title": "산업활용 디자인DB 구축 (박물관 제안서)",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 36,
+    "title": "네트워크 보안 인력 양성 교육 플랫폼 개발 운영 제안서",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 37,
+    "title": "정보보안 업무관리 시스템 구축 (27억 규모)",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 38,
+    "title": "농산물 물류 추적 및 관리 시스템 구축 용역",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 39,
+    "title": "화영시 여객서비스 입주기업 지원 포털사이트 제안서",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 40,
+    "title": "[A3] 45억 규모 공공 제안서 - 시스템 구축부문",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 41,
+    "title": "[세로/A4] 45억 규모 공공 제안서 - 시스템 구축부문",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 43,
+    "title": "ISP 통합전산망 구축 정보화 전략계획",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 44,
+    "title": "나라장터 제안서 작성법",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 2,
+    "category_ids": [
+      2
+    ]
+  },
+  {
+    "id": 45,
+    "title": "예비창업패키지 사업계획서",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 6,
+    "category_ids": [
+      6
+    ]
+  },
+  {
+    "id": 46,
+    "title": "SLA 서비스품질관리 부문 제안서",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 47,
+    "title": "LMS 학습관리시스템 분석설계서",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 3,
+    "category_ids": [
+      3
+    ]
+  },
+  {
+    "id": 48,
+    "title": "MOU(양해각서) 양식 템플릿",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 2,
+    "category_ids": [
+      2
+    ]
+  },
+  {
+    "id": 49,
+    "title": "프로젝트 수행계획서 템플릿",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 2,
+    "category_ids": [
+      2
+    ]
+  },
+  {
+    "id": 50,
+    "title": "엔티티 정의서 (DB 설계 문서)",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 51,
+    "title": "우선협상대상자 기술협상안",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 2,
+    "category_ids": [
+      2
+    ]
+  },
+  {
+    "id": 52,
+    "title": "제안서 목차 참조 템플릿",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 2,
+    "category_ids": [
+      2
+    ]
+  },
+  {
+    "id": 53,
+    "title": "제안서 목차 템플릿 (2024)",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 2,
+    "category_ids": [
+      2
+    ]
+  },
+  {
+    "id": 54,
+    "title": "투찰가 산정 및 지분율 계산기",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 4,
+    "category_ids": [
+      4
+    ]
+  },
+  {
+    "id": 55,
+    "title": "특허청 소프트웨어(SW) 개발방법론",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 2,
+    "category_ids": [
+      2
+    ]
+  },
+  {
+    "id": 56,
+    "title": "프로그램 목록 템플릿",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 57,
+    "title": "IA(정보구조) 기획서 템플릿",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 3,
+    "category_ids": [
+      3
+    ]
+  },
+  {
+    "id": 58,
+    "title": "상품이력제 정보시스템 구축 용역 제안서",
+    "is_published": true,
+    "is_free": false,
+    "category_id": 1,
+    "category_ids": [
+      1
+    ]
+  },
+  {
+    "id": 59,
+    "title": "공공정보화 제안요청서 작성가이드 (2024)",
+    "is_published": true,
+    "is_free": true,
+    "category_id": 2,
+    "category_ids": [
+      2
+    ]
+  },
+  {
+    "id": 60,
+    "title": "사업비 세부내역 산출 (비목 산출표) (복제)",
+    "is_published": false,
+    "is_free": false,
+    "category_id": 4,
+    "category_ids": [
+      4
+    ]
+  }
+]
