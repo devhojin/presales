@@ -67,6 +67,7 @@ export default function AnnouncementsPage() {
         .eq('is_published', true)
         .order('status', { ascending: true })
         .order('end_date', { ascending: true })
+        .limit(50)
 
       setAnnouncements(data || [])
       setLoading(false)
@@ -304,13 +305,13 @@ export default function AnnouncementsPage() {
           </p>
         </div>
       ) : (
-        <div className="flex gap-0 border border-border/50 rounded-2xl overflow-hidden bg-card mb-12" style={{ minHeight: 'calc(100vh - 340px)' }}>
-          {/* LEFT: List Panel */}
-          <div className={`${showDetail ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[38%] border-r border-border/50 overflow-hidden`}>
+        <div className="flex gap-4 mb-12 items-start">
+          {/* LEFT: List Panel (자연 높이, 페이지 스크롤) */}
+          <div className={`${showDetail ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[38%] border border-border/50 rounded-2xl overflow-hidden bg-card`}>
             <div className="px-4 py-3 border-b border-border/50 bg-muted/30">
               <p className="text-xs text-muted-foreground font-medium">{filteredAnnouncements.length}개 공고</p>
             </div>
-            <div className="flex-1 overflow-y-auto divide-y divide-border/50">
+            <div className="divide-y divide-border/50">
               {filteredAnnouncements.map((ann) => {
                 const dday = calcDDay(ann.end_date)
                 const isActive = ann.id === selectedId
@@ -345,8 +346,11 @@ export default function AnnouncementsPage() {
             </div>
           </div>
 
-          {/* RIGHT: Detail Panel */}
-          <div className={`${showDetail ? 'flex' : 'hidden md:flex'} flex-col flex-1 overflow-hidden`}>
+          {/* RIGHT: Detail Panel (sticky, 뷰포트 높이) */}
+          <div
+            className={`${showDetail ? 'flex' : 'hidden md:flex'} flex-col flex-1 border border-border/50 rounded-2xl overflow-hidden bg-card sticky self-start`}
+            style={{ top: '80px', height: 'calc(100vh - 100px)' }}
+          >
             {selectedAnnouncement ? (
               <AnnouncementDetail
                 announcement={selectedAnnouncement}

@@ -73,7 +73,7 @@ export default function FeedsPage() {
         query = query.ilike('title', `%${search.trim()}%`)
       }
 
-      const { data, error: fetchError } = await query
+      const { data, error: fetchError } = await query.limit(50)
       if (fetchError) throw fetchError
       setFeeds((data || []) as FeedItem[])
     } catch (e) {
@@ -300,13 +300,13 @@ export default function FeedsPage() {
           <p className="text-muted-foreground">{search ? '검색 결과가 없습니다' : '등록된 피드가 없습니다'}</p>
         </div>
       ) : (
-        <div className="flex gap-0 border border-border/50 rounded-2xl overflow-hidden bg-card mb-12" style={{ minHeight: 'calc(100vh - 400px)' }}>
-          {/* LEFT: List */}
-          <div className={`${showDetail ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[38%] border-r border-border/50 overflow-hidden`}>
+        <div className="flex gap-4 mb-12 items-start">
+          {/* LEFT: List (자연 높이, 페이지 스크롤) */}
+          <div className={`${showDetail ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[38%] border border-border/50 rounded-2xl overflow-hidden bg-card`}>
             <div className="px-4 py-3 border-b border-border/50 bg-muted/30">
               <p className="text-xs text-muted-foreground font-medium">{filteredFeeds.length}개 피드</p>
             </div>
-            <div className="flex-1 overflow-y-auto divide-y divide-border/50">
+            <div className="divide-y divide-border/50">
               {filteredFeeds.map((feed) => {
                 const isActive = feed.id === selectedId
                 const isRead = readMap.has(feed.id)
@@ -341,8 +341,11 @@ export default function FeedsPage() {
             </div>
           </div>
 
-          {/* RIGHT: Detail */}
-          <div className={`${showDetail ? 'flex' : 'hidden md:flex'} flex-col flex-1 overflow-hidden`}>
+          {/* RIGHT: Detail (sticky, 뷰포트 높이) */}
+          <div
+            className={`${showDetail ? 'flex' : 'hidden md:flex'} flex-col flex-1 border border-border/50 rounded-2xl overflow-hidden bg-card sticky self-start`}
+            style={{ top: '80px', height: 'calc(100vh - 100px)' }}
+          >
             {selectedFeed ? (
               <FeedDetail
                 feed={selectedFeed}

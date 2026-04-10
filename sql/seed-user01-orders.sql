@@ -89,16 +89,15 @@ BEGIN
       INSERT INTO order_items (order_id, product_id, price, original_price)
       VALUES (new_order_id, selected_products.id, selected_products.price, selected_products.price);
 
-      -- 5) paid/completed 주문의 상품에 대해 다운로드 이력 생성 (1~4회 랜덤)
+      -- 5) paid 주문의 상품에 대해 다운로드 이력 생성 (1~4회 랜덤)
       IF order_status = 'paid' THEN
         FOR j IN 1..(1 + (RANDOM() * 3)::INT) LOOP
-          INSERT INTO download_logs (user_id, product_id, file_name, downloaded_at, user_name)
+          INSERT INTO download_logs (user_id, product_id, file_name, downloaded_at)
           SELECT
             target_user_id,
             selected_products.id,
             COALESCE(p.title, '파일') || '.pdf',
-            NOW() - (days_ago || ' days')::INTERVAL + (j || ' hours')::INTERVAL,
-            'user01'
+            NOW() - (days_ago || ' days')::INTERVAL + (j || ' hours')::INTERVAL
           FROM products p WHERE p.id = selected_products.id;
         END LOOP;
       END IF;
