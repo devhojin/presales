@@ -142,34 +142,47 @@ export function ChatWidget() {
     loadMessages()
   }, [roomId, isOpen, user, guestId])
 
-  // Supabase Realtime 구독
+  // 폴링 방식으로 새 메시지 감지 (3초 주기)
   useEffect(() => {
     if (!roomId || !isOpen) return
-    const supabase = createClient()
-    const channel = supabase
-      .channel(`chat-widget-${roomId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'chat_messages',
-        filter: `room_id=eq.${roomId}`,
-      }, (payload) => {
-        const newMsg = payload.new as ChatMessage
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === newMsg.id)) return prev
-          return [...prev, newMsg]
-        })
+
+    const pollMessages = async () => {
+      try {
+        if (user) {
+          const res = await fetch(`/api/chat/messages?room_id=${roomId}`)
+          const data = await res.json()
+          if (data.messages) {
+            setMessages((prev) => {
+              if (prev.length === data.messages.length) return prev
+              return data.messages
+            })
+          }
+        } else if (guestId) {
+          const res = await fetch('/api/chat/guest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ room_id: roomId, guest_id: guestId }),
+          })
+          const data = await res.json()
+          if (data.messages) {
+            setMessages((prev) => {
+              if (prev.length === data.messages.length) return prev
+              return data.messages
+            })
+          }
+        }
         // 읽음 처리
         fetch('/api/chat/read', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ room_id: roomId, guest_id: guestId }),
         })
-      })
-      .subscribe()
+      } catch { /* ignore */ }
+    }
 
-    return () => { supabase.removeChannel(channel) }
-  }, [roomId, isOpen, guestId])
+    const interval = setInterval(pollMessages, 3000)
+    return () => clearInterval(interval)
+  }, [roomId, isOpen, user, guestId])
 
   // 스크롤 관리
   useEffect(() => {
