@@ -299,7 +299,9 @@ function extractXmlField(xml: string, fieldName: string): string {
 // Main Fetch Function
 // ===========================
 
-export async function fetchAllCommunityPosts(): Promise<{
+export type FeedProgressCallback = (msg: { source: string; status: string; fetched: number; inserted: number; skipped: number }) => void
+
+export async function fetchAllCommunityPosts(onProgress?: FeedProgressCallback): Promise<{
   results: FetchResult[]
   totalInserted: number
   totalSkipped: number
@@ -319,9 +321,12 @@ export async function fetchAllCommunityPosts(): Promise<{
   }
 
   const results: FetchResult[] = []
-  for (const source of sources) {
+  for (let i = 0; i < sources.length; i++) {
+    const source = sources[i]
+    onProgress?.({ source: source.name, status: `수집 중... (${i + 1}/${sources.length})`, fetched: 0, inserted: 0, skipped: 0 })
     const result = await fetchRssSource(source)
     results.push(result)
+    onProgress?.({ source: source.name, status: `완료`, fetched: result.total_fetched, inserted: result.new_inserted, skipped: result.already_exists })
   }
 
   const totalInserted = results.reduce((s, r) => s + r.new_inserted, 0)

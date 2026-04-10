@@ -45,6 +45,8 @@ export interface FetchResult {
   errors: string[]
 }
 
+export type ProgressCallback = (msg: { source: string; status: string; fetched: number; inserted: number; skipped: number }) => void
+
 // ===========================
 // Normalization
 // ===========================
@@ -97,7 +99,7 @@ function getServiceClient() {
 // Fetch K-Startup Announcements
 // ===========================
 
-async function fetchKStartupAnnouncements(): Promise<FetchResult> {
+async function fetchKStartupAnnouncements(onProgress?: ProgressCallback): Promise<FetchResult> {
   const result: FetchResult = { source: "K-Startup", fetched: 0, inserted: 0, skipped: 0, blocked: 0, errors: [] }
   const apiKey = process.env.KSTARTUP_API_KEY
 
@@ -238,6 +240,8 @@ async function fetchKStartupAnnouncements(): Promise<FetchResult> {
         }
       }
 
+      onProgress?.({ source: "K-Startup", status: `페이지 ${page} 수집 완료`, fetched: result.fetched, inserted: result.inserted, skipped: result.skipped })
+
       if (items.length < perPage || page * perPage >= totalCount) {
         hasMore = false
       } else {
@@ -251,6 +255,7 @@ async function fetchKStartupAnnouncements(): Promise<FetchResult> {
     }
   }
 
+  onProgress?.({ source: "K-Startup", status: "완료", fetched: result.fetched, inserted: result.inserted, skipped: result.skipped })
   return result
 }
 
@@ -260,19 +265,23 @@ async function fetchKStartupAnnouncements(): Promise<FetchResult> {
 
 interface BizinfoItem {
   pblancId: string
-  title: string
-  jrsdInsttNm: string  // 지원기관
-  bsnsSumryCn: string  // 사업요약
-  reqstBeginEndDe: string // 접수기간 (예: "2026-04-01 ~ 2026-05-31")
-  pubDate: string
-  link: string
-  trgetNm: string // 지원대상
-  lcategory: string // 분야
-  hashTags: string
-  reqstDt: string // 신청상태
+  pblancNm: string       // 공고명
+  jrsdInsttNm: string    // 관할기관
+  excInsttNm: string     // 수행기관
+  bsnsSumryCn: string    // 사업요약 (HTML)
+  reqstBeginEndDe: string // 접수기간
+  creatPnttm: string     // 등록일
+  pblancUrl: string      // 상세 URL
+  trgetNm: string        // 지원대상
+  pldirSportRealmLclasCodeNm: string // 분야 대분류
+  pldirSportRealmMlsfcCodeNm: string // 분야 중분류
+  hashtags: string       // 해시태그 (쉼표 구분)
+  refrncNm: string       // 문의처
+  reqstMthPapersCn: string // 접수방법
+  totCnt: number
 }
 
-async function fetchBizinfoAnnouncements(): Promise<FetchResult> {
+async function fetchBizinfoAnnouncements(onProgress?: ProgressCallback): Promise<FetchResult> {
   const result: FetchResult = { source: "중소벤처24", fetched: 0, inserted: 0, skipped: 0, blocked: 0, errors: [] }
   const apiKey = process.env.BIZINFO_API_KEY
 
@@ -318,57 +327,69 @@ async function fetchBizinfoAnnouncements(): Promise<FetchResult> {
       result.fetched += items.length
 
       for (const item of items) {
-        const title = item.title?.trim()
+        const title = (item.pblancNm || "").trim()
         if (!title) continue
 
-        const externalId = `bizinfo-${item.pblancId || title.substring(0, 50)}`
+        const externalId = `bizinfo-${item.pblancId}`
 
         if (blockedSet.has(externalId)) {
           result.blocked++
           continue
         }
 
-        // 접수기간 파싱 ("2026-04-01 ~ 2026-05-31")
+        // 접수기간 파싱 — "2026-04-01 ~ 2026-05-31" 또는 "예산 소진시까지"
         let startDate: string | null = null
         let endDate: string | null = null
-        if (item.reqstBeginEndDe) {
+        if (item.reqstBeginEndDe && item.reqstBeginEndDe.includes("~")) {
           const parts = item.reqstBeginEndDe.split("~").map(s => s.trim())
-          if (parts[0]) startDate = parts[0].slice(0, 10)
-          if (parts[1]) endDate = parts[1].slice(0, 10)
+          if (parts[0] && /^\d{4}-\d{2}-\d{2}/.test(parts[0])) startDate = parts[0].slice(0, 10)
+          if (parts[1] && /^\d{4}-\d{2}-\d{2}/.test(parts[1])) endDate = parts[1].slice(0, 10)
         }
 
         // 분야 매핑
         const supportAreas: string[] = []
-        if (item.lcategory) supportAreas.push(item.lcategory)
-        if (item.hashTags) {
-          item.hashTags.split(",").map(t => t.trim().replace(/^#/, "")).filter(Boolean).forEach(t => supportAreas.push(t))
-        }
+        if (item.pldirSportRealmLclasCodeNm) supportAreas.push(item.pldirSportRealmLclasCodeNm)
+        if (item.pldirSportRealmMlsfcCodeNm) supportAreas.push(item.pldirSportRealmMlsfcCodeNm)
         if (supportAreas.length === 0) supportAreas.push("지원사업")
 
-        const isRecruiting = item.reqstDt?.includes("접수중") || item.reqstDt?.includes("모집중")
-        const status = isRecruiting ? "active" : endDate && new Date(endDate) < new Date() ? "closed" : "active"
+        // 해시태그에서 지역 추출
+        const regions: string[] = ["전국"]
+        if (item.hashtags) {
+          const tags = item.hashtags.split(",").map(t => t.trim())
+          for (const tag of tags) {
+            if (Object.keys(REGION_NORMALIZE).includes(tag) || tag.includes("시") || tag.includes("도")) {
+              regions[0] = normalizeRegion(tag)
+              break
+            }
+          }
+        }
+
+        // HTML 제거한 설명
+        const descriptionClean = (item.bsnsSumryCn || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().substring(0, 2000)
+
+        const status = endDate && new Date(endDate) < new Date() ? "closed" : "active"
 
         const dbRow = {
           title,
-          organization: item.jrsdInsttNm || "중소벤처기업부",
+          organization: item.jrsdInsttNm || item.excInsttNm || "중소벤처기업부",
           type: "public",
           budget: "",
           start_date: startDate,
           end_date: endDate,
-          application_method: "기업마당 홈페이지",
+          application_method: item.reqstMthPapersCn || "기업마당 홈페이지",
           target: item.trgetNm || "",
-          description: (item.bsnsSumryCn || "").substring(0, 2000),
+          description: descriptionClean,
           eligibility: item.trgetNm || "",
-          department: item.jrsdInsttNm || "",
-          contact: "",
-          source_url: item.link || `https://www.bizinfo.go.kr/web/lay1/bbs/S1T122C128/AS/74/view.do?pblancId=${item.pblancId}`,
-          field: item.lcategory || "",
+          department: item.excInsttNm || item.jrsdInsttNm || "",
+          contact: item.refrncNm || "",
+          source_url: item.pblancUrl || `https://www.bizinfo.go.kr/sii/siia/selectSIIA200Detail.do?pblancId=${item.pblancId}`,
+          field: item.pldirSportRealmLclasCodeNm || "",
           status,
           source: "중소벤처24",
           external_id: externalId,
           matching_keywords: supportAreas,
           support_areas: supportAreas,
-          regions: ["전국"],
+          regions,
           target_types: item.trgetNm ? [item.trgetNm] : ["중소기업"],
           age_ranges: ["제한없음"],
           business_years: ["제한없음"],
@@ -417,6 +438,8 @@ async function fetchBizinfoAnnouncements(): Promise<FetchResult> {
         }
       }
 
+      onProgress?.({ source: "중소벤처24", status: `페이지 ${pageIndex} 수집 완료`, fetched: result.fetched, inserted: result.inserted, skipped: result.skipped })
+
       const totCnt = json.totCnt || json.totalCount || 0
       if (pageIndex * 50 >= totCnt || items.length < 50) break
     }
@@ -424,6 +447,7 @@ async function fetchBizinfoAnnouncements(): Promise<FetchResult> {
     result.errors.push(`기업마당 수집 오류: ${err instanceof Error ? err.message : String(err)}`)
   }
 
+  onProgress?.({ source: "중소벤처24", status: "완료", fetched: result.fetched, inserted: result.inserted, skipped: result.skipped })
   return result
 }
 
@@ -431,15 +455,15 @@ async function fetchBizinfoAnnouncements(): Promise<FetchResult> {
 // Main Export
 // ===========================
 
-export async function fetchAllAnnouncements(): Promise<{ results: FetchResult[]; totalInserted: number; totalSkipped: number; totalBlocked: number }> {
+export async function fetchAllAnnouncements(onProgress?: ProgressCallback): Promise<{ results: FetchResult[]; totalInserted: number; totalSkipped: number; totalBlocked: number }> {
   const results: FetchResult[] = []
 
-  // K-Startup 수집
-  const kstartup = await fetchKStartupAnnouncements()
+  onProgress?.({ source: "K-Startup", status: "수집 시작...", fetched: 0, inserted: 0, skipped: 0 })
+  const kstartup = await fetchKStartupAnnouncements(onProgress)
   results.push(kstartup)
 
-  // 기업마당(중소벤처24) 수집
-  const bizinfo = await fetchBizinfoAnnouncements()
+  onProgress?.({ source: "중소벤처24", status: "수집 시작...", fetched: 0, inserted: 0, skipped: 0 })
+  const bizinfo = await fetchBizinfoAnnouncements(onProgress)
   results.push(bizinfo)
 
   const totalInserted = results.reduce((s, r) => s + r.inserted, 0)

@@ -68,6 +68,9 @@ export default function AdminAnnouncementsPage() {
   const [tabCounts, setTabCounts] = useState<Record<Tab, number>>({ all: 0, published: 0, unpublished: 0, closed: 0 })
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [fetchingNow, setFetchingNow] = useState(false)
+  const [fetchModal, setFetchModal] = useState(false)
+  const [fetchLogs, setFetchLogs] = useState<Array<{ source: string; status: string; fetched: number; inserted: number; skipped: number }>>([])
+  const [fetchDone, setFetchDone] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showDetail, setShowDetail] = useState(false)
   const [toastMsg, setToastMsg] = useState<string | null>(null)
@@ -107,17 +110,41 @@ export default function AdminAnnouncementsPage() {
 
   useEffect(() => { fetchAnnouncements() }, [fetchAnnouncements])
 
-  const handleFetchNow = async () => {
+  const handleFetchNow = () => {
     setFetchingNow(true)
-    try {
-      const res = await fetch('/api/admin/announcements/trigger-fetch', { method: 'POST' })
-      const data = await res.json()
-      if (!res.ok) { showToast(`수집 실패: ${data.error || res.statusText}`); return }
-      const { totalInserted = 0, totalSkipped = 0, totalBlocked = 0 } = data.summary || {}
-      showToast(`수집 완료: 신규 ${totalInserted}건, 중복 ${totalSkipped}건, 차단 ${totalBlocked}건`)
-      setTimeout(() => fetchAnnouncements(), 1000)
-    } catch (e) { showToast(e instanceof Error ? e.message : '수집 오류') }
-    finally { setFetchingNow(false) }
+    setFetchModal(true)
+    setFetchLogs([])
+    setFetchDone(false)
+
+    const evtSource = new EventSource('/api/admin/announcements/trigger-fetch-stream')
+    evtSource.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data)
+        if (data.type === 'progress') {
+          setFetchLogs(prev => {
+            const idx = prev.findIndex(l => l.source === data.source)
+            const item = { source: data.source, status: data.status, fetched: data.fetched, inserted: data.inserted, skipped: data.skipped }
+            if (idx >= 0) { const next = [...prev]; next[idx] = item; return next }
+            return [...prev, item]
+          })
+        } else if (data.type === 'done') {
+          setFetchDone(true)
+          setFetchingNow(false)
+          evtSource.close()
+          setTimeout(() => fetchAnnouncements(), 500)
+        } else if (data.type === 'error') {
+          setFetchLogs(prev => [...prev, { source: '오류', status: data.message, fetched: 0, inserted: 0, skipped: 0 }])
+          setFetchDone(true)
+          setFetchingNow(false)
+          evtSource.close()
+        }
+      } catch {}
+    }
+    evtSource.onerror = () => {
+      setFetchDone(true)
+      setFetchingNow(false)
+      evtSource.close()
+    }
   }
 
   const handleTogglePublish = async (id: string, publish: boolean) => {
@@ -306,6 +333,62 @@ export default function AdminAnnouncementsPage() {
       <ConfirmModal type={modalType} count={selectedIds.size}
         onConfirm={() => handleBulkAction(modalType === 'publish' ? 'publish' : modalType === 'permanent-delete' ? 'permanent-delete' : 'delete')}
         onCancel={() => { if (!deleting) setModalType(null) }} />
+
+      {/* Fetch Progress Modal */}
+      {fetchModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => { if (fetchDone) setFetchModal(false) }}>
+          <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                {fetchDone ? <Megaphone className="w-5 h-5 text-primary" /> : <Loader2 className="w-5 h-5 animate-spin text-primary" />}
+                공고 수집 {fetchDone ? '완료' : '진행 중'}
+              </h3>
+              {fetchDone && <button onClick={() => setFetchModal(false)} className="text-muted-foreground hover:text-foreground cursor-pointer"><X className="w-5 h-5" /></button>}
+            </div>
+            <div className="space-y-3">
+              {fetchLogs.map((log, i) => (
+                <div key={i} className="bg-muted/50 rounded-xl p-3">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-semibold text-foreground">{log.source}</span>
+                    <span className={`text-xs font-medium ${log.status === '완료' ? 'text-primary' : 'text-muted-foreground'}`}>{log.status}</span>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <span>수집 <strong className="text-foreground">{log.fetched}</strong></span>
+                    <span>신규 <strong className="text-emerald-600">{log.inserted}</strong></span>
+                    <span>중복 <strong>{log.skipped}</strong></span>
+                  </div>
+                  {/* Progress bar */}
+                  {!fetchDone && log.status !== '완료' && (
+                    <div className="mt-2 h-1.5 bg-border/50 rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
+                    </div>
+                  )}
+                  {log.status === '완료' && (
+                    <div className="mt-2 h-1.5 bg-border/50 rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full" style={{ width: '100%' }} />
+                    </div>
+                  )}
+                </div>
+              ))}
+              {fetchLogs.length === 0 && !fetchDone && (
+                <div className="text-center py-6 text-sm text-muted-foreground">
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
+                  수집 소스에 연결 중...
+                </div>
+              )}
+            </div>
+            {fetchDone && (
+              <div className="mt-4 pt-3 border-t border-border/50">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">총 신규</span>
+                  <span className="font-bold text-primary">{fetchLogs.reduce((s, l) => s + l.inserted, 0)}건</span>
+                </div>
+                <button onClick={() => setFetchModal(false)} className="mt-3 w-full py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 cursor-pointer">확인</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {toastMsg && (
         <div className="fixed bottom-6 right-6 z-[70]">

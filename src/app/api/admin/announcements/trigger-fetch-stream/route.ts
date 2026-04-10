@@ -1,0 +1,61 @@
+import { createServerClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
+import { cookies } from 'next/headers'
+import { fetchAllAnnouncements } from '@/lib/fetch-announcements'
+
+export const dynamic = 'force-dynamic'
+
+export async function GET() {
+  // Auth check
+  const cookieStore = await cookies()
+  const supabaseAuth = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll() { return cookieStore.getAll() }, setAll() {} } }
+  )
+  const { data: { user } } = await supabaseAuth.auth.getUser()
+  if (!user) {
+    return new Response(JSON.stringify({ error: '로그인 필요' }), { status: 401 })
+  }
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (profile?.role !== 'admin') {
+    return new Response(JSON.stringify({ error: '관리자 권한 필요' }), { status: 403 })
+  }
+
+  // SSE stream
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream({
+    async start(controller) {
+      function send(data: Record<string, unknown>) {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+      }
+
+      try {
+        const result = await fetchAllAnnouncements((msg) => {
+          send({ type: 'progress', ...msg })
+        })
+
+        send({
+          type: 'done',
+          results: result.results.map(r => ({ source: r.source, fetched: r.fetched, inserted: r.inserted, skipped: r.skipped, blocked: r.blocked, errors: r.errors })),
+          totalInserted: result.totalInserted,
+          totalSkipped: result.totalSkipped,
+          totalBlocked: result.totalBlocked,
+        })
+      } catch (err) {
+        send({ type: 'error', message: err instanceof Error ? err.message : '수집 오류' })
+      }
+
+      controller.close()
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    },
+  })
+}
