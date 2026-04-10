@@ -119,6 +119,7 @@ export default function MyConsolePage() {
   const [feedBookmarks, setFeedBookmarks] = useState<BookmarkFeed[]>([])
   const [bookmarkModal, setBookmarkModal] = useState<BookmarkModalItem | null>(null)
   const [bookmarkTab, setBookmarkTab] = useState<'announcement' | 'feed'>('announcement')
+  const [receiptOrder, setReceiptOrder] = useState<Order | null>(null)
 
   // KPI counts
   const [kpi, setKpi] = useState({ orders: 0, bookmarks: 0, downloads: 0, chats: 0 })
@@ -522,8 +523,11 @@ export default function MyConsolePage() {
                             )
                           })}
                           <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                            <div className="flex items-center gap-2">
-                              {(order.status === 'paid' || order.status === 'completed') && <button type="button" onClick={e => { e.stopPropagation(); printReceipt(order) }} className="px-3 py-1.5 rounded-lg border border-blue-300 text-primary text-xs font-medium hover:bg-primary/8 cursor-pointer">영수증</button>}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <button type="button" onClick={e => { e.stopPropagation(); setReceiptOrder(order) }} className="px-3 py-1.5 rounded-lg border border-border text-foreground text-xs font-medium hover:bg-muted cursor-pointer flex items-center gap-1">
+                                <FileText className="w-3 h-3" /> 주문서 보기
+                              </button>
+                              {(order.status === 'paid' || order.status === 'completed') && <button type="button" onClick={e => { e.stopPropagation(); printReceipt(order) }} className="px-3 py-1.5 rounded-lg border border-blue-300 text-primary text-xs font-medium hover:bg-primary/8 cursor-pointer">영수증 인쇄</button>}
                               {order.status === 'paid' && !order.refund_reason && <button type="button" onClick={e => { e.stopPropagation(); setRefundOrderId(order.id); setRefundReason('') }} className="px-3 py-1.5 rounded-lg border border-orange-300 text-orange-600 text-xs font-medium hover:bg-orange-50 cursor-pointer">환불 문의</button>}
                               {order.refund_reason && <p className="text-xs text-orange-600">환불 문의 접수됨</p>}
                             </div>
@@ -679,6 +683,91 @@ export default function MyConsolePage() {
           </div>
         </div>
       </div>
+
+      {/* Receipt/Order Detail Modal */}
+      {receiptOrder && (() => {
+        const items = (receiptOrder.order_items || []) as OrderItem[]
+        const statusInfo = statusMap[receiptOrder.status] || { label: receiptOrder.status, class: 'bg-muted text-muted-foreground border-border' }
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setReceiptOrder(null)}>
+            <div className="bg-background rounded-2xl max-w-lg w-full max-h-[85vh] shadow-xl flex flex-col" onClick={e => e.stopPropagation()}>
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-border/50 shrink-0">
+                <div>
+                  <h3 className="text-lg font-semibold">주문서</h3>
+                  <p className="text-xs font-mono text-muted-foreground mt-1">{receiptOrder.order_number}</p>
+                </div>
+                <button type="button" onClick={() => setReceiptOrder(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {/* Meta */}
+                <div className="grid grid-cols-2 gap-3 mb-5 pb-5 border-b border-border/50">
+                  <div>
+                    <p className="text-xs text-muted-foreground">주문 상태</p>
+                    <Badge className={`text-xs border mt-1 ${statusInfo.class}`}>{statusInfo.label}</Badge>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">주문 일시</p>
+                    <p className="text-sm font-medium mt-0.5">{formatDate(receiptOrder.created_at)}</p>
+                  </div>
+                  {receiptOrder.paid_at && (
+                    <div>
+                      <p className="text-xs text-muted-foreground">결제 완료</p>
+                      <p className="text-sm font-medium mt-0.5">{formatDate(receiptOrder.paid_at)}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-xs text-muted-foreground">주문자</p>
+                    <p className="text-sm font-medium mt-0.5">{profile?.name || profile?.email || '-'}</p>
+                  </div>
+                </div>
+
+                {/* Items */}
+                <p className="text-xs font-semibold text-muted-foreground mb-2">주문 상품</p>
+                <div className="space-y-2 mb-5">
+                  {items.map(item => {
+                    const prod = Array.isArray(item.products) ? item.products[0] : item.products
+                    return (
+                      <div key={item.id} className="flex items-center justify-between py-2.5 px-3 rounded-lg border border-border/50 bg-muted/20">
+                        <div className="min-w-0 flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                          <p className="text-sm font-medium truncate">{prod?.title || '-'}</p>
+                        </div>
+                        <p className="text-sm font-semibold shrink-0 ml-3">{formatPrice(item.price)}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Total */}
+                <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                  <p className="text-sm font-semibold">총 결제 금액</p>
+                  <p className="text-lg font-bold text-primary">{formatPrice(receiptOrder.total_amount)}</p>
+                </div>
+
+                {receiptOrder.refund_reason && (
+                  <div className="mt-4 p-3 rounded-lg bg-orange-50 border border-orange-200">
+                    <p className="text-xs font-semibold text-orange-700 mb-1">환불 문의 내용</p>
+                    <p className="text-xs text-orange-600 whitespace-pre-wrap">{receiptOrder.refund_reason}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-end gap-2 p-4 border-t border-border/50 shrink-0">
+                {(receiptOrder.status === 'paid' || receiptOrder.status === 'completed') && (
+                  <button type="button" onClick={() => printReceipt(receiptOrder)} className="px-4 py-2 text-xs font-medium border border-blue-300 text-primary rounded-lg hover:bg-primary/8 cursor-pointer">영수증 인쇄</button>
+                )}
+                <button type="button" onClick={() => setReceiptOrder(null)} className="px-4 py-2 text-xs font-medium border border-border rounded-lg hover:bg-muted cursor-pointer">닫기</button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Bookmark Detail Modal */}
       {bookmarkModal && (
