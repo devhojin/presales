@@ -6,6 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { ToastContainer } from "@/components/Toast";
+import { ChatWidget } from "@/components/chat/ChatWidget";
 import { SITE_URL } from "@/lib/constants";
 
 const geistSans = Geist({
@@ -79,6 +80,7 @@ export default function RootLayout({
         <main className="flex-1">{children}</main>
         <Footer />
         <ToastContainer />
+        <ChatWidget />
       </body>
     </html>
   );

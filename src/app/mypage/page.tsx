@@ -9,7 +9,7 @@ import {
   FileText, Download, User, Loader2, Mail, Phone, Building, Pencil, Save, X,
   Lock, Eye, EyeOff, ChevronDown, ShoppingBag, AlertTriangle, Clock, Bookmark,
   ExternalLink, Megaphone, Rss, Package, ArrowRight, Store, BookOpen,
-  ArrowLeft, BookmarkCheck,
+  ArrowLeft, BookmarkCheck, MessageCircle, CreditCard,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { validatePassword } from '@/lib/password-policy'
@@ -70,6 +70,10 @@ interface ActivityItem {
   raw: Date
 }
 
+interface ChatPaymentRequest {
+  id: string; title: string; amount: number; status: string; created_at: string; description: string | null
+}
+
 interface BookmarkAnn { id: string; title: string; organization: string | null; status: string; end_date: string | null; source_url: string | null }
 interface BookmarkFeed { id: string; title: string; category: string; external_url: string | null }
 
@@ -113,6 +117,7 @@ export default function MyConsolePage() {
   const [downloadLogs, setDownloadLogs] = useState<DownloadLog[]>([])
   const [annBookmarks, setAnnBookmarks] = useState<BookmarkAnn[]>([])
   const [feedBookmarks, setFeedBookmarks] = useState<BookmarkFeed[]>([])
+  const [chatPaymentRequests, setChatPaymentRequests] = useState<ChatPaymentRequest[]>([])
 
   // KPI counts
   const [kpi, setKpi] = useState({ orders: 0, bookmarks: 0, activeAnns: 0, downloads: 0 })
@@ -218,6 +223,13 @@ export default function MyConsolePage() {
         downloads: logsData?.length || 0,
       })
       setLoading(false)
+
+      // 채팅 결제요청 내역 로드
+      try {
+        const prRes = await fetch('/api/chat/payment-request')
+        const prData = await prRes.json()
+        if (prData.paymentRequests) setChatPaymentRequests(prData.paymentRequests)
+      } catch { /* ignore */ }
     }
     load()
   }, [router])
@@ -549,6 +561,58 @@ export default function MyConsolePage() {
             )}
           </div>
 
+          {/* Chat Section */}
+          <div id="chat" className="bg-card border border-border/50 rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2"><MessageCircle className="w-4 h-4 text-teal-600" /><h2 className="font-semibold">나의 채팅</h2></div>
+            </div>
+            <p className="text-sm text-muted-foreground mb-3">우측 하단의 채팅 버튼을 통해 상담을 시작할 수 있습니다.</p>
+            <button type="button" onClick={() => {
+              const event = new CustomEvent('open-chat-widget')
+              window.dispatchEvent(event)
+            }} className="px-4 py-2.5 rounded-xl bg-teal-600 text-white text-sm font-medium hover:bg-teal-700 transition-colors flex items-center gap-2 cursor-pointer">
+              <MessageCircle className="w-4 h-4" /> 채팅 시작하기
+            </button>
+          </div>
+
+          {/* Payment Requests Section */}
+          <div id="payment-requests" className="bg-card border border-border/50 rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2"><CreditCard className="w-4 h-4 text-emerald-600" /><h2 className="font-semibold">결제 요청 내역</h2><span className="text-xs text-muted-foreground">{chatPaymentRequests.length}건</span></div>
+            </div>
+            {chatPaymentRequests.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <CreditCard className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">결제 요청 내역이 없습니다</p>
+                <p className="text-xs mt-1">채팅 상담 중 관리자가 커스텀 상품을 제안하면 여기에 표시됩니다</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {chatPaymentRequests.map(pr => (
+                  <div key={pr.id} className="flex items-center gap-4 p-3 rounded-xl border border-border/50">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                      pr.status === 'pending' ? 'bg-yellow-50 text-yellow-600' : pr.status === 'paid' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'
+                    }`}>
+                      <CreditCard className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">{pr.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{formatDate(pr.created_at)}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-sm font-bold">{formatPrice(pr.amount)}</p>
+                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                        pr.status === 'pending' ? 'bg-yellow-50 text-yellow-700' : pr.status === 'paid' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'
+                      }`}>
+                        {pr.status === 'pending' ? '결제 대기' : pr.status === 'paid' ? '결제 완료' : '취소됨'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Downloads Section */}
           <div id="downloads" className="bg-card border border-border/50 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
@@ -610,9 +674,11 @@ export default function MyConsolePage() {
             <div className="grid grid-cols-2 gap-2">
               {[
                 { label: '스토어', href: '/store', icon: Store, color: 'from-primary to-emerald-600' },
+                { label: '나의 채팅', href: '#chat', icon: MessageCircle, color: 'from-teal-500 to-teal-600' },
                 { label: '공고사업', href: '/announcements', icon: Megaphone, color: 'from-blue-500 to-blue-600' },
                 { label: 'IT피드', href: '/feeds', icon: Rss, color: 'from-orange-400 to-orange-500' },
                 { label: '블로그', href: '/blog', icon: BookOpen, color: 'from-violet-500 to-violet-600' },
+                { label: '결제요청', href: '#payment-requests', icon: CreditCard, color: 'from-emerald-500 to-emerald-600' },
               ].map(link => (
                 <Link key={link.label} href={link.href} className="group flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
                   <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${link.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
