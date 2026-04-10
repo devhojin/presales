@@ -70,12 +70,11 @@ interface ActivityItem {
   raw: Date
 }
 
-interface ChatPaymentRequest {
-  id: string; title: string; amount: number; status: string; created_at: string; description: string | null
-}
-
-interface BookmarkAnn { id: string; title: string; organization: string | null; status: string; end_date: string | null; source_url: string | null }
-interface BookmarkFeed { id: string; title: string; category: string; external_url: string | null }
+interface BookmarkAnn { id: string; title: string; organization: string | null; status: string; end_date: string | null; source_url: string | null; content?: string | null; start_date?: string | null }
+interface BookmarkFeed { id: string; title: string; category: string; external_url: string | null; content?: string | null; source?: string | null; published_at?: string | null }
+type BookmarkModalItem =
+  | { type: 'announcement'; data: BookmarkAnn }
+  | { type: 'feed'; data: BookmarkFeed }
 
 const statusMap: Record<string, { label: string; class: string }> = {
   pending: { label: '대기', class: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
@@ -117,7 +116,7 @@ export default function MyConsolePage() {
   const [downloadLogs, setDownloadLogs] = useState<DownloadLog[]>([])
   const [annBookmarks, setAnnBookmarks] = useState<BookmarkAnn[]>([])
   const [feedBookmarks, setFeedBookmarks] = useState<BookmarkFeed[]>([])
-  const [chatPaymentRequests, setChatPaymentRequests] = useState<ChatPaymentRequest[]>([])
+  const [bookmarkModal, setBookmarkModal] = useState<BookmarkModalItem | null>(null)
 
   // KPI counts
   const [kpi, setKpi] = useState({ orders: 0, bookmarks: 0, activeAnns: 0, downloads: 0 })
@@ -202,14 +201,14 @@ export default function MyConsolePage() {
       // Announcement bookmarks details
       if (annBmData && annBmData.length > 0) {
         const ids = annBmData.map(b => b.announcement_id)
-        const { data: anns } = await supabase.from('announcements').select('id, title, organization, status, end_date, source_url').in('id', ids)
+        const { data: anns } = await supabase.from('announcements').select('id, title, organization, status, end_date, start_date, source_url, content').in('id', ids)
         if (anns) setAnnBookmarks(ids.map(id => anns.find(a => a.id === id)).filter(Boolean) as BookmarkAnn[])
       }
 
       // Feed bookmarks details
       if (feedBmData && feedBmData.length > 0) {
         const ids = feedBmData.map(b => b.post_id)
-        const { data: posts } = await supabase.from('community_posts').select('id, title, category, external_url').in('id', ids)
+        const { data: posts } = await supabase.from('community_posts').select('id, title, category, external_url, content, source, published_at').in('id', ids)
         if (posts) setFeedBookmarks(ids.map(id => posts.find(p => p.id === id)).filter(Boolean) as BookmarkFeed[])
       }
 
@@ -223,13 +222,6 @@ export default function MyConsolePage() {
         downloads: logsData?.length || 0,
       })
       setLoading(false)
-
-      // 채팅 결제요청 내역 로드
-      try {
-        const prRes = await fetch('/api/chat/payment-request')
-        const prData = await prRes.json()
-        if (prData.paymentRequests) setChatPaymentRequests(prData.paymentRequests)
-      } catch { /* ignore */ }
     }
     load()
   }, [router])
@@ -464,32 +456,6 @@ export default function MyConsolePage() {
         {/* LEFT Column (2/3) */}
         <div className="lg:col-span-2 space-y-6">
 
-          {/* Recent Activity */}
-          <div className="bg-card border border-border/50 rounded-2xl p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Clock className="w-4 h-4 text-primary" />
-              <h2 className="font-semibold">최근 활동</h2>
-            </div>
-            {activities.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Clock className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">아직 활동 내역이 없습니다</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {activities.map((a, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${a.type === 'order' ? 'bg-primary/10 text-primary' : a.type === 'download' ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-600'}`}>
-                      {a.type === 'order' ? <Package className="w-4 h-4" /> : a.type === 'download' ? <Download className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
-                    </div>
-                    <p className="text-sm text-foreground flex-1 truncate">{a.text}</p>
-                    <span className="text-xs text-muted-foreground shrink-0">{a.time}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
           {/* Orders Section */}
           <div id="orders" className="bg-card border border-border/50 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
@@ -561,6 +527,32 @@ export default function MyConsolePage() {
             )}
           </div>
 
+          {/* Recent Activity */}
+          <div className="bg-card border border-border/50 rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="w-4 h-4 text-primary" />
+              <h2 className="font-semibold">최근 활동</h2>
+            </div>
+            {activities.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Clock className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">아직 활동 내역이 없습니다</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {activities.map((a, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${a.type === 'order' ? 'bg-primary/10 text-primary' : a.type === 'download' ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                      {a.type === 'order' ? <Package className="w-4 h-4" /> : a.type === 'download' ? <Download className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+                    </div>
+                    <p className="text-sm text-foreground flex-1 truncate">{a.text}</p>
+                    <span className="text-xs text-muted-foreground shrink-0">{a.time}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Chat Section */}
           <div id="chat" className="bg-card border border-border/50 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
@@ -575,94 +567,6 @@ export default function MyConsolePage() {
             </button>
           </div>
 
-          {/* Payment Requests Section */}
-          <div id="payment-requests" className="bg-card border border-border/50 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2"><CreditCard className="w-4 h-4 text-emerald-600" /><h2 className="font-semibold">결제 요청 내역</h2><span className="text-xs text-muted-foreground">{chatPaymentRequests.length}건</span></div>
-            </div>
-            {chatPaymentRequests.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <CreditCard className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">결제 요청 내역이 없습니다</p>
-                <p className="text-xs mt-1">채팅 상담 중 관리자가 커스텀 상품을 제안하면 여기에 표시됩니다</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {chatPaymentRequests.map(pr => (
-                  <div key={pr.id} className="flex items-center gap-4 p-3 rounded-xl border border-border/50">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                      pr.status === 'pending' ? 'bg-yellow-50 text-yellow-600' : pr.status === 'paid' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'
-                    }`}>
-                      <CreditCard className="w-5 h-5" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate">{pr.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{formatDate(pr.created_at)}</p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-sm font-bold">{formatPrice(pr.amount)}</p>
-                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                        pr.status === 'pending' ? 'bg-yellow-50 text-yellow-700' : pr.status === 'paid' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'
-                      }`}>
-                        {pr.status === 'pending' ? '결제 대기' : pr.status === 'paid' ? '결제 완료' : '취소됨'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Downloads Section */}
-          <div id="downloads" className="bg-card border border-border/50 rounded-2xl p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2"><Download className="w-4 h-4 text-orange-600" /><h2 className="font-semibold">내 다운로드</h2><span className="text-xs text-muted-foreground">{purchasedProducts.length}개 상품</span></div>
-            </div>
-            {purchasedProducts.length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground">
-                <Download className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">구매한 상품이 없습니다</p>
-                <Link href="/store" className="inline-block mt-3 text-xs text-primary hover:underline">스토어 바로가기</Link>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {purchasedProducts.map(p => {
-                  const lastLog = downloadLogs.find(l => l.product_id === p.id)
-                  return (
-                    <div key={p.id} className="flex items-center gap-4 p-3 rounded-xl border border-border/50 hover:bg-muted/30 transition-colors">
-                      {p.thumbnail_url ? <img src={p.thumbnail_url} alt={p.title} className="w-10 h-10 rounded-lg object-cover shrink-0" /> : <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-900 to-blue-700 flex items-center justify-center shrink-0"><FileText className="w-4 h-4 text-white/70" /></div>}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold truncate">{p.title}</p>
-                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                          {p.format && <Badge className="text-[10px] px-1.5 py-0 bg-primary/8 text-primary border-blue-200 border">{p.format}</Badge>}
-                          {lastLog && <span className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="w-3 h-3" />최근 {formatDate(lastLog.downloaded_at)}</span>}
-                        </div>
-                      </div>
-                      <button type="button" onClick={() => handleProductDownload(p.id, p.title)} className="px-3 py-2 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 flex items-center gap-1 shrink-0 cursor-pointer"><Download className="w-3.5 h-3.5" />다운로드</button>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-            {downloadLogs.length > 0 && (
-              <div className="mt-4 border-t border-border/50 pt-3">
-                <button type="button" onClick={() => setShowDownloadHistory(p => !p)} className="flex items-center justify-between w-full text-xs text-muted-foreground hover:text-foreground cursor-pointer">
-                  <span>최근 다운로드 이력 ({downloadLogs.length}건)</span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showDownloadHistory ? 'rotate-180' : ''}`} />
-                </button>
-                {showDownloadHistory && (
-                  <div className="mt-3 space-y-1">
-                    {downloadLogs.map(log => (
-                      <div key={log.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg hover:bg-muted/30 text-xs">
-                        <span className="truncate text-foreground">{(Array.isArray(log.products) ? log.products[0]?.title : log.products?.title) || log.file_name}</span>
-                        <span className="text-muted-foreground shrink-0 ml-2">{formatDate(log.downloaded_at)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* RIGHT Column (1/3) - Sticky */}
@@ -677,8 +581,6 @@ export default function MyConsolePage() {
                 { label: '나의 채팅', href: '#chat', icon: MessageCircle, color: 'from-teal-500 to-teal-600' },
                 { label: '공고사업', href: '/announcements', icon: Megaphone, color: 'from-blue-500 to-blue-600' },
                 { label: 'IT피드', href: '/feeds', icon: Rss, color: 'from-orange-400 to-orange-500' },
-                { label: '블로그', href: '/blog', icon: BookOpen, color: 'from-violet-500 to-violet-600' },
-                { label: '결제요청', href: '#payment-requests', icon: CreditCard, color: 'from-emerald-500 to-emerald-600' },
               ].map(link => (
                 <Link key={link.label} href={link.href} className="group flex flex-col items-center gap-2 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
                   <div className={`w-9 h-9 rounded-lg bg-gradient-to-br ${link.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
@@ -711,20 +613,20 @@ export default function MyConsolePage() {
                 {annBookmarks.map(ann => {
                   const expired = ann.end_date ? new Date(ann.end_date) < new Date() : false
                   return (
-                    <Link key={`a-${ann.id}`} href={`/announcements?selected=${ann.id}`} className="flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors group">
+                    <button type="button" key={`a-${ann.id}`} onClick={() => setBookmarkModal({ type: 'announcement', data: ann })} className="w-full flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors group cursor-pointer text-left">
                       <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${expired || ann.status === 'closed' ? 'bg-zinc-100 text-zinc-500' : 'bg-emerald-50 text-emerald-700'}`}>
                         {expired || ann.status === 'closed' ? '마감' : '공고'}
                       </span>
                       <span className="text-xs text-foreground truncate flex-1 group-hover:text-primary transition-colors">{ann.title}</span>
-                    </Link>
+                    </button>
                   )
                 })}
                 {/* Feed bookmarks */}
                 {feedBookmarks.map(feed => (
-                  <Link key={`f-${feed.id}`} href={`/feeds?selected=${feed.id}`} className="flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors group">
+                  <button type="button" key={`f-${feed.id}`} onClick={() => setBookmarkModal({ type: 'feed', data: feed })} className="w-full flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors group cursor-pointer text-left">
                     <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${catColor(feed.category)}`}>{catLabel(feed.category)}</span>
                     <span className="text-xs text-foreground truncate flex-1 group-hover:text-primary transition-colors">{feed.title}</span>
-                  </Link>
+                  </button>
                 ))}
               </div>
             )}
@@ -736,6 +638,86 @@ export default function MyConsolePage() {
           </div>
         </div>
       </div>
+
+      {/* Bookmark Detail Modal */}
+      {bookmarkModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setBookmarkModal(null)}>
+          <div className="bg-background rounded-2xl max-w-2xl w-full max-h-[85vh] shadow-xl flex flex-col" onClick={e => e.stopPropagation()}>
+            {/* Header */}
+            <div className="flex items-start justify-between p-6 border-b border-border/50 shrink-0">
+              <div className="flex-1 min-w-0">
+                {bookmarkModal.type === 'announcement' ? (
+                  <>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${(bookmarkModal.data.end_date && new Date(bookmarkModal.data.end_date) < new Date()) || bookmarkModal.data.status === 'closed' ? 'bg-zinc-100 text-zinc-500' : 'bg-emerald-50 text-emerald-700'}`}>
+                        {(bookmarkModal.data.end_date && new Date(bookmarkModal.data.end_date) < new Date()) || bookmarkModal.data.status === 'closed' ? '마감' : '공고'}
+                      </span>
+                      {bookmarkModal.data.organization && <span className="text-xs text-muted-foreground">{bookmarkModal.data.organization}</span>}
+                    </div>
+                    <h3 className="text-lg font-semibold leading-snug">{bookmarkModal.data.title}</h3>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${catColor(bookmarkModal.data.category)}`}>{catLabel(bookmarkModal.data.category)}</span>
+                      {bookmarkModal.data.source && <span className="text-xs text-muted-foreground">{bookmarkModal.data.source}</span>}
+                    </div>
+                    <h3 className="text-lg font-semibold leading-snug">{bookmarkModal.data.title}</h3>
+                  </>
+                )}
+              </div>
+              <button type="button" onClick={() => setBookmarkModal(null)} className="text-muted-foreground hover:text-foreground cursor-pointer shrink-0 ml-3">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {bookmarkModal.type === 'announcement' ? (
+                <>
+                  {(bookmarkModal.data.start_date || bookmarkModal.data.end_date) && (
+                    <div className="mb-4 text-xs text-muted-foreground">
+                      {bookmarkModal.data.start_date && <span>시작: {formatDate(bookmarkModal.data.start_date)}</span>}
+                      {bookmarkModal.data.start_date && bookmarkModal.data.end_date && <span className="mx-2">·</span>}
+                      {bookmarkModal.data.end_date && <span>마감: {formatDate(bookmarkModal.data.end_date)}</span>}
+                    </div>
+                  )}
+                  {bookmarkModal.data.content ? (
+                    <div className="prose prose-sm max-w-none text-sm text-foreground whitespace-pre-wrap leading-relaxed">{bookmarkModal.data.content}</div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">상세 내용이 없습니다.</p>
+                  )}
+                </>
+              ) : (
+                <>
+                  {bookmarkModal.data.published_at && (
+                    <div className="mb-4 text-xs text-muted-foreground">게시일: {formatDate(bookmarkModal.data.published_at)}</div>
+                  )}
+                  {bookmarkModal.data.content ? (
+                    <div className="prose prose-sm max-w-none text-sm text-foreground whitespace-pre-wrap leading-relaxed">{bookmarkModal.data.content}</div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">상세 내용이 없습니다.</p>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between p-4 border-t border-border/50 shrink-0">
+              {bookmarkModal.type === 'announcement' && bookmarkModal.data.source_url ? (
+                <a href={bookmarkModal.data.source_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-primary hover:underline">
+                  <ExternalLink className="w-3.5 h-3.5" /> 원문 보기
+                </a>
+              ) : bookmarkModal.type === 'feed' && bookmarkModal.data.external_url ? (
+                <a href={bookmarkModal.data.external_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-xs text-primary hover:underline">
+                  <ExternalLink className="w-3.5 h-3.5" /> 원문 보기
+                </a>
+              ) : <div />}
+              <button type="button" onClick={() => setBookmarkModal(null)} className="px-4 py-2 text-xs font-medium border border-border rounded-lg hover:bg-muted cursor-pointer">닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Refund Modal */}
       {refundOrderId !== null && (
