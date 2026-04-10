@@ -452,19 +452,150 @@ async function fetchBizinfoAnnouncements(onProgress?: ProgressCallback): Promise
 }
 
 // ===========================
+// Fetch NIPA (정보통신산업진흥원) — HTML Scraping
+// ===========================
+
+interface NipaSource {
+  name: string
+  url: string
+  category: string
+  pages: number
+}
+
+const NIPA_SOURCES: NipaSource[] = [
+  { name: "NIPA 사업공고", url: "https://www.nipa.kr/home/2-2?tab=1", category: "사업공고", pages: 2 },
+  { name: "NIPA 입찰공고", url: "https://www.nipa.kr/home/2-3", category: "입찰공고", pages: 2 },
+]
+
+async function fetchNipaAnnouncements(onProgress?: ProgressCallback): Promise<FetchResult[]> {
+  const results: FetchResult[] = []
+  const supabase = getServiceClient()
+
+  // 차단 목록
+  const blockedSet = new Set<string>()
+  const { data: blockedRows } = await supabase.from("blocked_announcements").select("external_id").limit(5000)
+  if (blockedRows) for (const row of blockedRows) blockedSet.add(row.external_id)
+
+  for (const source of NIPA_SOURCES) {
+    const result: FetchResult = { source: source.name, fetched: 0, inserted: 0, skipped: 0, blocked: 0, errors: [] }
+    onProgress?.({ source: source.name, status: "수집 시작...", fetched: 0, inserted: 0, skipped: 0 })
+
+    try {
+      for (let page = 1; page <= source.pages; page++) {
+        const pageUrl = `${source.url}${source.url.includes('?') ? '&' : '?'}curPage=${page}`
+        const res = await fetch(pageUrl, { cache: "no-store", headers: { "User-Agent": "Mozilla/5.0 PRESALES Bot" } })
+        if (!res.ok) { result.errors.push(`NIPA HTTP ${res.status}`); break }
+
+        const html = await res.text()
+
+        // Parse table rows: extract links with /home/2-{n}/{id} pattern
+        const rowRegex = /<tr[^>]*>[\s\S]*?<\/tr>/gi
+        const rows = html.match(rowRegex) || []
+
+        for (const row of rows) {
+          // Extract link and title
+          const linkMatch = row.match(/href="\/home\/2-\d+\/(\d+)"/)
+          if (!linkMatch) continue
+          const postId = linkMatch[1]
+          const externalId = `nipa-${postId}`
+
+          // Title from <a> tag
+          const titleMatch = row.match(/href="\/home\/2-\d+\/\d+"[^>]*>([^<]+)</)
+          const title = titleMatch ? titleMatch[1].trim() : ""
+          if (!title) continue
+
+          result.fetched++
+
+          if (blockedSet.has(externalId)) { result.blocked++; continue }
+
+          // Period parsing: "YYYY.MM.DD ~ YYYY.MM.DD"
+          let startDate: string | null = null
+          let endDate: string | null = null
+          const periodMatch = row.match(/(\d{4}\.\d{2}\.\d{2})\s*~\s*(\d{4}\.\d{2}\.\d{2})/)
+          if (periodMatch) {
+            startDate = periodMatch[1].replace(/\./g, "-")
+            endDate = periodMatch[2].replace(/\./g, "-")
+          }
+
+          // D-day
+          const ddayMatch = row.match(/D-(\d+)/)
+          const dday = ddayMatch ? parseInt(ddayMatch[1]) : -1
+          const status = dday >= 0 ? "active" : endDate && new Date(endDate) >= new Date() ? "active" : "closed"
+
+          const detailUrl = `https://www.nipa.kr/home/2-${source.url.includes('2-2') ? '2' : '3'}/${postId}`
+
+          const dbRow = {
+            title,
+            organization: "NIPA(정보통신산업진흥원)",
+            type: "public",
+            budget: "",
+            start_date: startDate,
+            end_date: endDate,
+            application_method: "NIPA 홈페이지",
+            target: "",
+            description: "",
+            eligibility: "",
+            department: "NIPA",
+            contact: "",
+            source_url: detailUrl,
+            field: source.category,
+            status,
+            source: source.name,
+            external_id: externalId,
+            matching_keywords: [source.category],
+            support_areas: [source.category],
+            regions: ["전국"],
+            target_types: ["중소기업"],
+            age_ranges: ["제한없음"],
+            business_years: ["제한없음"],
+            governing_body: "과학기술정보통신부",
+          }
+
+          // 중복 체크
+          const { data: existById } = await supabase.from("announcements").select("id").eq("external_id", externalId).limit(1)
+          if (existById && existById.length > 0) { result.skipped++; continue }
+
+          const { data: inserted, error } = await supabase.from("announcements").insert({ ...dbRow, is_published: false }).select("id").maybeSingle()
+          if (error) { result.errors.push(`NIPA INSERT: ${error.message}`) }
+          else {
+            result.inserted++
+            await supabase.from("announcement_logs").insert({ action: "collected", announcement_id: inserted?.id || null, announcement_title: title, source: source.name, detail: "비공개로 자동 수집됨" })
+          }
+        }
+
+        onProgress?.({ source: source.name, status: `페이지 ${page} 완료`, fetched: result.fetched, inserted: result.inserted, skipped: result.skipped })
+      }
+    } catch (err) {
+      result.errors.push(`${source.name} 오류: ${err instanceof Error ? err.message : String(err)}`)
+    }
+
+    onProgress?.({ source: source.name, status: "완료", fetched: result.fetched, inserted: result.inserted, skipped: result.skipped })
+    results.push(result)
+  }
+
+  return results
+}
+
+// ===========================
 // Main Export
 // ===========================
 
 export async function fetchAllAnnouncements(onProgress?: ProgressCallback): Promise<{ results: FetchResult[]; totalInserted: number; totalSkipped: number; totalBlocked: number }> {
   const results: FetchResult[] = []
 
+  // 1. K-Startup
   onProgress?.({ source: "K-Startup", status: "수집 시작...", fetched: 0, inserted: 0, skipped: 0 })
   const kstartup = await fetchKStartupAnnouncements(onProgress)
   results.push(kstartup)
 
+  // 2. 기업마당(중소벤처24)
   onProgress?.({ source: "중소벤처24", status: "수집 시작...", fetched: 0, inserted: 0, skipped: 0 })
   const bizinfo = await fetchBizinfoAnnouncements(onProgress)
   results.push(bizinfo)
+
+  // 3. NIPA (사업공고 + 입찰공고)
+  const nipaResults = await fetchNipaAnnouncements(onProgress)
+  results.push(...nipaResults)
 
   const totalInserted = results.reduce((s, r) => s + r.inserted, 0)
   const totalSkipped = results.reduce((s, r) => s + r.skipped, 0)
