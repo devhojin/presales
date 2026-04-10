@@ -106,10 +106,12 @@ export default function AdminFeedsPage() {
 
   const selectedFeed = useMemo(() => feeds.find(f => f.id === selectedId), [feeds, selectedId])
 
+  const FEED_SOURCE_NAMES = ['스마트시티', '전자신문', '아웃스탠딩', 'AI타임스', '테크엠', '한경IT', '매경이코노미', '서울경제', '동아경제']
+
   const handleFetchNow = () => {
     setFetchingNow(true)
     setFetchModal(true)
-    setFetchLogs([])
+    setFetchLogs(FEED_SOURCE_NAMES.map(s => ({ source: s, status: '대기', fetched: 0, inserted: 0, skipped: 0 })))
     setFetchDone(false)
 
     const evtSource = new EventSource('/api/admin/feeds/trigger-fetch-stream')
@@ -339,24 +341,22 @@ export default function AdminFeedsPage() {
                 <div key={i} className="bg-muted/50 rounded-xl p-3">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-semibold text-foreground">{log.source}</span>
-                    <span className={`text-xs font-medium ${log.status === '완료' ? 'text-primary' : 'text-muted-foreground'}`}>{log.status}</span>
+                    <span className={`text-xs font-medium ${log.status === '완료' ? 'text-primary' : log.status === '대기' ? 'text-zinc-400' : 'text-amber-600'}`}>{log.status}</span>
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span>수집 <strong className="text-foreground">{log.fetched}</strong></span>
-                    <span>신규 <strong className="text-emerald-600">{log.inserted}</strong></span>
-                    <span>중복 <strong>{log.skipped}</strong></span>
-                  </div>
+                  {log.status !== '대기' && (
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span>수집 <strong className="text-foreground">{log.fetched}</strong></span>
+                      <span>신규 <strong className="text-emerald-600">{log.inserted}</strong></span>
+                      <span>중복 <strong>{log.skipped}</strong></span>
+                    </div>
+                  )}
                   <div className="mt-1.5 h-1 bg-border/50 rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full ${log.status === '완료' ? 'bg-primary' : 'bg-primary animate-pulse'}`} style={{ width: log.status === '완료' ? '100%' : '60%' }} />
+                    {log.status === '대기' ? <div className="h-full bg-zinc-200 rounded-full" style={{ width: '0%' }} />
+                    : log.status === '완료' ? <div className="h-full bg-primary rounded-full transition-all" style={{ width: '100%' }} />
+                    : <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />}
                   </div>
                 </div>
               ))}
-              {fetchLogs.length === 0 && !fetchDone && (
-                <div className="text-center py-6 text-sm text-muted-foreground">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
-                  RSS 소스에 연결 중...
-                </div>
-              )}
             </div>
             {fetchDone && (
               <div className="mt-4 pt-3 border-t border-border/50">

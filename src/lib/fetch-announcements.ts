@@ -222,7 +222,7 @@ async function fetchKStartupAnnouncements(onProgress?: ProgressCallback): Promis
         } else {
           const { data: inserted, error } = await supabase
             .from("announcements")
-            .insert({ ...dbRow, is_published: false })
+            .insert({ ...dbRow, is_published: true })
             .select("id")
             .maybeSingle()
           if (error) {
@@ -234,7 +234,7 @@ async function fetchKStartupAnnouncements(onProgress?: ProgressCallback): Promis
               announcement_id: inserted?.id || null,
               announcement_title: dbRow.title,
               source: "K-Startup API",
-              detail: `비공개로 자동 수집됨 (${dbRow.organization || ""})`,
+              detail: `공개로 자동 수집됨 (${dbRow.organization || ""})`,
             })
           }
         }
@@ -420,7 +420,7 @@ async function fetchBizinfoAnnouncements(onProgress?: ProgressCallback): Promise
         } else {
           const { data: inserted, error } = await supabase
             .from("announcements")
-            .insert({ ...dbRow, is_published: false })
+            .insert({ ...dbRow, is_published: true })
             .select("id")
             .maybeSingle()
           if (error) {
@@ -432,7 +432,7 @@ async function fetchBizinfoAnnouncements(onProgress?: ProgressCallback): Promise
               announcement_id: inserted?.id || null,
               announcement_title: dbRow.title,
               source: "기업마당 API",
-              detail: `비공개로 자동 수집됨 (${dbRow.organization || ""})`,
+              detail: `공개로 자동 수집됨 (${dbRow.organization || ""})`,
             })
           }
         }
@@ -555,11 +555,11 @@ async function fetchNipaAnnouncements(onProgress?: ProgressCallback): Promise<Fe
           const { data: existById } = await supabase.from("announcements").select("id").eq("external_id", externalId).limit(1)
           if (existById && existById.length > 0) { result.skipped++; continue }
 
-          const { data: inserted, error } = await supabase.from("announcements").insert({ ...dbRow, is_published: false }).select("id").maybeSingle()
+          const { data: inserted, error } = await supabase.from("announcements").insert({ ...dbRow, is_published: true }).select("id").maybeSingle()
           if (error) { result.errors.push(`NIPA INSERT: ${error.message}`) }
           else {
             result.inserted++
-            await supabase.from("announcement_logs").insert({ action: "collected", announcement_id: inserted?.id || null, announcement_title: title, source: source.name, detail: "비공개로 자동 수집됨" })
+            await supabase.from("announcement_logs").insert({ action: "collected", announcement_id: inserted?.id || null, announcement_title: title, source: source.name, detail: "공개로 자동 수집됨" })
           }
         }
 

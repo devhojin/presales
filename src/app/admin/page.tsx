@@ -19,6 +19,8 @@ import {
   X,
   PlusCircle,
   AlertCircle,
+  Megaphone,
+  Rss,
 } from 'lucide-react'
 
 // ===========================
@@ -432,6 +434,9 @@ export default function AdminDashboard() {
   const [downloadProfiles, setDownloadProfiles] = useState<ProfileMap>({})
   const [downloadProducts, setDownloadProducts] = useState<ProductMap>({})
 
+  // 수집 현황
+  const [fetchStatus, setFetchStatus] = useState<{ annLogs: Array<{ source: string; count: number; time: string }>; feedLogs: Array<{ source: string; count: number; time: string }> }>({ annLogs: [], feedLogs: [] })
+
   // Realtime notifications
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
@@ -787,6 +792,36 @@ export default function AdminDashboard() {
       setDownloadProducts(map)
     }
 
+    // 오늘 수집 현황 (announcement_logs + feed_logs)
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const todayISO = todayStart.toISOString()
+
+    const [{ data: annLogData }, { data: feedLogData }] = await Promise.all([
+      supabase.from('announcement_logs').select('source, created_at').eq('action', 'collected').gte('created_at', todayISO).order('created_at', { ascending: false }),
+      supabase.from('feed_logs').select('source_name, created_at').eq('action', 'collected').gte('created_at', todayISO).order('created_at', { ascending: false }),
+    ])
+
+    if (annLogData) {
+      const sourceMap: Record<string, { count: number; time: string }> = {}
+      for (const log of annLogData) {
+        const src = log.source || 'K-Startup'
+        if (!sourceMap[src]) sourceMap[src] = { count: 0, time: log.created_at }
+        sourceMap[src].count++
+      }
+      setFetchStatus(prev => ({ ...prev, annLogs: Object.entries(sourceMap).map(([source, v]) => ({ source, count: v.count, time: v.time })) }))
+    }
+
+    if (feedLogData) {
+      const sourceMap: Record<string, { count: number; time: string }> = {}
+      for (const log of feedLogData) {
+        const src = log.source_name || 'RSS'
+        if (!sourceMap[src]) sourceMap[src] = { count: 0, time: log.created_at }
+        sourceMap[src].count++
+      }
+      setFetchStatus(prev => ({ ...prev, feedLogs: Object.entries(sourceMap).map(([source, v]) => ({ source, count: v.count, time: v.time })) }))
+    }
+
     setLoading(false)
   }
 
@@ -1075,6 +1110,85 @@ export default function AdminDashboard() {
             </p>
           </div>
           <RevenueChart data={dailyRevenue} period={period} />
+        </div>
+      )}
+
+      {/* 오늘 수집 현황 */}
+      {!loading && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* 공고 수집 */}
+          <div className="bg-card rounded-2xl border border-border/50 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <Megaphone className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold">오늘 공고 수집</h3>
+                  <p className="text-[10px] text-muted-foreground">자동 수집 현황</p>
+                </div>
+              </div>
+              <Link href="/admin/announcements" className="text-xs text-primary hover:underline">관리</Link>
+            </div>
+            {fetchStatus.annLogs.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-3 text-center">오늘 수집 내역이 없습니다</p>
+            ) : (
+              <div className="space-y-2">
+                {fetchStatus.annLogs.map((log, i) => (
+                  <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/50">
+                    <div>
+                      <span className="text-sm font-medium">{log.source}</span>
+                      <span className="text-xs text-muted-foreground ml-2">
+                        {new Date(log.time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <Badge className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">{log.count}건 공개</Badge>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                  <span className="text-xs text-muted-foreground">합계</span>
+                  <span className="text-sm font-bold text-primary">{fetchStatus.annLogs.reduce((s, l) => s + l.count, 0)}건</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* IT피드 수집 */}
+          <div className="bg-card rounded-2xl border border-border/50 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
+                  <Rss className="w-4 h-4 text-orange-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold">오늘 IT피드 수집</h3>
+                  <p className="text-[10px] text-muted-foreground">자동 수집 현황</p>
+                </div>
+              </div>
+              <Link href="/admin/feeds" className="text-xs text-primary hover:underline">관리</Link>
+            </div>
+            {fetchStatus.feedLogs.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-3 text-center">오늘 수집 내역이 없습니다</p>
+            ) : (
+              <div className="space-y-2">
+                {fetchStatus.feedLogs.map((log, i) => (
+                  <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/50">
+                    <div>
+                      <span className="text-sm font-medium">{log.source}</span>
+                      <span className="text-xs text-muted-foreground ml-2">
+                        {new Date(log.time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    <Badge className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">{log.count}건 공개</Badge>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between pt-2 border-t border-border/50">
+                  <span className="text-xs text-muted-foreground">합계</span>
+                  <span className="text-sm font-bold text-primary">{fetchStatus.feedLogs.reduce((s, l) => s + l.count, 0)}건</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

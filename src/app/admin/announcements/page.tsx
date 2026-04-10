@@ -110,10 +110,12 @@ export default function AdminAnnouncementsPage() {
 
   useEffect(() => { fetchAnnouncements() }, [fetchAnnouncements])
 
+  const FETCH_SOURCES = ['K-Startup', '중소벤처24', 'NIPA 사업공고', 'NIPA 입찰공고']
+
   const handleFetchNow = () => {
     setFetchingNow(true)
     setFetchModal(true)
-    setFetchLogs([])
+    setFetchLogs(FETCH_SOURCES.map(s => ({ source: s, status: '대기', fetched: 0, inserted: 0, skipped: 0 })))
     setFetchDone(false)
 
     const evtSource = new EventSource('/api/admin/announcements/trigger-fetch-stream')
@@ -350,32 +352,26 @@ export default function AdminAnnouncementsPage() {
                 <div key={i} className="bg-muted/50 rounded-xl p-3">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-sm font-semibold text-foreground">{log.source}</span>
-                    <span className={`text-xs font-medium ${log.status === '완료' ? 'text-primary' : 'text-muted-foreground'}`}>{log.status}</span>
+                    <span className={`text-xs font-medium ${log.status === '완료' ? 'text-primary' : log.status === '대기' ? 'text-zinc-400' : 'text-amber-600'}`}>{log.status}</span>
                   </div>
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span>수집 <strong className="text-foreground">{log.fetched}</strong></span>
-                    <span>신규 <strong className="text-emerald-600">{log.inserted}</strong></span>
-                    <span>중복 <strong>{log.skipped}</strong></span>
-                  </div>
-                  {/* Progress bar */}
-                  {!fetchDone && log.status !== '완료' && (
-                    <div className="mt-2 h-1.5 bg-border/50 rounded-full overflow-hidden">
+                  {log.status !== '대기' && (
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span>수집 <strong className="text-foreground">{log.fetched}</strong></span>
+                      <span>신규 <strong className="text-emerald-600">{log.inserted}</strong></span>
+                      <span>중복 <strong>{log.skipped}</strong></span>
+                    </div>
+                  )}
+                  <div className="mt-1.5 h-1.5 bg-border/50 rounded-full overflow-hidden">
+                    {log.status === '대기' ? (
+                      <div className="h-full bg-zinc-200 rounded-full" style={{ width: '0%' }} />
+                    ) : log.status === '완료' ? (
+                      <div className="h-full bg-primary rounded-full transition-all" style={{ width: '100%' }} />
+                    ) : (
                       <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
-                    </div>
-                  )}
-                  {log.status === '완료' && (
-                    <div className="mt-2 h-1.5 bg-border/50 rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full" style={{ width: '100%' }} />
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
-              {fetchLogs.length === 0 && !fetchDone && (
-                <div className="text-center py-6 text-sm text-muted-foreground">
-                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-primary" />
-                  수집 소스에 연결 중...
-                </div>
-              )}
             </div>
             {fetchDone && (
               <div className="mt-4 pt-3 border-t border-border/50">

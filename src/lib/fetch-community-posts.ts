@@ -246,7 +246,7 @@ async function fetchRssSource(
         source_name: source.name,
         external_id: externalId,
         external_url: actualLink.trim(),
-        is_published: false,
+        is_published: true,
         created_at: pubDateISO,
       }
 
