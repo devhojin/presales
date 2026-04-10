@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Search, Loader2, ImageOff } from 'lucide-react'
+import { Search, Loader2, ImageOff, BookOpen } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
 interface BlogPost {
@@ -103,20 +103,18 @@ export default function BlogPage() {
   return (
     <div className="min-h-[100dvh] bg-background">
       {/* Header */}
-      <div className="bg-background border-b border-border/50">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-16 md:py-20">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-4">BLOG</p>
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-3 tracking-tight">
-            블로그
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            공공조달 전문가의 인사이트와 실무 경험을 공유합니다
-          </p>
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+        <div className="py-8 md:py-12">
+          <div className="flex items-center gap-3 mb-3">
+            <BookOpen className="w-7 h-7 text-primary" />
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">블로그</h1>
+          </div>
+          <p className="text-muted-foreground">공공조달 전문가의 인사이트와 실무 경험을 공유합니다</p>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-12 md:py-16">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 pb-12">
         <div className="flex gap-8 md:gap-12">
           {/* Left Column: Posts */}
           <div className="flex-1">

@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback, type ReactNode } from 'react
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import { Badge } from '@/components/ui/badge'
-import { Search, ShoppingCart, Check, Star, RotateCcw, ChevronDown, FileText } from 'lucide-react'
+import { Search, ShoppingCart, Check, Star, RotateCcw, ChevronDown, FileText, Store } from 'lucide-react'
 import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
 import Link from 'next/link'
@@ -341,10 +341,13 @@ export default function StorePage() {
   }
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-24">
-      <div className="mb-12">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight">문서 스토어</h1>
-        <p className="text-muted-foreground mt-2">공공조달 입찰에 필요한 모든 문서 템플릿</p>
+    <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+      <div className="py-8 md:py-12">
+        <div className="flex items-center gap-3 mb-3">
+          <Store className="w-7 h-7 text-primary" />
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">문서 스토어</h1>
+        </div>
+        <p className="text-muted-foreground">공공조달 입찰에 필요한 모든 문서 템플릿</p>
       </div>
 
       <div className="relative mb-8">

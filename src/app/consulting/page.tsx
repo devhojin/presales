@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { Check, X, Clock, Video, FileText, Star, Upload, Loader2 } from 'lucide-react'
+import { Check, X, Clock, Video, FileText, Star, Upload, Loader2, MessageSquare } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
 // ===========================
@@ -305,18 +305,13 @@ export default function ConsultingPage() {
   const project = packages.find(p => p.slug === 'project')
 
   return (
-    <div className="container mx-auto px-4 py-10">
-      <div className="text-center mb-12">
-        <Badge className="bg-primary/10 text-primary border-blue-200 mb-4">
-          전문가 컨설팅
-        </Badge>
-        <h1 className="text-2xl md:text-3xl font-bold mb-3">
-          공공조달, 혼자 하지 마세요
-        </h1>
-        <p className="text-muted-foreground max-w-lg mx-auto">
-          나라장터·조달청 입찰 경험이 풍부한 전문가가
-          제안서 작성부터 발표까지 함께합니다.
-        </p>
+    <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+      <div className="py-8 md:py-12">
+        <div className="flex items-center gap-3 mb-3">
+          <MessageSquare className="w-7 h-7 text-primary" />
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">컨설팅</h1>
+        </div>
+        <p className="text-muted-foreground">나라장터·조달청 입찰 전문가가 제안서 작성부터 발표까지 함께합니다</p>
       </div>
 
       {/* Package Cards - equal height */}

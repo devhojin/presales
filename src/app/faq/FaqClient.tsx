@@ -78,26 +78,25 @@ export function FaqClient() {
 
   return (
     <div className="min-h-[100dvh] bg-background">
-      {/* Hero */}
-      <section className="border-b border-border/50 py-20 md:py-24">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-8">
-          <div className="max-w-2xl mx-auto text-center">
-            <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-4">FAQ</p>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3">자주 묻는 질문</h1>
-            <p className="text-muted-foreground mb-10">
-              궁금하신 점을 빠르게 찾아보세요
-            </p>
+      {/* Header */}
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+        <div className="py-8 md:py-12">
+          <div className="flex items-center gap-3 mb-3">
+            <HelpCircle className="w-7 h-7 text-primary" />
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight">자주 묻는 질문</h1>
+          </div>
+          <p className="text-muted-foreground mb-6">궁금하신 점을 빠르게 찾아보세요</p>
 
-            {/* Search */}
-            <div className="relative max-w-lg mx-auto">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-muted-foreground pointer-events-none" />
-              <input
-                type="text"
-                placeholder="키워드로 검색 (예: 환불, 다운로드, 결제...)"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3.5 rounded-xl border-0 bg-muted text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-              />
+          {/* Search */}
+          <div className="relative max-w-xl">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              placeholder="키워드로 검색 (예: 환불, 다운로드, 결제...)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 rounded-xl border border-border/50 bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+            />
             </div>
 
             {searchQuery && (
@@ -105,12 +104,11 @@ export function FaqClient() {
                 &ldquo;{searchQuery}&rdquo; 검색 결과: {totalMatches}개
               </p>
             )}
-          </div>
         </div>
-      </section>
+      </div>
 
       {/* FAQ Content */}
-      <section className="max-w-[800px] mx-auto px-4 md:px-8 py-16 md:py-20">
+      <section className="max-w-[800px] mx-auto px-4 md:px-8 py-8 md:py-12">
         {filteredData.length === 0 ? (
           <div className="text-center py-24">
             <HelpCircle className="w-10 h-10 text-muted-foreground/30 mx-auto mb-4" />
