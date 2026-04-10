@@ -10,12 +10,32 @@ export async function GET() {
     const admin = await isAdmin(user.id)
     if (admin) {
       // 관리자: 전체 목록 (최신순)
-      const { data, error } = await supabase
+      const { data: rooms, error } = await supabase
         .from('chat_rooms')
-        .select('*, profiles:user_id(name, email, phone, company)')
+        .select('*')
         .order('last_message_at', { ascending: false })
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-      return NextResponse.json({ rooms: data })
+
+      // profiles를 별도 조회 후 합치기 (FK가 auth.users라서 자동 조인 불가)
+      const userIds = (rooms || []).filter(r => r.user_id).map(r => r.user_id as string)
+      let profilesMap: Record<string, { name: string; email: string; phone: string | null; company: string | null }> = {}
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, name, email, phone, company')
+          .in('id', userIds)
+        profilesMap = (profiles || []).reduce((acc, p) => {
+          acc[p.id] = { name: p.name, email: p.email, phone: p.phone, company: p.company }
+          return acc
+        }, {} as typeof profilesMap)
+      }
+
+      const roomsWithProfiles = (rooms || []).map(r => ({
+        ...r,
+        profiles: r.user_id ? profilesMap[r.user_id as string] || null : null,
+      }))
+
+      return NextResponse.json({ rooms: roomsWithProfiles })
     }
     // 회원: 내 방만
     const { data, error } = await supabase
