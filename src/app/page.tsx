@@ -405,7 +405,7 @@ export default function Home() {
           <div className="max-w-[1400px] mx-auto px-4 md:px-8">
             <div className="text-center mb-14">
               <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">TESTIMONIALS</p>
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">고객 ��기</h2>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">고객 후기</h2>
               <p className="text-muted-foreground mt-2">실제 고객들의 성공 경험을 확인하세요</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
