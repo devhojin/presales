@@ -144,8 +144,9 @@ export default function Home() {
         supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_published', true),
         supabase
           .from('reviews')
-          .select('content, rating, profiles(name)')
+          .select('content, rating, reviewer_name')
           .gte('rating', 4)
+          .eq('is_published', true)
           .order('created_at', { ascending: false })
           .limit(3),
       ])
@@ -187,8 +188,7 @@ export default function Home() {
 
       if (reviewsData && reviewsData.length > 0) {
         const mapped: ReviewData[] = reviewsData.map((r: Record<string, unknown>) => {
-          const profiles = r.profiles as { name?: string } | null
-          const name = profiles?.name || '익명'
+          const name = (r.reviewer_name as string | null) || '익명'
           return {
             text: (r.content as string) || '',
             author: name.length > 1 ? name[0] + 'OO' : name,

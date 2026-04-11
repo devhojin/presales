@@ -91,8 +91,8 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
     setSubmitting(true)
     const supabase = createClient()
 
-    // 구매 인증 확인: order_items + orders 조회 또는 무료 상품 여부
-    const [{ data: orderData }, { data: productData }] = await Promise.all([
+    // 구매 인증 확인 + 작성자 프로필 조회 (reviewer_name 스냅샷용)
+    const [{ data: orderData }, { data: productData }, { data: profileData }] = await Promise.all([
       supabase
         .from('order_items')
         .select('id, order_id, orders!inner(user_id, status)')
@@ -105,6 +105,11 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
         .select('is_free')
         .eq('id', productId)
         .single(),
+      supabase
+        .from('profiles')
+        .select('name, email')
+        .eq('id', userId)
+        .maybeSingle(),
     ])
 
     const isVerifiedPurchase =
@@ -121,6 +126,8 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
       image_urls: imageUrls,
       is_verified_purchase: isVerifiedPurchase,
       is_published: true,
+      reviewer_name: profileData?.name || null,
+      reviewer_email: profileData?.email || null,
     }
 
     if (existingReview) {

@@ -169,21 +169,17 @@ export default function AdminReviewsPage() {
 
     setReviews(reviewList)
 
-    // Load profiles
-    const userIds = [...new Set(reviewList.map((r) => r.user_id).filter(Boolean))]
-    if (userIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, name, email')
-        .in('id', userIds)
-      const pMap: ProfileMap = {}
-      if (profiles) {
-        for (const p of profiles) {
-          pMap[p.id] = { name: p.name || '-', email: p.email || '-' }
+    // Build profile map from denormalized reviewer_name/reviewer_email columns
+    const pMap: ProfileMap = {}
+    for (const r of reviewList) {
+      if (r.user_id) {
+        pMap[r.user_id] = {
+          name: r.reviewer_name || '-',
+          email: r.reviewer_email || '-',
         }
       }
-      setProfileMap(pMap)
     }
+    setProfileMap(pMap)
 
     // Load product names
     const productIds = [...new Set(reviewList.map((r) => r.product_id).filter(Boolean))]

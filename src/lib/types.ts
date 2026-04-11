@@ -55,7 +55,8 @@ export interface DbReview {
   is_verified_purchase: boolean
   admin_reply: string | null
   created_at: string
-  profiles?: { name: string; email: string } | null
+  reviewer_name: string | null
+  reviewer_email: string | null
   products?: { title: string } | null
 }
 

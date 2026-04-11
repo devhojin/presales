@@ -107,10 +107,10 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
       setAvgRating(allReviews.length > 0 ? sum / allReviews.length : 0)
     }
 
-    // Get paginated reviews
+    // Get paginated reviews (no embedded join — uses denormalized reviewer_name column)
     let query = supabase
       .from('reviews')
-      .select('*, profiles(name, email)')
+      .select('*')
       .eq('product_id', productId)
       .eq('is_published', true)
 
@@ -347,7 +347,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
               {/* Header */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium">{maskName(review.profiles?.name)}</span>
+                  <span className="text-sm font-medium">{maskName(review.reviewer_name)}</span>
                   {review.is_verified_purchase && (
                     <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
                       <ShieldCheck className="w-3 h-3" />
