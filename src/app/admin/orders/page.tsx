@@ -78,6 +78,13 @@ interface Order {
   updated_at: string | null
   order_items: OrderItem[]
   profiles: Profile | null
+  coupon_code: string | null
+  coupon_discount: number | null
+  tax_contact_info: string | null
+  business_cert_url: string | null
+  business_cert_name: string | null
+  deposit_memo: string | null
+  card_memo: string | null
 }
 
 function parseMemos(raw: string | null): MemoEntry[] {
@@ -469,6 +476,44 @@ function MemberDetailModal({
 }
 
 // ===========================
+// Business Cert Download Link
+// ===========================
+function BusinessCertLink({ path, fileName }: { path: string; fileName: string | null }) {
+  const [loading, setLoading] = useState(false)
+  const handleDownload = async () => {
+    setLoading(true)
+    try {
+      const supabase = createClient()
+      const { data, error } = await supabase.storage
+        .from('business-certs')
+        .createSignedUrl(path, 60)
+      if (error || !data?.signedUrl) {
+        alert('파일 다운로드 링크 생성에 실패했습니다.')
+        return
+      }
+      window.open(data.signedUrl, '_blank')
+    } catch (err) {
+      console.error(err)
+      alert('다운로드 중 오류가 발생했습니다.')
+    } finally {
+      setLoading(false)
+    }
+  }
+  return (
+    <button
+      type="button"
+      onClick={handleDownload}
+      disabled={loading}
+      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-white hover:bg-muted/50 transition-colors cursor-pointer text-sm disabled:opacity-50"
+    >
+      <Download className="w-4 h-4 text-primary" />
+      <span className="text-foreground">{fileName || '사업자등록증'}</span>
+      {loading && <span className="text-xs text-muted-foreground">로딩...</span>}
+    </button>
+  )
+}
+
+// ===========================
 // Order Detail Modal
 // ===========================
 
@@ -700,6 +745,48 @@ function OrderDetailModal({
               </div>
             </div>
           </div>
+
+          {/* 세금계산서/추가 정보 */}
+          {(order.tax_contact_info || order.business_cert_url || order.deposit_memo || order.card_memo || order.coupon_code) && (
+            <div>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">세금계산서 / 추가 정보</h3>
+              <div className="bg-muted rounded-xl p-4 space-y-4">
+                {order.coupon_code && (
+                  <div>
+                    <p className="text-[11px] text-muted-foreground mb-1">적용 쿠폰</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {order.coupon_code}
+                      {order.coupon_discount ? <span className="text-emerald-600 ml-2">(-{formatWon(order.coupon_discount)})</span> : null}
+                    </p>
+                  </div>
+                )}
+                {order.tax_contact_info && (
+                  <div>
+                    <p className="text-[11px] text-muted-foreground mb-1">세금계산서 담당자 정보</p>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">{order.tax_contact_info}</p>
+                  </div>
+                )}
+                {order.business_cert_url && (
+                  <div>
+                    <p className="text-[11px] text-muted-foreground mb-1">사업자등록증</p>
+                    <BusinessCertLink path={order.business_cert_url} fileName={order.business_cert_name} />
+                  </div>
+                )}
+                {order.deposit_memo && (
+                  <div>
+                    <p className="text-[11px] text-muted-foreground mb-1">무통장 입금 메모</p>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">{order.deposit_memo}</p>
+                  </div>
+                )}
+                {order.card_memo && (
+                  <div>
+                    <p className="text-[11px] text-muted-foreground mb-1">카드 결제 메모</p>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">{order.card_memo}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* 관리자 메모 (댓글형) */}
           <div>
@@ -1162,6 +1249,7 @@ export default function AdminOrders() {
       .from('orders')
       .select(
         `id, order_number, user_id, status, total_amount, payment_method, payment_key, paid_at, cancelled_at, refund_reason, admin_memo, created_at, updated_at,
+         coupon_code, coupon_discount, tax_contact_info, business_cert_url, business_cert_name, deposit_memo, card_memo,
          order_items ( id, order_id, product_id, price, products ( title, thumbnail_url ) )`
       )
       .order('created_at', { ascending: false })

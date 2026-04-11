@@ -201,11 +201,30 @@ export default function CheckoutPage() {
         let order
         let orderError
 
+        // 세금계산서/추가정보 (cart 에서 sessionStorage 에 저장됨)
+        let taxInfo: {
+          tax_contact_info?: string
+          business_cert_url?: string | null
+          business_cert_name?: string | null
+          business_cert_path?: string | null
+          deposit_memo?: string
+          card_memo?: string
+        } = {}
+        try {
+          const raw = sessionStorage.getItem('presales-tax-info')
+          if (raw) taxInfo = JSON.parse(raw)
+        } catch { /* noop */ }
+
         const orderUpdateFields = {
           total_amount: expectedTotalAmount,
           coupon_id: appliedCouponInfo?.id ?? null,
           coupon_code: appliedCouponInfo?.code ?? null,
           coupon_discount: appliedCouponInfo?.coupon_discount ?? 0,
+          tax_contact_info: taxInfo.tax_contact_info || null,
+          business_cert_url: taxInfo.business_cert_path || null,
+          business_cert_name: taxInfo.business_cert_name || null,
+          deposit_memo: taxInfo.deposit_memo || null,
+          card_memo: taxInfo.card_memo || null,
         }
 
         if (existingOrder) {

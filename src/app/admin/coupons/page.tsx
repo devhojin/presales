@@ -31,6 +31,8 @@ import { Badge } from '@/components/ui/badge'
 interface Coupon {
   id: string
   code: string
+  name: string | null
+  description: string | null
   discount_type: 'percentage' | 'fixed'
   discount_value: number
   min_order_amount: number
@@ -44,6 +46,8 @@ interface Coupon {
 
 const EMPTY_FORM = {
   code: '',
+  name: '',
+  description: '',
   discount_type: 'percentage' as 'percentage' | 'fixed',
   discount_value: '',
   min_order_amount: '',
@@ -144,12 +148,15 @@ export default function CouponsPage() {
 
   async function handleCreate() {
     if (!form.code.trim()) { showToast('쿠폰 코드를 입력하세요.', 'error'); return }
+    if (!form.name.trim()) { showToast('쿠폰 이름을 입력하세요.', 'error'); return }
     if (!form.discount_value) { showToast('할인 값을 입력하세요.', 'error'); return }
     setSaving(true)
     try {
       const supabase = createClient()
       const { error } = await supabase.from('coupons').insert({
         code: form.code.toUpperCase().trim(),
+        name: form.name.trim(),
+        description: form.description.trim() || null,
         discount_type: form.discount_type,
         discount_value: Number(form.discount_value),
         min_order_amount: Number(form.min_order_amount) || 0,
@@ -248,6 +255,7 @@ export default function CouponsPage() {
             <table className="w-full text-sm">
               <thead className="bg-muted border-b border-border">
                 <tr>
+                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">이름</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">코드</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">할인</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">최소주문</th>
@@ -264,8 +272,12 @@ export default function CouponsPage() {
                     onClick={() => openDetail(c)}
                     className="hover:bg-muted transition-colors cursor-pointer"
                   >
+                    <td className="px-4 py-3 max-w-[220px]">
+                      <p className="text-sm font-semibold text-foreground truncate">{c.name || <span className="text-muted-foreground italic">이름 없음</span>}</p>
+                      {c.description && <p className="text-[11px] text-muted-foreground truncate mt-0.5">{c.description}</p>}
+                    </td>
                     <td className="px-4 py-3">
-                      <span className="font-mono font-semibold text-foreground">{c.code}</span>
+                      <span className="font-mono text-xs text-muted-foreground">{c.code}</span>
                     </td>
                     <td className="px-4 py-3">
                       <Badge
@@ -340,6 +352,17 @@ export default function CouponsPage() {
             </div>
             <div className="space-y-4">
               <div>
+                <label className="text-sm font-medium text-foreground block mb-1">쿠폰 이름 *</label>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  placeholder="예: 여름 시즌 10% 할인"
+                  className="w-full h-10 px-3 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <p className="text-[11px] text-muted-foreground mt-1">고객에게 보여지는 쿠폰 이름입니다.</p>
+              </div>
+              <div>
                 <label className="text-sm font-medium text-foreground block mb-1">쿠폰 코드 *</label>
                 <input
                   type="text"
@@ -347,6 +370,16 @@ export default function CouponsPage() {
                   onChange={(e) => setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))}
                   placeholder="예: SUMMER2026"
                   className="w-full h-10 px-3 rounded-xl border border-border text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground block mb-1">설명 (선택)</label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                  placeholder="쿠폰 사용 조건, 프로모션 내용 등을 적어주세요"
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-xl border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">

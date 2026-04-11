@@ -945,6 +945,7 @@ export default function AdminMembers() {
   const [members, setMembers] = useState<Profile[]>([])
   const [statsMap, setStatsMap] = useState<Map<string, MemberStats>>(new Map())
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [filterTab, setFilterTab] = useState<FilterTab>('all')
   const [pageSize, setPageSize] = useState(20)
@@ -964,10 +965,12 @@ export default function AdminMembers() {
   async function loadMembers() {
     try {
       // Service-role API endpoint — RLS 우회하여 모든 회원 로드
-      const res = await fetch('/api/admin/members', { cache: 'no-store' })
+      const res = await fetch('/api/admin/members', { cache: 'no-store', credentials: 'same-origin' })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
+        const msg = `API ${res.status}: ${body?.error || '알 수 없는 오류'}`
         console.error('[members] API error', res.status, body)
+        setLoadError(msg)
         setMembers([])
         setLoading(false)
         return
@@ -977,6 +980,7 @@ export default function AdminMembers() {
         stats: Record<string, { order_count: number; total_spent: number; review_count: number }>
       }
 
+      setLoadError(null)
       setMembers(memberList || [])
 
       const newStats = new Map<string, MemberStats>()
@@ -985,7 +989,9 @@ export default function AdminMembers() {
       }
       setStatsMap(newStats)
     } catch (err) {
+      const msg = err instanceof Error ? err.message : '알 수 없는 오류'
       console.error('[members] load error', err)
+      setLoadError(`네트워크 오류: ${msg}`)
       setMembers([])
     } finally {
       setLoading(false)
@@ -1264,8 +1270,21 @@ export default function AdminMembers() {
                       <td colSpan={9} className="px-6 py-16 text-center">
                         <User className="w-10 h-10 text-gray-200 mx-auto mb-3" />
                         <p className="text-sm text-muted-foreground">
-                          {search ? '검색 결과가 없습니다' : '가입된 회원이 없습니다'}
+                          {loadError
+                            ? `회원 로드 실패: ${loadError}`
+                            : search
+                              ? '검색 결과가 없습니다'
+                              : '가입된 회원이 없습니다'}
                         </p>
+                        {loadError && (
+                          <button
+                            type="button"
+                            onClick={() => { setLoading(true); setLoadError(null); loadMembers() }}
+                            className="mt-3 px-4 py-2 text-xs font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 cursor-pointer"
+                          >
+                            다시 시도
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ) : (
