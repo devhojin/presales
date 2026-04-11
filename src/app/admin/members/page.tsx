@@ -962,50 +962,34 @@ export default function AdminMembers() {
   }, [])
 
   async function loadMembers() {
-    const supabase = createClient()
-
-    // Load profiles
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, email, name, phone, company, role, admin_memo, created_at')
-      .order('created_at', { ascending: false })
-
-    const memberList = (profiles || []) as Profile[]
-    setMembers(memberList)
-
-    // Load stats: order counts + totals
-    const userIds = memberList.map((m) => m.id)
-    const newStats = new Map<string, MemberStats>()
-    userIds.forEach((uid) => {
-      newStats.set(uid, { user_id: uid, order_count: 0, total_spent: 0, review_count: 0 })
-    })
-
-    // Orders: count and sum
-    const { data: orderStats } = await supabase
-      .from('orders')
-      .select('user_id, total_amount, status')
-
-    if (orderStats) {
-      for (const o of orderStats) {
-        const s = newStats.get(o.user_id)
-        if (s && (o.status === 'paid' || o.status === 'completed')) {
-          s.order_count += 1
-          s.total_spent += o.total_amount || 0
-        }
+    try {
+      // Service-role API endpoint — RLS 우회하여 모든 회원 로드
+      const res = await fetch('/api/admin/members', { cache: 'no-store' })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        console.error('[members] API error', res.status, body)
+        setMembers([])
+        setLoading(false)
+        return
       }
-    }
-
-    // Reviews: count
-    const { data: reviewStats } = await supabase.from('reviews').select('user_id')
-    if (reviewStats) {
-      for (const r of reviewStats) {
-        const s = newStats.get(r.user_id)
-        if (s) s.review_count += 1
+      const { members: memberList, stats } = await res.json() as {
+        members: Profile[]
+        stats: Record<string, { order_count: number; total_spent: number; review_count: number }>
       }
-    }
 
-    setStatsMap(newStats)
-    setLoading(false)
+      setMembers(memberList || [])
+
+      const newStats = new Map<string, MemberStats>()
+      for (const [uid, s] of Object.entries(stats || {})) {
+        newStats.set(uid, { user_id: uid, ...s })
+      }
+      setStatsMap(newStats)
+    } catch (err) {
+      console.error('[members] load error', err)
+      setMembers([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleRoleChange(id: string, newRole: string) {

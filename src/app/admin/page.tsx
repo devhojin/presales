@@ -528,13 +528,19 @@ export default function AdminDashboard() {
       return q.gte(col, prevPeriodStart).lt(col, periodStart)
     }
 
+    // 회원 전체 데이터 (RLS 우회 API)
+    const adminMembersRes = await fetch('/api/admin/members', { cache: 'no-store' })
+    const adminMembers = adminMembersRes.ok
+      ? (await adminMembersRes.json() as { members: Array<{ id: string; name: string | null; email: string; created_at: string }> })
+      : { members: [] }
+    const allMembers = adminMembers.members || []
+
     // Current period queries
     const ordersQ = supabase.from('orders').select('id', { count: 'exact', head: true })
     const paidOrdersQ = supabase
       .from('orders')
       .select('id', { count: 'exact', head: true })
       .in('status', ['paid', 'completed'])
-    const membersQ = supabase.from('profiles').select('id', { count: 'exact', head: true })
     const consultingQ = supabase.from('consulting_requests').select('id', { count: 'exact', head: true })
     const reviewsQ = supabase.from('reviews').select('id', { count: 'exact', head: true })
     const downloadsQ = supabase.from('download_logs').select('id', { count: 'exact', head: true })
@@ -543,18 +549,22 @@ export default function AdminDashboard() {
       .select('total_amount, created_at')
       .in('status', ['paid', 'completed'])
 
+    // 기간별 회원 카운트 계산 (API 결과에서)
+    const periodStartMs = periodStart ? new Date(periodStart).getTime() : null
+    const membersInPeriod = periodStartMs !== null
+      ? allMembers.filter(m => new Date(m.created_at).getTime() >= periodStartMs).length
+      : allMembers.length
+
     const [
       productsCount,
       ordersCount,
       paidOrdersCount,
-      membersCount,
       consultingCount,
       reviewsCount,
       downloadsCount,
       paidOrdersData,
       recentOrdersData,
       topProductsData,
-      recentMembersData,
       recentConsultingData,
       recentReviewsData,
       recentDownloadsData,
@@ -562,7 +572,6 @@ export default function AdminDashboard() {
       supabase.from('products').select('id', { count: 'exact', head: true }),
       applyPeriod(ordersQ),
       applyPeriod(paidOrdersQ),
-      applyPeriod(membersQ),
       applyPeriod(consultingQ),
       applyPeriod(reviewsQ),
       applyPeriod(downloadsQ, 'downloaded_at'),
@@ -576,11 +585,6 @@ export default function AdminDashboard() {
         .from('products')
         .select('id, title, download_count, price')
         .order('download_count', { ascending: false })
-        .limit(5),
-      supabase
-        .from('profiles')
-        .select('id, name, email, created_at')
-        .order('created_at', { ascending: false })
         .limit(5),
       supabase
         .from('consulting_requests')
@@ -599,6 +603,16 @@ export default function AdminDashboard() {
         .limit(5),
     ])
 
+    // Recent 5 members from API result
+    const recentMembersData = {
+      data: allMembers
+        .slice()
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 5),
+      error: null,
+    }
+    const membersCount = { count: membersInPeriod }
+
     // Previous period queries (for change %)
     let prevKpi = {
       orders: 0,
@@ -614,7 +628,6 @@ export default function AdminDashboard() {
       const [
         prevOrdersCount,
         prevPaidOrdersCount,
-        prevMembersCount,
         prevConsultingCount,
         prevReviewsCount,
         prevDownloadsCount,
@@ -628,9 +641,6 @@ export default function AdminDashboard() {
             .from('orders')
             .select('id', { count: 'exact', head: true })
             .in('status', ['paid', 'completed'])
-        ),
-        applyPrevPeriod(
-          supabase.from('profiles').select('id', { count: 'exact', head: true })
         ),
         applyPrevPeriod(
           supabase.from('consulting_requests').select('id', { count: 'exact', head: true })
@@ -650,10 +660,18 @@ export default function AdminDashboard() {
         ),
       ])
 
+      // 이전 기간 회원 수 (API 결과에서 필터링)
+      const prevStartMs = new Date(prevPeriodStart).getTime()
+      const curStartMs = new Date(periodStart).getTime()
+      const prevMembersCount = allMembers.filter(m => {
+        const t = new Date(m.created_at).getTime()
+        return t >= prevStartMs && t < curStartMs
+      }).length
+
       prevKpi = {
         orders: prevOrdersCount.count || 0,
         paidOrders: prevPaidOrdersCount.count || 0,
-        members: prevMembersCount.count || 0,
+        members: prevMembersCount,
         revenue:
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           prevPaidAmountData.data?.reduce((s: number, o: { total_amount?: number }) => s + (o.total_amount || 0), 0) || 0,
@@ -760,15 +778,11 @@ export default function AdminDashboard() {
     const allUserIds = [...new Set([...orderUserIds, ...reviewUserIds, ...downloadUserIds])]
 
     if (allUserIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, name, email')
-        .in('id', allUserIds)
-
+      // allMembers already has everyone; build map from it (bypasses RLS)
       const map: ProfileMap = {}
-      if (profiles) {
-        for (const p of profiles) {
-          map[p.id] = { name: p.name || '-', email: p.email || '-' }
+      for (const m of allMembers) {
+        if (allUserIds.includes(m.id)) {
+          map[m.id] = { name: m.name || '-', email: m.email || '-' }
         }
       }
       setOrderProfiles(map)
