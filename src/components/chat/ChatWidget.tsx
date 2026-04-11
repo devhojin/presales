@@ -337,9 +337,11 @@ export function ChatWidget() {
 
   // 메시지 렌더
   const renderMessage = (msg: ChatMessage) => {
+    // sender_id 가 현재 유저/게스트와 일치하면 내 메시지
+    // (관리자 계정이 위젯에서 대화해도 자기 id 메시지는 오른쪽에 표시)
     const isMe = user
-      ? msg.sender_id === user.id && msg.sender_type === 'user'
-      : msg.sender_id === guestId && msg.sender_type === 'guest'
+      ? msg.sender_id === user.id
+      : msg.sender_id === guestId
     const isSystem = msg.sender_type === 'system'
     const isPayment = msg.message_type === 'payment_request'
 
