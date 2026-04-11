@@ -1099,10 +1099,10 @@ export default function AdminDashboard() {
                 <Link
                   key={card.label}
                   href={card.href}
-                  className={`rounded-2xl p-5 border transition-all group cursor-pointer ${
+                  className={`rounded-2xl p-5 border transition-all group cursor-pointer hover:border-primary hover:ring-2 hover:ring-primary/30 hover:shadow-md hover:-translate-y-0.5 ${
                     card.emphasis
                       ? 'bg-card border-primary/30 ring-1 ring-primary/10'
-                      : 'bg-card border-border/50 hover:border-border'
+                      : 'bg-card border-border/50'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 mb-3">
