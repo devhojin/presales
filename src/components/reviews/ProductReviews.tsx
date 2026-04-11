@@ -371,22 +371,6 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                 <p className="text-sm text-gray-700 mb-3 whitespace-pre-wrap">{review.content}</p>
               )}
 
-              {/* Pros */}
-              {review.pros && (
-                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-2">
-                  <p className="text-xs font-medium text-emerald-700 mb-1">좋은점</p>
-                  <p className="text-sm text-emerald-700">{review.pros}</p>
-                </div>
-              )}
-
-              {/* Cons */}
-              {review.cons && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-2">
-                  <p className="text-xs font-medium text-amber-700 mb-1">아쉬운점</p>
-                  <p className="text-sm text-amber-800">{review.cons}</p>
-                </div>
-              )}
-
               {/* Images */}
               {review.image_urls && review.image_urls.length > 0 && (
                 <div className="flex gap-2 mb-3 mt-3">

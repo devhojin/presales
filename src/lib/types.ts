@@ -47,8 +47,6 @@ export interface DbReview {
   rating: number
   title: string
   content: string
-  pros: string | null
-  cons: string | null
   image_urls: string[]
   helpful_count: number
   is_published: boolean

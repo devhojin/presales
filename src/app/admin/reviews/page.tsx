@@ -565,20 +565,6 @@ export default function AdminReviewsPage() {
                   <p className="text-sm whitespace-pre-wrap">{selectedReview.content}</p>
                 </div>
 
-                {selectedReview.pros && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
-                    <p className="text-xs font-medium text-emerald-700 mb-1">좋은점</p>
-                    <p className="text-sm text-emerald-700">{selectedReview.pros}</p>
-                  </div>
-                )}
-
-                {selectedReview.cons && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-                    <p className="text-xs font-medium text-amber-700 mb-1">아쉬운점</p>
-                    <p className="text-sm text-amber-800">{selectedReview.cons}</p>
-                  </div>
-                )}
-
                 {selectedReview.image_urls && selectedReview.image_urls.length > 0 && (
                   <div>
                     <p className="text-xs text-muted-foreground mb-2">첨부 이미지</p>
