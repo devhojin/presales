@@ -18,7 +18,14 @@ export default function CartPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [couponCode, setCouponCode] = useState('')
   const [couponLoading, setCouponLoading] = useState(false)
-  const [appliedCoupon, setAppliedCoupon] = useState<{ id: number; name: string; discount_type: string; discount_value: number } | null>(null)
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    id: string
+    code: string
+    discount_type: 'percentage' | 'fixed'
+    discount_value: number
+    min_order_amount: number
+    valid_until: string | null
+  } | null>(null)
   const router = useRouter()
 
   const allFree = items.length > 0 && items.every((item) => item.price === 0)
@@ -88,39 +95,62 @@ export default function CartPage() {
 
   function getCouponDiscount() {
     if (!appliedCoupon) return 0
-    const cartTotal = getTotal() + getDiscountTotal()
-    if (appliedCoupon.discount_type === 'percent') {
+    const cartTotal = getTotal()
+    if (appliedCoupon.discount_type === 'percentage') {
       return Math.floor((cartTotal * appliedCoupon.discount_value) / 100)
-    } else {
-      return appliedCoupon.discount_value
     }
+    return Math.min(appliedCoupon.discount_value, cartTotal)
   }
 
   async function applyCoupon() {
     setCouponLoading(true)
     try {
       const supabase = createClient()
-      const { data } = await supabase
+      const code = couponCode.toUpperCase().trim()
+      const { data, error } = await supabase
         .from('coupons')
-        .select('id, name, code, discount_type, discount_value, min_amount, is_active, expires_at')
-        .eq('code', couponCode)
+        .select('id, code, discount_type, discount_value, min_order_amount, is_active, valid_from, valid_until, usage_count, max_usage')
+        .eq('code', code)
         .eq('is_active', true)
-        .single()
+        .maybeSingle()
 
-      if (!data) {
+      if (error || !data) {
         addToast('유효하지 않은 쿠폰 코드입니다.', 'error')
         return
       }
-      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+      const now = new Date()
+      if (data.valid_from && new Date(data.valid_from) > now) {
+        addToast('아직 사용할 수 없는 쿠폰입니다.', 'error')
+        return
+      }
+      if (data.valid_until && new Date(data.valid_until) < now) {
         addToast('만료된 쿠폰입니다.', 'error')
         return
       }
-      const cartTotal = getTotal() + getDiscountTotal()
-      if (data.min_amount && cartTotal < data.min_amount) {
-        addToast(`최소 주문금액 ${data.min_amount.toLocaleString()}원 이상이어야 합니다.`, 'error')
+      if (data.max_usage !== null && data.usage_count >= data.max_usage) {
+        addToast('사용 횟수가 소진된 쿠폰입니다.', 'error')
         return
       }
-      setAppliedCoupon(data)
+      const cartTotal = getTotal()
+      if (data.min_order_amount && cartTotal < data.min_order_amount) {
+        addToast(`최소 주문금액 ${Number(data.min_order_amount).toLocaleString()}원 이상이어야 합니다.`, 'error')
+        return
+      }
+      setAppliedCoupon({
+        id: data.id,
+        code: data.code,
+        discount_type: data.discount_type,
+        discount_value: Number(data.discount_value),
+        min_order_amount: Number(data.min_order_amount || 0),
+        valid_until: data.valid_until,
+      })
+      // 세션에 저장해서 체크아웃으로 전달
+      sessionStorage.setItem('presales-applied-coupon', JSON.stringify({
+        id: data.id,
+        code: data.code,
+        discount_type: data.discount_type,
+        discount_value: Number(data.discount_value),
+      }))
       addToast('쿠폰이 적용되었습니다!', 'success')
     } catch {
       addToast('쿠폰 확인 중 오류가 발생했습니다.', 'error')
@@ -219,12 +249,13 @@ export default function CartPage() {
             {appliedCoupon && (
               <div className="flex items-center justify-between text-sm p-2 bg-emerald-50 rounded-lg">
                 <span className="text-emerald-600 font-medium">
-                  ✓ {appliedCoupon.name} (-{appliedCoupon.discount_type === 'percent' ? `${appliedCoupon.discount_value}%` : `${appliedCoupon.discount_value.toLocaleString()}원`})
+                  ✓ {appliedCoupon.code} (-{appliedCoupon.discount_type === 'percentage' ? `${appliedCoupon.discount_value}%` : `${appliedCoupon.discount_value.toLocaleString()}원`})
                 </span>
                 <button
                   onClick={() => {
                     setAppliedCoupon(null)
                     setCouponCode('')
+                    sessionStorage.removeItem('presales-applied-coupon')
                   }}
                   className="text-xs text-muted-foreground hover:text-foreground hover:font-medium cursor-pointer"
                 >

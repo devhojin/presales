@@ -53,6 +53,8 @@ export default function CheckoutSuccessPage() {
         setConfirmedOrderId(data.orderId)
         setStatus('success')
         clearCart()
+        // 쿠폰 세션 정리
+        sessionStorage.removeItem('presales-applied-coupon')
 
         // GA4 purchase event
         gtag.trackPurchase(String(data.orderId), Number(amount))

@@ -25,7 +25,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Tag, Plus, Loader2, Trash2, ToggleLeft, ToggleRight, X } from 'lucide-react'
+import { Tag, Plus, Loader2, Trash2, ToggleLeft, ToggleRight, X, Info, History } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 interface Coupon {
@@ -52,6 +52,17 @@ const EMPTY_FORM = {
   max_usage: '',
 }
 
+interface CouponUse {
+  id: number
+  coupon_id: string
+  user_id: string | null
+  order_id: number | null
+  applied_amount: number
+  created_at: string
+  profile?: { name: string | null; email: string } | null
+  order_number?: string | null
+}
+
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [loading, setLoading] = useState(true)
@@ -60,6 +71,9 @@ export default function CouponsPage() {
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  const [detailCoupon, setDetailCoupon] = useState<Coupon | null>(null)
+  const [detailUses, setDetailUses] = useState<CouponUse[]>([])
+  const [detailLoading, setDetailLoading] = useState(false)
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type })
@@ -81,11 +95,52 @@ export default function CouponsPage() {
   // ESC to close modal
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { setShowModal(false); setDeleteTarget(null) }
+      if (e.key === 'Escape') { setShowModal(false); setDeleteTarget(null); setDetailCoupon(null) }
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [])
+
+  async function openDetail(coupon: Coupon) {
+    setDetailCoupon(coupon)
+    setDetailLoading(true)
+    setDetailUses([])
+    try {
+      const supabase = createClient()
+      const { data: uses } = await supabase
+        .from('coupon_uses')
+        .select('id, coupon_id, user_id, order_id, applied_amount, created_at')
+        .eq('coupon_id', coupon.id)
+        .order('created_at', { ascending: false })
+
+      if (uses && uses.length > 0) {
+        const userIds = Array.from(new Set(uses.map(u => u.user_id).filter((v): v is string => !!v)))
+        const orderIds = Array.from(new Set(uses.map(u => u.order_id).filter((v): v is number => !!v)))
+
+        const [{ data: profiles }, { data: orders }] = await Promise.all([
+          userIds.length > 0
+            ? supabase.from('profiles').select('id, name, email').in('id', userIds)
+            : Promise.resolve({ data: [] as { id: string; name: string | null; email: string }[] }),
+          orderIds.length > 0
+            ? supabase.from('orders').select('id, order_number').in('id', orderIds)
+            : Promise.resolve({ data: [] as { id: number; order_number: string }[] }),
+        ])
+
+        const profileMap = new Map((profiles || []).map(p => [p.id, p]))
+        const orderMap = new Map((orders || []).map(o => [o.id, o.order_number]))
+
+        setDetailUses(uses.map(u => ({
+          ...u,
+          profile: u.user_id ? (profileMap.get(u.user_id) || null) : null,
+          order_number: u.order_id ? (orderMap.get(u.order_id) || null) : null,
+        })))
+      }
+    } catch (err) {
+      console.error('Failed to load coupon uses:', err)
+    } finally {
+      setDetailLoading(false)
+    }
+  }
 
   async function handleCreate() {
     if (!form.code.trim()) { showToast('쿠폰 코드를 입력하세요.', 'error'); return }
@@ -204,7 +259,11 @@ export default function CouponsPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {coupons.map((c) => (
-                  <tr key={c.id} className="hover:bg-muted transition-colors">
+                  <tr
+                    key={c.id}
+                    onClick={() => openDetail(c)}
+                    className="hover:bg-muted transition-colors cursor-pointer"
+                  >
                     <td className="px-4 py-3">
                       <span className="font-mono font-semibold text-foreground">{c.code}</span>
                     </td>
@@ -232,7 +291,7 @@ export default function CouponsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => toggleActive(c.id, c.is_active)}
+                        onClick={(e) => { e.stopPropagation(); toggleActive(c.id, c.is_active) }}
                         className="flex items-center gap-1.5 cursor-pointer"
                         title={c.is_active ? '비활성화' : '활성화'}
                       >
@@ -248,7 +307,7 @@ export default function CouponsPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button
-                        onClick={() => setDeleteTarget(c.id)}
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(c.id) }}
                         className="p-1.5 text-muted-foreground hover:text-red-500 transition-colors cursor-pointer"
                         title="삭제"
                       >
@@ -375,6 +434,136 @@ export default function CouponsPage() {
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 {saving ? '생성 중...' : '쿠폰 생성'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Detail Modal — 쿠폰 정보 + 사용 내역 */}
+      {detailCoupon && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={() => setDetailCoupon(null)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] shadow-xl flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-border shrink-0">
+              <div className="flex items-center gap-3">
+                <Tag className="w-5 h-5 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold font-mono">{detailCoupon.code}</h3>
+                  <p className="text-xs text-muted-foreground">쿠폰 상세 정보</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDetailCoupon(null)}
+                className="text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {/* 정보 섹션 */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <Info className="w-4 h-4 text-muted-foreground" />
+                  <h4 className="text-sm font-semibold">쿠폰 정보</h4>
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                  <div>
+                    <p className="text-xs text-muted-foreground">할인</p>
+                    <p className="font-medium mt-0.5">{formatDiscount(detailCoupon)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">할인 유형</p>
+                    <p className="font-medium mt-0.5">
+                      {detailCoupon.discount_type === 'percentage' ? '퍼센트 할인' : '금액 할인'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">최소 주문금액</p>
+                    <p className="font-medium mt-0.5">
+                      {detailCoupon.min_order_amount > 0 ? `${detailCoupon.min_order_amount.toLocaleString()}원` : '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">사용 현황</p>
+                    <p className="font-medium mt-0.5">
+                      {detailCoupon.usage_count} {detailCoupon.max_usage ? `/ ${detailCoupon.max_usage}` : '(무제한)'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">유효 시작일</p>
+                    <p className="font-medium mt-0.5">{formatDate(detailCoupon.valid_from)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">유효 종료일</p>
+                    <p className="font-medium mt-0.5">{formatDate(detailCoupon.valid_until)}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">상태</p>
+                    <Badge className={`text-xs mt-0.5 ${detailCoupon.is_active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-muted text-muted-foreground'}`}>
+                      {detailCoupon.is_active ? '활성' : '비활성'}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">생성일</p>
+                    <p className="font-medium mt-0.5">{formatDate(detailCoupon.created_at)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 사용 내역 */}
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <History className="w-4 h-4 text-muted-foreground" />
+                  <h4 className="text-sm font-semibold">사용 내역 <span className="text-muted-foreground font-normal">({detailUses.length}건)</span></h4>
+                </div>
+                {detailLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : detailUses.length === 0 ? (
+                  <div className="bg-muted/30 rounded-lg py-10 text-center text-sm text-muted-foreground">
+                    아직 사용된 적이 없습니다
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {detailUses.map((use) => (
+                      <div key={use.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/20">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {use.profile?.name || use.profile?.email || '알 수 없음'}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {use.order_number ? `주문 ${use.order_number}` : '-'} · {new Date(use.created_at).toLocaleString('ko-KR')}
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold text-emerald-600 shrink-0 ml-3">
+                          -{use.applied_amount.toLocaleString()}원
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-2 p-4 border-t border-border shrink-0">
+              <button
+                type="button"
+                onClick={() => setDetailCoupon(null)}
+                className="px-4 py-2 text-sm font-medium border border-border rounded-lg hover:bg-muted cursor-pointer"
+              >
+                닫기
               </button>
             </div>
           </div>

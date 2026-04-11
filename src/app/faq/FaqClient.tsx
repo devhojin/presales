@@ -173,7 +173,7 @@ export function FaqClient() {
                         <AccordionTrigger className="px-5 py-4 text-sm font-medium hover:no-underline text-left">
                           {item.question}
                         </AccordionTrigger>
-                        <AccordionContent className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed">
+                        <AccordionContent className="px-5 pb-4 text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">
                           {item.answer}
                         </AccordionContent>
                       </AccordionItem>

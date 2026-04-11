@@ -15,6 +15,7 @@ import {
   Star,
   Trash2,
   MessageSquare,
+  ExternalLink,
 } from 'lucide-react'
 
 interface ProfileMap {
@@ -389,8 +390,22 @@ export default function AdminReviewsPage() {
                   key={review.id}
                   className="hover:bg-muted transition-colors"
                 >
-                  <td className="px-6 py-3 text-sm max-w-[200px] truncate">
-                    {productMap[review.product_id] || '-'}
+                  <td className="px-6 py-3 text-sm max-w-[200px]">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="truncate">{productMap[review.product_id] || '-'}</span>
+                      {review.product_id && (
+                        <a
+                          href={`/store/${review.product_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="shrink-0 text-muted-foreground hover:text-primary transition-colors"
+                          title="상품 페이지 새창에서 보기"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-3 text-sm">
                     {profileMap[review.user_id]?.name || '-'}
@@ -505,7 +520,20 @@ export default function AdminReviewsPage() {
               <div className="space-y-3 mb-4">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">상품</span>
-                  <span className="font-medium">{productMap[selectedReview.product_id] || '-'}</span>
+                  <span className="font-medium flex items-center gap-1.5">
+                    {productMap[selectedReview.product_id] || '-'}
+                    {selectedReview.product_id && (
+                      <a
+                        href={`/store/${selectedReview.product_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-primary transition-colors"
+                        title="상품 페이지 새창에서 보기"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">작성자</span>
