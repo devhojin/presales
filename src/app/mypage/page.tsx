@@ -74,6 +74,8 @@ interface ActivityItem {
 interface DbCoupon {
   id: string
   code: string
+  name?: string | null
+  description?: string | null
   discount_type: 'percentage' | 'fixed'
   discount_value: number
   min_order_amount: number
@@ -250,17 +252,24 @@ export default function MyConsolePage() {
         if (data.rooms) setKpi(k => ({ ...k, chats: data.rooms.length }))
       } catch { /* ignore */ }
 
-      // 쿠폰 로드 (활성 + 유효 기간 내)
-      const nowIso = new Date().toISOString()
-      const { data: couponData } = await supabase
-        .from('coupons')
-        .select('id, code, discount_type, discount_value, min_order_amount, valid_from, valid_until, usage_count, max_usage, is_active')
-        .eq('is_active', true)
-        .or(`valid_from.is.null,valid_from.lte.${nowIso}`)
-        .or(`valid_until.is.null,valid_until.gte.${nowIso}`)
-        .order('created_at', { ascending: false })
+      // 내가 보유한 쿠폰 (user_coupons 기반, 미사용 + 유효)
+      const now = new Date()
+      const { data: myCoupons } = await supabase
+        .from('user_coupons')
+        .select('id, received_at, used_at, coupons:coupon_id(id, code, name, description, discount_type, discount_value, min_order_amount, valid_from, valid_until, usage_count, max_usage, is_active)')
+        .eq('user_id', user.id)
+        .is('used_at', null)
+        .order('received_at', { ascending: false })
 
-      const available = (couponData || []).filter(c => !c.max_usage || c.usage_count < c.max_usage)
+      const available = (myCoupons || [])
+        .map(uc => uc.coupons as unknown as DbCoupon & { valid_from: string | null; valid_until: string | null; is_active: boolean; max_usage: number | null; usage_count: number })
+        .filter(c => {
+          if (!c || !c.is_active) return false
+          if (c.valid_from && new Date(c.valid_from) > now) return false
+          if (c.valid_until && new Date(c.valid_until) < now) return false
+          if (c.max_usage !== null && c.usage_count >= c.max_usage) return false
+          return true
+        })
       setCoupons(available as DbCoupon[])
     }
     load()
@@ -776,6 +785,9 @@ export default function MyConsolePage() {
                       <div key={c.id} className="relative border border-border/50 rounded-xl p-4 bg-gradient-to-br from-pink-50 to-white">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
+                            {c.name && (
+                              <p className="text-sm font-semibold text-foreground mb-1 truncate">{c.name}</p>
+                            )}
                             <div className="flex items-center gap-2 mb-2">
                               <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-white border border-pink-200 text-pink-700">
                                 {c.code}
@@ -790,10 +802,12 @@ export default function MyConsolePage() {
                               </span>
                             </div>
                             <p className="text-2xl font-bold text-pink-600 leading-none">{discountLabel}<span className="text-xs font-normal text-muted-foreground ml-1">할인</span></p>
+                            {c.description && (
+                              <p className="text-[11px] text-muted-foreground mt-2 line-clamp-2">{c.description}</p>
+                            )}
                             <div className="mt-3 space-y-1 text-xs text-muted-foreground">
                               <p className="flex items-center gap-1.5"><Check className="w-3 h-3 text-emerald-500" /> 최소 주문: {minOrderLabel}</p>
                               <p className="flex items-center gap-1.5"><Clock className="w-3 h-3 text-muted-foreground" /> 유효 기간: {validLabel}</p>
-                              {c.max_usage && <p className="flex items-center gap-1.5"><User className="w-3 h-3 text-muted-foreground" /> {c.max_usage}회 사용 가능</p>}
                             </div>
                           </div>
                         </div>

@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '주문이 이미 처리되었거나 상태가 변경되었습니다' }, { status: 409 })
     }
 
-    // 4.5. 쿠폰 사용 기록 + 사용 횟수 증가
+    // 4.5. 쿠폰 사용 기록 + 사용 횟수 증가 + 회원 보유 쿠폰 소진 처리
     if (order.coupon_id) {
       await supabase.from('coupon_uses').insert({
         coupon_id: order.coupon_id,
@@ -150,6 +150,14 @@ export async function POST(request: NextRequest) {
         .from('coupons')
         .update({ usage_count: (couponRow?.usage_count || 0) + 1 })
         .eq('id', order.coupon_id)
+
+      // 회원 보유 쿠폰(있다면) used_at 마킹
+      await supabase
+        .from('user_coupons')
+        .update({ used_at: new Date().toISOString(), used_order_id: dbOrderId })
+        .eq('user_id', user.id)
+        .eq('coupon_id', order.coupon_id)
+        .is('used_at', null)
     }
 
     // 5. 주문 확인 이메일 발송 (비동기, 실패해도 결제 성공)

@@ -11,6 +11,17 @@ import { createClient } from '@/lib/supabase'
 import { useToastStore } from '@/stores/toast-store'
 import * as gtag from '@/lib/gtag'
 
+interface OwnedCoupon {
+  id: string
+  code: string
+  name: string | null
+  description: string | null
+  discount_type: 'percentage' | 'fixed'
+  discount_value: number
+  min_order_amount: number
+  valid_until: string | null
+}
+
 export default function CartPage() {
   const { items, removeItem, clearCart, getTotal, getDiscountTotal } = useCartStore()
   const { addToast } = useToastStore()
@@ -21,12 +32,47 @@ export default function CartPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<{
     id: string
     code: string
+    name?: string | null
     discount_type: 'percentage' | 'fixed'
     discount_value: number
     min_order_amount: number
     valid_until: string | null
   } | null>(null)
+  const [ownedCoupons, setOwnedCoupons] = useState<OwnedCoupon[]>([])
+  const [couponMode, setCouponMode] = useState<'select' | 'code'>('select')
   const router = useRouter()
+
+  // 내 보유 쿠폰 로드
+  useEffect(() => {
+    const loadOwned = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setCouponMode('code')
+        return
+      }
+      const { data: userCoupons } = await supabase
+        .from('user_coupons')
+        .select('coupon_id, used_at, coupons:coupon_id(id, code, name, description, discount_type, discount_value, min_order_amount, valid_from, valid_until, is_active)')
+        .eq('user_id', user.id)
+        .is('used_at', null)
+      const now = new Date()
+      const owned = (userCoupons || [])
+        .map(uc => {
+          const c = uc.coupons as unknown as OwnedCoupon & { is_active: boolean; valid_from: string | null }
+          return c
+        })
+        .filter(c => {
+          if (!c || !c.is_active) return false
+          if (c.valid_from && new Date(c.valid_from) > now) return false
+          if (c.valid_until && new Date(c.valid_until) < now) return false
+          return true
+        })
+      setOwnedCoupons(owned)
+      if (owned.length === 0) setCouponMode('code')
+    }
+    loadOwned()
+  }, [])
 
   const allFree = items.length > 0 && items.every((item) => item.price === 0)
   const hasPaidItems = items.some((item) => item.price > 0)
@@ -102,6 +148,36 @@ export default function CartPage() {
     return Math.min(appliedCoupon.discount_value, cartTotal)
   }
 
+  function applyOwnedCoupon(coupon: OwnedCoupon) {
+    const cartTotal = getTotal()
+    const now = new Date()
+    if (coupon.valid_until && new Date(coupon.valid_until) < now) {
+      addToast('만료된 쿠폰입니다.', 'error')
+      return
+    }
+    if (coupon.min_order_amount && cartTotal < Number(coupon.min_order_amount)) {
+      addToast(`최소 주문금액 ${Number(coupon.min_order_amount).toLocaleString()}원 이상이어야 합니다.`, 'error')
+      return
+    }
+    setAppliedCoupon({
+      id: coupon.id,
+      code: coupon.code,
+      name: coupon.name,
+      discount_type: coupon.discount_type,
+      discount_value: Number(coupon.discount_value),
+      min_order_amount: Number(coupon.min_order_amount || 0),
+      valid_until: coupon.valid_until,
+    })
+    sessionStorage.setItem('presales-applied-coupon', JSON.stringify({
+      id: coupon.id,
+      code: coupon.code,
+      name: coupon.name,
+      discount_type: coupon.discount_type,
+      discount_value: Number(coupon.discount_value),
+    }))
+    addToast(`${coupon.name || coupon.code} 쿠폰이 적용되었습니다!`, 'success')
+  }
+
   async function applyCoupon() {
     setCouponLoading(true)
     try {
@@ -109,7 +185,7 @@ export default function CartPage() {
       const code = couponCode.toUpperCase().trim()
       const { data, error } = await supabase
         .from('coupons')
-        .select('id, code, discount_type, discount_value, min_order_amount, is_active, valid_from, valid_until, usage_count, max_usage')
+        .select('id, code, name, discount_type, discount_value, min_order_amount, is_active, valid_from, valid_until, usage_count, max_usage')
         .eq('code', code)
         .eq('is_active', true)
         .maybeSingle()
@@ -139,19 +215,20 @@ export default function CartPage() {
       setAppliedCoupon({
         id: data.id,
         code: data.code,
+        name: data.name,
         discount_type: data.discount_type,
         discount_value: Number(data.discount_value),
         min_order_amount: Number(data.min_order_amount || 0),
         valid_until: data.valid_until,
       })
-      // 세션에 저장해서 체크아웃으로 전달
       sessionStorage.setItem('presales-applied-coupon', JSON.stringify({
         id: data.id,
         code: data.code,
+        name: data.name,
         discount_type: data.discount_type,
         discount_value: Number(data.discount_value),
       }))
-      addToast('쿠폰이 적용되었습니다!', 'success')
+      addToast(`${data.name || data.code} 쿠폰이 적용되었습니다!`, 'success')
     } catch {
       addToast('쿠폰 확인 중 오류가 발생했습니다.', 'error')
     } finally {
@@ -225,42 +302,113 @@ export default function CartPage() {
             ))}
           </div>
 
-          {/* 쿠폰 코드 입력 */}
+          {/* 쿠폰 선택/입력 */}
           <div className="border border-border/50 rounded-2xl p-5 bg-card">
-            <h3 className="text-sm font-semibold mb-3">쿠폰 코드</h3>
-            <div className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                placeholder="쿠폰 코드를 입력하세요"
-                className="flex-1 h-11 rounded-xl border border-border px-4 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                maxLength={20}
-                disabled={appliedCoupon !== null}
-              />
-              <button
-                onClick={applyCoupon}
-                disabled={!couponCode || couponLoading || appliedCoupon !== null}
-                className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors cursor-pointer"
-              >
-                {couponLoading ? '확인중...' : '적용'}
-              </button>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold">쿠폰 사용</h3>
+              {ownedCoupons.length > 0 && (
+                <div className="flex gap-1 bg-muted/50 p-0.5 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setCouponMode('select')}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer ${
+                      couponMode === 'select' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    내 쿠폰 ({ownedCoupons.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCouponMode('code')}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer ${
+                      couponMode === 'code' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    코드 입력
+                  </button>
+                </div>
+              )}
             </div>
-            {appliedCoupon && (
-              <div className="flex items-center justify-between text-sm p-2 bg-emerald-50 rounded-lg">
-                <span className="text-emerald-600 font-medium">
-                  ✓ {appliedCoupon.code} (-{appliedCoupon.discount_type === 'percentage' ? `${appliedCoupon.discount_value}%` : `${appliedCoupon.discount_value.toLocaleString()}원`})
-                </span>
+
+            {/* 적용된 쿠폰 표시 */}
+            {appliedCoupon ? (
+              <div className="flex items-center justify-between text-sm p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                <div className="min-w-0">
+                  <p className="text-emerald-700 font-semibold truncate">✓ {appliedCoupon.name || appliedCoupon.code}</p>
+                  <p className="text-xs text-emerald-600 mt-0.5">
+                    {appliedCoupon.discount_type === 'percentage'
+                      ? `${appliedCoupon.discount_value}% 할인`
+                      : `${appliedCoupon.discount_value.toLocaleString()}원 할인`}
+                  </p>
+                </div>
                 <button
                   onClick={() => {
                     setAppliedCoupon(null)
                     setCouponCode('')
                     sessionStorage.removeItem('presales-applied-coupon')
                   }}
-                  className="text-xs text-muted-foreground hover:text-foreground hover:font-medium cursor-pointer"
+                  className="ml-3 shrink-0 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
                 >
-                  취소
+                  변경
                 </button>
+              </div>
+            ) : couponMode === 'select' && ownedCoupons.length > 0 ? (
+              <div className="space-y-2">
+                {ownedCoupons.map((c) => {
+                  const cartTotal = getTotal()
+                  const canUse = cartTotal >= Number(c.min_order_amount || 0)
+                  const discountPreview = c.discount_type === 'percentage'
+                    ? `${c.discount_value}%`
+                    : `${Number(c.discount_value).toLocaleString()}원`
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => applyOwnedCoupon(c)}
+                      disabled={!canUse}
+                      className="w-full flex items-center gap-3 p-3 border border-border rounded-xl bg-background hover:border-primary hover:bg-primary/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-left cursor-pointer"
+                    >
+                      <div className="shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex flex-col items-center justify-center">
+                        <Gift className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate">{c.name || c.code}</p>
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">
+                          {discountPreview} 할인
+                          {c.min_order_amount > 0 && ` · 최소 ${Number(c.min_order_amount).toLocaleString()}원`}
+                        </p>
+                        {!canUse && (
+                          <p className="text-[10px] text-red-500 mt-0.5">최소 주문금액 미달</p>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            ) : (
+              <div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    placeholder="쿠폰 코드를 입력하세요"
+                    className="flex-1 h-11 rounded-xl border border-border px-4 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                    maxLength={32}
+                  />
+                  <button
+                    onClick={applyCoupon}
+                    disabled={!couponCode || couponLoading}
+                    className="h-11 px-5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors cursor-pointer"
+                  >
+                    {couponLoading ? '확인중...' : '적용'}
+                  </button>
+                </div>
+                {ownedCoupons.length === 0 && (
+                  <p className="text-[11px] text-muted-foreground mt-2">
+                    보유 중인 쿠폰이 없습니다. 코드를 직접 입력해주세요.
+                  </p>
+                )}
               </div>
             )}
           </div>
