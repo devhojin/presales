@@ -218,6 +218,15 @@ export default function BriefPage() {
             </div>
           </div>
 
+          {/* SEO: 개별 브리프 링크 (크롤러용, 화면에 보이지 않음) */}
+          <nav className="sr-only" aria-label="브리프 아카이브">
+            {briefs.map((b) => (
+              <a key={b.slug} href={`/brief/${b.slug}`}>
+                {b.subject}
+              </a>
+            ))}
+          </nav>
+
           {/* RIGHT: 이메일 본문 */}
           <div
             className={`${showDetail ? 'flex' : 'hidden md:flex'} flex-col flex-1 border border-border/50 rounded-2xl overflow-hidden bg-card sticky self-start`}

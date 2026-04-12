@@ -50,7 +50,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-    return [...staticPages, ...productPages, ...announcementPages];
+    // 브리프 개별 페이지
+    const { data: briefs } = await supabase
+      .from("daily_briefs")
+      .select("slug, sent_at, created_at")
+      .eq("is_published", true)
+      .order("brief_date", { ascending: false });
+
+    const briefPages: MetadataRoute.Sitemap = (briefs ?? []).map((b) => ({
+      url: `${BASE_URL}/brief/${b.slug}`,
+      lastModified: b.sent_at ? new Date(b.sent_at) : new Date(b.created_at),
+      changeFrequency: "daily" as const,
+      priority: 0.7,
+    }));
+
+    return [...staticPages, ...productPages, ...announcementPages, ...briefPages];
   } catch {
     return staticPages;
   }
