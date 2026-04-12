@@ -12,6 +12,7 @@ const navLinks = [
   { href: '/store', label: '문서 스토어' },
   { href: '/consulting', label: '컨설팅' },
   { href: '/announcements', label: '공고 사업' },
+  { href: '/brief', label: '모닝 브리프' },
   { href: '/feeds', label: 'IT피드' },
   { href: '/about', label: '회사소개' },
   { href: '/faq', label: '고객지원' },
