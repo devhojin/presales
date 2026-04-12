@@ -139,7 +139,7 @@ export default function AboutPage() {
           <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">TRACK RECORD</p>
           <h2 className="text-3xl font-bold tracking-tight text-foreground mb-3">수주 실적</h2>
           <p className="text-muted-foreground">
-            소프트웨어 기술자 경력 특급 · 특허 12건 출원 / 6건 등록 · 정보통신기술 기능계기술자
+            소프트웨어 기술자 경력 특급 · 정보통신기술 기능계기술자
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -183,19 +183,6 @@ export default function AboutPage() {
                 '정부기관 디지털 안전 선도모델 개발 (재난안전)',
                 '광역시 자율주행 리빙랩 사업계획 (700억 규모)',
                 '라이다 기반 회전교차로 상품 기획',
-              ],
-            },
-            {
-              icon: '📋',
-              title: '특허 등록',
-              color: 'from-amber-500 to-amber-600',
-              items: [
-                'AI 기반 블랙아이스 모니터링 시스템',
-                '도로 온도·습도 측정 매립형 센서 장치',
-                'AI 자동 염수분사 도로 모니터링 시스템',
-                '보행자 안전 확보 및 차량 진입 제어 신호 시스템',
-                '진동 모니터링에 따른 자동 주유 장치',
-                '공정 시스템 부생가스 배관 가스누출 감시 시스템',
               ],
             },
             {
