@@ -395,44 +395,41 @@ function ConsultingDetailModal({
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                {request.status === 'pending' && (
-                  <>
-                    <button
-                      onClick={() => handleStatusClick('confirmed')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      확정
-                    </button>
-                    <button
-                      onClick={() => handleStatusClick('cancelled')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-gray-300 transition-colors"
-                    >
-                      <XCircle className="w-4 h-4" />
-                      취소
-                    </button>
-                  </>
+                {request.status !== 'pending' && (
+                  <button
+                    onClick={() => handleStatusClick('pending')}
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-xl hover:bg-amber-100 transition-colors"
+                  >
+                    <Clock className="w-4 h-4" />
+                    대기
+                  </button>
+                )}
+                {request.status !== 'confirmed' && request.status !== 'completed' && (
+                  <button
+                    onClick={() => handleStatusClick('confirmed')}
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    확정
+                  </button>
                 )}
                 {request.status === 'confirmed' && (
-                  <>
-                    <button
-                      onClick={() => handleStatusClick('completed')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      완료 처리
-                    </button>
-                    <button
-                      onClick={() => handleStatusClick('cancelled')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-gray-300 transition-colors"
-                    >
-                      <XCircle className="w-4 h-4" />
-                      취소
-                    </button>
-                  </>
+                  <button
+                    onClick={() => handleStatusClick('completed')}
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    완료
+                  </button>
                 )}
-                {(request.status === 'completed' || request.status === 'cancelled') && (
-                  <p className="text-sm text-muted-foreground">상태 변경이 불가능합니다</p>
+                {request.status !== 'cancelled' && (
+                  <button
+                    onClick={() => handleStatusClick('cancelled')}
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-gray-300 transition-colors"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    취소
+                  </button>
                 )}
               </div>
             </div>
