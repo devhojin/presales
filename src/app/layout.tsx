@@ -30,11 +30,11 @@ export const metadata: Metadata = {
     default: "PRESALES - 공공조달 제안서 마켓플레이스",
     template: "%s | PRESALES",
   },
-  description: "공공조달 기술제안서, 입찰가이드, 발표자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",
+  description: "공공조달 기술제안서, 입찰가이드, 구축자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",
   metadataBase: new URL(SITE_URL),
   openGraph: {
     title: "PRESALES - 공공조달 제안서 마켓플레이스",
-    description: "공공조달 기술제안서, 입찰가이드, 발표자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",
+    description: "공공조달 기술제안서, 입찰가이드, 구축자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",
     type: "website",
     url: SITE_URL,
     siteName: "PRESALES by AMARANS Partners",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "PRESALES - 공공조달 제안서 마켓플레이스",
-    description: "공공조달 기술제안서, 입찰가이드, 발표자료 등 전문 문서 다운로드 플랫폼.",
+    description: "공공조달 기술제안서, 입찰가이드, 구축자료 등 전문 문서 다운로드 플랫폼.",
   },
 };
 
@@ -53,7 +53,7 @@ const organizationJsonLd = {
   name: "PRESALES by AMARANS Partners",
   url: SITE_URL,
   description:
-    "공공조달 기술제안서, 입찰가이드, 발표자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",
+    "공공조달 기술제안서, 입찰가이드, 구축자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",
   sameAs: [],
 };
 
