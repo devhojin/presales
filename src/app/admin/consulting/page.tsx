@@ -54,7 +54,7 @@ const statusConfig: Record<string, { label: string; class: string; bg: string }>
     bg: 'bg-yellow-500',
   },
   confirmed: {
-    label: '확정',
+    label: '진행중',
     class: 'bg-primary/8 text-primary border border-primary/20',
     bg: 'bg-primary',
   },
@@ -181,6 +181,14 @@ function StatusConfirmModal({
 // Detail Modal
 // ===========================
 
+interface MemberStats {
+  joined_at: string
+  total_orders: number
+  paid_orders: number
+  total_spent: number
+  past_consulting: number
+}
+
 function ConsultingDetailModal({
   request,
   onClose,
@@ -193,6 +201,41 @@ function ConsultingDetailModal({
   const [showConfirm, setShowConfirm] = useState(false)
   const [targetStatus, setTargetStatus] = useState('')
   const [confirmLoading, setConfirmLoading] = useState(false)
+  const [memberStats, setMemberStats] = useState<MemberStats | null>(null)
+  const [statsLoading, setStatsLoading] = useState(false)
+
+  // 회원 통계 로드 (등록 회원만)
+  useEffect(() => {
+    if (!request.user_id) return
+    let cancelled = false
+    async function loadStats() {
+      setStatsLoading(true)
+      try {
+        const supabase = createClient()
+        const [profileRes, ordersRes, consultingRes] = await Promise.all([
+          supabase.from('profiles').select('created_at').eq('id', request.user_id!).maybeSingle(),
+          supabase.from('orders').select('id, status, total_amount').eq('user_id', request.user_id!),
+          supabase.from('consulting_requests').select('id', { count: 'exact', head: true }).eq('user_id', request.user_id!).neq('id', request.id),
+        ])
+        if (cancelled) return
+        const orders = ordersRes.data || []
+        const paidOrders = orders.filter(o => o.status === 'paid' || o.status === 'completed')
+        setMemberStats({
+          joined_at: profileRes.data?.created_at || request.created_at,
+          total_orders: orders.length,
+          paid_orders: paidOrders.length,
+          total_spent: paidOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0),
+          past_consulting: consultingRes.count || 0,
+        })
+      } catch (err) {
+        console.error('Failed to load member stats:', err)
+      } finally {
+        if (!cancelled) setStatsLoading(false)
+      }
+    }
+    loadStats()
+    return () => { cancelled = true }
+  }, [request.user_id, request.id, request.created_at])
 
   // Close on ESC
   useEffect(() => {
@@ -254,8 +297,13 @@ function ConsultingDetailModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* 신청자 정보 */}
           <div>
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
               신청자 정보
+              {request.user_id ? (
+                <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px]">등록 회원</Badge>
+              ) : (
+                <Badge className="bg-muted text-muted-foreground border border-border text-[10px]">비회원</Badge>
+              )}
             </h3>
             <div className="bg-muted rounded-xl p-4 space-y-0 divide-y divide-gray-200/60">
               <InfoRow icon={<User className="w-4 h-4" />} label="이름" value={request.name || '-'} />
@@ -264,6 +312,41 @@ function ConsultingDetailModal({
               <InfoRow icon={<Building className="w-4 h-4" />} label="회사" value={request.company || '-'} />
             </div>
           </div>
+
+          {/* 회원 통계 (등록 회원만) */}
+          {request.user_id && (
+            <div>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                회원 활동 이력
+              </h3>
+              <div className="bg-muted rounded-xl p-4">
+                {statsLoading ? (
+                  <p className="text-sm text-muted-foreground text-center py-2">불러오는 중...</p>
+                ) : memberStats ? (
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase">가입일</p>
+                      <p className="font-medium mt-0.5">{formatDateTime(memberStats.joined_at)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase">총 주문</p>
+                      <p className="font-medium mt-0.5">{memberStats.total_orders}건 (결제완료 {memberStats.paid_orders}건)</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase">누적 결제금액</p>
+                      <p className="font-semibold mt-0.5 text-primary">{memberStats.total_spent.toLocaleString()}원</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase">이전 컨설팅 신청</p>
+                      <p className="font-medium mt-0.5">{memberStats.past_consulting}건</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-2">회원 정보를 불러올 수 없습니다</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* 패키지 유형 */}
           <div>
@@ -312,44 +395,41 @@ function ConsultingDetailModal({
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                {request.status === 'pending' && (
-                  <>
-                    <button
-                      onClick={() => handleStatusClick('confirmed')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      확정
-                    </button>
-                    <button
-                      onClick={() => handleStatusClick('cancelled')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-gray-300 transition-colors"
-                    >
-                      <XCircle className="w-4 h-4" />
-                      취소
-                    </button>
-                  </>
+                {request.status !== 'pending' && (
+                  <button
+                    onClick={() => handleStatusClick('pending')}
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-xl hover:bg-amber-100 transition-colors"
+                  >
+                    <Clock className="w-4 h-4" />
+                    대기
+                  </button>
+                )}
+                {request.status !== 'confirmed' && request.status !== 'completed' && (
+                  <button
+                    onClick={() => handleStatusClick('confirmed')}
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    진행중
+                  </button>
                 )}
                 {request.status === 'confirmed' && (
-                  <>
-                    <button
-                      onClick={() => handleStatusClick('completed')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      완료 처리
-                    </button>
-                    <button
-                      onClick={() => handleStatusClick('cancelled')}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-gray-300 transition-colors"
-                    >
-                      <XCircle className="w-4 h-4" />
-                      취소
-                    </button>
-                  </>
+                  <button
+                    onClick={() => handleStatusClick('completed')}
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    완료
+                  </button>
                 )}
-                {(request.status === 'completed' || request.status === 'cancelled') && (
-                  <p className="text-sm text-muted-foreground">상태 변경이 불가능합니다</p>
+                {request.status !== 'cancelled' && (
+                  <button
+                    onClick={() => handleStatusClick('cancelled')}
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-gray-300 transition-colors"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    취소
+                  </button>
                 )}
               </div>
             </div>
@@ -478,7 +558,7 @@ export default function AdminConsulting() {
   const filterTabs: { key: FilterTab; label: string; count: number }[] = [
     { key: 'all', label: '전체', count: totalCount },
     { key: 'pending', label: '대기', count: pendingCount },
-    { key: 'confirmed', label: '확정', count: confirmedCount },
+    { key: 'confirmed', label: '진행중', count: confirmedCount },
     { key: 'completed', label: '완료', count: completedCount },
     { key: 'cancelled', label: '취소', count: cancelledCount },
   ]

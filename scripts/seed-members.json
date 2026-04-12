@@ -1,0 +1,587 @@
+[
+  {
+    "name": "김서현",
+    "email": "seohyun.kim@nextsys.co.kr",
+    "phone": "010-3821-4567",
+    "company": "넥스트시스템즈",
+    "role": "user",
+    "tier": "heavy",
+    "orders": [
+      {"product_id": 19, "price": 99000, "status": "paid"},
+      {"product_id": 63, "price": 49000, "status": "paid"},
+      {"product_id": 40, "price": 99000, "status": "paid"},
+      {"product_id": 64, "price": 49000, "status": "paid"},
+      {"product_id": 25, "price": 99000, "status": "paid"},
+      {"product_id": 29, "price": 99000, "status": "paid"}
+    ],
+    "reviews": [
+      {"product_id": 19, "rating": 5, "title": "실전 입찰에서 검증된 자료", "content": "30억 규모 ITS 사업 입찰 준비에 이 제안서 구조를 참고했는데 최우선협상 대상자로 선정됐습니다. 목차 구성과 기술 서술 방식이 발주처 요구사항에 딱 맞았어요. 다음 입찰에도 계속 활용할 예정입니다."},
+      {"product_id": 40, "rating": 5, "title": "45억 규모 공공사업 제안서로 완벽", "content": "A3 판형이라 인쇄 품질도 훌륭하고 발표 자료로도 손색이 없습니다. 세부 비용 산출 방식이 현실적이고 평가위원들이 좋아하는 포인트를 잘 잡았습니다."},
+      {"product_id": 25, "rating": 4, "title": "금융권 유지운영 제안서 참고자료로 우수", "content": "은행 전산 유지운영 사업 입찰 준비하면서 이 자료가 정말 도움됐습니다. 월 1억 매출 규모 사업이라 SLA 조항이나 인력 배치 방식이 현실감 있게 작성되어 있어요."}
+    ],
+    "ann_bookmarks": 4,
+    "feed_bookmarks": 3,
+    "brief_subscribed": true,
+    "chat_messages": [
+      "45억 규모 제안서 파일이 PPT와 PDF 둘 다 포함된 건가요?",
+      "네 확인했습니다. PDF 버전도 같이 받을 수 있어서 좋네요.",
+      "다음 달에 IT 인프라 구축 사업 입찰 예정인데 맞는 제안서 추천해 주실 수 있나요?"
+    ],
+    "consulting": {"package_type": "project", "status": "completed", "message": "행정안전부 산하 공공기관 스마트시티 플랫폼 구축 사업(45억 규모) 입찰 전략 수립 및 제안서 전체 검토 요청드립니다."},
+    "downloads": [19, 63, 40, 64, 25, 29, 33],
+    "coupon_used": "WELCOME10K"
+  },
+  {
+    "name": "박준호",
+    "email": "junho.park@hdengineering.com",
+    "phone": "010-5634-8912",
+    "company": "현대엔지니어링솔루션",
+    "role": "user",
+    "tier": "heavy",
+    "orders": [
+      {"product_id": 37, "price": 99000, "status": "paid"},
+      {"product_id": 32, "price": 99000, "status": "paid"},
+      {"product_id": 67, "price": 49000, "status": "paid"},
+      {"product_id": 43, "price": 99000, "status": "paid"},
+      {"product_id": 36, "price": 99000, "status": "paid"},
+      {"product_id": 68, "price": 49000, "status": "paid"},
+      {"product_id": 29, "price": 99000, "status": "paid"}
+    ],
+    "reviews": [
+      {"product_id": 37, "rating": 5, "title": "보안 시스템 구축 제안서 완성도 최상", "content": "27억 규모 정보보안 시스템 구축 사업 수주에 성공했습니다. KISA 가이드라인 반영 방식, 취약점 분석 보고서 양식 등이 실무에서 바로 쓸 수 있는 수준입니다."},
+      {"product_id": 43, "rating": 4, "title": "ISP 전략계획 수립 제안에 딱 맞는 자료", "content": "통합전산망 ISP 사업 입찰 준비 중이었는데 현황 분석 → 목표 아키텍처 → 이행 로드맵 순서의 논리 흐름이 매우 좋습니다. 발주처 설득 논리 구성에 큰 도움이 됐어요."}
+    ],
+    "ann_bookmarks": 5,
+    "feed_bookmarks": 2,
+    "brief_subscribed": true,
+    "chat_messages": [
+      "정보보안 제안서 구매 후 파일 다운로드가 안 됩니다. 확인 부탁드립니다.",
+      "방금 다시 시도했더니 됐습니다. 감사합니다.",
+      "악성코드 은닉사이트 제안서도 보안 사업 입찰에 활용 가능한가요?"
+    ],
+    "consulting": {"package_type": "review", "status": "confirmed", "message": "CCTV 통합관제 시스템 구축 사업(22억 규모) 입찰서류 검토 요청. 기술 배점 90점 사업입니다."},
+    "downloads": [37, 32, 67, 43, 36, 68, 29],
+    "coupon_used": null
+  },
+  {
+    "name": "이수진",
+    "email": "sujin.lee@greendigital.kr",
+    "phone": "010-2287-6340",
+    "company": "그린디지털",
+    "role": "user",
+    "tier": "heavy",
+    "orders": [
+      {"product_id": 23, "price": 99000, "status": "paid"},
+      {"product_id": 69, "price": 49000, "status": "paid"},
+      {"product_id": 45, "price": 99000, "status": "paid"},
+      {"product_id": 27, "price": 99000, "status": "paid"},
+      {"product_id": 70, "price": 49000, "status": "paid"},
+      {"product_id": 20, "price": 59000, "status": "paid"},
+      {"product_id": 34, "price": 59000, "status": "paid"}
+    ],
+    "reviews": [
+      {"product_id": 23, "rating": 5, "title": "이커머스 차세대 제안서 중 최고", "content": "국내 Top tier 쇼핑몰 BM 개선 제안서인데 UI/UX 개선 방향성, 개인화 추천 알고리즘 도입 전략 등 실제 기업 프로젝트에 투자받을 때 활용했습니다. 투자자들 반응이 매우 좋았어요."},
+      {"product_id": 45, "rating": 4, "title": "창업 패키지 사업계획서 형식 완벽", "content": "예비창업패키지 최종 발표 준비에 이 사업계획서 구조를 참고했습니다. 심사위원이 원하는 형식 그대로라 합격률이 높을 것 같아요."},
+      {"product_id": 27, "rating": 5, "title": "IoT 제안서 군 납품 사업에 완벽 적용", "content": "군부대 시설물 원격감시 사업 입찰했는데 수주 성공했습니다. 보안 요건 충족 방식, 실시간 모니터링 아키텍처 설계 방식이 발주처 요구에 딱 맞았어요."}
+    ],
+    "ann_bookmarks": 3,
+    "feed_bookmarks": 1,
+    "brief_subscribed": true,
+    "chat_messages": [
+      "쇼핑몰 BM 개선 제안서는 스타트업 투자유치 목적으로도 활용 가능한가요?",
+      "감사합니다. 구매해서 잘 활용했습니다."
+    ],
+    "consulting": null,
+    "downloads": [23, 69, 45, 27, 70, 20, 34],
+    "coupon_used": "FIRST20PCT"
+  },
+  {
+    "name": "최민준",
+    "email": "minjun.choi@posco-ict.co.kr",
+    "phone": "010-8847-2231",
+    "company": "포스코ICT",
+    "role": "user",
+    "tier": "medium",
+    "orders": [
+      {"product_id": 40, "price": 99000, "status": "paid"},
+      {"product_id": 64, "price": 49000, "status": "paid"},
+      {"product_id": 41, "price": 99000, "status": "paid"}
+    ],
+    "reviews": [
+      {"product_id": 40, "rating": 5, "title": "대형 공공사업 수주에 실질적 도움", "content": "포스코 계열사에서 공공기관 시스템 통합 사업 수주 업무를 맡고 있는데, 이 제안서 양식이 평가위원들이 좋아하는 패턴을 잘 담고 있습니다. 구조 그대로 쓸 수 있어서 편했어요."}
+    ],
+    "ann_bookmarks": 2,
+    "feed_bookmarks": 0,
+    "brief_subscribed": true,
+    "chat_messages": [],
+    "consulting": {"package_type": "spot", "status": "completed", "message": "스마트팩토리 MES 시스템 구축 사업(38억) 기술 제안서 핵심 차별화 포인트 자문 요청"},
+    "downloads": [40, 64, 41],
+    "coupon_used": "WELCOME10K"
+  },
+  {
+    "name": "정유리",
+    "email": "yuri.jung@sbstech.kr",
+    "phone": "010-4412-9087",
+    "company": "에스비에스테크",
+    "role": "user",
+    "tier": "medium",
+    "orders": [
+      {"product_id": 29, "price": 99000, "status": "paid"},
+      {"product_id": 30, "price": 99000, "status": "paid"},
+      {"product_id": 65, "price": 49000, "status": "paid"}
+    ],
+    "reviews": [
+      {"product_id": 29, "rating": 4, "title": "지자체 홈페이지 유지보수 입찰 필수 자료", "content": "지방자치단체 정보화 사업 입찰을 주로 하는데, 이 제안서는 발주처에서 실제로 원하는 체크리스트 항목들을 빠짐없이 다루고 있습니다. 다음 입찰에도 기본 구조로 활용할 예정입니다."},
+      {"product_id": 30, "rating": 4, "title": "실제 청해시 사례라 신뢰도 높음", "content": "실제 지자체 명칭이 들어간 제안서라 현실감이 있어서 참고 자료로 가치가 높습니다. 유지보수 SLA 산정 방식이 특히 유용했어요."}
+    ],
+    "ann_bookmarks": 1,
+    "feed_bookmarks": 2,
+    "brief_subscribed": false,
+    "chat_messages": [
+      "홈페이지 유지보수 제안서 PPT와 PDF 버전 파일 포맷이 다른가요?"
+    ],
+    "consulting": null,
+    "downloads": [29, 30, 65],
+    "coupon_used": null
+  },
+  {
+    "name": "한동욱",
+    "email": "dongwook.han@smartgov.go.kr",
+    "phone": "010-6623-5508",
+    "company": "스마트행정연구원",
+    "role": "user",
+    "tier": "medium",
+    "orders": [
+      {"product_id": 43, "price": 99000, "status": "paid"},
+      {"product_id": 25, "price": 99000, "status": "paid"}
+    ],
+    "reviews": [
+      {"product_id": 43, "rating": 5, "title": "ISP 전략계획 보고서 품질이 탁월", "content": "공공기관 중장기 정보화 전략 수립 컨설팅 업무에 이 자료를 활용했습니다. 현황 진단 프레임워크, 정보화 비전 체계, 세부 이행과제 구조가 실무 경험 없이도 따라 할 수 있는 수준으로 잘 정리되어 있습니다."}
+    ],
+    "ann_bookmarks": 3,
+    "feed_bookmarks": 1,
+    "brief_subscribed": true,
+    "chat_messages": [],
+    "consulting": {"package_type": "spot", "status": "pending", "message": "전자정부 플랫폼 고도화 중장기 마스터플랜 수립 프로젝트 자문 요청"},
+    "downloads": [43, 25],
+    "coupon_used": "FIRST20PCT"
+  },
+  {
+    "name": "윤채원",
+    "email": "chaewon.yoon@buildkon.co.kr",
+    "phone": "010-9934-7621",
+    "company": "빌드콘건설",
+    "role": "user",
+    "tier": "medium",
+    "orders": [
+      {"product_id": 39, "price": 99000, "status": "paid"},
+      {"product_id": 38, "price": 99000, "status": "paid"}
+    ],
+    "reviews": [],
+    "ann_bookmarks": 0,
+    "feed_bookmarks": 3,
+    "brief_subscribed": false,
+    "chat_messages": [
+      "건설 관련 제안서도 있나요? 도로 스마트 인프라 쪽 찾고 있습니다."
+    ],
+    "consulting": null,
+    "downloads": [39, 38],
+    "coupon_used": null
+  },
+  {
+    "name": "오상현",
+    "email": "sanghyun.oh@ktds.co.kr",
+    "phone": "010-7712-4398",
+    "company": "KT디에스",
+    "role": "user",
+    "tier": "medium",
+    "orders": [
+      {"product_id": 36, "price": 99000, "status": "paid"},
+      {"product_id": 32, "price": 99000, "status": "paid"},
+      {"product_id": 66, "price": 49000, "status": "paid"}
+    ],
+    "reviews": [
+      {"product_id": 36, "rating": 5, "title": "사이버 보안 교육 플랫폼 사업 수주 성공", "content": "네트워크 보안 인력 양성 교육 플랫폼 구축 사업 수주에 이 제안서가 결정적으로 도움됐습니다. 커리큘럼 설계 방식, LMS 연동 구조, 강사 관리 시스템까지 빠짐없이 담겨 있어요. 이 가격에 이 퀄리티 정말 놀랍습니다."}
+    ],
+    "ann_bookmarks": 2,
+    "feed_bookmarks": 0,
+    "brief_subscribed": true,
+    "chat_messages": [],
+    "consulting": null,
+    "downloads": [36, 32, 66],
+    "coupon_used": "WELCOME10K"
+  },
+  {
+    "name": "강민서",
+    "email": "minseo.kang@agritech.co.kr",
+    "phone": "010-3345-8876",
+    "company": "농업기술솔루션",
+    "role": "user",
+    "tier": "light",
+    "orders": [
+      {"product_id": 38, "price": 99000, "status": "paid"}
+    ],
+    "reviews": [
+      {"product_id": 38, "rating": 5, "title": "농산물 유통 IT 사업 입찰 완벽 참고", "content": "농림축산식품부 산하 농산물 이력추적 시스템 사업 입찰에 이 제안서를 참고했습니다. QR코드 기반 이력 추적, 농가 앱 연동 방식, 유통 단계별 데이터 수집 구조가 현실적입니다. 수주 결과는 아직 기다리는 중이지만 제안서 완성도는 매우 높아요."}
+    ],
+    "ann_bookmarks": 1,
+    "feed_bookmarks": 1,
+    "brief_subscribed": true,
+    "chat_messages": [],
+    "consulting": null,
+    "downloads": [38],
+    "coupon_used": null
+  },
+  {
+    "name": "임지훈",
+    "email": "jihoon.lim@samsungsds.com",
+    "phone": "010-8823-6147",
+    "company": "삼성SDS",
+    "role": "user",
+    "tier": "light",
+    "orders": [
+      {"product_id": 19, "price": 99000, "status": "paid"}
+    ],
+    "reviews": [],
+    "ann_bookmarks": 4,
+    "feed_bookmarks": 2,
+    "brief_subscribed": true,
+    "chat_messages": [
+      "30억 규모 제안서 파일 안에 PPT 슬라이드 수가 얼마나 되나요?"
+    ],
+    "consulting": null,
+    "downloads": [19],
+    "coupon_used": "WELCOME10K"
+  },
+  {
+    "name": "송하은",
+    "email": "haeun.song@innowave.kr",
+    "phone": "010-6671-3290",
+    "company": "이노웨이브",
+    "role": "user",
+    "tier": "light",
+    "orders": [
+      {"product_id": 45, "price": 99000, "status": "paid"}
+    ],
+    "reviews": [
+      {"product_id": 45, "rating": 4, "title": "창업지원 사업계획서 형식으로 최적", "content": "예비창업패키지 서류 통과하고 최종 선정됐습니다. HWP 파일도 포함되어 있어서 공식 양식에 맞게 바로 편집 가능했어요. 내용의 논리 구조가 심사위원들에게 어필하기 좋은 형태입니다."}
+    ],
+    "ann_bookmarks": 0,
+    "feed_bookmarks": 1,
+    "brief_subscribed": false,
+    "chat_messages": [],
+    "consulting": null,
+    "downloads": [45],
+    "coupon_used": null
+  },
+  {
+    "name": "권태호",
+    "email": "taeho.kwon@lgsci.co.kr",
+    "phone": "010-4456-7723",
+    "company": "LG사이언스파크",
+    "role": "user",
+    "tier": "light",
+    "orders": [
+      {"product_id": 27, "price": 99000, "status": "paid"}
+    ],
+    "reviews": [],
+    "ann_bookmarks": 2,
+    "feed_bookmarks": 0,
+    "brief_subscribed": true,
+    "chat_messages": [],
+    "consulting": {"package_type": "review", "status": "cancelled", "message": "IoT 스마트 빌딩 관리 시스템 구축 제안서 검토 요청 - 일정 조율 실패로 취소"},
+    "downloads": [27],
+    "coupon_used": null
+  },
+  {
+    "name": "배소연",
+    "email": "soyeon.bae@mobilefirst.kr",
+    "phone": "010-9981-4523",
+    "company": "모바일퍼스트",
+    "role": "user",
+    "tier": "light",
+    "orders": [
+      {"product_id": 31, "price": 69000, "status": "paid"}
+    ],
+    "reviews": [
+      {"product_id": 31, "rating": 4, "title": "UI/UX 기획서 실무 바로 적용 가능", "content": "앱 기획서 작성할 때 참고하려고 구매했는데, 와이어프레임 구성 방식과 사용자 플로우 다이어그램이 실무 수준입니다. 고객사 제안 때 이 양식 기반으로 만들었더니 반응이 좋았어요."}
+    ],
+    "ann_bookmarks": 0,
+    "feed_bookmarks": 2,
+    "brief_subscribed": false,
+    "chat_messages": [],
+    "consulting": null,
+    "downloads": [31],
+    "coupon_used": null
+  },
+  {
+    "name": "신재원",
+    "email": "jaewon.shin@konasoft.com",
+    "phone": "010-7723-8841",
+    "company": "코나소프트",
+    "role": "user",
+    "tier": "light",
+    "orders": [
+      {"product_id": 25, "price": 99000, "status": "paid"}
+    ],
+    "reviews": [],
+    "ann_bookmarks": 3,
+    "feed_bookmarks": 0,
+    "brief_subscribed": true,
+    "chat_messages": [
+      "금융 시스템 유지운영 제안서 — 증권사/보험사 사업에도 적용 가능한 구조인가요?"
+    ],
+    "consulting": null,
+    "downloads": [25],
+    "coupon_used": null
+  },
+  {
+    "name": "홍예진",
+    "email": "yejin.hong@daejinconst.co.kr",
+    "phone": "010-5512-6039",
+    "company": "대진건설정보",
+    "role": "user",
+    "tier": "light",
+    "orders": [
+      {"product_id": 43, "price": 99000, "status": "paid"}
+    ],
+    "reviews": [],
+    "ann_bookmarks": 1,
+    "feed_bookmarks": 0,
+    "brief_subscribed": false,
+    "chat_messages": [],
+    "consulting": null,
+    "downloads": [43],
+    "coupon_used": "WELCOME10K"
+  },
+  {
+    "name": "문성민",
+    "email": "sungmin.moon@bizhub.kr",
+    "phone": "010-6634-2987",
+    "company": "비즈허브파트너스",
+    "role": "user",
+    "tier": "light",
+    "orders": [
+      {"product_id": 44, "price": 69000, "status": "paid"}
+    ],
+    "reviews": [
+      {"product_id": 44, "rating": 5, "title": "나라장터 입찰 처음 도전하는 분께 강추", "content": "처음 나라장터 입찰을 준비하면서 어디서부터 시작해야 할지 막막했는데, 이 자료 한 권으로 전체 프로세스를 파악할 수 있었습니다. 입찰공고 해석법, 입찰참가자격, 제안서 제출 절차까지 단계별로 잘 정리되어 있어요."}
+    ],
+    "ann_bookmarks": 0,
+    "feed_bookmarks": 1,
+    "brief_subscribed": false,
+    "chat_messages": [],
+    "consulting": null,
+    "downloads": [44],
+    "coupon_used": null
+  },
+  {
+    "name": "류지아",
+    "email": "jia.ryu@cloudnative.io",
+    "phone": "010-3387-5544",
+    "company": "클라우드네이티브",
+    "role": "user",
+    "tier": "free_only",
+    "orders": [],
+    "reviews": [],
+    "ann_bookmarks": 2,
+    "feed_bookmarks": 0,
+    "brief_subscribed": true,
+    "chat_messages": [],
+    "consulting": null,
+    "downloads": [33],
+    "coupon_used": null
+  },
+  {
+    "name": "남기현",
+    "email": "kihyun.nam@logisplus.co.kr",
+    "phone": "010-8867-1102",
+    "company": "로지스플러스",
+    "role": "user",
+    "tier": "free_only",
+    "orders": [],
+    "reviews": [],
+    "ann_bookmarks": 1,
+    "feed_bookmarks": 1,
+    "brief_subscribed": false,
+    "chat_messages": [
+      "무료 사업비 산출 파일 받았는데 엑셀 수식이 깨져 있습니다.",
+      "Excel 버전 문제였네요 해결했습니다."
+    ],
+    "consulting": null,
+    "downloads": [33],
+    "coupon_used": null
+  },
+  {
+    "name": "전소희",
+    "email": "sohee.jeon@publicworks.go.kr",
+    "phone": "010-7745-3389",
+    "company": "공공사업기획단",
+    "role": "user",
+    "tier": "free_only",
+    "orders": [],
+    "reviews": [],
+    "ann_bookmarks": 3,
+    "feed_bookmarks": 2,
+    "brief_subscribed": true,
+    "chat_messages": [],
+    "consulting": null,
+    "downloads": [33],
+    "coupon_used": null
+  },
+  {
+    "name": "허태민",
+    "email": "taemin.heo@samwoo.co.kr",
+    "phone": "010-2234-6781",
+    "company": "삼우시스템",
+    "role": "user",
+    "tier": "free_only",
+    "orders": [],
+    "reviews": [],
+    "ann_bookmarks": 0,
+    "feed_bookmarks": 0,
+    "brief_subscribed": true,
+    "chat_messages": [],
+    "consulting": null,
+    "downloads": [33],
+    "coupon_used": null
+  },
+  {
+    "name": "조아름",
+    "email": "areum.jo@smartvillage.or.kr",
+    "phone": "010-9912-4467",
+    "company": "스마트빌리지재단",
+    "role": "user",
+    "tier": "free_only",
+    "orders": [],
+    "reviews": [],
+    "ann_bookmarks": 1,
+    "feed_bookmarks": 3,
+    "brief_subscribed": false,
+    "chat_messages": [],
+    "consulting": null,
+    "downloads": [33],
+    "coupon_used": null
+  },
+  {
+    "name": "도현우",
+    "email": "hyunwoo.do@devpartner.kr",
+    "phone": "010-4498-7712",
+    "company": "데브파트너",
+    "role": "user",
+    "tier": "free_only",
+    "orders": [],
+    "reviews": [],
+    "ann_bookmarks": 0,
+    "feed_bookmarks": 0,
+    "brief_subscribed": false,
+    "chat_messages": [
+      "무료 자료 종류가 더 있나요? 어디서 볼 수 있죠?"
+    ],
+    "consulting": null,
+    "downloads": [33],
+    "coupon_used": null
+  },
+  {
+    "name": "고은별",
+    "email": "eunbyul.ko@stellartech.kr",
+    "phone": "010-5521-9934",
+    "company": "스텔라테크",
+    "role": "user",
+    "tier": "browser",
+    "orders": [],
+    "reviews": [],
+    "ann_bookmarks": 1,
+    "feed_bookmarks": 0,
+    "brief_subscribed": true,
+    "chat_messages": [],
+    "consulting": null,
+    "downloads": [],
+    "coupon_used": null
+  },
+  {
+    "name": "서민재",
+    "email": "minjae.seo@greencons.co.kr",
+    "phone": "010-7789-3312",
+    "company": "그린컨설팅",
+    "role": "user",
+    "tier": "browser",
+    "orders": [],
+    "reviews": [],
+    "ann_bookmarks": 0,
+    "feed_bookmarks": 1,
+    "brief_subscribed": false,
+    "chat_messages": [],
+    "consulting": null,
+    "downloads": [],
+    "coupon_used": null
+  },
+  {
+    "name": "원지현",
+    "email": "jihyun.won@axiomsys.kr",
+    "phone": "010-3362-8854",
+    "company": "액시엄시스템즈",
+    "role": "user",
+    "tier": "browser",
+    "orders": [],
+    "reviews": [],
+    "ann_bookmarks": 2,
+    "feed_bookmarks": 0,
+    "brief_subscribed": true,
+    "chat_messages": [],
+    "consulting": null,
+    "downloads": [],
+    "coupon_used": null
+  },
+  {
+    "name": "마준성",
+    "email": "junsung.ma@bigsolution.co.kr",
+    "phone": "010-9823-5571",
+    "company": "빅솔루션",
+    "role": "user",
+    "tier": "browser",
+    "orders": [],
+    "reviews": [],
+    "ann_bookmarks": 0,
+    "feed_bookmarks": 0,
+    "brief_subscribed": false,
+    "chat_messages": [],
+    "consulting": null,
+    "downloads": [],
+    "coupon_used": null
+  },
+  {
+    "name": "나혜린",
+    "email": "hyerin.na@koreainfra.go.kr",
+    "phone": "010-6678-2241",
+    "company": "한국기반시설공단",
+    "role": "user",
+    "tier": "browser",
+    "orders": [],
+    "reviews": [],
+    "ann_bookmarks": 0,
+    "feed_bookmarks": 2,
+    "brief_subscribed": false,
+    "chat_messages": [],
+    "consulting": null,
+    "downloads": [],
+    "coupon_used": null
+  },
+  {
+    "name": "우성빈",
+    "email": "sungbin.woo@nulsolutions.com",
+    "phone": "010-4423-6609",
+    "company": "눌솔루션즈",
+    "role": "user",
+    "tier": "browser",
+    "orders": [],
+    "reviews": [],
+    "ann_bookmarks": 0,
+    "feed_bookmarks": 0,
+    "brief_subscribed": false,
+    "chat_messages": [],
+    "consulting": null,
+    "downloads": [],
+    "coupon_used": null
+  }
+]

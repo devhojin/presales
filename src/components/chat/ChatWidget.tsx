@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { usePathname } from 'next/navigation'
 import {
   MessageCircle, X, Send, Paperclip, Loader2, FileText, Download,
   Image as ImageIcon, AlertTriangle, CreditCard, ChevronDown,
@@ -31,7 +32,11 @@ function formatAmount(n: number) {
 }
 
 export function ChatWidget() {
+  const pathname = usePathname()
   const { isOpen, toggle, close, roomId, setRoomId } = useChatWidgetStore()
+
+  // 관리자 페이지에서는 채팅 위젯 숨김
+  if (pathname?.startsWith('/admin')) return null
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [guestId, setGuestId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -337,9 +342,11 @@ export function ChatWidget() {
 
   // 메시지 렌더
   const renderMessage = (msg: ChatMessage) => {
+    // sender_id 가 현재 유저/게스트와 일치하면 내 메시지
+    // (관리자 계정이 위젯에서 대화해도 자기 id 메시지는 오른쪽에 표시)
     const isMe = user
-      ? msg.sender_id === user.id && msg.sender_type === 'user'
-      : msg.sender_id === guestId && msg.sender_type === 'guest'
+      ? msg.sender_id === user.id
+      : msg.sender_id === guestId
     const isSystem = msg.sender_type === 'system'
     const isPayment = msg.message_type === 'payment_request'
 

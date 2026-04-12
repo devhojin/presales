@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   if (user) {
     const admin = await isAdmin(user.id)
 
-    // 메시지 읽음 처리 (상대방이 보낸 것만)
+    // 메시지 읽음 처리 (상대방이 보낸 것만) + unread 카운트 동기화
     if (admin) {
       await supabase
         .from('chat_messages')
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
       await supabase
         .from('chat_rooms')
-        .update({ admin_unread_count: 0 })
+        .update({ admin_unread_count: 0, updated_at: new Date().toISOString() })
         .eq('id', room_id)
     } else {
       await supabase
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
       await supabase
         .from('chat_rooms')
-        .update({ user_unread_count: 0 })
+        .update({ user_unread_count: 0, updated_at: new Date().toISOString() })
         .eq('id', room_id)
     }
 

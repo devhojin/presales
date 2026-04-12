@@ -304,20 +304,35 @@ export default function AdminChatPage() {
 
   // 메시지 로드
   const loadMessages = useCallback(async (roomId: string) => {
-    const res = await fetch(`/api/chat/messages?room_id=${roomId}`)
-    const data = await res.json()
-    if (data.messages) setMessages(data.messages)
-    // 읽음 처리
-    await fetch('/api/chat/read', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ room_id: roomId }),
-    })
-    loadRooms()
+    try {
+      const res = await fetch(`/api/chat/messages?room_id=${roomId}`)
+      if (!res.ok) {
+        setError(`메시지 로드 실패 (HTTP ${res.status})`)
+        return
+      }
+      const data = await res.json()
+      if (data.error) {
+        setError(`메시지 로드 실패: ${data.error}`)
+        return
+      }
+      setMessages(data.messages || [])
+      // 읽음 처리
+      await fetch('/api/chat/read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ room_id: roomId }),
+      })
+      loadRooms()
+    } catch (e) {
+      setError(`메시지 로드 오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}`)
+    }
   }, [loadRooms])
 
-  // 방 선택
+  // 방 선택 — 이전 방 메시지를 즉시 비워서 깜빡임 방지
   const selectRoom = (room: ChatRoom) => {
+    if (selectedRoom?.id === room.id) return
+    setMessages([])
+    setError(null)
     setSelectedRoom(room)
     loadMessages(room.id)
   }
@@ -654,7 +669,7 @@ export default function AdminChatPage() {
                       </div>
                     </div>
                     <div className="text-right shrink-0 ml-2 flex items-center gap-2">
-                      <div className="group-hover:hidden">
+                      <div className="flex flex-col items-end">
                         <p className="text-[10px] text-muted-foreground">{formatTime(room.last_message_at)}</p>
                         {room.admin_unread_count > 0 && (
                           <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold bg-emerald-600 text-white rounded-full mt-0.5">
@@ -665,7 +680,8 @@ export default function AdminChatPage() {
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setDeleteTarget(room) }}
-                        className="hidden group-hover:flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground hover:bg-red-50 hover:text-red-500 cursor-pointer transition-colors"
+                        onMouseDown={(e) => e.stopPropagation()}
+                        className="opacity-0 group-hover:opacity-100 flex items-center justify-center w-7 h-7 rounded-lg text-muted-foreground hover:bg-red-50 hover:text-red-500 cursor-pointer transition-opacity"
                         title="채팅방 삭제"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

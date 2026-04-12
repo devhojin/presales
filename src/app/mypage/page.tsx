@@ -74,6 +74,8 @@ interface ActivityItem {
 interface DbCoupon {
   id: string
   code: string
+  name?: string | null
+  description?: string | null
   discount_type: 'percentage' | 'fixed'
   discount_value: number
   min_order_amount: number
@@ -250,17 +252,24 @@ export default function MyConsolePage() {
         if (data.rooms) setKpi(k => ({ ...k, chats: data.rooms.length }))
       } catch { /* ignore */ }
 
-      // 쿠폰 로드 (활성 + 유효 기간 내)
-      const nowIso = new Date().toISOString()
-      const { data: couponData } = await supabase
-        .from('coupons')
-        .select('id, code, discount_type, discount_value, min_order_amount, valid_from, valid_until, usage_count, max_usage, is_active')
-        .eq('is_active', true)
-        .or(`valid_from.is.null,valid_from.lte.${nowIso}`)
-        .or(`valid_until.is.null,valid_until.gte.${nowIso}`)
-        .order('created_at', { ascending: false })
+      // 내가 보유한 쿠폰 (user_coupons 기반, 미사용 + 유효)
+      const now = new Date()
+      const { data: myCoupons } = await supabase
+        .from('user_coupons')
+        .select('id, received_at, used_at, coupons:coupon_id(id, code, name, description, discount_type, discount_value, min_order_amount, valid_from, valid_until, usage_count, max_usage, is_active)')
+        .eq('user_id', user.id)
+        .is('used_at', null)
+        .order('received_at', { ascending: false })
 
-      const available = (couponData || []).filter(c => !c.max_usage || c.usage_count < c.max_usage)
+      const available = (myCoupons || [])
+        .map(uc => uc.coupons as unknown as DbCoupon & { valid_from: string | null; valid_until: string | null; is_active: boolean; max_usage: number | null; usage_count: number })
+        .filter(c => {
+          if (!c || !c.is_active) return false
+          if (c.valid_from && new Date(c.valid_from) > now) return false
+          if (c.valid_until && new Date(c.valid_until) < now) return false
+          if (c.max_usage !== null && c.usage_count >= c.max_usage) return false
+          return true
+        })
       setCoupons(available as DbCoupon[])
     }
     load()
@@ -302,6 +311,10 @@ export default function MyConsolePage() {
     const receiptDate = order.paid_at ? new Date(order.paid_at).toLocaleDateString('ko-KR') : new Date(order.created_at).toLocaleDateString('ko-KR')
     const itemsHtml = (order.order_items || []).map(item => {
       const prod = Array.isArray(item.products) ? item.products[0] : item.products
+      const hasDiscount = (item.discount_amount ?? 0) > 0 && item.original_price && item.original_price > item.price
+      if (hasDiscount) {
+        return `<tr><td>${prod?.title || '상품'}<br/><span style="color:#059669;font-size:11px">할인 -${(item.discount_amount || 0).toLocaleString()}원</span></td><td style="text-align:right"><span style="color:#999;text-decoration:line-through;font-size:11px">${(item.original_price || 0).toLocaleString()}원</span><br/>${item.price.toLocaleString()}원</td></tr>`
+      }
       return `<tr><td>${prod?.title || '상품'}</td><td style="text-align:right">${item.price.toLocaleString()}원</td></tr>`
     }).join('')
     printWindow.document.write(`<html><head><meta charset="UTF-8"/><title>거래 영수증</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:40px;max-width:500px;margin:0 auto;color:#333}h1{text-align:center;font-size:24px;border-bottom:2px solid #333;padding-bottom:16px}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left;font-size:14px}th{background:#f5f5f5;font-weight:600}.total{font-weight:bold;font-size:18px;text-align:right;padding-top:16px;border-top:2px solid #333}.footer{margin-top:40px;text-align:center;color:#666;font-size:12px}.info dt{color:#999;font-size:12px;margin:8px 0 4px}.info dd{margin:0 0 12px;font-weight:500;font-size:14px}.company-info{margin-top:32px;padding:16px;background:#fafafa;border-radius:4px;font-size:13px}@media print{body{padding:0}}</style></head><body><h1>거래 영수증</h1><dl class="info"><dt>주문번호</dt><dd>${order.order_number || order.id}</dd><dt>발행일</dt><dd>${receiptDate}</dd></dl><table><thead><tr><th>상품명</th><th style="text-align:right">금액</th></tr></thead><tbody>${itemsHtml}</tbody></table><p class="total">합계: ${order.total_amount?.toLocaleString()}원</p><hr/><div class="company-info"><dl class="info"><dt>공급자</dt><dd>주식회사 아마란스</dd><dt>대표</dt><dd>채호진</dd><dt>이메일</dt><dd>hojin@amarans.co.kr</dd></dl></div><div class="footer"><p>이 영수증은 전자상거래 거래증빙용입니다.</p><button onclick="window.print()" style="margin-top:16px;padding:8px 24px;cursor:pointer;border:1px solid #999;background:#fff;border-radius:4px">인쇄</button></div></body></html>`)
@@ -550,11 +563,24 @@ export default function MyConsolePage() {
                         <div className="border-t border-border bg-muted/20 px-4 py-4 space-y-3">
                           {items.map(item => {
                             const prod = Array.isArray(item.products) ? item.products[0] : item.products
+                            const hasDiscount = (item.discount_amount ?? 0) > 0 && item.original_price && item.original_price > item.price
                             return (
                               <div key={item.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-background border border-border/50">
-                                <div className="min-w-0"><p className="text-sm font-medium truncate">{prod?.title || '-'}</p></div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium truncate">{prod?.title || '-'}</p>
+                                  {hasDiscount && (
+                                    <p className="text-[10px] text-emerald-600 mt-0.5">
+                                      할인 -{formatPrice(item.discount_amount || 0)}
+                                    </p>
+                                  )}
+                                </div>
                                 <div className="flex items-center gap-2 shrink-0 ml-3">
-                                  <p className="text-sm font-medium">{formatPrice(item.price)}</p>
+                                  <div className="text-right">
+                                    {hasDiscount && (
+                                      <p className="text-[10px] text-muted-foreground line-through">{formatPrice(item.original_price || 0)}</p>
+                                    )}
+                                    <p className="text-sm font-medium">{formatPrice(item.price)}</p>
+                                  </div>
                                   {(order.status === 'paid' || order.status === 'completed') && prod && (
                                     <button type="button" onClick={e => { e.stopPropagation(); handleProductDownload(prod.id, prod.title) }} className="px-3 py-1 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 flex items-center gap-1 cursor-pointer"><Download className="w-3 h-3" />다운로드</button>
                                   )}
@@ -759,6 +785,9 @@ export default function MyConsolePage() {
                       <div key={c.id} className="relative border border-border/50 rounded-xl p-4 bg-gradient-to-br from-pink-50 to-white">
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
+                            {c.name && (
+                              <p className="text-sm font-semibold text-foreground mb-1 truncate">{c.name}</p>
+                            )}
                             <div className="flex items-center gap-2 mb-2">
                               <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-white border border-pink-200 text-pink-700">
                                 {c.code}
@@ -773,10 +802,12 @@ export default function MyConsolePage() {
                               </span>
                             </div>
                             <p className="text-2xl font-bold text-pink-600 leading-none">{discountLabel}<span className="text-xs font-normal text-muted-foreground ml-1">할인</span></p>
+                            {c.description && (
+                              <p className="text-[11px] text-muted-foreground mt-2 line-clamp-2">{c.description}</p>
+                            )}
                             <div className="mt-3 space-y-1 text-xs text-muted-foreground">
                               <p className="flex items-center gap-1.5"><Check className="w-3 h-3 text-emerald-500" /> 최소 주문: {minOrderLabel}</p>
                               <p className="flex items-center gap-1.5"><Clock className="w-3 h-3 text-muted-foreground" /> 유효 기간: {validLabel}</p>
-                              {c.max_usage && <p className="flex items-center gap-1.5"><User className="w-3 h-3 text-muted-foreground" /> {c.max_usage}회 사용 가능</p>}
                             </div>
                           </div>
                         </div>
@@ -841,23 +872,49 @@ export default function MyConsolePage() {
                 <div className="space-y-2 mb-5">
                   {items.map(item => {
                     const prod = Array.isArray(item.products) ? item.products[0] : item.products
+                    const hasDiscount = (item.discount_amount ?? 0) > 0 && item.original_price && item.original_price > item.price
                     return (
-                      <div key={item.id} className="flex items-center justify-between py-2.5 px-3 rounded-lg border border-border/50 bg-muted/20">
-                        <div className="min-w-0 flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
-                          <p className="text-sm font-medium truncate">{prod?.title || '-'}</p>
+                      <div key={item.id} className="py-2.5 px-3 rounded-lg border border-border/50 bg-muted/20">
+                        <div className="flex items-center justify-between">
+                          <div className="min-w-0 flex items-center gap-2">
+                            <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                            <p className="text-sm font-medium truncate">{prod?.title || '-'}</p>
+                          </div>
+                          <div className="text-right shrink-0 ml-3">
+                            {hasDiscount && (
+                              <p className="text-[10px] text-muted-foreground line-through">{formatPrice(item.original_price || 0)}</p>
+                            )}
+                            <p className="text-sm font-semibold">{formatPrice(item.price)}</p>
+                          </div>
                         </div>
-                        <p className="text-sm font-semibold shrink-0 ml-3">{formatPrice(item.price)}</p>
+                        {hasDiscount && (
+                          <p className="text-[11px] text-emerald-600 mt-1 pl-6">
+                            ▸ 할인 -{formatPrice(item.discount_amount || 0)}
+                          </p>
+                        )}
                       </div>
                     )
                   })}
                 </div>
 
                 {/* Total */}
-                <div className="flex items-center justify-between pt-4 border-t border-border/50">
-                  <p className="text-sm font-semibold">총 결제 금액</p>
-                  <p className="text-lg font-bold text-primary">{formatPrice(receiptOrder.total_amount)}</p>
-                </div>
+                {(() => {
+                  const totalDiscount = items.reduce((sum, it) => sum + (it.discount_amount || 0), 0)
+                  return (
+                    <div className="pt-4 border-t border-border/50 space-y-1.5">
+                      {totalDiscount > 0 && (
+                        <div className="flex items-center justify-between text-xs">
+                          <p className="text-muted-foreground">할인 합계</p>
+                          <p className="text-emerald-600 font-medium">-{formatPrice(totalDiscount)}</p>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <p className="text-sm font-semibold">총 결제 금액</p>
+                        <p className="text-lg font-bold text-primary">{formatPrice(receiptOrder.total_amount)}</p>
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 {receiptOrder.refund_reason && (
                   <div className="mt-4 p-3 rounded-lg bg-orange-50 border border-orange-200">

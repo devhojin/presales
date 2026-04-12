@@ -133,117 +133,95 @@ export default function AboutPage() {
         </div>
       )}
 
-      {/* Team */}
+      {/* Track Record (실적) */}
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-12 md:py-16">
         <div className="max-w-2xl mx-auto text-center mb-16">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">전문가 팀</p>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground mb-3">전문가 팀</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">TRACK RECORD</p>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground mb-3">수주 실적</h2>
           <p className="text-muted-foreground">
-            각 분야 최고의 전문가들이 함께합니다
+            소프트웨어 기술자 경력 특급 · 정보통신기술 기능계기술자
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {loading
-            ? Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="border border-border/50 bg-card rounded-2xl p-8 animate-pulse">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 rounded-full bg-muted shrink-0" />
-                    <div className="space-y-2 flex-1 min-w-0">
-                      <div className="h-4 bg-muted rounded w-1/2" />
-                      <div className="h-3 bg-muted rounded w-3/4" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-3 bg-muted rounded w-full" />
-                    <div className="h-3 bg-muted rounded w-full" />
-                    <div className="h-3 bg-muted rounded w-4/5" />
-                  </div>
+          {[
+            {
+              icon: '🏛',
+              title: '공공조달 · SI 제안',
+              color: 'from-emerald-500 to-emerald-600',
+              items: [
+                '수도권 광역시 지능형교통시스템(ITS) 유지관리 용역',
+                '경기도 스마트빌리지 보급 및 확산사업 (AI 기반 서비스)',
+                '경기도 생활밀착형 도시재생 스마트기술 지원사업',
+                '충남 지능형교통체계(ITS) 구축사업',
+                '종합상황센터 시스템 개선 사업',
+                '스마트관제 시스템 제작 구매 설치 사업',
+                '경기도 스마트 경로당 구축 사업',
+                '다차로 하이패스 차량검지 매칭 시스템 개발',
+              ],
+            },
+            {
+              icon: '🏭',
+              title: '스마트팩토리 · IoT',
+              color: 'from-blue-500 to-blue-600',
+              items: [
+                '반도체 기업 스마트공장 구축 및 고도화 사업 (PM)',
+                '반도체 기업 종합관제시스템 구축사업 (PM)',
+                '2차전지 대기업 전력검침 자동화 시스템 (PM)',
+                'IoT 환경설비 모니터링 플랫폼 론칭 (350여 중소기업 활용)',
+                '철강 대기업 집진기 화재위험 안전 시스템',
+                '철강 대기업 GAS 감시 및 밀폐공간 안전 플랫폼',
+                '건설 대기업 스마트 컨스트럭션 안전 플랫폼',
+              ],
+            },
+            {
+              icon: '🚗',
+              title: 'AI · 교통관제',
+              color: 'from-violet-500 to-violet-600',
+              items: [
+                'AI 기반 도로결빙 관제 시스템 (혁신제품 등록, 실증 완료)',
+                'AI 교차로 신호등 관련 신사업 기획',
+                '정부기관 디지털 안전 선도모델 개발 (재난안전)',
+                '광역시 자율주행 리빙랩 사업계획 (700억 규모)',
+                '라이다 기반 회전교차로 상품 기획',
+              ],
+            },
+            {
+              icon: '💼',
+              title: '금융 · 기업 SI',
+              color: 'from-pink-500 to-pink-600',
+              items: [
+                '인터넷전문은행 기업뱅킹 신규구축 (수주)',
+                '생명보험사 온라인 채널 구축 컨설팅',
+                '은행 오픈뱅킹 사업',
+                '저축은행 웹접근성 사업',
+                '생명보험사 다이렉트 보험 기획',
+                '카드사 웹접근성 사업',
+              ],
+            },
+          ].map((category) => (
+            <div
+              key={category.title}
+              className="border border-border/50 bg-card rounded-2xl p-7 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-500 hover:-translate-y-1"
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${category.color} flex items-center justify-center text-lg`}>
+                  {category.icon}
                 </div>
-              ))
-            : team.map((member) => (
-                <div
-                  key={member.name}
-                  className="border border-border/50 bg-card rounded-2xl p-8 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-500 hover:-translate-y-1 flex flex-col"
-                >
-                  {/* 이니셜 + 이름 + 역할 */}
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg shrink-0">
-                      {getInitials(member.name)}
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="font-bold text-base truncate text-foreground">{member.name}</h3>
-                      <p className="text-xs text-primary font-medium leading-tight">{member.role}</p>
-                    </div>
-                  </div>
-
-                  {/* 소개 문구 */}
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-6 flex-1">
-                    {getIntro(member.name)}
-                  </p>
-
-                  {/* 경력 */}
-                  <ul className="text-xs text-muted-foreground space-y-1 mb-6">
-                    {member.career.map((c) => (
-                      <li key={c} className="flex items-start gap-1.5">
-                        <span className="text-primary mt-0.5 shrink-0">•</span>
-                        <span>{c}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* 전문 분야 태그 */}
-                  <div className="flex flex-wrap gap-2">
-                    {member.expertise.map((e) => (
-                      <Badge key={e} variant="outline" className="text-[10px] border-primary/30 text-primary bg-primary/5 rounded-full">
-                        {e}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                <h3 className="font-bold text-sm text-foreground">{category.title}</h3>
+              </div>
+              <ul className="space-y-2.5">
+                {category.items.map((item) => (
+                  <li key={item} className="flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
+                    <span className="text-primary mt-0.5 shrink-0">✓</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Timeline - Editorial feel */}
-      {(loading || timeline.length > 0) && (
-        <div className="bg-muted/30">
-          <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-12 md:py-16">
-            <div className="max-w-2xl mx-auto text-center mb-16">
-              <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">연혁</p>
-              <h2 className="text-3xl font-bold tracking-tight text-foreground">연혁</h2>
-            </div>
-            <div className="max-w-md mx-auto">
-              <div className="relative">
-                {/* Vertical line */}
-                <div className="absolute left-8 top-0 bottom-0 w-px bg-border/50" />
-
-                <div className="space-y-8">
-                  {loading
-                    ? Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="flex items-start gap-8 animate-pulse">
-                          <div className="w-16 h-5 bg-muted rounded shrink-0" />
-                          <div className="h-4 bg-muted rounded flex-1" />
-                        </div>
-                      ))
-                    : timeline.map((item) => (
-                        <div key={item.year} className="flex items-start gap-8">
-                          <div className="relative pt-1">
-                            <div className="w-16 text-right">
-                              <span className="font-bold text-primary text-sm">{item.year}</span>
-                            </div>
-                            <div className="absolute left-1/2 top-3.5 -translate-x-1/2 w-3 h-3 rounded-full bg-primary -ml-1.5" />
-                          </div>
-                          <div className="pt-1 pb-8">
-                            <p className="text-sm text-foreground leading-relaxed">{item.event}</p>
-                          </div>
-                        </div>
-                      ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

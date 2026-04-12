@@ -489,26 +489,111 @@ function RowActionsMenu({
 // Member Detail Modal
 // ===========================
 
-type ModalTab = 'info' | 'orders' | 'downloads' | 'consulting'
+type ModalTab = 'info' | 'orders' | 'downloads' | 'consulting' | 'reviews'
+
+function MemberInfoEdit({ member, onUpdated }: { member: Profile; onUpdated?: (updated: Profile) => void }) {
+  const [editing, setEditing] = useState(false)
+  const [form, setForm] = useState({ name: member.name || '', email: member.email, phone: member.phone || '', company: member.company || '' })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSave = async () => {
+    setSaving(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/admin/members/${member.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || '수정 실패'); return }
+      setEditing(false)
+      onUpdated?.(data.data as Profile)
+    } catch { setError('네트워크 오류') }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">회원 기본정보</h3>
+        {!editing ? (
+          <button onClick={() => setEditing(true)} className="cursor-pointer text-xs text-primary hover:underline">수정</button>
+        ) : (
+          <div className="flex gap-2">
+            <button onClick={() => setEditing(false)} className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">취소</button>
+            <button onClick={handleSave} disabled={saving} className="cursor-pointer text-xs text-white bg-primary px-3 py-1 rounded-lg disabled:opacity-50">{saving ? '저장중...' : '저장'}</button>
+          </div>
+        )}
+      </div>
+      {error && <p className="text-xs text-red-500 mb-2">{error}</p>}
+      <div className="bg-muted rounded-xl p-4 space-y-0 divide-y divide-gray-200/60">
+        {editing ? (
+          <>
+            <div className="flex items-center gap-3 py-3">
+              <User className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground w-16 shrink-0">이름</span>
+              <input value={form.name} onChange={(e) => setForm(f => ({...f, name: e.target.value}))} className="flex-1 text-sm bg-white border border-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-primary" />
+            </div>
+            <div className="flex items-center gap-3 py-3">
+              <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground w-16 shrink-0">이메일</span>
+              <input value={form.email} onChange={(e) => setForm(f => ({...f, email: e.target.value}))} className="flex-1 text-sm bg-white border border-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-primary" />
+            </div>
+            <div className="flex items-center gap-3 py-3">
+              <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground w-16 shrink-0">연락처</span>
+              <input value={form.phone} onChange={(e) => setForm(f => ({...f, phone: e.target.value}))} className="flex-1 text-sm bg-white border border-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-primary" placeholder="010-0000-0000" />
+            </div>
+            <div className="flex items-center gap-3 py-3">
+              <Building className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground w-16 shrink-0">회사</span>
+              <input value={form.company} onChange={(e) => setForm(f => ({...f, company: e.target.value}))} className="flex-1 text-sm bg-white border border-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-primary" />
+            </div>
+          </>
+        ) : (
+          <>
+            <InfoRow icon={<User className="w-4 h-4" />} label="이름" value={member.name || '-'} />
+            <InfoRow icon={<Mail className="w-4 h-4" />} label="이메일" value={member.email} />
+            <InfoRow icon={<Phone className="w-4 h-4" />} label="연락처" value={member.phone || '-'} />
+            <InfoRow icon={<Building className="w-4 h-4" />} label="회사" value={member.company || '-'} />
+          </>
+        )}
+        <InfoRow icon={<Calendar className="w-4 h-4" />} label="가입일" value={formatDateTime(member.created_at)} />
+      </div>
+    </div>
+  )
+}
 
 function MemberDetailModal({
   member,
   onClose,
   onRoleChange,
   onMemoSave,
+  defaultTab = 'info',
+  onMemberUpdated,
 }: {
   member: Profile
   onClose: () => void
   onRoleChange: (id: string, newRole: string) => Promise<void>
   onMemoSave: (id: string, memo: string) => Promise<void>
+  defaultTab?: ModalTab
+  onMemberUpdated?: (updated: Profile) => void
 }) {
-  const [activeTab, setActiveTab] = useState<ModalTab>('info')
+  const [activeTab, setActiveTab] = useState<ModalTab>(defaultTab)
   const [orders, setOrders] = useState<Order[]>([])
   const [downloads, setDownloads] = useState<DownloadLog[]>([])
   const [consulting, setConsulting] = useState<ConsultingRequest[]>([])
   const [loadingOrders, setLoadingOrders] = useState(false)
   const [loadingDownloads, setLoadingDownloads] = useState(false)
   const [loadingConsulting, setLoadingConsulting] = useState(false)
+  const [ordersLoaded, setOrdersLoaded] = useState(false)
+  const [downloadsLoaded, setDownloadsLoaded] = useState(false)
+  const [consultingLoaded, setConsultingLoaded] = useState(false)
+  const [memberReviews, setMemberReviews] = useState<Array<{ id: number; product_id: number; rating: number; title: string; content: string; created_at: string; products?: { title: string } | null }>>([])
+  const [loadingReviews, setLoadingReviews] = useState(false)
+  const [reviewsLoaded, setReviewsLoaded] = useState(false)
   const [showRoleConfirm, setShowRoleConfirm] = useState(false)
   const [roleLoading, setRoleLoading] = useState(false)
   const [currentRole, setCurrentRole] = useState(member.role)
@@ -529,7 +614,7 @@ function MemberDetailModal({
   }, [onClose, showRoleConfirm])
 
   useEffect(() => {
-    if (activeTab === 'orders' && orders.length === 0 && !loadingOrders) {
+    if (activeTab === 'orders' && !ordersLoaded && !loadingOrders) {
       setLoadingOrders(true)
       const supabase = createClient()
       supabase
@@ -543,12 +628,13 @@ function MemberDetailModal({
         .then(({ data }) => {
           setOrders((data as unknown as Order[]) || [])
           setLoadingOrders(false)
+          setOrdersLoaded(true)
         })
     }
-  }, [activeTab, member.id, orders.length, loadingOrders])
+  }, [activeTab, member.id, ordersLoaded, loadingOrders])
 
   useEffect(() => {
-    if (activeTab === 'downloads' && downloads.length === 0 && !loadingDownloads) {
+    if (activeTab === 'downloads' && !downloadsLoaded && !loadingDownloads) {
       setLoadingDownloads(true)
       const supabase = createClient()
       supabase
@@ -559,12 +645,13 @@ function MemberDetailModal({
         .then(({ data }) => {
           setDownloads((data as unknown as DownloadLog[]) || [])
           setLoadingDownloads(false)
+          setDownloadsLoaded(true)
         })
     }
-  }, [activeTab, member.id, downloads.length, loadingDownloads])
+  }, [activeTab, member.id, downloadsLoaded, loadingDownloads])
 
   useEffect(() => {
-    if (activeTab === 'consulting' && consulting.length === 0 && !loadingConsulting) {
+    if (activeTab === 'consulting' && !consultingLoaded && !loadingConsulting) {
       setLoadingConsulting(true)
       const supabase = createClient()
       supabase
@@ -575,9 +662,27 @@ function MemberDetailModal({
         .then(({ data }) => {
           setConsulting((data as ConsultingRequest[]) || [])
           setLoadingConsulting(false)
+          setConsultingLoaded(true)
         })
     }
-  }, [activeTab, member.id, consulting.length, loadingConsulting])
+  }, [activeTab, member.id, consultingLoaded, loadingConsulting])
+
+  useEffect(() => {
+    if (activeTab === 'reviews' && !reviewsLoaded && !loadingReviews) {
+      setLoadingReviews(true)
+      const supabase = createClient()
+      supabase
+        .from('reviews')
+        .select('id, product_id, rating, title, content, created_at, products(title)')
+        .eq('user_id', member.id)
+        .order('created_at', { ascending: false })
+        .then(({ data }) => {
+          setMemberReviews((data as unknown as typeof memberReviews) || [])
+          setLoadingReviews(false)
+          setReviewsLoaded(true)
+        })
+    }
+  }, [activeTab, member.id, reviewsLoaded, loadingReviews])
 
   const handleRoleToggle = async () => {
     setRoleLoading(true)
@@ -623,6 +728,7 @@ function MemberDetailModal({
   const tabs: { key: ModalTab; label: string; icon: React.ReactNode }[] = [
     { key: 'info', label: '회원정보', icon: <User className="w-3.5 h-3.5" /> },
     { key: 'orders', label: '주문내역', icon: <ShoppingCart className="w-3.5 h-3.5" /> },
+    { key: 'reviews', label: '리뷰내역', icon: <Star className="w-3.5 h-3.5" /> },
     { key: 'downloads', label: '다운로드내역', icon: <Download className="w-3.5 h-3.5" /> },
     { key: 'consulting', label: '문의내역', icon: <MessageSquare className="w-3.5 h-3.5" /> },
   ]
@@ -673,22 +779,8 @@ function MemberDetailModal({
           {/* 회원정보 탭 */}
           {activeTab === 'info' && (
             <div className="space-y-6">
-              <div>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                  회원 기본정보
-                </h3>
-                <div className="bg-muted rounded-xl p-4 space-y-0 divide-y divide-gray-200/60">
-                  <InfoRow icon={<User className="w-4 h-4" />} label="이름" value={member.name || '-'} />
-                  <InfoRow icon={<Mail className="w-4 h-4" />} label="이메일" value={member.email} />
-                  <InfoRow icon={<Phone className="w-4 h-4" />} label="연락처" value={member.phone || '-'} />
-                  <InfoRow icon={<Building className="w-4 h-4" />} label="회사" value={member.company || '-'} />
-                  <InfoRow
-                    icon={<Calendar className="w-4 h-4" />}
-                    label="가입일"
-                    value={formatDateTime(member.created_at)}
-                  />
-                </div>
-              </div>
+              <MemberInfoEdit member={member} onUpdated={(updated) => onMemberUpdated?.(updated)} />
+
 
               {/* 권한 변경 */}
               <div>
@@ -870,6 +962,47 @@ function MemberDetailModal({
             </div>
           )}
 
+          {/* 리뷰내역 탭 */}
+          {activeTab === 'reviews' && (
+            <div>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                리뷰 내역
+              </h3>
+              {loadingReviews ? (
+                <div className="text-center py-12 text-sm text-muted-foreground">불러오는 중...</div>
+              ) : memberReviews.length === 0 ? (
+                <div className="text-center py-12">
+                  <Star className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">작성한 리뷰가 없습니다</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {memberReviews.map((rv) => {
+                    const prodTitle = Array.isArray(rv.products) ? (rv.products as Array<{title: string}>)[0]?.title : rv.products?.title
+                    return (
+                      <div key={rv.id} className="bg-muted rounded-xl p-4 border border-border/50">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-1.5">
+                            {Array.from({ length: 5 }).map((_, si) => (
+                              <Star
+                                key={si}
+                                className={`w-3.5 h-3.5 ${si < rv.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-xs text-muted-foreground">{formatDate(rv.created_at)}</span>
+                        </div>
+                        <p className="text-xs text-primary font-medium mb-1">{prodTitle || '상품'}</p>
+                        {rv.title && <p className="text-sm font-semibold text-foreground mb-1">{rv.title}</p>}
+                        <p className="text-sm text-muted-foreground leading-relaxed">{rv.content}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* 문의내역 탭 */}
           {activeTab === 'consulting' && (
             <div>
@@ -945,11 +1078,13 @@ export default function AdminMembers() {
   const [members, setMembers] = useState<Profile[]>([])
   const [statsMap, setStatsMap] = useState<Map<string, MemberStats>>(new Map())
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [filterTab, setFilterTab] = useState<FilterTab>('all')
-  const [pageSize, setPageSize] = useState(20)
+  const [pageSize, setPageSize] = useState(100)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedMember, setSelectedMember] = useState<Profile | null>(null)
+  const [selectedMemberTab, setSelectedMemberTab] = useState<ModalTab>('info')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [memoModal, setMemoModal] = useState<Profile | null>(null)
   const [roleConfirm, setRoleConfirm] = useState<Profile | null>(null)
@@ -962,50 +1097,39 @@ export default function AdminMembers() {
   }, [])
 
   async function loadMembers() {
-    const supabase = createClient()
-
-    // Load profiles
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, email, name, phone, company, role, admin_memo, created_at')
-      .order('created_at', { ascending: false })
-
-    const memberList = (profiles || []) as Profile[]
-    setMembers(memberList)
-
-    // Load stats: order counts + totals
-    const userIds = memberList.map((m) => m.id)
-    const newStats = new Map<string, MemberStats>()
-    userIds.forEach((uid) => {
-      newStats.set(uid, { user_id: uid, order_count: 0, total_spent: 0, review_count: 0 })
-    })
-
-    // Orders: count and sum
-    const { data: orderStats } = await supabase
-      .from('orders')
-      .select('user_id, total_amount, status')
-
-    if (orderStats) {
-      for (const o of orderStats) {
-        const s = newStats.get(o.user_id)
-        if (s && (o.status === 'paid' || o.status === 'completed')) {
-          s.order_count += 1
-          s.total_spent += o.total_amount || 0
-        }
+    try {
+      // Service-role API endpoint — RLS 우회하여 모든 회원 로드
+      const res = await fetch('/api/admin/members', { cache: 'no-store', credentials: 'same-origin' })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        const msg = `API ${res.status}: ${body?.error || '알 수 없는 오류'}`
+        console.error('[members] API error', res.status, body)
+        setLoadError(msg)
+        setMembers([])
+        setLoading(false)
+        return
       }
-    }
-
-    // Reviews: count
-    const { data: reviewStats } = await supabase.from('reviews').select('user_id')
-    if (reviewStats) {
-      for (const r of reviewStats) {
-        const s = newStats.get(r.user_id)
-        if (s) s.review_count += 1
+      const { members: memberList, stats } = await res.json() as {
+        members: Profile[]
+        stats: Record<string, { order_count: number; total_spent: number; review_count: number }>
       }
-    }
 
-    setStatsMap(newStats)
-    setLoading(false)
+      setLoadError(null)
+      setMembers(memberList || [])
+
+      const newStats = new Map<string, MemberStats>()
+      for (const [uid, s] of Object.entries(stats || {})) {
+        newStats.set(uid, { user_id: uid, ...s })
+      }
+      setStatsMap(newStats)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '알 수 없는 오류'
+      console.error('[members] load error', err)
+      setLoadError(`네트워크 오류: ${msg}`)
+      setMembers([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function handleRoleChange(id: string, newRole: string) {
@@ -1185,15 +1309,21 @@ export default function AdminMembers() {
                 )}
               </div>
               <div className="flex items-center gap-3">
-                <select
-                  value={pageSize}
-                  onChange={(e) => setPageSize(Number(e.target.value))}
-                  className="cursor-pointer border border-border rounded-xl px-3 py-2 text-sm text-foreground bg-white focus:outline-none focus:border-primary"
-                >
-                  <option value={20}>20개</option>
-                  <option value={50}>50개</option>
-                  <option value={100}>100개</option>
-                </select>
+                <div className="flex rounded-lg border border-border overflow-hidden">
+                  {[20, 50, 100].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => setPageSize(n)}
+                      className={`px-3 py-2 text-xs font-medium transition-colors cursor-pointer ${
+                        pageSize === n
+                          ? 'bg-primary text-white'
+                          : 'bg-white text-muted-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {n}개
+                    </button>
+                  ))}
+                </div>
                 <button
                   onClick={() => exportCSV(filtered, statsMap)}
                   className="cursor-pointer flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-muted transition-colors"
@@ -1280,8 +1410,21 @@ export default function AdminMembers() {
                       <td colSpan={9} className="px-6 py-16 text-center">
                         <User className="w-10 h-10 text-gray-200 mx-auto mb-3" />
                         <p className="text-sm text-muted-foreground">
-                          {search ? '검색 결과가 없습니다' : '가입된 회원이 없습니다'}
+                          {loadError
+                            ? `회원 로드 실패: ${loadError}`
+                            : search
+                              ? '검색 결과가 없습니다'
+                              : '가입된 회원이 없습니다'}
                         </p>
+                        {loadError && (
+                          <button
+                            type="button"
+                            onClick={() => { setLoading(true); setLoadError(null); loadMembers() }}
+                            className="mt-3 px-4 py-2 text-xs font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 cursor-pointer"
+                          >
+                            다시 시도
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ) : (
@@ -1341,19 +1484,31 @@ export default function AdminMembers() {
                           </td>
                           {/* 주문/구매액 */}
                           <td className="px-4 py-3 hidden md:table-cell">
-                            <div className="text-sm">
-                              <span className="text-foreground font-medium">
-                                {stats?.order_count ?? 0}회
-                              </span>
-                              <span className="text-muted-foreground mx-1">/</span>
-                              <span className="text-muted-foreground">
-                                {formatWon(stats?.total_spent ?? 0)}
-                              </span>
-                            </div>
+                            {(stats?.order_count ?? 0) > 0 ? (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setSelectedMemberTab('orders'); setSelectedMember(m) }}
+                                className="cursor-pointer text-sm hover:text-primary transition-colors text-left"
+                              >
+                                <span className="text-foreground font-medium">{stats?.order_count ?? 0}회</span>
+                                <span className="text-muted-foreground mx-1">/</span>
+                                <span className="text-muted-foreground">{formatWon(stats?.total_spent ?? 0)}</span>
+                              </button>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">0회 / 0원</span>
+                            )}
                           </td>
                           {/* 리뷰 */}
-                          <td className="px-4 py-3 text-sm text-muted-foreground hidden lg:table-cell">
-                            {stats?.review_count ?? 0}
+                          <td className="px-4 py-3 text-sm hidden lg:table-cell">
+                            {(stats?.review_count ?? 0) > 0 ? (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setSelectedMemberTab('reviews'); setSelectedMember(m) }}
+                                className="cursor-pointer text-primary font-medium hover:underline"
+                              >
+                                {stats?.review_count ?? 0}
+                              </button>
+                            ) : (
+                              <span className="text-muted-foreground">0</span>
+                            )}
                           </td>
                           {/* 메모 */}
                           <td className="px-4 py-3 hidden md:table-cell">
@@ -1362,12 +1517,14 @@ export default function AdminMembers() {
                                 e.stopPropagation()
                                 setMemoModal(m)
                               }}
-                              className="cursor-pointer w-7 h-7 flex items-center justify-center rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors"
+                              className="cursor-pointer relative w-7 h-7 flex items-center justify-center rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/8 transition-colors"
                               title={parseMemberMemos(m.admin_memo).map(e => e.content).join(' / ') || '메모 없음'}
                             >
                               <Pencil className="w-3.5 h-3.5" />
                               {parseMemberMemos(m.admin_memo).length > 0 && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-primary absolute -top-0.5 -right-0.5" />
+                                <span className="absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-primary text-white text-[9px] font-bold px-1">
+                                  {parseMemberMemos(m.admin_memo).length}
+                                </span>
                               )}
                             </button>
                           </td>
@@ -1455,9 +1612,14 @@ export default function AdminMembers() {
       {selectedMember && (
         <MemberDetailModal
           member={selectedMember}
-          onClose={() => setSelectedMember(null)}
+          onClose={() => { setSelectedMember(null); setSelectedMemberTab('info') }}
           onRoleChange={handleRoleChange}
           onMemoSave={handleMemoSave}
+          defaultTab={selectedMemberTab}
+          onMemberUpdated={(updated) => {
+            setMembers((prev) => prev.map((m) => m.id === updated.id ? updated : m))
+            setSelectedMember(updated)
+          }}
         />
       )}
 

@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
     // 주문 소유권 확인
     const { data: order } = await supabase
       .from('orders')
-      .select('id, user_id, total_amount, status')
+      .select('id, user_id, total_amount, status, coupon_id, coupon_discount')
       .eq('id', dbOrderId)
       .single()
 
@@ -130,6 +130,34 @@ export async function POST(request: NextRequest) {
     if (!updatedOrders || updatedOrders.length === 0) {
       logger.error('주문 상태 변경 불가', 'payment/confirm', { orderId: dbOrderId, currentStatus: order.status })
       return NextResponse.json({ error: '주문이 이미 처리되었거나 상태가 변경되었습니다' }, { status: 409 })
+    }
+
+    // 4.5. 쿠폰 사용 기록 + 사용 횟수 증가 + 회원 보유 쿠폰 소진 처리
+    if (order.coupon_id) {
+      await supabase.from('coupon_uses').insert({
+        coupon_id: order.coupon_id,
+        user_id: user.id,
+        order_id: dbOrderId,
+        applied_amount: order.coupon_discount || 0,
+      })
+      // 사용 횟수 +1 (동시성: rpc 없이 단순 증가 — 중복 결제 차단은 위 race check로 처리)
+      const { data: couponRow } = await supabase
+        .from('coupons')
+        .select('usage_count')
+        .eq('id', order.coupon_id)
+        .single()
+      await supabase
+        .from('coupons')
+        .update({ usage_count: (couponRow?.usage_count || 0) + 1 })
+        .eq('id', order.coupon_id)
+
+      // 회원 보유 쿠폰(있다면) used_at 마킹
+      await supabase
+        .from('user_coupons')
+        .update({ used_at: new Date().toISOString(), used_order_id: dbOrderId })
+        .eq('user_id', user.id)
+        .eq('coupon_id', order.coupon_id)
+        .is('used_at', null)
     }
 
     // 5. 주문 확인 이메일 발송 (비동기, 실패해도 결제 성공)

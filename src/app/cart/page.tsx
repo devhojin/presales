@@ -1,15 +1,26 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCartStore } from '@/stores/cart-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ShoppingCart, Trash2, X, ArrowLeft, Gift, Sparkles } from 'lucide-react'
+import { ShoppingCart, Trash2, X, ArrowLeft, Gift, Sparkles, FileText, Upload, Check, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { useToastStore } from '@/stores/toast-store'
 import * as gtag from '@/lib/gtag'
+
+interface OwnedCoupon {
+  id: string
+  code: string
+  name: string | null
+  description: string | null
+  discount_type: 'percentage' | 'fixed'
+  discount_value: number
+  min_order_amount: number
+  valid_until: string | null
+}
 
 export default function CartPage() {
   const { items, removeItem, clearCart, getTotal, getDiscountTotal } = useCartStore()
@@ -18,8 +29,90 @@ export default function CartPage() {
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [couponCode, setCouponCode] = useState('')
   const [couponLoading, setCouponLoading] = useState(false)
-  const [appliedCoupon, setAppliedCoupon] = useState<{ id: number; name: string; discount_type: string; discount_value: number } | null>(null)
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    id: string
+    code: string
+    name?: string | null
+    discount_type: 'percentage' | 'fixed'
+    discount_value: number
+    min_order_amount: number
+    valid_until: string | null
+  } | null>(null)
+  const [ownedCoupons, setOwnedCoupons] = useState<OwnedCoupon[]>([])
+  const [couponMode, setCouponMode] = useState<'select' | 'code'>('select')
+
+  // 세금계산서/추가정보 입력 상태
+  const [taxContactInfo, setTaxContactInfo] = useState('')
+  const [businessCertUrl, setBusinessCertUrl] = useState<string | null>(null)
+  const [businessCertName, setBusinessCertName] = useState<string | null>(null)
+  const [businessCertPath, setBusinessCertPath] = useState<string | null>(null)
+  const [depositMemo, setDepositMemo] = useState('')
+  const [cardMemo, setCardMemo] = useState('')
+  const [uploadingCert, setUploadingCert] = useState(false)
+  const certInputRef = useRef<HTMLInputElement>(null)
+
   const router = useRouter()
+
+  // 세션 복원
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('presales-tax-info')
+      if (raw) {
+        const data = JSON.parse(raw)
+        setTaxContactInfo(data.tax_contact_info || '')
+        setBusinessCertUrl(data.business_cert_url || null)
+        setBusinessCertName(data.business_cert_name || null)
+        setBusinessCertPath(data.business_cert_path || null)
+        setDepositMemo(data.deposit_memo || '')
+        setCardMemo(data.card_memo || '')
+      }
+    } catch { /* noop */ }
+  }, [])
+
+  // 세션 저장 (입력 변경 시)
+  useEffect(() => {
+    const data = {
+      tax_contact_info: taxContactInfo,
+      business_cert_url: businessCertUrl,
+      business_cert_name: businessCertName,
+      business_cert_path: businessCertPath,
+      deposit_memo: depositMemo,
+      card_memo: cardMemo,
+    }
+    sessionStorage.setItem('presales-tax-info', JSON.stringify(data))
+  }, [taxContactInfo, businessCertUrl, businessCertName, businessCertPath, depositMemo, cardMemo])
+
+  // 내 보유 쿠폰 로드
+  useEffect(() => {
+    const loadOwned = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setCouponMode('code')
+        return
+      }
+      const { data: userCoupons } = await supabase
+        .from('user_coupons')
+        .select('coupon_id, used_at, coupons:coupon_id(id, code, name, description, discount_type, discount_value, min_order_amount, valid_from, valid_until, is_active)')
+        .eq('user_id', user.id)
+        .is('used_at', null)
+      const now = new Date()
+      const owned = (userCoupons || [])
+        .map(uc => {
+          const c = uc.coupons as unknown as OwnedCoupon & { is_active: boolean; valid_from: string | null }
+          return c
+        })
+        .filter(c => {
+          if (!c || !c.is_active) return false
+          if (c.valid_from && new Date(c.valid_from) > now) return false
+          if (c.valid_until && new Date(c.valid_until) < now) return false
+          return true
+        })
+      setOwnedCoupons(owned)
+      if (owned.length === 0) setCouponMode('code')
+    }
+    loadOwned()
+  }, [])
 
   const allFree = items.length > 0 && items.every((item) => item.price === 0)
   const hasPaidItems = items.some((item) => item.price > 0)
@@ -88,40 +181,150 @@ export default function CartPage() {
 
   function getCouponDiscount() {
     if (!appliedCoupon) return 0
-    const cartTotal = getTotal() + getDiscountTotal()
-    if (appliedCoupon.discount_type === 'percent') {
+    const cartTotal = getTotal()
+    if (appliedCoupon.discount_type === 'percentage') {
       return Math.floor((cartTotal * appliedCoupon.discount_value) / 100)
-    } else {
-      return appliedCoupon.discount_value
     }
+    return Math.min(appliedCoupon.discount_value, cartTotal)
+  }
+
+  async function handleCertUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      addToast('파일 크기는 10MB 이하여야 합니다.', 'error')
+      return
+    }
+    const allowedExts = ['.pdf', '.jpg', '.jpeg', '.png', '.webp']
+    const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'))
+    if (!allowedExts.includes(ext)) {
+      addToast('PDF, JPG, PNG, WEBP 파일만 업로드 가능합니다.', 'error')
+      return
+    }
+
+    setUploadingCert(true)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        addToast('로그인이 필요합니다.', 'error')
+        return
+      }
+      const path = `${user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+      const { error: uploadError } = await supabase.storage
+        .from('business-certs')
+        .upload(path, file, { cacheControl: '3600', upsert: false })
+
+      if (uploadError) {
+        addToast(`업로드 실패: ${uploadError.message}`, 'error')
+        return
+      }
+
+      // 60초 서명 URL (관리자는 언제든 새로 생성)
+      const { data: signed } = await supabase.storage
+        .from('business-certs')
+        .createSignedUrl(path, 60)
+
+      setBusinessCertUrl(signed?.signedUrl || null)
+      setBusinessCertName(file.name)
+      setBusinessCertPath(path)
+      addToast('사업자등록증이 업로드되었습니다.', 'success')
+    } catch (err) {
+      addToast('업로드 중 오류가 발생했습니다.', 'error')
+      console.error('Cert upload error', err)
+    } finally {
+      setUploadingCert(false)
+      if (certInputRef.current) certInputRef.current.value = ''
+    }
+  }
+
+  function removeCert() {
+    setBusinessCertUrl(null)
+    setBusinessCertName(null)
+    setBusinessCertPath(null)
+  }
+
+  function applyOwnedCoupon(coupon: OwnedCoupon) {
+    const cartTotal = getTotal()
+    const now = new Date()
+    if (coupon.valid_until && new Date(coupon.valid_until) < now) {
+      addToast('만료된 쿠폰입니다.', 'error')
+      return
+    }
+    if (coupon.min_order_amount && cartTotal < Number(coupon.min_order_amount)) {
+      addToast(`최소 주문금액 ${Number(coupon.min_order_amount).toLocaleString()}원 이상이어야 합니다.`, 'error')
+      return
+    }
+    setAppliedCoupon({
+      id: coupon.id,
+      code: coupon.code,
+      name: coupon.name,
+      discount_type: coupon.discount_type,
+      discount_value: Number(coupon.discount_value),
+      min_order_amount: Number(coupon.min_order_amount || 0),
+      valid_until: coupon.valid_until,
+    })
+    sessionStorage.setItem('presales-applied-coupon', JSON.stringify({
+      id: coupon.id,
+      code: coupon.code,
+      name: coupon.name,
+      discount_type: coupon.discount_type,
+      discount_value: Number(coupon.discount_value),
+    }))
+    addToast(`${coupon.name || coupon.code} 쿠폰이 적용되었습니다!`, 'success')
   }
 
   async function applyCoupon() {
     setCouponLoading(true)
     try {
       const supabase = createClient()
-      const { data } = await supabase
+      const code = couponCode.toUpperCase().trim()
+      const { data, error } = await supabase
         .from('coupons')
-        .select('id, name, code, discount_type, discount_value, min_amount, is_active, expires_at')
-        .eq('code', couponCode)
+        .select('id, code, name, discount_type, discount_value, min_order_amount, is_active, valid_from, valid_until, usage_count, max_usage')
+        .eq('code', code)
         .eq('is_active', true)
-        .single()
+        .maybeSingle()
 
-      if (!data) {
+      if (error || !data) {
         addToast('유효하지 않은 쿠폰 코드입니다.', 'error')
         return
       }
-      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+      const now = new Date()
+      if (data.valid_from && new Date(data.valid_from) > now) {
+        addToast('아직 사용할 수 없는 쿠폰입니다.', 'error')
+        return
+      }
+      if (data.valid_until && new Date(data.valid_until) < now) {
         addToast('만료된 쿠폰입니다.', 'error')
         return
       }
-      const cartTotal = getTotal() + getDiscountTotal()
-      if (data.min_amount && cartTotal < data.min_amount) {
-        addToast(`최소 주문금액 ${data.min_amount.toLocaleString()}원 이상이어야 합니다.`, 'error')
+      if (data.max_usage !== null && data.usage_count >= data.max_usage) {
+        addToast('사용 횟수가 소진된 쿠폰입니다.', 'error')
         return
       }
-      setAppliedCoupon(data)
-      addToast('쿠폰이 적용되었습니다!', 'success')
+      const cartTotal = getTotal()
+      if (data.min_order_amount && cartTotal < data.min_order_amount) {
+        addToast(`최소 주문금액 ${Number(data.min_order_amount).toLocaleString()}원 이상이어야 합니다.`, 'error')
+        return
+      }
+      setAppliedCoupon({
+        id: data.id,
+        code: data.code,
+        name: data.name,
+        discount_type: data.discount_type,
+        discount_value: Number(data.discount_value),
+        min_order_amount: Number(data.min_order_amount || 0),
+        valid_until: data.valid_until,
+      })
+      sessionStorage.setItem('presales-applied-coupon', JSON.stringify({
+        id: data.id,
+        code: data.code,
+        name: data.name,
+        discount_type: data.discount_type,
+        discount_value: Number(data.discount_value),
+      }))
+      addToast(`${data.name || data.code} 쿠폰이 적용되었습니다!`, 'success')
     } catch {
       addToast('쿠폰 확인 중 오류가 발생했습니다.', 'error')
     } finally {
@@ -195,43 +398,223 @@ export default function CartPage() {
             ))}
           </div>
 
-          {/* 쿠폰 코드 입력 */}
+          {/* 쿠폰 선택/입력 */}
           <div className="border border-border/50 rounded-2xl p-5 bg-card">
-            <h3 className="text-sm font-semibold mb-3">쿠폰 코드</h3>
-            <div className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                placeholder="쿠폰 코드를 입력하세요"
-                className="flex-1 h-11 rounded-xl border border-border px-4 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-                maxLength={20}
-                disabled={appliedCoupon !== null}
-              />
-              <button
-                onClick={applyCoupon}
-                disabled={!couponCode || couponLoading || appliedCoupon !== null}
-                className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors cursor-pointer"
-              >
-                {couponLoading ? '확인중...' : '적용'}
-              </button>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold">쿠폰 사용</h3>
+              {ownedCoupons.length > 0 && (
+                <div className="flex gap-1 bg-muted/50 p-0.5 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setCouponMode('select')}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer ${
+                      couponMode === 'select' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    내 쿠폰 ({ownedCoupons.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCouponMode('code')}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer ${
+                      couponMode === 'code' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    코드 입력
+                  </button>
+                </div>
+              )}
             </div>
-            {appliedCoupon && (
-              <div className="flex items-center justify-between text-sm p-2 bg-emerald-50 rounded-lg">
-                <span className="text-emerald-600 font-medium">
-                  ✓ {appliedCoupon.name} (-{appliedCoupon.discount_type === 'percent' ? `${appliedCoupon.discount_value}%` : `${appliedCoupon.discount_value.toLocaleString()}원`})
-                </span>
+
+            {/* 적용된 쿠폰 표시 */}
+            {appliedCoupon ? (
+              <div className="flex items-center justify-between text-sm p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                <div className="min-w-0">
+                  <p className="text-emerald-700 font-semibold truncate">✓ {appliedCoupon.name || appliedCoupon.code}</p>
+                  <p className="text-xs text-emerald-600 mt-0.5">
+                    {appliedCoupon.discount_type === 'percentage'
+                      ? `${appliedCoupon.discount_value}% 할인`
+                      : `${appliedCoupon.discount_value.toLocaleString()}원 할인`}
+                  </p>
+                </div>
                 <button
                   onClick={() => {
                     setAppliedCoupon(null)
                     setCouponCode('')
+                    sessionStorage.removeItem('presales-applied-coupon')
                   }}
-                  className="text-xs text-muted-foreground hover:text-foreground hover:font-medium cursor-pointer"
+                  className="ml-3 shrink-0 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
                 >
-                  취소
+                  변경
                 </button>
               </div>
+            ) : couponMode === 'select' && ownedCoupons.length > 0 ? (
+              <div className="space-y-2">
+                {ownedCoupons.map((c) => {
+                  const cartTotal = getTotal()
+                  const canUse = cartTotal >= Number(c.min_order_amount || 0)
+                  const discountPreview = c.discount_type === 'percentage'
+                    ? `${c.discount_value}%`
+                    : `${Number(c.discount_value).toLocaleString()}원`
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => applyOwnedCoupon(c)}
+                      disabled={!canUse}
+                      className="w-full flex items-center gap-3 p-3 border border-border rounded-xl bg-background hover:border-primary hover:bg-primary/5 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-left cursor-pointer"
+                    >
+                      <div className="shrink-0 w-12 h-12 rounded-xl bg-primary/10 flex flex-col items-center justify-center">
+                        <Gift className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold truncate">{c.name || c.code}</p>
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">
+                          {discountPreview} 할인
+                          {c.min_order_amount > 0 && ` · 최소 ${Number(c.min_order_amount).toLocaleString()}원`}
+                        </p>
+                        {!canUse && (
+                          <p className="text-[10px] text-red-500 mt-0.5">최소 주문금액 미달</p>
+                        )}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            ) : (
+              <div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    placeholder="쿠폰 코드를 입력하세요"
+                    className="flex-1 h-11 rounded-xl border border-border px-4 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                    maxLength={32}
+                  />
+                  <button
+                    onClick={applyCoupon}
+                    disabled={!couponCode || couponLoading}
+                    className="h-11 px-5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors cursor-pointer"
+                  >
+                    {couponLoading ? '확인중...' : '적용'}
+                  </button>
+                </div>
+                {ownedCoupons.length === 0 && (
+                  <p className="text-[11px] text-muted-foreground mt-2">
+                    보유 중인 쿠폰이 없습니다. 코드를 직접 입력해주세요.
+                  </p>
+                )}
+              </div>
             )}
+          </div>
+
+          {/* 추가정보 입력 (세금계산서/사업자등록증/무통장/카드 메모) */}
+          <div className="border border-border/50 rounded-2xl p-5 bg-card">
+            <h3 className="text-sm font-semibold mb-3">추가정보 입력</h3>
+
+            <div className="border-l-4 border-blue-400 bg-blue-50/50 px-4 py-2 rounded-r-lg mb-5">
+              <p className="text-xs text-foreground">아래 내용 해당 시 확인 바랍니다</p>
+            </div>
+
+            {/* 세금계산서 담당자 정보 */}
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-foreground mb-1">
+                세금계산서 필요 시 아래 내용 입력 필수
+              </label>
+              <p className="text-[11px] text-muted-foreground mb-2">담당자 성명, 전화번호, 이메일 주소</p>
+              <textarea
+                value={taxContactInfo}
+                onChange={(e) => setTaxContactInfo(e.target.value)}
+                placeholder="예) 홍길동 / 010-1234-5678 / hong@example.com"
+                rows={3}
+                className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all resize-none"
+              />
+            </div>
+
+            {/* 사업자등록증 업로드 */}
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-foreground mb-1">
+                세금계산서 필요 시 사업자등록증 업로드 필수
+              </label>
+              <p className="text-[11px] text-muted-foreground mb-2">PDF, JPG, PNG 형식 · 10MB 이하</p>
+
+              <input
+                ref={certInputRef}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/*"
+                onChange={handleCertUpload}
+                className="hidden"
+              />
+
+              {businessCertName ? (
+                <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-emerald-200 bg-emerald-50/50">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
+                      <Check className="w-4 h-4 text-emerald-600" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{businessCertName}</p>
+                      <p className="text-[11px] text-emerald-600">업로드 완료</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={removeCert}
+                    className="text-xs text-muted-foreground hover:text-red-500 cursor-pointer shrink-0"
+                  >
+                    삭제
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => certInputRef.current?.click()}
+                  disabled={uploadingCert}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {uploadingCert ? (
+                    <>
+                      <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
+                      <span className="text-sm text-muted-foreground">업로드 중...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">파일 올리기</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            {/* 무통장 입금 메모 */}
+            <div className="mb-5">
+              <label className="block text-sm font-medium text-foreground mb-1">
+                무통장 입금 후 빠른 확인을 원하시면 &apos;우측 하단 채널톡&apos; 문의 부탁드립니다.
+              </label>
+              <input
+                type="text"
+                value={depositMemo}
+                onChange={(e) => setDepositMemo(e.target.value)}
+                placeholder="입금자명 또는 입금 시점을 입력해주세요"
+                className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+              />
+            </div>
+
+            {/* 카드 결제 메모 */}
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                신용카드 결제의 경우 세금계산서 발행되지 않습니다. 매출전표를 활용하시면 됩니다.
+              </label>
+              <input
+                type="text"
+                value={cardMemo}
+                onChange={(e) => setCardMemo(e.target.value)}
+                placeholder="메모할 내용이 있으면 입력해주세요 (선택)"
+                className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+              />
+            </div>
           </div>
 
           {/* Summary */}

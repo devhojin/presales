@@ -9,16 +9,28 @@ import { createClient } from '@/lib/supabase'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 
 const navLinks = [
+  { href: '/us', label: '우리는' },
   { href: '/store', label: '문서 스토어' },
   { href: '/consulting', label: '컨설팅' },
   { href: '/announcements', label: '공고 사업' },
+  { href: '/brief', label: '모닝 브리프' },
   { href: '/feeds', label: 'IT피드' },
-  { href: '/about', label: '회사소개' },
   { href: '/faq', label: '고객지원' },
 ]
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+
+  // 모바일 메뉴 열릴 때 body 스크롤 차단
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [isMobileMenuOpen])
+
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const [profileMenu, setProfileMenu] = useState(false)
@@ -210,13 +222,13 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile Menu — Full overlay */}
+      {/* Mobile Menu — Full overlay (불투명 배경 + 스크롤 차단) */}
       <div
-        className={`md:hidden fixed inset-0 top-16 bg-background/98 backdrop-blur-xl z-40 transition-all duration-500 ${
+        className={`md:hidden fixed inset-0 top-16 bg-background z-50 transition-all duration-500 overflow-y-auto ${
           isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
       >
-        <div className="flex flex-col px-6 pt-8 pb-6 h-full">
+        <div className="flex flex-col px-6 pt-8 pb-6 min-h-full">
           <nav className="space-y-1 flex-1">
             {navLinks.map((link, i) => (
               <Link

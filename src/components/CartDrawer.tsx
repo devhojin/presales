@@ -42,7 +42,7 @@ export function CartDrawer() {
             </Badge>
           )}
       </SheetTrigger>
-      <SheetContent className="w-full sm:w-[420px] flex flex-col">
+      <SheetContent className="w-full sm:w-[420px] flex flex-col h-[100dvh] max-h-[100dvh] pb-[max(env(safe-area-inset-bottom),16px)] overflow-hidden">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <ShoppingCart className="w-5 h-5" />
@@ -59,7 +59,7 @@ export function CartDrawer() {
           </div>
         ) : (
           <>
-            <div className="flex-1 overflow-y-auto py-4 space-y-3">
+            <div className="flex-1 min-h-0 overflow-y-auto py-4 space-y-3 px-4">
               {items.map((item) => (
                 <div key={item.productId} className="flex gap-3 p-3 rounded-lg border border-border">
                   <img
@@ -87,7 +87,7 @@ export function CartDrawer() {
               ))}
             </div>
 
-            <div className="border-t border-border pt-4 space-y-4">
+            <div className="border-t border-border px-4 pt-4 pb-2 space-y-3 shrink-0">
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">상품 금액</span>

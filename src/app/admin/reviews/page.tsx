@@ -15,6 +15,7 @@ import {
   Star,
   Trash2,
   MessageSquare,
+  ExternalLink,
 } from 'lucide-react'
 
 interface ProfileMap {
@@ -168,21 +169,17 @@ export default function AdminReviewsPage() {
 
     setReviews(reviewList)
 
-    // Load profiles
-    const userIds = [...new Set(reviewList.map((r) => r.user_id).filter(Boolean))]
-    if (userIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, name, email')
-        .in('id', userIds)
-      const pMap: ProfileMap = {}
-      if (profiles) {
-        for (const p of profiles) {
-          pMap[p.id] = { name: p.name || '-', email: p.email || '-' }
+    // Build profile map from denormalized reviewer_name/reviewer_email columns
+    const pMap: ProfileMap = {}
+    for (const r of reviewList) {
+      if (r.user_id) {
+        pMap[r.user_id] = {
+          name: r.reviewer_name || '-',
+          email: r.reviewer_email || '-',
         }
       }
-      setProfileMap(pMap)
     }
+    setProfileMap(pMap)
 
     // Load product names
     const productIds = [...new Set(reviewList.map((r) => r.product_id).filter(Boolean))]
@@ -389,8 +386,22 @@ export default function AdminReviewsPage() {
                   key={review.id}
                   className="hover:bg-muted transition-colors"
                 >
-                  <td className="px-6 py-3 text-sm max-w-[200px] truncate">
-                    {productMap[review.product_id] || '-'}
+                  <td className="px-6 py-3 text-sm max-w-[200px]">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="truncate">{productMap[review.product_id] || '-'}</span>
+                      {review.product_id && (
+                        <a
+                          href={`/store/${review.product_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="shrink-0 text-muted-foreground hover:text-primary transition-colors"
+                          title="상품 페이지 새창에서 보기"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-3 text-sm">
                     {profileMap[review.user_id]?.name || '-'}
@@ -505,7 +516,20 @@ export default function AdminReviewsPage() {
               <div className="space-y-3 mb-4">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">상품</span>
-                  <span className="font-medium">{productMap[selectedReview.product_id] || '-'}</span>
+                  <span className="font-medium flex items-center gap-1.5">
+                    {productMap[selectedReview.product_id] || '-'}
+                    {selectedReview.product_id && (
+                      <a
+                        href={`/store/${selectedReview.product_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-primary transition-colors"
+                        title="상품 페이지 새창에서 보기"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    )}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">작성자</span>
@@ -540,20 +564,6 @@ export default function AdminReviewsPage() {
                   <p className="text-xs text-muted-foreground mb-1">내용</p>
                   <p className="text-sm whitespace-pre-wrap">{selectedReview.content}</p>
                 </div>
-
-                {selectedReview.pros && (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3">
-                    <p className="text-xs font-medium text-emerald-700 mb-1">좋은점</p>
-                    <p className="text-sm text-emerald-700">{selectedReview.pros}</p>
-                  </div>
-                )}
-
-                {selectedReview.cons && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
-                    <p className="text-xs font-medium text-amber-700 mb-1">아쉬운점</p>
-                    <p className="text-sm text-amber-800">{selectedReview.cons}</p>
-                  </div>
-                )}
 
                 {selectedReview.image_urls && selectedReview.image_urls.length > 0 && (
                   <div>

@@ -18,8 +18,6 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
   const [rating, setRating] = useState(existingReview?.rating || 0)
   const [title, setTitle] = useState(existingReview?.title || '')
   const [content, setContent] = useState(existingReview?.content || '')
-  const [pros, setPros] = useState(existingReview?.pros || '')
-  const [cons, setCons] = useState(existingReview?.cons || '')
   const [imageUrls, setImageUrls] = useState<string[]>(existingReview?.image_urls || [])
   const [uploading, setUploading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -91,8 +89,8 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
     setSubmitting(true)
     const supabase = createClient()
 
-    // 구매 인증 확인: order_items + orders 조회 또는 무료 상품 여부
-    const [{ data: orderData }, { data: productData }] = await Promise.all([
+    // 구매 인증 확인 + 작성자 프로필 조회 (reviewer_name 스냅샷용)
+    const [{ data: orderData }, { data: productData }, { data: profileData }] = await Promise.all([
       supabase
         .from('order_items')
         .select('id, order_id, orders!inner(user_id, status)')
@@ -105,6 +103,11 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
         .select('is_free')
         .eq('id', productId)
         .single(),
+      supabase
+        .from('profiles')
+        .select('name, email')
+        .eq('id', userId)
+        .maybeSingle(),
     ])
 
     const isVerifiedPurchase =
@@ -116,11 +119,13 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
       rating,
       title: title.trim(),
       content: content.trim(),
-      pros: pros.trim() || null,
-      cons: cons.trim() || null,
+      pros: null,
+      cons: null,
       image_urls: imageUrls,
       is_verified_purchase: isVerifiedPurchase,
       is_published: true,
+      reviewer_name: profileData?.name || null,
+      reviewer_email: profileData?.email || null,
     }
 
     if (existingReview) {
@@ -200,30 +205,6 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
           placeholder="상품에 대한 솔직한 리뷰를 작성해주세요."
           rows={4}
           className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
-        />
-      </div>
-
-      {/* Pros */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-1 text-emerald-700">좋은점</label>
-        <textarea
-          value={pros}
-          onChange={(e) => setPros(e.target.value)}
-          placeholder="이 상품의 좋은 점을 알려주세요 (선택)"
-          rows={2}
-          className="w-full px-3 py-2 border border-emerald-200 bg-emerald-50/50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:border-emerald-300 resize-none"
-        />
-      </div>
-
-      {/* Cons */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-1 text-amber-700">아쉬운점</label>
-        <textarea
-          value={cons}
-          onChange={(e) => setCons(e.target.value)}
-          placeholder="아쉬웠던 점을 알려주세요 (선택)"
-          rows={2}
-          className="w-full px-3 py-2 border border-amber-200 bg-amber-50/50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-200 focus:border-amber-300 resize-none"
         />
       </div>
 

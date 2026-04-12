@@ -264,7 +264,7 @@ export default function AdminAnnouncementsPage() {
       ) : error ? (
         <div className="text-center py-16"><AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-2" /><p className="text-sm text-red-500">{error}</p></div>
       ) : (
-        <div className="flex gap-0 border border-border/50 rounded-2xl overflow-hidden bg-card" style={{ minHeight: '60vh' }}>
+        <div className="flex gap-0 border border-border/50 rounded-2xl overflow-hidden bg-card h-[calc(100vh-220px)] min-h-[500px]">
           {/* LEFT: List */}
           <div className={`${showDetail ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-[38%] border-r border-border/50 overflow-hidden`}>
             {/* Select all header */}

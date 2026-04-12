@@ -88,9 +88,24 @@ export default function SignupPage() {
         company: form.company,
         phone: form.phone,
       }).eq('id', user.id)
+
+      // 회원가입 축하 쿠폰 자동 발급 (WELCOME10K)
+      const { data: welcome } = await supabase
+        .from('coupons')
+        .select('id')
+        .eq('code', 'WELCOME10K')
+        .eq('is_active', true)
+        .maybeSingle()
+      if (welcome) {
+        await supabase.from('user_coupons').insert({
+          user_id: user.id,
+          coupon_id: welcome.id,
+          source: 'signup',
+        })
+      }
     }
 
-    addToast('환영합니다! 무료 템플릿을 다운로드해보세요', 'success')
+    addToast('환영합니다! 🎉 회원가입 축하 1만원 쿠폰이 발급되었습니다', 'success')
     router.push('/mypage')
     router.refresh()
   }

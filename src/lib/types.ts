@@ -47,15 +47,14 @@ export interface DbReview {
   rating: number
   title: string
   content: string
-  pros: string | null
-  cons: string | null
   image_urls: string[]
   helpful_count: number
   is_published: boolean
   is_verified_purchase: boolean
   admin_reply: string | null
   created_at: string
-  profiles?: { name: string; email: string } | null
+  reviewer_name: string | null
+  reviewer_email: string | null
   products?: { title: string } | null
 }
 

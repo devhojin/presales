@@ -270,7 +270,7 @@ export default function AdminFeedsPage() {
       ) : error ? (
         <div className="text-center py-12"><AlertCircle className="w-8 h-8 text-destructive mx-auto mb-2" /><p className="text-sm text-destructive">{error}</p></div>
       ) : (
-        <div className="flex gap-0 border border-border/50 rounded-2xl overflow-hidden bg-card" style={{ minHeight: '60vh' }}>
+        <div className="flex gap-0 border border-border/50 rounded-2xl overflow-hidden bg-card h-[calc(100vh-220px)] min-h-[500px]">
           {/* LEFT */}
           <div className={`${showDetail ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-[38%] border-r border-border/50 overflow-hidden`}>
             <div className="px-4 py-2.5 border-b border-border/50 bg-muted/30 flex items-center gap-3">
