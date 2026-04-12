@@ -222,46 +222,6 @@ export default function AboutPage() {
         </div>
       </div>
 
-      {/* Timeline - Editorial feel */}
-      {(loading || timeline.length > 0) && (
-        <div className="bg-muted/30">
-          <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-12 md:py-16">
-            <div className="max-w-2xl mx-auto text-center mb-16">
-              <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">연혁</p>
-              <h2 className="text-3xl font-bold tracking-tight text-foreground">연혁</h2>
-            </div>
-            <div className="max-w-md mx-auto">
-              <div className="relative">
-                {/* Vertical line */}
-                <div className="absolute left-8 top-0 bottom-0 w-px bg-border/50" />
-
-                <div className="space-y-8">
-                  {loading
-                    ? Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="flex items-start gap-8 animate-pulse">
-                          <div className="w-16 h-5 bg-muted rounded shrink-0" />
-                          <div className="h-4 bg-muted rounded flex-1" />
-                        </div>
-                      ))
-                    : timeline.map((item) => (
-                        <div key={item.year} className="flex items-start gap-8">
-                          <div className="relative pt-1">
-                            <div className="w-16 text-right">
-                              <span className="font-bold text-primary text-sm">{item.year}</span>
-                            </div>
-                            <div className="absolute left-1/2 top-3.5 -translate-x-1/2 w-3 h-3 rounded-full bg-primary -ml-1.5" />
-                          </div>
-                          <div className="pt-1 pb-8">
-                            <p className="text-sm text-foreground leading-relaxed">{item.event}</p>
-                          </div>
-                        </div>
-                      ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
