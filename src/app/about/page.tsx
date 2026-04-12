@@ -133,74 +133,117 @@ export default function AboutPage() {
         </div>
       )}
 
-      {/* Team */}
+      {/* Track Record (실적) */}
       <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-12 md:py-16">
         <div className="max-w-2xl mx-auto text-center mb-16">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">전문가 팀</p>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground mb-3">전문가 팀</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-3">TRACK RECORD</p>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground mb-3">수주 실적</h2>
           <p className="text-muted-foreground">
-            각 분야 최고의 전문가들이 함께합니다
+            소프트웨어 기술자 경력 특급 · 특허 12건 출원 / 6건 등록 · 정보통신기술 기능계기술자
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {loading
-            ? Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="border border-border/50 bg-card rounded-2xl p-8 animate-pulse">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 rounded-full bg-muted shrink-0" />
-                    <div className="space-y-2 flex-1 min-w-0">
-                      <div className="h-4 bg-muted rounded w-1/2" />
-                      <div className="h-3 bg-muted rounded w-3/4" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-3 bg-muted rounded w-full" />
-                    <div className="h-3 bg-muted rounded w-full" />
-                    <div className="h-3 bg-muted rounded w-4/5" />
-                  </div>
+          {[
+            {
+              icon: '🏛',
+              title: '공공조달 · SI 제안',
+              color: 'from-emerald-500 to-emerald-600',
+              items: [
+                '인천광역시 지능형교통시스템(ITS) 유지관리 용역',
+                '과천시 스마트빌리지 보급 및 확산사업 (AI 안심허그)',
+                '안산시 생활밀착형 도시재생 스마트기술 지원사업',
+                '천안시 지능형교통체계(ITS) 구축사업',
+                '종합상황센터 시스템 개선 사업',
+                '스마트관제 시스템 제작 구매 설치 사업',
+                '다함께 미래로 연천 스마트 경로당 구축 사업',
+                '다차로 하이패스 차량검지 매칭 정확도 평가시스템 개발',
+              ],
+            },
+            {
+              icon: '🏭',
+              title: '스마트팩토리 · IoT',
+              color: 'from-blue-500 to-blue-600',
+              items: [
+                '코미코 스마트공장 구축 및 고도화 사업 (PM)',
+                'LB세미콘 종합관제시스템 구축사업 (PM)',
+                '에코프로비엠 전력검침 자동화 시스템 (PM)',
+                'IoT 환경설비 모니터링 플랫폼 론칭 (350여 중소기업 활용)',
+                '포스코 집진기 화재위험 안전 시스템',
+                '포스코 GAS 감시 및 밀폐공간 안전 플랫폼',
+                '대우건설 스마트 컨스트럭션 안전 플랫폼',
+              ],
+            },
+            {
+              icon: '🚗',
+              title: 'AI · 교통관제',
+              color: 'from-violet-500 to-violet-600',
+              items: [
+                'AI 기반 도로결빙 관제 시스템 (혁신제품, 부산청 실증)',
+                'AI 교차로 신호등 관련 신사업 기획',
+                'NIPA 디지털 안전 선도모델 개발 (재난안전)',
+                '자율주행 리빙랩 사업계획 (700억 규모)',
+                '라이다 기반 회전교차로 상품 기획',
+              ],
+            },
+            {
+              icon: '📋',
+              title: '특허 등록',
+              color: 'from-amber-500 to-amber-600',
+              items: [
+                'AI 기반 블랙아이스 모니터링 시스템',
+                '도로 온도·습도 측정 매립형 센서 장치',
+                'AI 자동 염수분사 도로 모니터링 시스템',
+                '보행자 안전 확보 및 차량 진입 제어 신호 시스템',
+                '진동 모니터링에 따른 자동 주유 장치',
+                '공정 시스템 부생가스 배관 가스누출 감시 시스템',
+              ],
+            },
+            {
+              icon: '💼',
+              title: '금융 · 기업 SI',
+              color: 'from-pink-500 to-pink-600',
+              items: [
+                '카카오뱅크 기업인터넷뱅킹 신규구축 (수주)',
+                '하나생명보험 온라인 채널 구축 컨설팅',
+                'IBK 오픈뱅킹 사업',
+                'SBI 저축은행 웹접근성 사업',
+                '미래에셋생명 다이렉트 보험',
+                '롯데카드 웹접근성 사업',
+              ],
+            },
+            {
+              icon: '🚀',
+              title: '스타트업 · 신사업',
+              color: 'from-teal-500 to-teal-600',
+              items: [
+                '스마트워치 기반 AI 헬스케어 "맥동" 창업 → EXIT (사업 매각)',
+                '월정액 스마트팩토리 구독 서비스 론칭',
+                '중대재해처벌법 대응 밀폐공간 안전 플랫폼 론칭',
+                'IoT DIY Platform 구축 (구독 서비스)',
+                '환경공단 IoT 정부지원사업 기획 및 운영',
+              ],
+            },
+          ].map((category) => (
+            <div
+              key={category.title}
+              className="border border-border/50 bg-card rounded-2xl p-7 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-500 hover:-translate-y-1"
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${category.color} flex items-center justify-center text-lg`}>
+                  {category.icon}
                 </div>
-              ))
-            : team.map((member) => (
-                <div
-                  key={member.name}
-                  className="border border-border/50 bg-card rounded-2xl p-8 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-500 hover:-translate-y-1 flex flex-col"
-                >
-                  {/* 이니셜 + 이름 + 역할 */}
-                  <div className="flex items-center gap-4 mb-6">
-                    <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg shrink-0">
-                      {getInitials(member.name)}
-                    </div>
-                    <div className="min-w-0">
-                      <h3 className="font-bold text-base truncate text-foreground">{member.name}</h3>
-                      <p className="text-xs text-primary font-medium leading-tight">{member.role}</p>
-                    </div>
-                  </div>
-
-                  {/* 소개 문구 */}
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-6 flex-1">
-                    {getIntro(member.name)}
-                  </p>
-
-                  {/* 경력 */}
-                  <ul className="text-xs text-muted-foreground space-y-1 mb-6">
-                    {member.career.map((c) => (
-                      <li key={c} className="flex items-start gap-1.5">
-                        <span className="text-primary mt-0.5 shrink-0">•</span>
-                        <span>{c}</span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* 전문 분야 태그 */}
-                  <div className="flex flex-wrap gap-2">
-                    {member.expertise.map((e) => (
-                      <Badge key={e} variant="outline" className="text-[10px] border-primary/30 text-primary bg-primary/5 rounded-full">
-                        {e}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                <h3 className="font-bold text-sm text-foreground">{category.title}</h3>
+              </div>
+              <ul className="space-y-2.5">
+                {category.items.map((item) => (
+                  <li key={item} className="flex items-start gap-2 text-xs text-muted-foreground leading-relaxed">
+                    <span className="text-primary mt-0.5 shrink-0">✓</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
 
