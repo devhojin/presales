@@ -1,0 +1,145 @@
+{
+  "slug": "presales",
+  "name": "PRESALES",
+  "fullName": "PRESALES by AMARANS Partners",
+  "description": "공공조달 제안서 마켓플레이스 — Next.js 16 + Supabase + Vercel",
+  "status": "베타 운영 중 (QA 71건 완료, 도메인+PG 대기)",
+  "phase": "Beta",
+  "liveUrl": "https://presales-zeta.vercel.app",
+  "plannedDomain": "presales.co.kr",
+  "githubRepo": "https://github.com/devhojin/presales",
+  "tabs": {
+    "기초정보": {
+      "stack": [
+        "Next.js 16.2.1",
+        "React 19.2.4",
+        "TypeScript strict",
+        "Tailwind CSS 4",
+        "Supabase (PostgreSQL + Auth + Storage + Realtime)",
+        "Vercel (Production)",
+        "Zustand (상태관리)",
+        "Tiptap (에디터), pdfjs-dist (미리보기)",
+        "Three.js (/us 페이지)"
+      ],
+      "accounts": [
+        { "type": "관리자", "email": "admin@amarans.co.kr", "password": "Test123!" },
+        { "type": "테스트 유저 (주문12건)", "email": "user01@test.com", "password": "Test123!" },
+        { "type": "테스트 유저 02~09", "email": "user02@test.com ~ user09@test.com", "password": "Test123!" }
+      ],
+      "metrics": {
+        "products": "71개 게시 (유료45 + 무료26), 6개 카테고리",
+        "product_files": "65건 (Supabase Storage, 한글 파일명 서명URL 지원)",
+        "orders": "32건 (user01 테스트 12건 포함)",
+        "profiles": "30명 (베타 27명 시드 포함)",
+        "reviews": "19건 (reviewer_name 비정규화)",
+        "coupons": "3개 활성 (user_coupons 개인발급)",
+        "announcements": "373건 (7개소스 자동수집, Cron 08:00)",
+        "community_posts": "601건 (9개 RSS, Cron 08:30)",
+        "chat_rooms": "14건 (폴링 3초/5초)",
+        "consulting_requests": "10건",
+        "daily_briefs": "2건 (NAS daily-news.py 발송)",
+        "brief_subscribers": "22명",
+        "page_views": "983건"
+      },
+      "supabase": {
+        "project_ref": "vswkrbemigyclgjrpgqt",
+        "url": "https://vswkrbemigyclgjrpgqt.supabase.co",
+        "note": ".env.local은 다른 프로젝트(egumjqaloqdvxpslbsba) → vercel env pull .env.production.local 필요"
+      },
+      "notes": [
+        "기존 사이트 www.documento.co.kr (imweb) 유지 중",
+        "대표: 채호진, 010-9940-7909, sales@amarans.co.kr",
+        "NAS 일일 백업: Tailscale 100.69.139.70, DSM 크론 매일 05:00",
+        "환경변수 백업: NAS dev-kit/secrets/presales/"
+      ]
+    },
+    "새 PC 세팅": {
+      "content_markdown": "## 프리세일즈 새 PC 세팅 가이드\n\n### 1. 사전 준비\n```bash\n# Node.js 20+ 설치\n# Git 설치\n# Vercel CLI: npm i -g vercel\n```\n\n### 2. 프로젝트 클론\n```bash\ncd ~\ngit clone https://github.com/devhojin/presales.git\ncd presales\nnpm install\n```\n\n### 3. 환경변수 설정\n```bash\n# 방법 A: Vercel에서 pull (추천)\nvercel login\nvercel link  # devhojin/presales 선택\nvercel env pull .env.local\n\n# 방법 B: NAS에서 복사\n# NAS dev-kit/secrets/presales/.env.local 파일을 프로젝트 루트에 복사\n```\n\n**주의**: `.env.local`이 `egumjqaloqdvxpslbsba`를 가리키면 잘못된 것!\n`vswkrbemigyclgjrpgqt`여야 정상.\n\n### 4. 로컬 개발 서버\n```bash\nnpm run dev\n# http://localhost:3000\n```\n\n### 5. 배포\n```bash\ngit add -A\ngit commit --author=\"Hojin Chae <hojinchae@gmail.com>\" -m \"커밋 메시지\"\ngit push\nnpx vercel --yes --prod\n```\n\n### 6. Supabase SQL 실행이 필요한 경우\n- 대시보드: https://supabase.com/dashboard/project/vswkrbemigyclgjrpgqt\n- SQL Editor에서 실행\n- 관리자: admin@amarans.co.kr / Test123!\n\n### 7. 테스트\n- admin@amarans.co.kr (관리자)\n- user01@test.com (구매12건, 다운로드, 즐겨찾기 보유)\n\n### 8. 주의사항\n- DB 작업 전 반드시 `information_schema.columns`로 스키마 확인\n- DELETE/UPDATE 쿼리는 사용자 승인 후 실행\n- 테스트 데이터도 참조 무결성 완전 유지"
+    },
+    "작업 완료사항": {
+      "done": [
+        "홈페이지 리뉴얼 (낙찰 중심 Hero, 카피 A안)",
+        "/us '우리는' 스크롤 스토리텔링 랜딩 (Three.js)",
+        "/brief 모닝 브리프 (구독/수신거부/관리/SEO/JSON-LD)",
+        "/store 문서 스토어 (71개 상품, 6 카테고리, PDF 미리보기)",
+        "채팅 시스템 (회원/비회원↔관리자, 폴링, 파일첨부, 결제요청)",
+        "Split-View 공고/피드 (sticky 상세, 50개 제한, 7+9소스 자동수집)",
+        "나의콘솔 (쿠폰위젯/주문서모달/즐겨찾기탭/채팅열기)",
+        "관리자 사이드바 다크 테마 + 뱃지 카운트 (실시간 30초)",
+        "관리자 회원관리 (RLS 우회 API, 페이지크기, 주문/리뷰/메모 탭, 회원수정)",
+        "관리자 모닝 브리프 관리",
+        "쿠폰 시스템 (user_coupons 개인별 발급/소진, 세금계산서)",
+        "컨설팅 상태 관리 (대기/진행중/완료/취소)",
+        "리뷰 시스템 (reviewer_name 비정규화, is_published)",
+        "product_files 65개 실파일 업로드 (Storage ASCII 경로, 한글 다운로드명)",
+        "다운로드 API (서명URL 60초 + Content-Disposition 한글)",
+        "RLS is_admin() SECURITY DEFINER 함수",
+        "KISA 보안 (비번8자3종, 5회잠금, 30분세션)",
+        "XSS 방어 DOMPurify",
+        "SEO (sitemap, robots, OG태그, JSON-LD)",
+        "NAS 일일 백업 (Supabase 3프로젝트, DSM 크론 05:00)",
+        "베타 테스트 27명 시드",
+        "QA 71개 시나리오 완료 (P0 블로커 0건)",
+        "회사소개 수주 실적 교체",
+        "'발표자료' → '구축자료' 변경"
+      ]
+    },
+    "해야할 일": {
+      "todo": [
+        { "priority": "high", "item": "presales.co.kr 도메인 연결 (Vercel + sitemap/robots URL)" },
+        { "priority": "high", "item": "PG 결제 (토스페이먼츠) — TOSS_SECRET_KEY 미설정" },
+        { "priority": "high", "item": "유료 상품 21개 파일 미연결 (PDF 버전 상품, product_files 매핑 필요)" },
+        { "priority": "medium", "item": "consulting_requests RLS (sql/fix-consulting-rls.sql 실행)" },
+        { "priority": "medium", "item": "미리보기 PDF 확대 (현재 10/71개)" },
+        { "priority": "medium", "item": "Google OAuth (SNS 로그인)" },
+        { "priority": "medium", "item": "GA4 측정 ID 등록" },
+        { "priority": "medium", "item": ".env.local 불일치 (egumjqaloqdvxpslbsba → vswkrbemigyclgjrpgqt)" },
+        { "priority": "low", "item": "유튜브 동영상 (현재 0개)" },
+        { "priority": "low", "item": "관리자 대시보드 리디자인 (cleanierbuilding 톤)" },
+        { "priority": "low", "item": "Dropbox 백업 폴더 비어있음 (NAS는 가동 중)" }
+      ]
+    }
+  },
+  "stack": [
+    "Next.js 16.2.1",
+    "TypeScript",
+    "Tailwind CSS 4",
+    "Supabase (PostgreSQL + Auth + Storage + Realtime)",
+    "Vercel",
+    "Zustand",
+    "Tiptap, pdfjs-dist, Three.js"
+  ],
+  "accounts": [
+    { "type": "관리자", "email": "admin@amarans.co.kr", "password": "Test123!" },
+    { "type": "테스트 유저 (주문12건)", "email": "user01@test.com", "password": "Test123!" },
+    { "type": "테스트 유저 02~09", "email": "user02@test.com ~ user09@test.com", "password": "Test123!" }
+  ],
+  "metrics": {
+    "products": "71개 게시 (유료45 + 무료26)",
+    "categories": "6개 (기술제안서/입찰가이드/구축자료/가격제안/풀패키지/사업계획서)",
+    "files": "65건 (Supabase Storage)",
+    "routes": "40+ 라우트"
+  },
+  "features": {
+    "done": [
+      "홈페이지 리뉴얼 + /us 스토리텔링 + /brief 모닝 브리프",
+      "채팅 시스템 + 관리자 다크 테마 + 뱃지",
+      "쿠폰/결제/컨설팅/리뷰 전체",
+      "product_files 65개 + 다운로드 API + 한글 파일명",
+      "RLS is_admin() + NAS 백업 + QA 71건 완료"
+    ],
+    "todo": [
+      { "priority": "high", "item": "presales.co.kr 도메인 연결" },
+      { "priority": "high", "item": "PG 결제 (토스페이먼츠)" },
+      { "priority": "high", "item": "유료 상품 21개 파일 미연결" },
+      { "priority": "medium", "item": "미리보기 PDF 확대 (10/71)" },
+      { "priority": "medium", "item": "Google OAuth / GA4" },
+      { "priority": "low", "item": "관리자 대시보드 리디자인" }
+    ]
+  },
+  "notes": [
+    "기존 사이트 www.documento.co.kr (imweb) 유지 중",
+    "NAS 백업: 100.69.139.70, DSM 크론 05:00, 환경변수 dev-kit/secrets/presales",
+    "board-meta.json은 이 레포에서 수정 → 미니컴에서 refresh-project-board.sh 실행하면 NAS에 반영"
+  ]
+}
