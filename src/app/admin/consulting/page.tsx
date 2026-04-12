@@ -54,7 +54,7 @@ const statusConfig: Record<string, { label: string; class: string; bg: string }>
     bg: 'bg-yellow-500',
   },
   confirmed: {
-    label: '확정',
+    label: '진행중',
     class: 'bg-primary/8 text-primary border border-primary/20',
     bg: 'bg-primary',
   },
@@ -410,7 +410,7 @@ function ConsultingDetailModal({
                     className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors"
                   >
                     <CheckCircle className="w-4 h-4" />
-                    확정
+                    진행중
                   </button>
                 )}
                 {request.status === 'confirmed' && (
@@ -558,7 +558,7 @@ export default function AdminConsulting() {
   const filterTabs: { key: FilterTab; label: string; count: number }[] = [
     { key: 'all', label: '전체', count: totalCount },
     { key: 'pending', label: '대기', count: pendingCount },
-    { key: 'confirmed', label: '확정', count: confirmedCount },
+    { key: 'confirmed', label: '진행중', count: confirmedCount },
     { key: 'completed', label: '완료', count: completedCount },
     { key: 'cancelled', label: '취소', count: cancelledCount },
   ]
