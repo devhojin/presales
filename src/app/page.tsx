@@ -242,18 +242,18 @@ export default function Home() {
             <div className="space-y-8">
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-[11px] font-medium tracking-wide text-emerald-300 uppercase">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                공공조달 제안서 전문 플랫폼
+                실제 낙찰된 제안서만 판매합니다
               </div>
 
               <h1 className="text-4xl md:text-6xl font-bold tracking-tighter leading-[1.08]">
-                공공조달의<br />
-                복잡함을
-                <span className="block text-emerald-400 mt-1">문서로 단순하게</span>
+                낙찰받은 기업들의<br />
+                제안서가
+                <span className="block text-emerald-400 mt-1">여기 있습니다</span>
               </h1>
 
               <p className="text-base md:text-lg text-zinc-400 leading-relaxed max-w-[480px]">
-                나라장터, 조달청 입찰에 최적화된 기술제안서, 가격제안서, 발표PT 템플릿.
-                실전 경험이 녹아든 문서로 수주 확률을 높이세요.
+                나라장터·조달청 실제 낙찰 기업이 사용한 기술제안서, 가격제안서, 발표PT 템플릿.
+                처음부터 다시 쓰지 마세요.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3">
@@ -261,14 +261,14 @@ export default function Home() {
                   href="/store"
                   className="inline-flex items-center justify-center h-12 px-7 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white font-medium text-sm transition-all duration-300 active:scale-[0.98] shadow-[0_0_20px_rgba(16,185,129,0.2)]"
                 >
-                  문서 스토어 둘러보기
+                  낙찰 제안서 보러가기
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Link>
                 <Link
                   href="/consulting"
                   className="inline-flex items-center justify-center h-12 px-7 rounded-full border border-white/[0.12] text-zinc-300 hover:bg-white/[0.06] font-medium text-sm transition-all duration-300"
                 >
-                  전문가 컨설팅 알아보기
+                  입찰 전략 무료 상담
                 </Link>
               </div>
             </div>
@@ -276,10 +276,10 @@ export default function Home() {
             {/* Right: Stats Grid */}
             <div className="grid grid-cols-2 gap-3">
               {[
-                { value: '17년', label: '공공조달 경력', accent: false },
-                { value: '6개 분야', label: '전문 문서 카테고리', accent: true },
-                { value: '1:1', label: '전문가 맞춤 컨설팅', accent: true },
-                { value: '100%', label: '보안 다운로드', accent: false },
+                { value: '실전 검증', label: '낙찰 기록 보유', accent: false },
+                { value: '6개 분야', label: '실전 제안서 보유', accent: true },
+                { value: '1:1', label: '낙찰 전략 컨설팅', accent: true },
+                { value: '100%', label: '수정 가능한 원본 제공', accent: false },
               ].map((stat, i) => (
                 <div
                   key={stat.label}
@@ -303,10 +303,10 @@ export default function Home() {
         <div className="max-w-[1400px] mx-auto px-4 md:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
             {[
-              { icon: FileText, title: '실전 제안서', desc: '실제 수주에 성공한 제안서를 기반으로 제작된 고품질 템플릿' },
-              { icon: Download, title: '즉시 다운로드', desc: '결제 완료 즉시 원본 파일 다운로드. 수정 가능한 원본 제공' },
-              { icon: Globe, title: '나라장터 최적화', desc: '공공조달 평가기준에 맞춘 구조와 핵심 포인트 반영' },
-              { icon: Handshake, title: '전문가 컨설팅', desc: '입찰 전략 수립부터 발표 리허설까지 1:1 전문 코칭' },
+              { icon: FileText, title: '실전 제안서', desc: '실제 수주에 성공한 제안서 그대로. 어떤 구조로, 어떤 말로 평가위원을 설득했는지 확인하세요.' },
+              { icon: Download, title: '즉시 다운로드', desc: '결제 후 5초 안에 PPT/HWP 원본 파일을 받습니다. 폰트·구조 전부 수정 가능.' },
+              { icon: Globe, title: '나라장터 최적화', desc: '나라장터 평가표 항목별로 점수를 챙기는 구조. 감점 포인트를 미리 막습니다.' },
+              { icon: Handshake, title: '전문가 컨설팅', desc: '공고 분석부터 발표 리허설까지. 공공조달 전문가가 낙찰 전략을 함께 짭니다.' },
             ].map((item) => (
               <div key={item.title} className="group p-6 md:p-8 rounded-2xl border border-border/50 bg-card hover:border-primary/20 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-500">
                 <div className="w-11 h-11 rounded-xl bg-primary/8 flex items-center justify-center mb-5 group-hover:bg-primary/12 transition-colors duration-500">
@@ -362,7 +362,7 @@ export default function Home() {
                 <Badge className="bg-amber-50 text-amber-700 border-amber-200/50 text-[10px] font-semibold">TOP</Badge>
               </div>
               <h2 className="text-2xl md:text-3xl font-bold tracking-tight">인기 상품</h2>
-              <p className="text-muted-foreground mt-2">다운로드 수 기준 가장 인기 있는 템플릿</p>
+              <p className="text-muted-foreground mt-2">실제 낙찰 후기가 달린 인기 제안서</p>
             </div>
             <Link
               href="/store"
@@ -385,14 +385,14 @@ export default function Home() {
           {!loadingProducts && (
             <div className="mt-10 rounded-2xl bg-[#0C1220] p-8 md:p-10 flex flex-col sm:flex-row sm:items-center gap-6 text-white">
               <div className="flex-1">
-                <p className="font-bold text-lg tracking-tight mb-1.5">프리미엄 버전으로 낙찰률을 높이세요</p>
-                <p className="text-zinc-400 text-sm leading-relaxed">무료 템플릿으로 시작했다면, 이제 실전 수주 경험이 담긴 유료 버전으로 업그레이드하세요.</p>
+                <p className="font-bold text-lg tracking-tight mb-1.5">낙찰받은 기업들이 실제로 쓴 유료 버전</p>
+                <p className="text-zinc-400 text-sm leading-relaxed">무료 템플릿으로 방향을 잡았다면, 이제 실제 낙찰 기록이 있는 유료 버전을 써보세요.</p>
               </div>
               <Link
                 href="/store?price=paid"
                 className="shrink-0 inline-flex items-center justify-center h-11 px-6 rounded-full bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-400 transition-all duration-300 active:scale-[0.98]"
               >
-                유료 템플릿 보기 <ArrowRight className="ml-1.5 w-4 h-4" />
+                낙찰 검증 템플릿 보기 <ArrowRight className="ml-1.5 w-4 h-4" />
               </Link>
             </div>
           )}
@@ -405,8 +405,8 @@ export default function Home() {
           <div className="max-w-[1400px] mx-auto px-4 md:px-8">
             <div className="text-center mb-14">
               <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">TESTIMONIALS</p>
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">고객 후기</h2>
-              <p className="text-muted-foreground mt-2">실제 고객들의 성공 경험을 확인하세요</p>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">낙찰 후기</h2>
+              <p className="text-muted-foreground mt-2">"이 제안서로 실제 수주했습니다"</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {reviews.map((t, i) => (
@@ -439,17 +439,17 @@ export default function Home() {
         <div className="absolute top-[-20%] left-[50%] -translate-x-1/2 w-[800px] h-[400px] bg-emerald-500/8 rounded-full blur-[120px]" />
         <div className="max-w-[1400px] mx-auto px-4 md:px-8 text-center relative z-10">
           <h2 className="text-2xl md:text-4xl font-bold tracking-tighter mb-4">
-            첫 입찰, 어디서부터<br className="md:hidden" /> 시작해야 할지 모르겠다면?
+            입찰 준비, 뭐부터 해야 할지<br className="md:hidden" /> 막막하신가요?
           </h2>
           <p className="text-zinc-400 mb-10 max-w-md mx-auto leading-relaxed">
-            무료 입찰 가이드부터 전문가 1:1 컨설팅까지.
-            프리세일즈가 함께합니다.
+            공고 검토, 제안서 구조, 가격 전략까지.
+            공공조달 전문가와 1:1로 점검받으세요.
           </p>
           <Link
             href="/consulting"
             className="inline-flex items-center justify-center h-12 px-8 rounded-full bg-emerald-500 text-white hover:bg-emerald-400 font-medium text-sm transition-all duration-300 active:scale-[0.98] shadow-[0_0_30px_rgba(16,185,129,0.2)]"
           >
-            컨설팅 상담 신청
+            무료 입찰 상담 받기
             <ArrowRight className="ml-2 w-4 h-4" />
           </Link>
         </div>
