@@ -44,6 +44,49 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [mobileOpen, setMobileOpen] = useState(false)
   const [authChecked, setAuthChecked] = useState(false)
   const [authorized, setAuthorized] = useState(false)
+  const [badges, setBadges] = useState<Record<string, number>>({})
+
+  // 사이드바 뱃지 카운트 로드
+  useEffect(() => {
+    if (!authorized) return
+    const supabase = createClient()
+    async function loadBadges() {
+      try {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const todayIso = today.toISOString()
+
+        const [annRes, feedRes, chatRes, consultRes] = await Promise.all([
+          // 오늘 등록된 공고
+          supabase.from('announcements').select('id', { count: 'exact', head: true })
+            .eq('is_published', true).gte('created_at', todayIso),
+          // 오늘 등록된 피드
+          supabase.from('community_posts').select('id', { count: 'exact', head: true })
+            .eq('is_published', true).gte('created_at', todayIso),
+          // 관리자 미읽은 채팅
+          supabase.from('chat_rooms').select('admin_unread_count')
+            .eq('hidden_by_admin', false).gt('admin_unread_count', 0),
+          // pending 컨설팅
+          supabase.from('consulting_requests').select('id', { count: 'exact', head: true })
+            .eq('status', 'pending'),
+        ])
+
+        const chatUnread = (chatRes.data || []).reduce((sum, r) => sum + (r.admin_unread_count || 0), 0)
+
+        setBadges({
+          '/admin/announcements': annRes.count || 0,
+          '/admin/feeds': feedRes.count || 0,
+          '/admin/chat': chatUnread,
+          '/admin/consulting': consultRes.count || 0,
+        })
+      } catch (e) {
+        console.error('badge load error', e)
+      }
+    }
+    loadBadges()
+    const interval = setInterval(loadBadges, 30000)
+    return () => clearInterval(interval)
+  }, [authorized])
 
   useEffect(() => {
     const saved = localStorage.getItem('admin-sidebar-collapsed')
@@ -131,26 +174,41 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               return <div key={`div-${idx}`} className="my-2 border-t border-white/10" />
             }
             return (
-              <div key={`div-${idx}`} className="pt-4 pb-1.5 px-3">
+              <div key={`div-${idx}`} className="pt-3 pb-1 px-3">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">{item.label}</p>
               </div>
             )
           }
           const isActive = pathname === item.href ||
             (item.href !== '/admin' && pathname?.startsWith(item.href))
+          const badgeCount = badges[item.href] || 0
+          const isChat = item.href === '/admin/chat'
+          const isConsulting = item.href === '/admin/consulting'
+          const isRedBadge = isChat || isConsulting
           return (
             <Link
               key={item.href}
               href={item.href}
               title={!isMobile && collapsed ? item.label : undefined}
-              className={`flex items-center ${!isMobile && collapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
+              className={`flex items-center ${!isMobile && collapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
                 isActive
                   ? 'bg-primary text-white shadow-md shadow-primary/20'
                   : 'text-zinc-300 hover:bg-white/5 hover:text-white'
               }`}
             >
               <item.icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-white' : 'text-zinc-400'}`} />
-              {(isMobile || !collapsed) && <span>{item.label}</span>}
+              {(isMobile || !collapsed) && (
+                <span className="flex-1">{item.label}</span>
+              )}
+              {(isMobile || !collapsed) && badgeCount > 0 && (
+                <span className={`min-w-[22px] h-5 flex items-center justify-center rounded-full text-[10px] font-bold px-1.5 ${
+                  isRedBadge
+                    ? 'bg-red-500 text-white'
+                    : 'bg-blue-500 text-white'
+                }`}>
+                  {badgeCount > 999 ? '999+' : badgeCount}
+                </span>
+              )}
             </Link>
           )
         })}
