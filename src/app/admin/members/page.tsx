@@ -509,6 +509,9 @@ function MemberDetailModal({
   const [loadingOrders, setLoadingOrders] = useState(false)
   const [loadingDownloads, setLoadingDownloads] = useState(false)
   const [loadingConsulting, setLoadingConsulting] = useState(false)
+  const [ordersLoaded, setOrdersLoaded] = useState(false)
+  const [downloadsLoaded, setDownloadsLoaded] = useState(false)
+  const [consultingLoaded, setConsultingLoaded] = useState(false)
   const [showRoleConfirm, setShowRoleConfirm] = useState(false)
   const [roleLoading, setRoleLoading] = useState(false)
   const [currentRole, setCurrentRole] = useState(member.role)
@@ -529,7 +532,7 @@ function MemberDetailModal({
   }, [onClose, showRoleConfirm])
 
   useEffect(() => {
-    if (activeTab === 'orders' && orders.length === 0 && !loadingOrders) {
+    if (activeTab === 'orders' && !ordersLoaded && !loadingOrders) {
       setLoadingOrders(true)
       const supabase = createClient()
       supabase
@@ -543,12 +546,13 @@ function MemberDetailModal({
         .then(({ data }) => {
           setOrders((data as unknown as Order[]) || [])
           setLoadingOrders(false)
+          setOrdersLoaded(true)
         })
     }
-  }, [activeTab, member.id, orders.length, loadingOrders])
+  }, [activeTab, member.id, ordersLoaded, loadingOrders])
 
   useEffect(() => {
-    if (activeTab === 'downloads' && downloads.length === 0 && !loadingDownloads) {
+    if (activeTab === 'downloads' && !downloadsLoaded && !loadingDownloads) {
       setLoadingDownloads(true)
       const supabase = createClient()
       supabase
@@ -559,12 +563,13 @@ function MemberDetailModal({
         .then(({ data }) => {
           setDownloads((data as unknown as DownloadLog[]) || [])
           setLoadingDownloads(false)
+          setDownloadsLoaded(true)
         })
     }
-  }, [activeTab, member.id, downloads.length, loadingDownloads])
+  }, [activeTab, member.id, downloadsLoaded, loadingDownloads])
 
   useEffect(() => {
-    if (activeTab === 'consulting' && consulting.length === 0 && !loadingConsulting) {
+    if (activeTab === 'consulting' && !consultingLoaded && !loadingConsulting) {
       setLoadingConsulting(true)
       const supabase = createClient()
       supabase
@@ -575,9 +580,10 @@ function MemberDetailModal({
         .then(({ data }) => {
           setConsulting((data as ConsultingRequest[]) || [])
           setLoadingConsulting(false)
+          setConsultingLoaded(true)
         })
     }
-  }, [activeTab, member.id, consulting.length, loadingConsulting])
+  }, [activeTab, member.id, consultingLoaded, loadingConsulting])
 
   const handleRoleToggle = async () => {
     setRoleLoading(true)
