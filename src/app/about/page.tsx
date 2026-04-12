@@ -198,18 +198,6 @@ export default function AboutPage() {
                 '카드사 웹접근성 사업',
               ],
             },
-            {
-              icon: '🚀',
-              title: '스타트업 · 신사업',
-              color: 'from-teal-500 to-teal-600',
-              items: [
-                '스마트워치 기반 AI 헬스케어 서비스 창업 → EXIT (사업 매각)',
-                '월정액 스마트팩토리 구독 서비스 론칭',
-                '중대재해처벌법 대응 밀폐공간 안전 플랫폼 론칭',
-                'IoT DIY Platform 구축 (구독 서비스)',
-                '정부기관 IoT 지원사업 기획 및 운영',
-              ],
-            },
           ].map((category) => (
             <div
               key={category.title}
