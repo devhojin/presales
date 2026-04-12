@@ -248,7 +248,6 @@ export default function AdminBriefPage() {
               <thead className="bg-muted border-b border-border">
                 <tr>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">이메일</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">이름</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">상태</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">가입 경로</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground">가입일</th>
@@ -259,7 +258,7 @@ export default function AdminBriefPage() {
               <tbody className="divide-y divide-gray-100">
                 {subscribers.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground">
+                    <td colSpan={6} className="px-4 py-12 text-center text-muted-foreground">
                       구독자가 없습니다
                     </td>
                   </tr>
@@ -267,7 +266,6 @@ export default function AdminBriefPage() {
                   subscribers.map((sub) => (
                     <tr key={sub.id} className="hover:bg-muted/50 transition-colors">
                       <td className="px-4 py-3 font-medium text-foreground">{sub.email}</td>
-                      <td className="px-4 py-3 text-muted-foreground">{sub.name || '-'}</td>
                       <td className="px-4 py-3">
                         <button
                           onClick={() => handleToggleStatus(sub)}
