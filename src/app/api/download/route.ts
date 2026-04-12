@@ -186,17 +186,6 @@ export async function POST(request: NextRequest) {
     .update({ download_count: logCount ?? (product.download_count || 0) + 1 })
     .eq('id', productId)
 
-  // 9. 서명 URL 반환 (디버그 플래그 포함)
-  const isSigned = downloadUrl.includes('/storage/v1/object/sign/')
-  return NextResponse.json({
-    url: downloadUrl,
-    signed: isSigned,
-    fileName: downloadFileName,
-    debug: {
-      supabaseUrl,
-      fileUrlStart: file.file_url.slice(0, 80),
-      prefix: storagePublicPrefix,
-      startsWithPrefix: file.file_url.startsWith(storagePublicPrefix),
-    },
-  })
+  // 9. 서명 URL 반환
+  return NextResponse.json({ url: downloadUrl })
 }
