@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, ArrowLeft, ChevronLeft, ChevronRight, Loader2, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, ArrowLeft, ChevronLeft, ChevronRight, Loader2, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
 type NavItem = { href: string; icon: typeof LayoutDashboard; label: string } | { divider: true; label: string }
@@ -23,6 +23,7 @@ const adminNav: NavItem[] = [
 
   // 마케팅
   { divider: true, label: '마케팅' },
+  { href: '/admin/brief', icon: Mail, label: '모닝 브리프' },
   { href: '/admin/coupons', icon: Tag, label: '쿠폰 관리' },
   { href: '/admin/discount-matches', icon: Link2, label: '할인 매칭' },
   { href: '/admin/reviews', icon: Star, label: '리뷰 관리' },
