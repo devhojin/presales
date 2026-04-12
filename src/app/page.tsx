@@ -236,7 +236,7 @@ export default function Home() {
         <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-emerald-500/8 rounded-full blur-[120px]" />
         <div className="absolute bottom-[-30%] left-[-10%] w-[500px] h-[500px] bg-emerald-600/5 rounded-full blur-[100px]" />
 
-        <div className="max-w-[1400px] mx-auto px-4 md:px-8 w-full py-20 md:py-0">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 w-full py-20 md:py-0 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
             {/* Left: Content */}
             <div className="space-y-8">
