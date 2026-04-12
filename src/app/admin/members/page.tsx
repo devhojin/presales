@@ -491,18 +491,95 @@ function RowActionsMenu({
 
 type ModalTab = 'info' | 'orders' | 'downloads' | 'consulting' | 'reviews'
 
+function MemberInfoEdit({ member, onUpdated }: { member: Profile; onUpdated?: (updated: Profile) => void }) {
+  const [editing, setEditing] = useState(false)
+  const [form, setForm] = useState({ name: member.name || '', email: member.email, phone: member.phone || '', company: member.company || '' })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSave = async () => {
+    setSaving(true)
+    setError('')
+    try {
+      const res = await fetch(`/api/admin/members/${member.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json()
+      if (!res.ok) { setError(data.error || '수정 실패'); return }
+      setEditing(false)
+      onUpdated?.(data.data as Profile)
+    } catch { setError('네트워크 오류') }
+    finally { setSaving(false) }
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">회원 기본정보</h3>
+        {!editing ? (
+          <button onClick={() => setEditing(true)} className="cursor-pointer text-xs text-primary hover:underline">수정</button>
+        ) : (
+          <div className="flex gap-2">
+            <button onClick={() => setEditing(false)} className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">취소</button>
+            <button onClick={handleSave} disabled={saving} className="cursor-pointer text-xs text-white bg-primary px-3 py-1 rounded-lg disabled:opacity-50">{saving ? '저장중...' : '저장'}</button>
+          </div>
+        )}
+      </div>
+      {error && <p className="text-xs text-red-500 mb-2">{error}</p>}
+      <div className="bg-muted rounded-xl p-4 space-y-0 divide-y divide-gray-200/60">
+        {editing ? (
+          <>
+            <div className="flex items-center gap-3 py-3">
+              <User className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground w-16 shrink-0">이름</span>
+              <input value={form.name} onChange={(e) => setForm(f => ({...f, name: e.target.value}))} className="flex-1 text-sm bg-white border border-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-primary" />
+            </div>
+            <div className="flex items-center gap-3 py-3">
+              <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground w-16 shrink-0">이메일</span>
+              <input value={form.email} onChange={(e) => setForm(f => ({...f, email: e.target.value}))} className="flex-1 text-sm bg-white border border-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-primary" />
+            </div>
+            <div className="flex items-center gap-3 py-3">
+              <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground w-16 shrink-0">연락처</span>
+              <input value={form.phone} onChange={(e) => setForm(f => ({...f, phone: e.target.value}))} className="flex-1 text-sm bg-white border border-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-primary" placeholder="010-0000-0000" />
+            </div>
+            <div className="flex items-center gap-3 py-3">
+              <Building className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="text-xs text-muted-foreground w-16 shrink-0">회사</span>
+              <input value={form.company} onChange={(e) => setForm(f => ({...f, company: e.target.value}))} className="flex-1 text-sm bg-white border border-border rounded-lg px-3 py-1.5 focus:outline-none focus:border-primary" />
+            </div>
+          </>
+        ) : (
+          <>
+            <InfoRow icon={<User className="w-4 h-4" />} label="이름" value={member.name || '-'} />
+            <InfoRow icon={<Mail className="w-4 h-4" />} label="이메일" value={member.email} />
+            <InfoRow icon={<Phone className="w-4 h-4" />} label="연락처" value={member.phone || '-'} />
+            <InfoRow icon={<Building className="w-4 h-4" />} label="회사" value={member.company || '-'} />
+          </>
+        )}
+        <InfoRow icon={<Calendar className="w-4 h-4" />} label="가입일" value={formatDateTime(member.created_at)} />
+      </div>
+    </div>
+  )
+}
+
 function MemberDetailModal({
   member,
   onClose,
   onRoleChange,
   onMemoSave,
   defaultTab = 'info',
+  onMemberUpdated,
 }: {
   member: Profile
   onClose: () => void
   onRoleChange: (id: string, newRole: string) => Promise<void>
   onMemoSave: (id: string, memo: string) => Promise<void>
   defaultTab?: ModalTab
+  onMemberUpdated?: (updated: Profile) => void
 }) {
   const [activeTab, setActiveTab] = useState<ModalTab>(defaultTab)
   const [orders, setOrders] = useState<Order[]>([])
@@ -702,22 +779,8 @@ function MemberDetailModal({
           {/* 회원정보 탭 */}
           {activeTab === 'info' && (
             <div className="space-y-6">
-              <div>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                  회원 기본정보
-                </h3>
-                <div className="bg-muted rounded-xl p-4 space-y-0 divide-y divide-gray-200/60">
-                  <InfoRow icon={<User className="w-4 h-4" />} label="이름" value={member.name || '-'} />
-                  <InfoRow icon={<Mail className="w-4 h-4" />} label="이메일" value={member.email} />
-                  <InfoRow icon={<Phone className="w-4 h-4" />} label="연락처" value={member.phone || '-'} />
-                  <InfoRow icon={<Building className="w-4 h-4" />} label="회사" value={member.company || '-'} />
-                  <InfoRow
-                    icon={<Calendar className="w-4 h-4" />}
-                    label="가입일"
-                    value={formatDateTime(member.created_at)}
-                  />
-                </div>
-              </div>
+              <MemberInfoEdit member={member} onUpdated={(updated) => onMemberUpdated?.(updated)} />
+
 
               {/* 권한 변경 */}
               <div>
@@ -1553,6 +1616,10 @@ export default function AdminMembers() {
           onRoleChange={handleRoleChange}
           onMemoSave={handleMemoSave}
           defaultTab={selectedMemberTab}
+          onMemberUpdated={(updated) => {
+            setMembers((prev) => prev.map((m) => m.id === updated.id ? updated : m))
+            setSelectedMember(updated)
+          }}
         />
       )}
 
