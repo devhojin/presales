@@ -109,6 +109,7 @@ export default function UsPage() {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: revealStyle }} />
+      <div className="overflow-x-hidden">
 
       {/* ─── ① HERO: 입찰의 밤 ─── */}
       <section className="relative min-h-[100dvh] flex flex-col items-center justify-center bg-[#0a0a0a] text-white overflow-hidden px-6">
@@ -391,6 +392,7 @@ export default function UsPage() {
           </Reveal>
         </div>
       </section>
+      </div>
     </>
   )
 }
