@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { usePathname } from 'next/navigation'
 import {
   MessageCircle, X, Send, Paperclip, Loader2, FileText, Download,
   Image as ImageIcon, AlertTriangle, CreditCard, ChevronDown,
@@ -31,7 +32,11 @@ function formatAmount(n: number) {
 }
 
 export function ChatWidget() {
+  const pathname = usePathname()
   const { isOpen, toggle, close, roomId, setRoomId } = useChatWidgetStore()
+
+  // 관리자 페이지에서는 채팅 위젯 숨김
+  if (pathname?.startsWith('/admin')) return null
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [guestId, setGuestId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
