@@ -1509,6 +1509,29 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 {productFiles.length === 0 && !fileUploading && (
                   <p className="text-center text-xs text-muted-foreground mt-3">등록된 파일이 없습니다</p>
                 )}
+
+                {/* 미리보기 PDF 미등록 경고 */}
+                {productFiles.length > 0 && !form.preview_pdf_url && (() => {
+                  const hasPdfFile = productFiles.some((f: { file_name: string }) => f.file_name?.toLowerCase().endsWith('.pdf'))
+                  const fileExts = productFiles.map((f: { file_name: string }) => f.file_name?.split('.').pop()?.toUpperCase()).join(', ')
+                  return (
+                    <div className="mt-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-semibold text-amber-800">미리보기 PDF가 등록되지 않았습니다</p>
+                          <p className="text-xs text-amber-700 mt-1">
+                            등록된 파일: {fileExts}
+                            {!hasPdfFile && ' — PDF가 아닌 파일은 미리보기가 지원되지 않습니다.'}
+                          </p>
+                          <p className="text-xs text-amber-600 mt-1">
+                            위의 📖 PDF 미리보기 섹션에서 미리보기용 PDF를 업로드하거나, 안내 문구를 입력해주세요.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
               </>
             )}
           </section>
