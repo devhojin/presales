@@ -311,12 +311,10 @@ export default function StorePage() {
       }
       if (searchQuery) {
         const q = searchQuery.toLowerCase()
-        const catNames = getCategoryNames(p)
         return (
           p.title.toLowerCase().includes(q) ||
           p.tags?.some((t) => t.toLowerCase().includes(q)) ||
-          catNames.some((n) => n.toLowerCase().includes(q)) ||
-          (p.format || '').toLowerCase().includes(q)
+          (p.description || '').toLowerCase().includes(q)
         )
       }
       return true
