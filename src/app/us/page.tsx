@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   ArrowRight, ArrowDown, ShieldCheck, Download, RotateCcw, MessageCircle,
   Megaphone, Rss, Mail, Users, FileText, Pen, BarChart3, Star,
 } from 'lucide-react'
 import { useScrollReveal, useCountUp } from '@/hooks/useScrollReveal'
+import { createClient } from '@/lib/supabase'
 
 /* ============================================================
    CSS-in-JS: 스크롤 애니메이션 스타일 (Tailwind 보조)
@@ -58,6 +60,10 @@ const revealStyle = `
     0%,100%{opacity:0.06;transform:scale(1)}
     50%{opacity:0.12;transform:scale(1.05)}
   }
+  @keyframes marquee-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
   @media (prefers-reduced-motion: reduce) {
     [data-reveal],[data-reveal-left],[data-reveal-right],[data-reveal-scale] {
       opacity: 1 !important;
@@ -100,10 +106,25 @@ function CountUp({ target, suffix = '' }: { target: number; suffix?: string }) {
    ============================================================ */
 export default function UsPage() {
   const [heroReady, setHeroReady] = useState(false)
+  const [productThumbs, setProductThumbs] = useState<{ id: string; title: string; thumbnail_url: string }[]>([])
 
   useEffect(() => {
     const t = setTimeout(() => setHeroReady(true), 300)
     return () => clearTimeout(t)
+  }, [])
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('products')
+      .select('id, title, thumbnail_url')
+      .eq('is_published', true)
+      .not('thumbnail_url', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(20)
+      .then(({ data }) => {
+        if (data) setProductThumbs(data.filter((p): p is { id: string; title: string; thumbnail_url: string } => !!p.thumbnail_url))
+      })
   }, [])
 
   return (
@@ -203,24 +224,50 @@ export default function UsPage() {
             <h2 className="text-2xl md:text-4xl font-bold tracking-tight">낙찰의 공식을 템플릿으로 만들었습니다</h2>
           </Reveal>
 
-          {[
-            { num: '01', title: '실제 낙찰된 제안서', body: 'ITS, 스마트시티, 스마트팩토리, AI, 금융SI — 실제 나라장터에서 선정된 원본 구성을 담았습니다. 감이 아닌 실적으로 검증된 제안서.', dir: 'left' as const },
-            { num: '02', title: '열어서 바로 편집', body: 'PPT, PDF 원본 파일 그대로 제공. 다운로드 후 우리 회사 내용만 채우면 전문가 수준의 제안서가 완성됩니다.', dir: 'right' as const },
-            { num: '03', title: '분야별 맞춤 구성', body: '발주처가 기대하는 목차와 흐름을 이미 갖춘 상태에서 시작하세요. 정보시스템, 인프라, 컨설팅, 연구용역.', dir: 'left' as const },
-          ].map((row, i) => (
-            <div key={row.num} className={`flex flex-col ${i % 2 === 1 ? 'md:flex-row-reverse' : 'md:flex-row'} items-center gap-8 md:gap-16 mb-20 last:mb-0`}>
-              <Reveal type={row.dir} className="flex-1">
-                <p className="text-6xl font-bold text-emerald-500/20 mb-4">{row.num}</p>
-                <h3 className="text-xl md:text-2xl font-bold mb-4">{row.title}</h3>
-                <p className="text-zinc-400 leading-relaxed">{row.body}</p>
-              </Reveal>
-              <Reveal type={row.dir === 'left' ? 'right' : 'left'} delay={200} className="flex-1">
-                <div className="w-full aspect-video rounded-2xl bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-white/[0.08] flex items-center justify-center">
-                  <FileText className="w-16 h-16 text-emerald-500/30" />
-                </div>
-              </Reveal>
-            </div>
-          ))}
+          {/* 01 — 실제 낙찰된 제안서 */}
+          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-16 mb-20">
+            <Reveal type="left" className="flex-1">
+              <p className="text-6xl font-bold text-emerald-500/20 mb-4">01</p>
+              <h3 className="text-xl md:text-2xl font-bold mb-4">실제 낙찰된 제안서</h3>
+              <p className="text-zinc-400 leading-relaxed">ITS, 스마트시티, 스마트팩토리, AI, 금융SI — 실제 나라장터에서 선정된 원본 구성을 담았습니다. 감이 아닌 실적으로 검증된 제안서.</p>
+            </Reveal>
+            <Reveal type="right" delay={200} className="flex-1">
+              <div className="w-full rounded-2xl border border-white/[0.08] overflow-hidden shadow-[0_0_40px_rgba(16,185,129,0.08)]">
+                <Image src="/images/us/proposal-detail.jpg" alt="실제 낙찰된 제안서 내부 페이지" width={800} height={450} className="w-full h-auto" />
+              </div>
+            </Reveal>
+          </div>
+
+          {/* 02 — 열어서 바로 편집 */}
+          <div className="flex flex-col md:flex-row-reverse items-center gap-8 md:gap-16 mb-20">
+            <Reveal type="right" className="flex-1">
+              <p className="text-6xl font-bold text-emerald-500/20 mb-4">02</p>
+              <h3 className="text-xl md:text-2xl font-bold mb-4">열어서 바로 편집</h3>
+              <p className="text-zinc-400 leading-relaxed">PPT, PDF 원본 파일 그대로 제공. 다운로드 후 우리 회사 내용만 채우면 전문가 수준의 제안서가 완성됩니다.</p>
+            </Reveal>
+            <Reveal type="left" delay={200} className="flex-1">
+              <div className="w-full rounded-2xl border border-white/[0.08] overflow-hidden shadow-[0_0_40px_rgba(16,185,129,0.08)]">
+                <Image src="/images/us/proposal-slides.jpg" alt="PPT 슬라이드 전체 보기" width={800} height={450} className="w-full h-auto" />
+              </div>
+            </Reveal>
+          </div>
+
+          {/* 03 — 분야별 맞춤 구성 (2x2 그리드) */}
+          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-16">
+            <Reveal type="left" className="flex-1">
+              <p className="text-6xl font-bold text-emerald-500/20 mb-4">03</p>
+              <h3 className="text-xl md:text-2xl font-bold mb-4">분야별 맞춤 구성</h3>
+              <p className="text-zinc-400 leading-relaxed">발주처가 기대하는 목차와 흐름을 이미 갖춘 상태에서 시작하세요. 정보시스템, 인프라, 컨설팅, 연구용역.</p>
+            </Reveal>
+            <Reveal type="right" delay={200} className="flex-1">
+              <div className="grid grid-cols-2 gap-2 rounded-2xl border border-white/[0.08] overflow-hidden p-2 bg-white/[0.02] shadow-[0_0_40px_rgba(16,185,129,0.08)]">
+                <Image src="/images/us/toc-1.jpg" alt="제안서 목차 1" width={400} height={560} className="rounded-lg w-full h-auto" />
+                <Image src="/images/us/toc-2.jpg" alt="제안서 목차 2" width={400} height={560} className="rounded-lg w-full h-auto" />
+                <Image src="/images/us/toc-3.jpg" alt="제안서 목차 3" width={400} height={560} className="rounded-lg w-full h-auto" />
+                <Image src="/images/us/toc-4.jpg" alt="제안서 목차 4" width={400} height={560} className="rounded-lg w-full h-auto" />
+              </div>
+            </Reveal>
+          </div>
         </div>
       </section>
 
@@ -321,6 +368,32 @@ export default function UsPage() {
               <ArrowRight className="w-5 h-5" />
             </Link>
           </Reveal>
+
+          {/* 상품 미리보기 마퀴 */}
+          {productThumbs.length > 0 && (
+            <Reveal delay={400} className="mt-16">
+              <div className="relative overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}>
+                <div
+                  className="flex gap-4 w-max"
+                  style={{ animation: 'marquee-scroll 30s linear infinite' }}
+                >
+                  {[...productThumbs, ...productThumbs].map((p, i) => (
+                    <div key={`${p.id}-${i}`} className="flex-shrink-0 w-40 md:w-48">
+                      <div className="rounded-xl border border-white/[0.08] overflow-hidden bg-white/[0.03] hover:border-emerald-500/30 transition-colors">
+                        <Image
+                          src={p.thumbnail_url}
+                          alt={p.title}
+                          width={240}
+                          height={320}
+                          className="w-full h-auto"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Reveal>
+          )}
         </div>
       </section>
 
