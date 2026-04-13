@@ -21,12 +21,6 @@ function formatPrice(price: number) {
   return new Intl.NumberFormat('ko-KR').format(price) + '원'
 }
 
-// Detect if file is a PDF by URL
-function isPdfUrl(url: string): boolean {
-  const lower = url.toLowerCase()
-  return lower.includes('.pdf') || lower.includes('/pdf')
-}
-
 export function PdfPreviewModal({
   isOpen,
   onClose,
@@ -43,10 +37,7 @@ export function PdfPreviewModal({
   const [pdfDoc, setPdfDoc] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [iframeLoaded, setIframeLoaded] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-
-  const isPdf = isPdfUrl(pdfUrl)
 
   // Calculate clear/blur pages
   const clearPages = previewClearPages > 0
@@ -57,9 +48,9 @@ export function PdfPreviewModal({
   const isBlurPage = currentPage > clearPages
   const remainingPages = totalPages - totalPreviewPages
 
-  // Load PDF (only for PDF files)
+  // Load PDF
   useEffect(() => {
-    if (!isOpen || !pdfUrl || !isPdf) return
+    if (!isOpen || !pdfUrl) return
 
     setLoading(true)
     setError('')
@@ -81,14 +72,7 @@ export function PdfPreviewModal({
     }
 
     loadPdf()
-  }, [isOpen, pdfUrl, isPdf])
-
-  // For non-PDF files, use Google Docs Viewer
-  useEffect(() => {
-    if (!isOpen || !pdfUrl || isPdf) return
-    setLoading(true)
-    setIframeLoaded(false)
-  }, [isOpen, pdfUrl, isPdf])
+  }, [isOpen, pdfUrl])
 
   // Render page
   useEffect(() => {
@@ -166,27 +150,9 @@ export function PdfPreviewModal({
           </button>
         </div>
 
-        {/* Content */}
+        {/* PDF Content */}
         <div className="flex-1 overflow-auto bg-gray-100 relative">
-          {!isPdf ? (
-            /* Non-PDF: Google Docs Viewer iframe */
-            <div className="relative w-full h-[75vh]">
-              {!iframeLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-10 h-10 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                    <p className="text-sm text-gray-500">문서 로딩 중...</p>
-                  </div>
-                </div>
-              )}
-              <iframe
-                src={`https://docs.google.com/gview?url=${encodeURIComponent(pdfUrl)}&embedded=true`}
-                className="w-full h-full border-0"
-                title={`${productTitle} 미리보기`}
-                onLoad={() => { setIframeLoaded(true); setLoading(false) }}
-              />
-            </div>
-          ) : loading ? (
+          {loading ? (
             <div className="flex items-center justify-center h-96">
               <div className="text-center">
                 <div className="w-10 h-10 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
@@ -261,36 +227,28 @@ export function PdfPreviewModal({
 
         {/* Footer */}
         <div className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-3 gap-2 border-t border-gray-200 bg-gray-50">
-          {isPdf ? (
-            <>
-              <p className="text-sm text-gray-500">
-                페이지 {currentPage} / {totalPreviewPages}{' '}
-                <span className="text-xs text-gray-400">(미리보기)</span>
-              </p>
-              <div className="flex items-center gap-1.5">
-                {Array.from({ length: totalPreviewPages }).map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setCurrentPage(i + 1)}
-                    className={`w-3 h-3 sm:w-2 sm:h-2 rounded-full transition-colors ${
-                      currentPage === i + 1
-                        ? 'bg-blue-500'
-                        : i < clearPages
-                          ? 'bg-gray-300 hover:bg-gray-400'
-                          : 'bg-gray-200'
-                    }`}
-                  />
-                ))}
-              </div>
-              <p className="hidden sm:block text-xs text-gray-400">
-                ← → 키로 넘기기 · ESC로 닫기
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-gray-500">
-              문서 뷰어로 미리보기 · <span className="text-xs text-gray-400">ESC로 닫기</span>
-            </p>
-          )}
+          <p className="text-sm text-gray-500">
+            페이지 {currentPage} / {totalPreviewPages}{' '}
+            <span className="text-xs text-gray-400">(미리보기)</span>
+          </p>
+          <div className="flex items-center gap-1.5">
+            {Array.from({ length: totalPreviewPages }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`w-3 h-3 sm:w-2 sm:h-2 rounded-full transition-colors ${
+                  currentPage === i + 1
+                    ? 'bg-blue-500'
+                    : i < clearPages
+                      ? 'bg-gray-300 hover:bg-gray-400'
+                      : 'bg-gray-200'
+                }`}
+              />
+            ))}
+          </div>
+          <p className="hidden sm:block text-xs text-gray-400">
+            ← → 키로 넘기기 · ESC로 닫기
+          </p>
         </div>
       </div>
     </div>

@@ -48,6 +48,7 @@ interface ProductForm {
   preview_pdf_url: string
   preview_clear_pages: string
   preview_blur_pages: string
+  preview_note: string
   price: number
   original_price: number
   category_id: string
@@ -86,6 +87,7 @@ const EMPTY_FORM: ProductForm = {
   preview_pdf_url: '',
   preview_clear_pages: '0',
   preview_blur_pages: '2',
+  preview_note: '',
   price: 0,
   original_price: 0,
   category_id: '',
@@ -403,6 +405,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           preview_pdf_url: p.preview_pdf_url || '',
           preview_clear_pages: String(p.preview_clear_pages || 0),
           preview_blur_pages: String(p.preview_blur_pages || 2),
+          preview_note: p.preview_note || '',
           price: p.price || 0,
           original_price: p.original_price || 0,
           category_id: String(p.category_id || ''),
@@ -469,6 +472,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         preview_pdf_url: form.preview_pdf_url || null,
         preview_clear_pages: parseInt(form.preview_clear_pages) || 0,
         preview_blur_pages: parseInt(form.preview_blur_pages) || 2,
+        preview_note: form.preview_note || null,
         price: form.is_free ? 0 : form.price,
         original_price: form.is_free ? 0 : form.original_price,
         category_id: form.category_ids.length > 0 ? form.category_ids[0] : (form.category_id ? parseInt(form.category_id) : null),
@@ -1116,6 +1120,17 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   />
                   <p className="text-xs text-muted-foreground mt-1">흐리게 보여줄 페이지 수</p>
                 </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">미리보기 안내 문구 (PDF 없을 때 표시)</label>
+                <input
+                  type="text"
+                  value={form.preview_note}
+                  onChange={e => updateField('preview_note', e.target.value)}
+                  placeholder="예: 무료 다운로드 후 바로 사용 가능합니다"
+                  className={inputClass}
+                />
+                <p className="text-xs text-muted-foreground mt-1">PDF 미리보기가 없을 때 상품 상세에 표시될 안내 문구</p>
               </div>
             </div>
           </section>

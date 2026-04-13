@@ -7,6 +7,7 @@ export interface DbProduct {
   preview_pdf_url: string | null
   preview_clear_pages: number
   preview_blur_pages: number
+  preview_note: string | null
   price: number
   original_price: number
   category_id: number | null

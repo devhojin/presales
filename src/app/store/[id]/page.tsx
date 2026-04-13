@@ -286,7 +286,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </div>
 
           {/* PDF Preview Button */}
-          {product.preview_pdf_url && (
+          {product.preview_pdf_url ? (
             <button
               onClick={() => setShowPdfPreview(true)}
               className="w-full bg-card border border-border/50 rounded-2xl py-3 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-center justify-center gap-2 text-sm font-medium text-foreground"
@@ -294,6 +294,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <BookOpen className="w-4 h-4" />
               문서 미리보기
             </button>
+          ) : (product.preview_note || product.format) && (
+            <div className="w-full bg-card border border-border/50 rounded-2xl py-3 px-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                {product.preview_note || (product.is_free ? '무료 다운로드 후 바로 사용 가능합니다' : '구매 후 원본 파일을 다운로드할 수 있습니다')}
+              </p>
+              <p className="text-xs text-muted-foreground/60 mt-1">파일 형식: {product.format}</p>
+            </div>
           )}
         </div>
 
