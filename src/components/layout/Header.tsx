@@ -144,7 +144,7 @@ export function Header() {
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-2">
             <CartDrawer />
-            {authLoading ? (
+            {authLoading || (user && !profile) ? (
               <div className="w-20 h-8" />
             ) : user ? (
               <div className="relative" ref={profileRef}>
