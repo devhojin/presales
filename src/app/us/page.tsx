@@ -459,7 +459,7 @@ export default function UsPage() {
             <div className="flex flex-wrap items-center justify-center gap-6 text-white/60 text-xs">
               <span className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4" /> 안전한 결제</span>
               <span className="flex items-center gap-1.5"><Download className="w-4 h-4" /> 즉시 다운로드</span>
-              <span className="flex items-center gap-1.5"><RotateCcw className="w-4 h-4" /> 7일 환불 보장</span>
+              <span className="flex items-center gap-1.5"><RotateCcw className="w-4 h-4" /> 실전 검증 템플릿</span>
               <span className="flex items-center gap-1.5"><MessageCircle className="w-4 h-4" /> 1:1 문의 지원</span>
             </div>
           </Reveal>
