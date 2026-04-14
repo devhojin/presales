@@ -40,10 +40,10 @@ WHERE fb.post_id = cp.id
 UPDATE announcement_bookmarks ab
 SET
   title = a.title,
-  excerpt = LEFT(COALESCE(a.content, ''), 500),
-  url = a.external_url,
+  excerpt = LEFT(COALESCE(a.description, ''), 500),
+  url = a.source_url,
   source = a.source,
-  source_name = a.source_name,
+  source_name = a.source,
   end_date = a.end_date,
   snapshot_at = COALESCE(ab.snapshot_at, ab.created_at, NOW())
 FROM announcements a

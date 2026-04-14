@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
   // 스냅샷 저장 — 원본이 삭제돼도 사용자 북마크는 유지
   const { data: ann } = await supabase
     .from('announcements')
-    .select('title, content, external_url, source, source_name, end_date')
+    .select('title, description, source_url, source, end_date')
     .eq('id', announcement_id)
     .single()
 
@@ -77,10 +77,10 @@ export async function POST(request: NextRequest) {
     user_id: user.id,
     announcement_id,
     title: ann?.title ?? null,
-    excerpt: ann?.content ? String(ann.content).slice(0, 500) : null,
-    url: ann?.external_url ?? null,
+    excerpt: ann?.description ? String(ann.description).slice(0, 500) : null,
+    url: ann?.source_url ?? null,
     source: ann?.source ?? null,
-    source_name: ann?.source_name ?? null,
+    source_name: ann?.source ?? null,
     end_date: ann?.end_date ?? null,
     snapshot_at: new Date().toISOString(),
   })
