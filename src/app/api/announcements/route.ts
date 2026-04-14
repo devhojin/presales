@@ -42,14 +42,27 @@ export async function GET(request: NextRequest) {
     }
 
     let idFilter: { op: 'in' | 'not_in'; ids: string[] } | null = null
+    type AnnBookmarkSnap = {
+      announcement_id: string
+      title: string | null
+      excerpt: string | null
+      url: string | null
+      source: string | null
+      source_name: string | null
+      end_date: string | null
+      snapshot_at: string | null
+      created_at: string | null
+    }
+    let bookmarkSnaps: AnnBookmarkSnap[] = []
     if (userId && (tab === 'unread' || tab === 'read' || tab === 'bookmarks')) {
       if (tab === 'bookmarks') {
         const { data } = await supabase
           .from('announcement_bookmarks')
-          .select('announcement_id')
+          .select('announcement_id, title, excerpt, url, source, source_name, end_date, snapshot_at, created_at')
           .eq('user_id', userId)
           .limit(100000)
-        idFilter = { op: 'in', ids: (data || []).map(r => r.announcement_id) }
+        bookmarkSnaps = (data as AnnBookmarkSnap[]) || []
+        idFilter = { op: 'in', ids: bookmarkSnaps.map(r => r.announcement_id) }
       } else {
         const { data } = await supabase
           .from('announcement_reads')
@@ -100,9 +113,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: queryError.message }, { status: 500 })
     }
 
+    let finalAnns: unknown[] = announcements || []
+
+    if (tab === 'bookmarks' && bookmarkSnaps.length > 0) {
+      const existingIds = new Set((announcements || []).map((a: { id: string }) => a.id))
+      const missing = bookmarkSnaps.filter(s => !existingIds.has(s.announcement_id) && s.title)
+      const restored = missing.map(s => ({
+        id: s.announcement_id,
+        title: s.title,
+        description: s.excerpt,
+        source_url: s.url,
+        source: s.source,
+        source_name: s.source_name,
+        end_date: s.end_date,
+        created_at: s.snapshot_at || s.created_at,
+        is_published: true,
+        status: 'active',
+        _deleted: true,
+      }))
+      finalAnns = [...finalAnns, ...restored]
+    }
+
     return NextResponse.json({
-      announcements: announcements || [],
-      total: total || 0,
+      announcements: finalAnns,
+      total: tab === 'bookmarks' ? bookmarkSnaps.length : total || 0,
       page,
       pageSize,
     })

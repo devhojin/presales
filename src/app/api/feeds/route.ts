@@ -40,6 +40,17 @@ export async function GET(request: NextRequest) {
 
     // tab 필터용 post_id 집합 계산
     let idFilter: { op: 'in' | 'not_in'; ids: string[] } | null = null
+    type BookmarkSnap = {
+      post_id: string
+      title: string | null
+      excerpt: string | null
+      url: string | null
+      source: string | null
+      source_name: string | null
+      snapshot_at: string | null
+      created_at: string | null
+    }
+    let bookmarkSnaps: BookmarkSnap[] = []
     if (userId && (tab === 'unread' || tab === 'read' || tab === 'bookmarks')) {
       const service = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -49,10 +60,11 @@ export async function GET(request: NextRequest) {
       if (tab === 'bookmarks') {
         const { data } = await service
           .from('feed_bookmarks')
-          .select('post_id')
+          .select('post_id, title, excerpt, url, source, source_name, snapshot_at, created_at')
           .eq('user_id', userId)
           .limit(100000)
-        idFilter = { op: 'in', ids: (data || []).map(r => r.post_id) }
+        bookmarkSnaps = (data as BookmarkSnap[]) || []
+        idFilter = { op: 'in', ids: bookmarkSnaps.map(r => r.post_id) }
       } else {
         const { data } = await service
           .from('feed_reads')
@@ -91,9 +103,34 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: queryError.message }, { status: 500 })
     }
 
+    let finalPosts: unknown[] = posts || []
+
+    // bookmarks 탭: 원본이 삭제된 항목은 스냅샷으로 복원 (B안)
+    if (tab === 'bookmarks' && bookmarkSnaps.length > 0) {
+      const existingIds = new Set((posts || []).map((p: { id: string }) => p.id))
+      const missing = bookmarkSnaps.filter(s => !existingIds.has(s.post_id) && s.title)
+      const restored = missing.map(s => ({
+        id: s.post_id,
+        title: s.title,
+        content: s.excerpt,
+        external_url: s.url,
+        source: s.source,
+        source_name: s.source_name,
+        created_at: s.snapshot_at || s.created_at,
+        is_published: true,
+        status: 'published',
+        _deleted: true, // UI에서 "원본 삭제됨" 배지 표시용
+      }))
+      finalPosts = [...finalPosts, ...restored].sort((a, b) => {
+        const ad = (a as { created_at?: string }).created_at ?? ''
+        const bd = (b as { created_at?: string }).created_at ?? ''
+        return bd.localeCompare(ad)
+      })
+    }
+
     return NextResponse.json({
-      posts: posts || [],
-      total: total || 0,
+      posts: finalPosts,
+      total: tab === 'bookmarks' ? bookmarkSnaps.length : total || 0,
       page,
       pageSize,
     })
