@@ -38,7 +38,7 @@ SELECT
     ELSE 'OK'
   END AS price_check
 FROM products
-WHERE is_active = true
+WHERE is_published = true
 ORDER BY price_check DESC, price DESC;
 
 -- 3) PPT 상품은 있는데 같은 주제의 PDF 상품이 없는 케이스 (업그레이드 대상 매핑 검증)
@@ -48,11 +48,11 @@ SELECT
   p_ppt.title AS ppt_title,
   p_ppt.price AS ppt_price
 FROM products p_ppt
-WHERE p_ppt.is_active = true
+WHERE p_ppt.is_published = true
   AND p_ppt.format ILIKE '%ppt%'
   AND NOT EXISTS (
     SELECT 1 FROM products p_pdf
-    WHERE p_pdf.is_active = true
+    WHERE p_pdf.is_published = true
       AND p_pdf.format ILIKE '%pdf%'
       AND similarity(p_pdf.title, p_ppt.title) > 0.4
   )
