@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 /**
  * Public API: Get published IT feeds
  * GET /api/feeds?page=1&pageSize=20&search=...&category=news

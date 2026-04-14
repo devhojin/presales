@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 /**
  * Public Announcements API
  * GET: List published announcements
@@ -30,8 +33,13 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact' })
       .eq('is_published', true)
 
-    if (status === 'active' || status === 'closed') {
-      query = query.eq('status', status)
+    // "active" = status='active' AND (end_date >= today OR end_date IS NULL)
+    // "closed" = status='closed' OR end_date < today
+    const today = new Date().toISOString().slice(0, 10)
+    if (status === 'active') {
+      query = query.eq('status', 'active').or(`end_date.gte.${today},end_date.is.null`)
+    } else if (status === 'closed') {
+      query = query.or(`status.eq.closed,end_date.lt.${today}`)
     }
 
     // Search filter (title, organization, description)

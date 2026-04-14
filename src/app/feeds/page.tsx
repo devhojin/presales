@@ -34,6 +34,13 @@ export default function FeedsPage() {
 
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(t)
+  }, [search])
+
   const [feeds, setFeeds] = useState<FeedItem[]>([])
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
@@ -71,7 +78,7 @@ export default function FeedsPage() {
         pageSize: String(PAGE_SIZE),
       })
       if (selectedCategory !== 'all') params.set('category', selectedCategory)
-      if (search.trim()) params.set('search', search.trim())
+      if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
 
       const res = await fetch(`/api/feeds?${params.toString()}`)
       if (!res.ok) {
@@ -88,7 +95,7 @@ export default function FeedsPage() {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [selectedCategory, search])
+  }, [selectedCategory, debouncedSearch])
 
   // Reload when filter/search changes
   useEffect(() => {

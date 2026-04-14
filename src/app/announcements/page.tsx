@@ -41,7 +41,14 @@ export default function AnnouncementsPage() {
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
+
+  // Debounce search input
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchQuery), 300)
+    return () => clearTimeout(t)
+  }, [searchQuery])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showDetail, setShowDetail] = useState(false) // mobile toggle
   const sentinelRef = useRef<HTMLDivElement | null>(null)
@@ -72,7 +79,8 @@ export default function AnnouncementsPage() {
         page: String(pageNum),
         pageSize: String(PAGE_SIZE),
       })
-      if (searchQuery.trim()) params.set('search', searchQuery.trim())
+      if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
+      if (filterStatus !== 'all') params.set('status', filterStatus)
 
       const res = await fetch(`/api/announcements?${params.toString()}`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -86,7 +94,7 @@ export default function AnnouncementsPage() {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [searchQuery])
+  }, [debouncedSearch, filterStatus])
 
   useEffect(() => {
     fetchPage(1, false)
@@ -147,32 +155,18 @@ export default function AnnouncementsPage() {
     })
   }, [announcements])
 
-  // Filter
+  // Filter (search/status are applied server-side; only read-tab filter remains client-side)
   const filteredAnnouncements = useMemo(() => {
+    if (!userId) return sortedAnnouncements
     return sortedAnnouncements.filter((ann) => {
-      if (filterStatus === 'active' && isExpired(ann)) return false
-      if (filterStatus === 'closed' && !isExpired(ann)) return false
-
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase()
-        if (!ann.title.toLowerCase().includes(q) && !(ann.organization || '').toLowerCase().includes(q)) {
-          return false
-        }
-      }
-
-      // Read tab filter (only for logged-in users) — uses initialReadSet (page-load snapshot)
-      if (userId) {
-        const wasReadOnLoad = initialReadSet.has(ann.id)
-        const isBookmarked = bookmarkedIds.has(ann.id)
-
-        if (readTab === 'unread' && wasReadOnLoad) return false
-        if (readTab === 'read' && !wasReadOnLoad) return false
-        if (readTab === 'bookmarks' && !isBookmarked) return false
-      }
-
+      const wasReadOnLoad = initialReadSet.has(ann.id)
+      const isBookmarked = bookmarkedIds.has(ann.id)
+      if (readTab === 'unread' && wasReadOnLoad) return false
+      if (readTab === 'read' && !wasReadOnLoad) return false
+      if (readTab === 'bookmarks' && !isBookmarked) return false
       return true
     })
-  }, [sortedAnnouncements, searchQuery, filterStatus, userId, initialReadSet, bookmarkedIds, readTab])
+  }, [sortedAnnouncements, userId, initialReadSet, bookmarkedIds, readTab])
 
   const selectedAnnouncement = useMemo(
     () => announcements.find(a => a.id === selectedId) || null,
@@ -230,26 +224,18 @@ export default function AnnouncementsPage() {
     }
   }, [userId, bookmarkedIds, addToast])
 
-  // Count for read tabs
+  // Count for read tabs (server already applied search/status filter)
   const tabCounts = useMemo(() => {
     if (!userId) return { unread: 0, read: 0, bookmarks: 0 }
     let unread = 0, read = 0, bookmarks = 0
     sortedAnnouncements.forEach(ann => {
-      // Apply status filter
-      if (filterStatus === 'active' && isExpired(ann)) return
-      if (filterStatus === 'closed' && !isExpired(ann)) return
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase()
-        if (!ann.title.toLowerCase().includes(q) && !(ann.organization || '').toLowerCase().includes(q)) return
-      }
-
       const wasReadOnLoad = initialReadSet.has(ann.id)
       if (wasReadOnLoad) read++
       else unread++
       if (bookmarkedIds.has(ann.id)) bookmarks++
     })
     return { unread, read, bookmarks }
-  }, [userId, sortedAnnouncements, initialReadSet, bookmarkedIds, filterStatus, searchQuery])
+  }, [userId, sortedAnnouncements, initialReadSet, bookmarkedIds])
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 md:px-8">
