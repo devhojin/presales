@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
         .eq('id', room_id)
         .single()
 
-      let senderInfo = ''
+      let senderInfo = '(식별 정보 없음)'
       if (senderType === 'guest' && roomInfo) {
         senderInfo = `비회원 · ${roomInfo.guest_name || '이름없음'}${roomInfo.guest_email ? ` (${roomInfo.guest_email})` : ''}`
       } else if (roomInfo?.user_id) {
