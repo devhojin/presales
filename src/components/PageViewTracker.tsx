@@ -23,6 +23,10 @@ export function PageViewTracker() {
     // Skip admin pages
     if (pathname.startsWith('/admin')) return
 
+    // 봇/크롤러 필터 — 방문자 집계에서 제외 (2026-04-14 추가)
+    const ua = navigator.userAgent || ''
+    if (/bot|crawler|spider|preview|headless|phantom|lighthouse|pagespeed|pingdom|gtmetrix|uptime/i.test(ua)) return
+
     const now = Date.now()
     // Debounce: same path within 5 seconds
     if (lastLog.current.path === pathname && now - lastLog.current.time < 5000) return
