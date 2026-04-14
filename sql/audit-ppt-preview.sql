@@ -12,15 +12,15 @@ SELECT
   p.price,
   p.format,
   p.preview_pdf_url,
-  (SELECT STRING_AGG(DISTINCT pf.file_type, ', ')
-     FROM product_files pf WHERE pf.product_id = p.id) AS actual_file_types
+  (SELECT STRING_AGG(pf.file_name, ', ')
+     FROM product_files pf WHERE pf.product_id = p.id) AS actual_files
 FROM products p
 WHERE (
     p.format ILIKE '%ppt%'
     OR EXISTS (
       SELECT 1 FROM product_files pf
       WHERE pf.product_id = p.id
-        AND (pf.file_type ILIKE '%ppt%' OR pf.file_name ILIKE '%.ppt%' OR pf.file_name ILIKE '%.pptx%')
+        AND (pf.file_name ILIKE '%.ppt' OR pf.file_name ILIKE '%.pptx')
     )
   )
   AND (p.preview_pdf_url IS NULL OR p.preview_pdf_url = '')
