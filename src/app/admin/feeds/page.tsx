@@ -297,15 +297,15 @@ export default function AdminFeedsPage() {
       ) : error ? (
         <div className="text-center py-12"><AlertCircle className="w-8 h-8 text-destructive mx-auto mb-2" /><p className="text-sm text-destructive">{error}</p></div>
       ) : (
-        <div className="flex gap-0 border border-border/50 rounded-2xl overflow-hidden bg-card h-[calc(100vh-220px)] min-h-[500px]">
-          {/* LEFT */}
-          <div className={`${showDetail ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-[38%] border-r border-border/50 overflow-hidden`}>
+        <div className="flex gap-0 border border-border/50 rounded-2xl bg-card items-start">
+          {/* LEFT (페이지와 함께 스크롤) */}
+          <div className={`${showDetail ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-[38%] border-r border-border/50 rounded-l-2xl overflow-hidden`}>
             <div className="px-4 py-2.5 border-b border-border/50 bg-muted/30 flex items-center gap-3">
               <input type="checkbox" checked={pagedFeeds.length > 0 && pagedFeeds.every(f => selectedIds.has(f.id))}
                 onChange={toggleSelectAll} className="w-4 h-4 rounded cursor-pointer" />
               <span className="text-xs text-muted-foreground">{totalItems}건</span>
             </div>
-            <div className="flex-1 overflow-y-auto divide-y divide-border/50">
+            <div className="flex-1 divide-y divide-border/50">
               {pagedFeeds.map(feed => {
                 const isActive = feed.id === selectedId
                 return (
@@ -340,8 +340,11 @@ export default function AdminFeedsPage() {
             )}
           </div>
 
-          {/* RIGHT */}
-          <div className={`${showDetail ? 'flex' : 'hidden lg:flex'} flex-col flex-1 overflow-hidden`}>
+          {/* RIGHT (sticky) */}
+          <div
+            className={`${showDetail ? 'flex' : 'hidden lg:flex'} flex-col flex-1 overflow-hidden sticky self-start rounded-r-2xl`}
+            style={{ top: '16px', height: 'calc(100vh - 40px)' }}
+          >
             {selectedFeed ? (
               <AdminFeedDetail feed={selectedFeed}
                 onTogglePublish={() => handleTogglePublish(selectedFeed.id, !selectedFeed.is_published)}
