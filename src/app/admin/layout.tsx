@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, ArrowLeft, ChevronLeft, ChevronRight, Loader2, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail } from 'lucide-react'
+import { usePathname } from 'next/navigation'
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, ArrowLeft, ChevronLeft, ChevronRight, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
 type NavItem = { href: string; icon: typeof LayoutDashboard; label: string } | { divider: true; label: string }
@@ -39,16 +39,12 @@ const adminNav: NavItem[] = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const router = useRouter()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [authChecked, setAuthChecked] = useState(false)
-  const [authorized, setAuthorized] = useState(false)
   const [badges, setBadges] = useState<Record<string, number>>({})
 
-  // 사이드바 뱃지 카운트 로드
+  // 사이드바 뱃지 카운트 로드 (middleware가 admin 권한 보장)
   useEffect(() => {
-    if (!authorized) return
     const supabase = createClient()
     async function loadBadges() {
       try {
@@ -86,7 +82,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     loadBadges()
     const interval = setInterval(loadBadges, 30000)
     return () => clearInterval(interval)
-  }, [authorized])
+  }, [])
 
   useEffect(() => {
     const saved = localStorage.getItem('admin-sidebar-collapsed')
@@ -96,40 +92,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     setMobileOpen(false)
   }, [pathname])
-
-  useEffect(() => {
-    async function checkAuth() {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.replace('/auth/login')
-        return
-      }
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-      if (profile?.role !== 'admin') {
-        router.replace('/')
-        return
-      }
-      setAuthorized(true)
-      setAuthChecked(true)
-    }
-    checkAuth()
-  }, [router])
-
-  if (!authChecked || !authorized) {
-    return (
-      <div className="min-h-[100dvh] flex items-center justify-center bg-background">
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <Loader2 className="w-5 h-5 animate-spin" />
-          <span className="text-sm">권한 확인 중...</span>
-        </div>
-      </div>
-    )
-  }
 
   const toggle = () => {
     const next = !collapsed
