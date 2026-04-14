@@ -56,6 +56,7 @@ function ConfirmModal({ type, count, onConfirm, onCancel }: {
 export default function AdminFeedsPage() {
   const supabase = useMemo(() => createClient(), [])
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [tab, setTab] = useState<PublishTab>('all')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [feeds, setFeeds] = useState<FeedItem[]>([])
@@ -70,6 +71,7 @@ export default function AdminFeedsPage() {
   const [modalType, setModalType] = useState<ModalType>(null)
   const [pageSize, setPageSize] = useState(50)
   const [currentPage, setCurrentPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
   const [tabCounts, setTabCounts] = useState({ all: 0, published: 0, unpublished: 0 })
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -77,32 +79,57 @@ export default function AdminFeedsPage() {
 
   const showToast = useCallback((msg: string) => setToastMsg(msg), [])
 
+  useEffect(() => {
+    const timer = setTimeout(() => { setDebouncedSearch(search); setCurrentPage(1) }, 400)
+    return () => clearTimeout(timer)
+  }, [search])
+
   const fetchFeeds = useCallback(async () => {
     setLoading(true); setError('')
     try {
-      let query = supabase.from('community_posts').select('*').order('created_at', { ascending: false })
+      let query = supabase.from('community_posts').select('*', { count: 'exact' })
       if (tab !== 'all') query = query.eq('is_published', tab === 'published')
       if (categoryFilter !== 'all') query = query.eq('category', categoryFilter)
-      if (search.trim()) query = query.ilike('title', `%${search.trim()}%`)
-      const { data, error: fetchError } = await query
+      if (debouncedSearch.trim()) query = query.ilike('title', `%${debouncedSearch.trim()}%`)
+
+      const offset = (currentPage - 1) * pageSize
+      const { data, error: fetchError, count } = await query
+        .order('created_at', { ascending: false })
+        .range(offset, offset + pageSize - 1)
       if (fetchError) throw fetchError
-      const items = (data || []) as FeedItem[]
-      setFeeds(items)
+      setFeeds((data || []) as FeedItem[])
+      setTotalCount(count || 0)
+
+      // 전체 탭 카운트는 필터 조건과 무관하게 별도 조회 (허수 방지)
+      const catFilter = categoryFilter !== 'all' ? categoryFilter : null
+      const searchTerm = debouncedSearch.trim()
+      const buildCountQuery = (pub?: boolean) => {
+        let q = supabase.from('community_posts').select('id', { count: 'exact', head: true })
+        if (pub !== undefined) q = q.eq('is_published', pub)
+        if (catFilter) q = q.eq('category', catFilter)
+        if (searchTerm) q = q.ilike('title', `%${searchTerm}%`)
+        return q
+      }
+      const [allRes, pubRes, unpRes] = await Promise.all([
+        buildCountQuery(),
+        buildCountQuery(true),
+        buildCountQuery(false),
+      ])
       setTabCounts({
-        all: items.length,
-        published: items.filter(f => f.is_published).length,
-        unpublished: items.filter(f => !f.is_published).length,
+        all: allRes.count || 0,
+        published: pubRes.count || 0,
+        unpublished: unpRes.count || 0,
       })
     } catch (e) { setError(e instanceof Error ? e.message : '오류 발생') }
     finally { setLoading(false) }
-  }, [supabase, tab, categoryFilter, search])
+  }, [supabase, tab, categoryFilter, debouncedSearch, currentPage, pageSize])
 
   useEffect(() => { fetchFeeds() }, [fetchFeeds])
 
-  const totalItems = feeds.length
-  const totalPages = Math.ceil(totalItems / pageSize) || 1
+  const totalItems = totalCount
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
   const safePage = Math.min(currentPage, totalPages)
-  const pagedFeeds = feeds.slice((safePage - 1) * pageSize, safePage * pageSize)
+  const pagedFeeds = feeds
 
   const selectedFeed = useMemo(() => feeds.find(f => f.id === selectedId), [feeds, selectedId])
 

@@ -44,18 +44,21 @@ export async function GET() {
     return NextResponse.json({ error: '관리자만 접근 가능합니다' }, { status: 403 })
   }
 
-  // 3. 모든 프로필 + 집계 조회
+  // 3. 모든 프로필 + 집계 조회 (Supabase 기본 1000건 제한 회피 위해 명시적 limit)
   const [profilesRes, ordersRes, reviewsRes] = await Promise.all([
     service
       .from('profiles')
       .select('id, email, name, phone, company, role, admin_memo, created_at')
-      .order('created_at', { ascending: false }),
+      .order('created_at', { ascending: false })
+      .limit(50000),
     service
       .from('orders')
-      .select('user_id, total_amount, status'),
+      .select('user_id, total_amount, status')
+      .limit(100000),
     service
       .from('reviews')
-      .select('user_id'),
+      .select('user_id')
+      .limit(100000),
   ])
 
   if (profilesRes.error) {

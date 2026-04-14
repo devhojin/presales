@@ -587,7 +587,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         .from('products')
         .select('id, title, price, is_free, thumbnail_url')
         .ilike('title', `%${relatedSearch.trim()}%`)
-        .limit(10)
+        .limit(100)
       const currentId = isNew ? -1 : Number(id)
       const filtered = (data || []).filter(
         p => p.id !== currentId && !form.related_product_ids.includes(p.id)

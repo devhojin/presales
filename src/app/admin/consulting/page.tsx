@@ -496,6 +496,7 @@ export default function AdminConsulting() {
       .from('consulting_requests')
       .select('*')
       .order('created_at', { ascending: false })
+      .limit(10000)
     setRequests(data || [])
     setLoading(false)
   }

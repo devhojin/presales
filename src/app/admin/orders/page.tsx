@@ -1253,6 +1253,7 @@ export default function AdminOrders() {
          order_items ( id, order_id, product_id, price, products ( title, thumbnail_url ) )`
       )
       .order('created_at', { ascending: false })
+      .limit(10000)
 
     const orderList = (ordersResult.data as unknown as Order[]) || []
 
@@ -1275,6 +1276,7 @@ export default function AdminOrders() {
       .from('download_logs')
       .select('*')
       .order('downloaded_at', { ascending: false })
+      .limit(20000)
 
     setOrders(orderList)
     setDownloadLogs((logsResult.data as DownloadLogEntry[]) || [])

@@ -178,7 +178,7 @@ function ProductSearchDropdown({
         .select('id, title, price, format, is_free, thumbnail_url')
         .eq('is_published', true)
         .ilike('title', `%${query}%`)
-        .limit(20)
+        .limit(100)
       setProducts((data || []) as ProductSearchItem[])
     } catch (error) {
       console.error('Failed to fetch products:', error)
