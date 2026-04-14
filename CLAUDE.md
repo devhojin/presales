@@ -1,5 +1,38 @@
 @AGENTS.md
 
+## ⚠️ 작업 시작 전 필수 체크리스트 (READ FIRST)
+
+**이 섹션을 읽기 전 어떤 명령도 실행하지 마세요.**
+
+### 1. Vercel 배포 절대 규칙
+
+- **이 PC에서 `vercel deploy`/`vercel link`/`vercel --prod` 절대 실행 금지**
+- 실제 프로덕션은 `presales-zeta.vercel.app` (hojinchae-6423 팀, devhojin 개인 계정)
+- 로컬 PC들의 Vercel CLI는 다른 팀(`startuppartnercenter` 등)에 로그인되어 있어, 배포 시 잘못된 팀에 빈 프로젝트가 생성되고 사용자에게 실패 알림 메일이 발송됨 (2026-04-14 사고 발생)
+- **배포는 GitHub push만 한다.** `git push origin master` → Vercel webhook이 자동배포
+- 배포가 안 보이면 사용자에게 "Vercel 대시보드에서 Redeploy" 요청. 절대 CLI로 시도하지 말 것
+- `.vercel/` 디렉토리가 생기면 즉시 삭제
+
+### 2. 작업 시작 의례 (매 세션 첫 실행)
+
+```bash
+cd ~/presales && git pull
+```
+
+그리고 다음 메모리를 명시적으로 Read:
+- `presales_vercel_account.md` — Vercel 배포 금지 규칙
+- `feedback_commit_push.md` — 커밋/푸시 규칙
+- `setup_guide.md` — 환경 정보
+
+### 3. 사고 방지 원칙
+
+- **모르는 정보는 추측하지 말고 사용자에게 물어볼 것** (계정, 도메인, 키 등)
+- **돌이킬 수 없는 액션 전 반드시 사용자 확인**: 배포, 강제 푸시, DB 마이그레이션, 프로젝트 삭제
+- **하드코딩 금지** (특히 limit/페이지수 같은 허수 유발 코드)
+- 발견한 버그/문제는 묻지 말고 즉시 수정 (사용자 표준 지시)
+
+---
+
 ## 에이전트 팀 운영 모드
 
 이 프로젝트는 **9인 자율 에이전트 팀 (v2.0)**으로 운영됩니다.
@@ -30,7 +63,7 @@
 - **작업 종료 시**: 반드시 `git commit` + `git push` 실행 (다른 PC 동기화 필수)
 - **작업 시작 시**: 반드시 `git pull` 실행 (최신 코드 동기화)
 - **커밋 시**: 반드시 `--author="Hojin Chae <hojinchae@gmail.com>"` 사용 (Vercel 자동배포 조건)
-- **배포**: 커밋 → 푸시 → `npx vercel --yes --prod` 항상 세트로 실행
+- **배포**: 커밋 → `git push origin master` 까지만. **CLI 배포 금지** (위 ⚠️ 섹션 참조)
 - **새 PC 세팅**: 메모리 `reference_new_pc_setup.md` 참조
 
 ## 활성 스킬 (우선순위)
