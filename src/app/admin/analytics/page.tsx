@@ -10,7 +10,15 @@ function fmt(d: Date) {
   return `${mm}-${dd}`
 }
 function isoDate(d: Date) {
-  return d.toISOString().slice(0, 10)
+  // KST(UTC+9) 기준 YYYY-MM-DD. toISOString()은 UTC라 KST 자정이 전날로 밀림.
+  const kst = new Date(d.getTime() + 9 * 3600 * 1000)
+  return kst.toISOString().slice(0, 10)
+}
+function kstDateKey(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  return isoDate(d)
 }
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
@@ -73,11 +81,15 @@ function LineChart({
   xLabels,
   yMax,
   height = 180,
+  seriesLabels,
+  valueFormatter,
 }: {
   series: LineChartSeries[]
   xLabels: string[]
   yMax: number
   height?: number
+  seriesLabels?: string[]
+  valueFormatter?: (v: number) => string
 }) {
   const W = 700
   const H = height
@@ -143,9 +155,20 @@ function LineChart({
               strokeWidth={s.strokeWidth ?? 2}
               strokeLinejoin="round"
             />
-            {s.points.map((p, i) => (
-              <circle key={i} cx={toX(p.x)} cy={toY(p.y)} r="3" fill={s.stroke} />
-            ))}
+            {s.points.map((p, i) => {
+              const seriesLabel = seriesLabels?.[si]
+              const valStr = valueFormatter ? valueFormatter(p.y) : p.y.toLocaleString()
+              const tip = `${xLabels[i] ?? ''}${seriesLabel ? ` · ${seriesLabel}` : ''}: ${valStr}`
+              return (
+                <g key={i}>
+                  <circle cx={toX(p.x)} cy={toY(p.y)} r="3" fill={s.stroke} />
+                  {/* 히트박스 + 네이티브 툴팁 */}
+                  <circle cx={toX(p.x)} cy={toY(p.y)} r="12" fill="transparent" style={{ cursor: 'pointer' }}>
+                    <title>{tip}</title>
+                  </circle>
+                </g>
+              )
+            })}
           </g>
         )
       })}
@@ -232,16 +255,16 @@ export default function AnalyticsPage() {
     for (let i = 0; i < periodDays; i++) {
       const d = addDays(sevenAgo, i)
       const dateStr = isoDate(d)
-      const dayPvs = (pvRows || []).filter((r) => r.created_at?.startsWith(dateStr))
+      const dayPvs = (pvRows || []).filter((r) => kstDateKey(r.created_at) === dateStr)
       const daySessions = new Set(dayPvs.map((r) => r.session_id))
       const dayOrders = (orderRows || []).filter(
-        (r) => r.created_at?.startsWith(dateStr) && r.status === 'paid'
+        (r) => kstDateKey(r.created_at) === dateStr && ['paid', 'completed'].includes(r.status)
       )
-      const daySignups = (profileRows || []).filter((r) => r.created_at?.startsWith(dateStr))
-      const dayConsulting = (consultingRows || []).filter((r) =>
-        r.created_at?.startsWith(dateStr)
+      const daySignups = (profileRows || []).filter((r) => kstDateKey(r.created_at) === dateStr)
+      const dayConsulting = (consultingRows || []).filter(
+        (r) => kstDateKey(r.created_at) === dateStr
       )
-      const dayReviews = (reviewRows || []).filter((r) => r.created_at?.startsWith(dateStr))
+      const dayReviews = (reviewRows || []).filter((r) => kstDateKey(r.created_at) === dateStr)
 
       stats.push({
         date: dateStr,
@@ -261,7 +284,10 @@ export default function AnalyticsPage() {
     const storeSessions = new Set(
       (pvRows || []).filter((r) => r.path?.startsWith('/store/')).map((r) => r.session_id)
     )
-    const allOrders = (orderRows || []).length
+    // 장바구니(주문 생성) = 취소/환불 제외한 유효 주문
+    const allOrders = (orderRows || []).filter(
+      (r) => !['cancelled', 'refunded', 'canceled'].includes(r.status)
+    ).length
     const completedOrders = (orderRows || []).filter((r) =>
       ['paid', 'completed'].includes(r.status)
     ).length
@@ -432,6 +458,7 @@ export default function AnalyticsPage() {
           xLabels={xLabels}
           yMax={pvuvMax}
           height={200}
+          seriesLabels={['페이지뷰', '방문자']}
         />
       </div>
 
@@ -449,7 +476,14 @@ export default function AnalyticsPage() {
             기간 합계: {dailyStats.reduce((a, s) => a + s.revenue, 0).toLocaleString()}원
           </span>
         </div>
-        <LineChart series={[revSeries]} xLabels={xLabels} yMax={maxRevenue} height={200} />
+        <LineChart
+          series={[revSeries]}
+          xLabels={xLabels}
+          yMax={maxRevenue}
+          height={200}
+          seriesLabels={['일별 매출']}
+          valueFormatter={(v) => `${v.toLocaleString()}원`}
+        />
       </div>
 
       {/* ── 전환 퍼널 ── */}

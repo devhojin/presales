@@ -544,10 +544,12 @@ export default function AdminDashboard() {
     const consultingQ = supabase.from('consulting_requests').select('id', { count: 'exact', head: true })
     const reviewsQ = supabase.from('reviews').select('id', { count: 'exact', head: true })
     const downloadsQ = supabase.from('download_logs').select('id', { count: 'exact', head: true })
+    // Supabase 기본 1000행 제한 회피 — 전체 집계가 필요하므로 명시적 range
     const paidAmountQ = supabase
       .from('orders')
       .select('total_amount, created_at')
       .in('status', ['paid', 'completed'])
+      .range(0, 99999)
 
     // 기간별 회원 카운트 계산 (API 결과에서)
     const periodStartMs = periodStart ? new Date(periodStart).getTime() : null
