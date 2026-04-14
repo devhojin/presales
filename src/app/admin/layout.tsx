@@ -44,7 +44,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [badges, setBadges] = useState<Record<string, number>>({})
 
   // 사이드바 뱃지 카운트 로드 (middleware가 admin 권한 보장)
+  const [ready, setReady] = useState(false)
   useEffect(() => {
+    // auth 세션이 준비될 때까지 대기
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setReady(true)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) setReady(true)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    if (!ready) return
     const supabase = createClient()
     async function loadBadges() {
       try {
@@ -82,7 +96,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     loadBadges()
     const interval = setInterval(loadBadges, 30000)
     return () => clearInterval(interval)
-  }, [])
+  }, [ready])
 
   useEffect(() => {
     const saved = localStorage.getItem('admin-sidebar-collapsed')
