@@ -32,6 +32,8 @@ export const metadata: Metadata = {
   },
   description: "공공조달 기술제안서, 입찰가이드, 구축자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",
   metadataBase: new URL(SITE_URL),
+  alternates: { canonical: SITE_URL },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 } },
   openGraph: {
     title: "PRESALES - 공공조달 제안서 마켓플레이스",
     description: "공공조달 기술제안서, 입찰가이드, 구축자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",

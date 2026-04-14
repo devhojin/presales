@@ -30,6 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     return {
       title: `${data.title} | 공고 사업 | PRESALES`,
       description: desc,
+      alternates: { canonical: `${SITE_URL}/announcements/${id}` },
       openGraph: {
         title: data.title,
         description: desc,
@@ -43,6 +44,42 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   }
 }
 
-export default function Layout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>
+export default async function Layout({ children, params }: { children: React.ReactNode; params: Promise<{ id: string }> }) {
+  const { id } = await params
+  let jsonLd: Record<string, unknown> | null = null
+  try {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll() { return [] } } }
+    )
+    const { data } = await supabase
+      .from('announcements')
+      .select('title, organization, description, start_date, end_date, updated_at')
+      .eq('id', id)
+      .eq('is_published', true)
+      .single()
+    if (data) {
+      jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: data.title,
+        description: data.description ? String(data.description).slice(0, 300) : data.title,
+        datePublished: data.start_date || data.updated_at,
+        dateModified: data.updated_at,
+        author: { '@type': 'Organization', name: data.organization || 'PRESALES' },
+        publisher: { '@type': 'Organization', name: 'PRESALES by AMARANS Partners' },
+        mainEntityOfPage: `${SITE_URL}/announcements/${id}`,
+      }
+    }
+  } catch {}
+
+  return (
+    <>
+      {jsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      )}
+      {children}
+    </>
+  )
 }
