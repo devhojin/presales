@@ -48,6 +48,46 @@ interface ReferrerStat {
 }
 
 // ── Referrer normalizer ───────────────────────────────────────────────
+function extractSearchKeyword(raw: string | null | undefined): string | null {
+  if (!raw) return null
+  try {
+    const url = new URL(raw)
+    const host = url.hostname.replace(/^www\./, '')
+    // 구글·네이버·다음·빙
+    const params = ['q', 'query', 'wd', 'p']
+    for (const key of params) {
+      const v = url.searchParams.get(key)
+      if (v && v.trim()) return v.trim()
+    }
+    // naver의 경우 query 파라미터가 있는 경우만
+    if (host.includes('google') || host.includes('naver') || host.includes('daum') || host.includes('bing')) {
+      return null
+    }
+    return null
+  } catch {
+    return null
+  }
+}
+
+function pathLabel(p: string): string {
+  if (!p || p === '/') return '홈'
+  if (p === '/store') return '스토어'
+  if (p.startsWith('/store/')) return `상품 상세`
+  if (p === '/announcements') return '공고 목록'
+  if (p.startsWith('/announcements/')) return '공고 상세'
+  if (p === '/feeds') return '피드'
+  if (p === '/brief') return '데일리 브리프'
+  if (p.startsWith('/brief/')) return '브리프 상세'
+  if (p === '/consulting') return '컨설팅'
+  if (p === '/about') return '회사소개'
+  if (p === '/us') return 'Us'
+  if (p === '/faq') return 'FAQ'
+  if (p === '/mypage') return '마이페이지'
+  if (p === '/auth/login') return '로그인'
+  if (p === '/auth/signup') return '회원가입'
+  return p
+}
+
 function normalizeReferrer(raw: string | null | undefined): string {
   if (!raw || raw.trim() === '' || raw === 'direct') return '직접 유입'
   try {
@@ -203,6 +243,15 @@ export default function AnalyticsPage() {
   const [referrers, setReferrers] = useState<ReferrerStat[]>([])
   const [totalRefs, setTotalRefs] = useState(0)
 
+  // Top pages
+  const [topPages, setTopPages] = useState<{ path: string; count: number }[]>([])
+
+  // Search keywords
+  const [keywords, setKeywords] = useState<{ keyword: string; count: number }[]>([])
+
+  // Recent signups
+  const [recentSignups, setRecentSignups] = useState<{ name: string | null; email: string | null; created_at: string }[]>([])
+
   useEffect(() => {
     fetchAll()
   }, [periodDays])
@@ -311,6 +360,39 @@ export default function AnalyticsPage() {
       .map(([referrer, count]) => ({ referrer, count }))
     setReferrers(sorted)
     setTotalRefs((pvRows || []).length)
+
+    // ── 많이 방문한 페이지 TOP 10 ──────────────────────────────────────
+    const pathMap: Record<string, number> = {}
+    for (const row of pvRows || []) {
+      if (!row.path) continue
+      pathMap[row.path] = (pathMap[row.path] || 0) + 1
+    }
+    const topPaths = Object.entries(pathMap)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .map(([path, count]) => ({ path, count }))
+    setTopPages(topPaths)
+
+    // ── 유입 검색어 TOP 10 ────────────────────────────────────────────
+    const kwMap: Record<string, number> = {}
+    for (const row of pvRows || []) {
+      const kw = extractSearchKeyword(row.referrer)
+      if (!kw) continue
+      kwMap[kw] = (kwMap[kw] || 0) + 1
+    }
+    const topKw = Object.entries(kwMap)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .map(([keyword, count]) => ({ keyword, count }))
+    setKeywords(topKw)
+
+    // ── 최근 가입자 5명 (컨텐츠 반응) ─────────────────────────────────
+    const { data: signupList } = await supabase
+      .from('profiles')
+      .select('name, email, created_at')
+      .order('created_at', { ascending: false })
+      .limit(5)
+    setRecentSignups(signupList || [])
 
     // ── Monthly/Yearly — fetch ALL page_views (count only per month) ──
     // Still need all-time data for the monthly table; we fetch only session_id + created_at
@@ -566,6 +648,84 @@ export default function AnalyticsPage() {
                 </div>
               )
             })}
+          </div>
+        )}
+      </div>
+
+      {/* ── 많이 방문한 페이지 + 유입 검색어 (2컬럼) ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl border border-border p-6">
+          <h2 className="text-sm font-semibold text-foreground mb-4">많이 방문한 페이지</h2>
+          {topPages.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">데이터 없음</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-muted-foreground text-xs">
+                  <th className="text-left py-2 font-medium">제목</th>
+                  <th className="text-left py-2 px-3 font-medium">URL</th>
+                  <th className="text-right py-2 font-medium">조회</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topPages.map((p, i) => (
+                  <tr key={p.path} className={i % 2 === 1 ? 'bg-muted' : ''}>
+                    <td className="py-2 text-foreground">{pathLabel(p.path)}</td>
+                    <td className="py-2 px-3 text-muted-foreground text-xs truncate max-w-[180px]">{p.path}</td>
+                    <td className="py-2 text-right font-medium text-primary">{p.count.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl border border-border p-6">
+          <h2 className="text-sm font-semibold text-foreground mb-4">유입 검색어</h2>
+          {keywords.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">유입 검색어 없음 (검색엔진 referrer가 있어야 표시됩니다)</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-muted-foreground text-xs">
+                  <th className="text-left py-2 font-medium">검색어</th>
+                  <th className="text-right py-2 font-medium">클릭수</th>
+                </tr>
+              </thead>
+              <tbody>
+                {keywords.map((k, i) => (
+                  <tr key={k.keyword} className={i % 2 === 1 ? 'bg-muted' : ''}>
+                    <td className="py-2 text-foreground">{k.keyword}</td>
+                    <td className="py-2 text-right font-medium text-primary">{k.count.toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* ── 최근 가입자 (컨텐츠 반응) ── */}
+      <div className="bg-white rounded-xl border border-border p-6">
+        <h2 className="text-sm font-semibold text-foreground mb-4">최근 가입자</h2>
+        {recentSignups.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">가입자 없음</p>
+        ) : (
+          <div className="space-y-3">
+            {recentSignups.map((u) => (
+              <div key={u.created_at} className="flex items-center gap-3 text-sm">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs shrink-0">
+                  {(u.name || u.email || '?').charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-foreground font-medium">{u.name || u.email || '이름없음'}</span>
+                  <span className="text-muted-foreground ml-2">님이 가입했습니다.</span>
+                </div>
+                <span className="text-xs text-muted-foreground shrink-0">
+                  {new Date(u.created_at).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })}
+                </span>
+              </div>
+            ))}
           </div>
         )}
       </div>
