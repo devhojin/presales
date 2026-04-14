@@ -4,9 +4,9 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
-# PRESALES 자율 에이전트 팀 (v2.0, 2026-04-07)
+# PRESALES 자율 에이전트 팀 (v2.1, 2026-04-14)
 
-> 공공조달 제안서 마켓플레이스 presales.co.kr 자율 구축/운영을 위한 9인 에이전트 팀
+> 공공조달 제안서 마켓플레이스 presales.co.kr 자율 구축/운영을 위한 10인 에이전트 팀
 
 ## 팀 구성도
 
@@ -46,6 +46,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | Scenario Writer | 사용자 여정, 전환 시나리오, 예외 시나리오, 개선안 도출 | sonnet | `agents/scenario-writer.md` |
 | Content Writer | 상품 설명, 법적 문서, FAQ, 블로그, 뉴스레터 작성 | sonnet | `agents/docs-writer.md` |
 | Marketer | 마케팅 전략, 캠페인 기획, 프로모션, CRO | sonnet | `agents/marketer.md` |
+| Junior (신입사원) | 초심자 시선 리뷰: 혼란 포인트, 당연해 보이는 것 의심, 온보딩 병목 발견 | haiku | `agents/junior.md` |
 
 ### 역할 경계 (3인 콘텐츠/마케팅 구분)
 
@@ -69,8 +70,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ```text
 Orchestrator → Scenario Writer(사이트 전체 시나리오 작성 + 개선안 도출)
+  → Junior(초심자 시선 리뷰 + 혼란 포인트 보고)
   → QA(시나리오 기반 테스트 + 버그/오류 발견)
-  → Orchestrator(개선안+버그 취합 → 담당 에이전트 분배)
+  → Orchestrator(개선안+혼란포인트+버그 취합 → 담당 에이전트 분배)
   → Frontend/Backend/Growth/Content Writer(수정/개선)
   → QA(최종 검증) → DevOps(배포)
   → [반복]

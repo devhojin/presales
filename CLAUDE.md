@@ -47,7 +47,7 @@ cd ~/presales && git pull
 
 ## 에이전트 팀 운영 모드
 
-이 프로젝트는 **9인 자율 에이전트 팀 (v2.0)**으로 운영됩니다.
+이 프로젝트는 **10인 자율 에이전트 팀 (v2.1)**으로 운영됩니다.
 
 - 에이전트 정의: `agents/` 디렉토리 참조
 - 작업 요청 → Orchestrator가 분석 → 적절한 에이전트에 분배 → QA 검증 → 배포
@@ -67,6 +67,7 @@ cd ~/presales && git pull
 | Scenario Writer | 사용자여정/시나리오/개선안도출 | sonnet | `agents/scenario-writer.md` |
 | Content Writer | 상품설명/법적문서/FAQ/블로그 | sonnet | `agents/docs-writer.md` |
 | Marketer | 마케팅전략/캠페인/프로모션 | sonnet | `agents/marketer.md` |
+| Junior | 신입사원 시선: 혼란 포인트/온보딩 병목/초심자 UX 발견 | haiku | `agents/junior.md` |
 
 ## 개발 환경 정책
 
