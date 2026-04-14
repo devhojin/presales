@@ -22,7 +22,7 @@ async function getUser() {
   return user
 }
 
-/** GET: 내 공고 북마크 목록 */
+/** GET: 내 공고 북마크 목록 (스냅샷 포함 — 원본 삭제되어도 반환) */
 export async function GET() {
   const user = await getUser()
   if (!user) return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
@@ -30,7 +30,7 @@ export async function GET() {
   const supabase = getServiceClient()
   const { data, error } = await supabase
     .from('announcement_bookmarks')
-    .select('announcement_id, created_at')
+    .select('announcement_id, created_at, title, excerpt, url, source, source_name, end_date, snapshot_at')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 
@@ -38,7 +38,7 @@ export async function GET() {
   return NextResponse.json({ bookmarks: data })
 }
 
-/** POST: 공고 북마크 토글 */
+/** POST: 공고 북마크 토글 (추가 시 원본 스냅샷 함께 저장) */
 export async function POST(request: NextRequest) {
   const user = await getUser()
   if (!user) return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
 
   const supabase = getServiceClient()
 
-  // Check if already bookmarked
   const { data: existing } = await supabase
     .from('announcement_bookmarks')
     .select('announcement_id')
@@ -57,7 +56,6 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (existing) {
-    // Remove bookmark
     const { error } = await supabase
       .from('announcement_bookmarks')
       .delete()
@@ -66,13 +64,27 @@ export async function POST(request: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     return NextResponse.json({ bookmarked: false })
-  } else {
-    // Add bookmark
-    const { error } = await supabase
-      .from('announcement_bookmarks')
-      .insert({ user_id: user.id, announcement_id })
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ bookmarked: true })
   }
+
+  // 스냅샷 저장 — 원본이 삭제돼도 사용자 북마크는 유지
+  const { data: ann } = await supabase
+    .from('announcements')
+    .select('title, content, external_url, source, source_name, end_date')
+    .eq('id', announcement_id)
+    .single()
+
+  const { error } = await supabase.from('announcement_bookmarks').insert({
+    user_id: user.id,
+    announcement_id,
+    title: ann?.title ?? null,
+    excerpt: ann?.content ? String(ann.content).slice(0, 500) : null,
+    url: ann?.external_url ?? null,
+    source: ann?.source ?? null,
+    source_name: ann?.source_name ?? null,
+    end_date: ann?.end_date ?? null,
+    snapshot_at: new Date().toISOString(),
+  })
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ bookmarked: true })
 }
