@@ -67,7 +67,7 @@ export default function AnnouncementsPage() {
         .eq('is_published', true)
         .order('status', { ascending: true })
         .order('end_date', { ascending: true })
-        .limit(50)
+        .limit(1000)
 
       setAnnouncements(data || [])
       setLoading(false)

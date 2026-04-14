@@ -73,7 +73,7 @@ export default function FeedsPage() {
         query = query.ilike('title', `%${search.trim()}%`)
       }
 
-      const { data, error: fetchError } = await query.limit(50)
+      const { data, error: fetchError } = await query.limit(1000)
       if (fetchError) throw fetchError
       setFeeds((data || []) as FeedItem[])
     } catch (e) {
