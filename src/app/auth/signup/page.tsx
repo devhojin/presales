@@ -17,6 +17,9 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [agreePrivacy, setAgreePrivacy] = useState(false)
+  const [agreeAge, setAgreeAge] = useState(false)
+  const [agreeOverseas, setAgreeOverseas] = useState(false)
+  const [agreeMarketing, setAgreeMarketing] = useState(false) // 선택
   const [termsError, setTermsError] = useState('')
   const [form, setForm] = useState({
     email: '',
@@ -41,8 +44,8 @@ export default function SignupPage() {
     setError('')
     setTermsError('')
 
-    if (!agreeTerms || !agreePrivacy) {
-      setTermsError('이용약관과 개인정보처리방침에 동의해주세요')
+    if (!agreeTerms || !agreePrivacy || !agreeAge || !agreeOverseas) {
+      setTermsError('필수 항목에 모두 동의해주세요 (이용약관·개인정보·국외이전·만14세 이상)')
       return
     }
 
@@ -87,6 +90,8 @@ export default function SignupPage() {
         name: form.name,
         company: form.company,
         phone: form.phone,
+        marketing_opt_in: agreeMarketing,
+        marketing_opt_in_at: agreeMarketing ? new Date().toISOString() : null,
       }).eq('id', user.id)
 
       // 회원가입 축하 쿠폰 자동 발급 (WELCOME10K)
@@ -283,6 +288,39 @@ export default function SignupPage() {
                     개인정보처리방침
                   </Link>
                   에 동의합니다 (필수)
+                </span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreeOverseas}
+                  onChange={(e) => setAgreeOverseas(e.target.checked)}
+                  className="w-4 h-4 rounded border border-border cursor-pointer"
+                />
+                <span className="text-sm text-muted-foreground">
+                  개인정보의 국외 이전(Supabase 싱가포르·Vercel 미국)에 동의합니다 (필수)
+                </span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreeAge}
+                  onChange={(e) => setAgreeAge(e.target.checked)}
+                  className="w-4 h-4 rounded border border-border cursor-pointer"
+                />
+                <span className="text-sm text-muted-foreground">
+                  본인은 만 14세 이상입니다 (필수)
+                </span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreeMarketing}
+                  onChange={(e) => setAgreeMarketing(e.target.checked)}
+                  className="w-4 h-4 rounded border border-border cursor-pointer"
+                />
+                <span className="text-sm text-muted-foreground">
+                  마케팅 정보 수신(이메일·SMS)에 동의합니다 <span className="text-muted-foreground/70">(선택 · 정보통신망법 제50조)</span>
                 </span>
               </label>
             </div>

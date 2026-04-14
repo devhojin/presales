@@ -160,19 +160,49 @@ export default function PrivacyPage() {
                   <tr>
                     <th className="px-4 py-2 text-left font-semibold border-b border-border">수탁 업체</th>
                     <th className="px-4 py-2 text-left font-semibold border-b border-border">위탁 업무</th>
+                    <th className="px-4 py-2 text-left font-semibold border-b border-border">처리 국가</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr className="border-b border-border">
                     <td className="px-4 py-2">Supabase Inc.</td>
                     <td className="px-4 py-2">회원 인증 및 데이터 저장</td>
+                    <td className="px-4 py-2">싱가포르 (ap-southeast-1)</td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <td className="px-4 py-2">Vercel Inc.</td>
+                    <td className="px-4 py-2">웹 서비스 호스팅 및 로그 기록</td>
+                    <td className="px-4 py-2">미국</td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <td className="px-4 py-2">메일플러그(주)</td>
+                    <td className="px-4 py-2">이메일 발송(주문확인·알림)</td>
+                    <td className="px-4 py-2">대한민국</td>
                   </tr>
                   <tr>
                     <td className="px-4 py-2">토스페이먼츠(주)</td>
                     <td className="px-4 py-2">결제 처리</td>
+                    <td className="px-4 py-2">대한민국</td>
                   </tr>
                 </tbody>
               </table>
+            </div>
+
+            {/* 개인정보 국외이전 고지 — 개인정보보호법 제28조의8 */}
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-4">
+              <p className="font-semibold text-amber-900 mb-2 text-sm">개인정보 국외 이전 고지</p>
+              <p className="text-amber-900 text-xs leading-relaxed mb-2">
+                회사는 「개인정보 보호법」 제28조의8에 따라 아래와 같이 개인정보를 국외로 이전합니다.
+                회원가입 시 이에 동의하신 것으로 간주됩니다.
+              </p>
+              <ul className="list-disc list-inside text-amber-900 text-xs space-y-1">
+                <li><strong>이전받는 자:</strong> Supabase Inc. (hello@supabase.io) / Vercel Inc. (privacy@vercel.com)</li>
+                <li><strong>이전 국가·시점·방법:</strong> 싱가포르·미국, 회원가입·서비스 이용 시점, 네트워크를 통한 전송</li>
+                <li><strong>이전 항목:</strong> 이메일, 이름, 연락처, 접속 로그, 결제 이력 중 식별정보 일부</li>
+                <li><strong>이전받는 자의 이용 목적:</strong> 인증 서비스 제공, 데이터베이스 저장, 웹 호스팅</li>
+                <li><strong>보유·이용 기간:</strong> 회원 탈퇴 시까지 (관련 법령에서 정한 경우 해당 기간)</li>
+                <li><strong>거부 권리:</strong> 이용자는 국외 이전을 거부할 권리가 있으며, 거부 시 서비스 이용이 제한될 수 있습니다.</li>
+              </ul>
             </div>
           </div>
         </section>
