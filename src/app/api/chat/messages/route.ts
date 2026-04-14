@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient, getAuthUser, isAdmin } from '@/lib/chat'
+import { sendEmail, buildEmailHtml } from '@/lib/email'
 
 /** GET: 특정 방의 메시지 목록 */
 export async function GET(request: NextRequest) {
@@ -101,6 +102,46 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     })
     .eq('id', room_id)
+
+  // 고객 → 관리자 첫 미확인 메시지일 때만 이메일 알림 (스팸 방지: 대화 시작 + 재개 시점)
+  if ((senderType === 'user' || senderType === 'guest') && currentCount === 0) {
+    try {
+      const { data: roomInfo } = await supabase
+        .from('chat_rooms')
+        .select('guest_name, guest_email, user_id')
+        .eq('id', room_id)
+        .single()
+
+      let senderInfo = ''
+      if (senderType === 'guest' && roomInfo) {
+        senderInfo = `비회원 · ${roomInfo.guest_name || '이름없음'}${roomInfo.guest_email ? ` (${roomInfo.guest_email})` : ''}`
+      } else if (roomInfo?.user_id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email, name')
+          .eq('id', roomInfo.user_id)
+          .single()
+        senderInfo = `회원 · ${profile?.name || '이름없음'}${profile?.email ? ` (${profile.email})` : ''}`
+      }
+
+      const adminUrl = `https://presales.co.kr/admin/chat?room=${room_id}`
+      const html = buildEmailHtml(
+        '새 채팅 문의 도착',
+        `<h2 style="margin:0 0 16px;font-size:20px;color:#0f172a;">새 채팅 문의가 도착했습니다</h2>
+         <p style="margin:0 0 8px;color:#334155;"><strong>보낸사람:</strong> ${senderInfo}</p>
+         <p style="margin:0 0 16px;color:#334155;"><strong>내용:</strong></p>
+         <div style="background:#f8fafc;border-left:3px solid #3b82f6;padding:12px 16px;border-radius:4px;color:#0f172a;white-space:pre-wrap;">${(content || preview).replace(/</g, '&lt;')}</div>
+         <p style="margin:24px 0 0;"><a href="${adminUrl}" style="display:inline-block;background:#3b82f6;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;">관리자 화면에서 답변하기</a></p>`
+      )
+
+      // 실패해도 메시지 전송은 이미 성공했으므로 swallow
+      await sendEmail('hojin@amarans.co.kr', '[프리세일즈] 새 채팅 문의', html).catch(err => {
+        console.error('[chat-email] send failed:', err)
+      })
+    } catch (err) {
+      console.error('[chat-email] build failed:', err)
+    }
+  }
 
   return NextResponse.json({ message: msg })
 }
