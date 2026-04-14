@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import {
   Search, ExternalLink, Loader2, Rss, Clock, Newspaper, ArrowLeft,
@@ -35,10 +35,16 @@ export default function FeedsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [feeds, setFeeds] = useState<FeedItem[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showDetail, setShowDetail] = useState(false) // mobile
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
+
+  const PAGE_SIZE = 50
 
   // Auth & bookmark/read
   const [userId, setUserId] = useState<string | null>(null)
@@ -54,36 +60,55 @@ export default function FeedsPage() {
     })
   }, [supabase])
 
-  // Fetch feeds
-  const fetchFeeds = useCallback(async () => {
-    setLoading(true)
+  // Fetch feeds (paginated via API)
+  const fetchPage = useCallback(async (pageNum: number, append: boolean) => {
+    if (append) setLoadingMore(true)
+    else setLoading(true)
     setError('')
     try {
-      let query = supabase
-        .from('community_posts')
-        .select('*')
-        .eq('is_published', true)
-        .eq('status', 'published')
-        .order('created_at', { ascending: false })
+      const params = new URLSearchParams({
+        page: String(pageNum),
+        pageSize: String(PAGE_SIZE),
+      })
+      if (selectedCategory !== 'all') params.set('category', selectedCategory)
+      if (search.trim()) params.set('search', search.trim())
 
-      if (selectedCategory !== 'all') {
-        query = query.eq('category', selectedCategory)
+      const res = await fetch(`/api/feeds?${params.toString()}`)
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+        throw new Error(body.error || '데이터를 불러오지 못했습니다')
       }
-      if (search.trim()) {
-        query = query.ilike('title', `%${search.trim()}%`)
-      }
-
-      const { data, error: fetchError } = await query.limit(1000)
-      if (fetchError) throw fetchError
-      setFeeds((data || []) as FeedItem[])
+      const body = (await res.json()) as { posts: FeedItem[]; total: number }
+      setFeeds(prev => append ? [...prev, ...body.posts] : body.posts)
+      setTotal(body.total)
+      setPage(pageNum)
     } catch (e) {
       setError(e instanceof Error ? e.message : '데이터를 불러오는 중 오류가 발생했습니다')
     } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
-  }, [supabase, selectedCategory, search])
+  }, [selectedCategory, search])
 
-  useEffect(() => { fetchFeeds() }, [fetchFeeds])
+  // Reload when filter/search changes
+  useEffect(() => {
+    fetchPage(1, false)
+  }, [fetchPage])
+
+  // Infinite scroll: observe sentinel
+  useEffect(() => {
+    const node = sentinelRef.current
+    if (!node) return
+    const observer = new IntersectionObserver((entries) => {
+      const [entry] = entries
+      if (!entry.isIntersecting) return
+      if (loading || loadingMore) return
+      if (feeds.length >= total) return
+      fetchPage(page + 1, true)
+    }, { rootMargin: '200px' })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [feeds.length, total, page, loading, loadingMore, fetchPage])
 
   // Load bookmarks & reads
   useEffect(() => {
@@ -290,7 +315,7 @@ export default function FeedsPage() {
       ) : error ? (
         <div className="text-center py-24">
           <p className="text-sm text-destructive mb-3">{error}</p>
-          <button onClick={fetchFeeds} className="px-4 py-2 text-sm rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
+          <button onClick={() => fetchPage(1, false)} className="px-4 py-2 text-sm rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer">
             다시 시도
           </button>
         </div>
@@ -304,7 +329,9 @@ export default function FeedsPage() {
           {/* LEFT: List (자연 높이, 페이지 스크롤) */}
           <div className={`${showDetail ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[38%] border border-border/50 rounded-2xl overflow-hidden bg-card`}>
             <div className="px-4 py-3 border-b border-border/50 bg-muted/30">
-              <p className="text-xs text-muted-foreground font-medium">{filteredFeeds.length}개 피드</p>
+              <p className="text-xs text-muted-foreground font-medium">
+                {userId ? `${filteredFeeds.length}개 표시 / 전체 ${total.toLocaleString()}개` : `전체 ${total.toLocaleString()}개 피드`}
+              </p>
             </div>
             <div className="divide-y divide-border/50">
               {filteredFeeds.map((feed) => {
@@ -339,6 +366,20 @@ export default function FeedsPage() {
                 )
               })}
             </div>
+            {feeds.length < total && (
+              <div ref={sentinelRef} className="py-4 flex items-center justify-center border-t border-border/50">
+                {loadingMore ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                ) : (
+                  <button
+                    onClick={() => fetchPage(page + 1, true)}
+                    className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    더 보기 ({(total - feeds.length).toLocaleString()}개 남음)
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* RIGHT: Detail (sticky, 뷰포트 높이) */}

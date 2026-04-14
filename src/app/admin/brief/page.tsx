@@ -75,8 +75,7 @@ export default function AdminBriefPage() {
         supabase
           .from('daily_briefs')
           .select('id, brief_date, slug, subject, total_news, total_announcements, sent_count, is_published, created_at, sent_at')
-          .order('brief_date', { ascending: false })
-          .limit(60),
+          .order('brief_date', { ascending: false }),
       ])
       setSubscribers((subsRes.data || []) as Subscriber[])
       setBriefs((briefsRes.data || []) as Brief[])

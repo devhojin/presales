@@ -3,10 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * Public Announcements API
- * GET: List only published announcements
+ * GET: List published announcements
  * - Returns: { announcements, total }
  * - Orders by end_date ASC (soonest deadline first), then created_at DESC
- * - Query params: page, pageSize, search, area (support_areas filter)
+ * - Query params: page, pageSize, search, area (support_areas), status ('active'|'closed'|'all')
  */
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
   const pageSize = Math.min(100, Math.max(1, Number(searchParams.get('pageSize')) || 20))
   const search = searchParams.get('search') || ''
   const area = searchParams.get('area') || '' // support_areas filter
+  const status = searchParams.get('status') || 'all' // active | closed | all
 
   try {
     // Service client for public data access
@@ -23,12 +24,15 @@ export async function GET(request: NextRequest) {
       { auth: { persistSession: false } }
     )
 
-    // Build query: only is_published=true AND status='active'
+    // Base: published only
     let query = supabase
       .from('announcements')
       .select('*', { count: 'exact' })
       .eq('is_published', true)
-      .eq('status', 'active')
+
+    if (status === 'active' || status === 'closed') {
+      query = query.eq('status', status)
+    }
 
     // Search filter (title, organization, description)
     if (search) {

@@ -41,7 +41,6 @@ export default function BriefPage() {
           .select('id, brief_date, slug, subject, email_html, total_news, total_announcements, created_at, sent_at')
           .eq('is_published', true)
           .order('brief_date', { ascending: false })
-          .limit(60)
         if (error) throw error
         const list = (data || []) as DailyBrief[]
         setBriefs(list)

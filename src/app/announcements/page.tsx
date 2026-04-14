@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { Badge } from '@/components/ui/badge'
@@ -36,11 +36,17 @@ function DayBadge({ dday }: { dday: number | null }) {
 export default function AnnouncementsPage() {
   const { addToast } = useToastStore()
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showDetail, setShowDetail] = useState(false) // mobile toggle
+  const sentinelRef = useRef<HTMLDivElement | null>(null)
+
+  const PAGE_SIZE = 50
 
   // Auth & bookmark/read state
   const [userId, setUserId] = useState<string | null>(null)
@@ -57,23 +63,49 @@ export default function AnnouncementsPage() {
     })
   }, [])
 
-  // Load announcements
-  useEffect(() => {
-    async function load() {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from('announcements')
-        .select('*')
-        .eq('is_published', true)
-        .order('status', { ascending: true })
-        .order('end_date', { ascending: true })
-        .limit(1000)
+  // Load announcements (paginated via API)
+  const fetchPage = useCallback(async (pageNum: number, append: boolean) => {
+    if (append) setLoadingMore(true)
+    else setLoading(true)
+    try {
+      const params = new URLSearchParams({
+        page: String(pageNum),
+        pageSize: String(PAGE_SIZE),
+      })
+      if (searchQuery.trim()) params.set('search', searchQuery.trim())
 
-      setAnnouncements(data || [])
+      const res = await fetch(`/api/announcements?${params.toString()}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const body = (await res.json()) as { announcements: Announcement[]; total: number }
+      setAnnouncements(prev => append ? [...prev, ...body.announcements] : body.announcements)
+      setTotal(body.total)
+      setPage(pageNum)
+    } catch {
+      // keep prior data on failure
+    } finally {
       setLoading(false)
+      setLoadingMore(false)
     }
-    load()
-  }, [])
+  }, [searchQuery])
+
+  useEffect(() => {
+    fetchPage(1, false)
+  }, [fetchPage])
+
+  // Infinite scroll
+  useEffect(() => {
+    const node = sentinelRef.current
+    if (!node) return
+    const observer = new IntersectionObserver((entries) => {
+      const [entry] = entries
+      if (!entry.isIntersecting) return
+      if (loading || loadingMore) return
+      if (announcements.length >= total) return
+      fetchPage(page + 1, true)
+    }, { rootMargin: '200px' })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [announcements.length, total, page, loading, loadingMore, fetchPage])
 
   // Load bookmarks & reads
   useEffect(() => {
@@ -309,7 +341,9 @@ export default function AnnouncementsPage() {
           {/* LEFT: List Panel (자연 높이, 페이지 스크롤) */}
           <div className={`${showDetail ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[38%] border border-border/50 rounded-2xl overflow-hidden bg-card`}>
             <div className="px-4 py-3 border-b border-border/50 bg-muted/30">
-              <p className="text-xs text-muted-foreground font-medium">{filteredAnnouncements.length}개 공고</p>
+              <p className="text-xs text-muted-foreground font-medium">
+                {userId ? `${filteredAnnouncements.length}개 표시 / 전체 ${total.toLocaleString()}개` : `전체 ${total.toLocaleString()}개 공고`}
+              </p>
             </div>
             <div className="divide-y divide-border/50">
               {filteredAnnouncements.map((ann) => {
@@ -344,6 +378,20 @@ export default function AnnouncementsPage() {
                 )
               })}
             </div>
+            {announcements.length < total && (
+              <div ref={sentinelRef} className="py-4 flex items-center justify-center border-t border-border/50">
+                {loadingMore ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                ) : (
+                  <button
+                    onClick={() => fetchPage(page + 1, true)}
+                    className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    더 보기 ({(total - announcements.length).toLocaleString()}개 남음)
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* RIGHT: Detail Panel (sticky, 뷰포트 높이) */}

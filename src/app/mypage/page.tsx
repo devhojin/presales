@@ -193,9 +193,9 @@ export default function MyConsolePage() {
       ] = await Promise.all([
         supabase.from('profiles').select('name, email, phone, company, role, created_at').eq('id', user.id).single(),
         supabase.from('orders').select('id, order_number, total_amount, status, created_at, paid_at, refund_reason, order_items(id, price, original_price, discount_amount, products(id, title, price))').eq('user_id', user.id).order('created_at', { ascending: false }),
-        supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(title)').eq('user_id', user.id).order('downloaded_at', { ascending: false }).limit(50),
-        supabase.from('announcement_bookmarks').select('announcement_id').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
-        supabase.from('feed_bookmarks').select('post_id').eq('user_id', user.id).order('created_at', { ascending: false }).limit(10),
+        supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(title)').eq('user_id', user.id).order('downloaded_at', { ascending: false }),
+        supabase.from('announcement_bookmarks').select('announcement_id').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('feed_bookmarks').select('post_id').eq('user_id', user.id).order('created_at', { ascending: false }),
       ])
 
       if (ordersData === null) console.error('orders query failed')
@@ -289,7 +289,7 @@ export default function MyConsolePage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { data: newLogs } = await supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(title)').eq('user_id', user.id).order('downloaded_at', { ascending: false }).limit(50)
+    const { data: newLogs } = await supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(title)').eq('user_id', user.id).order('downloaded_at', { ascending: false })
     setDownloadLogs((newLogs || []) as DownloadLog[])
     setTimeout(() => addToast('상품 페이지에서 리뷰를 작성해주세요!', 'info'), 1500)
   }
