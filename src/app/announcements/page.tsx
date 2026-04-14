@@ -81,6 +81,7 @@ export default function AnnouncementsPage() {
       })
       if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
       if (filterStatus !== 'all') params.set('status', filterStatus)
+      if (userId) params.set('tab', readTab)
 
       const res = await fetch(`/api/announcements?${params.toString()}`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -94,7 +95,7 @@ export default function AnnouncementsPage() {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [debouncedSearch, filterStatus])
+  }, [debouncedSearch, filterStatus, userId, readTab])
 
   useEffect(() => {
     fetchPage(1, false)
@@ -155,18 +156,8 @@ export default function AnnouncementsPage() {
     })
   }, [announcements])
 
-  // Filter (search/status are applied server-side; only read-tab filter remains client-side)
-  const filteredAnnouncements = useMemo(() => {
-    if (!userId) return sortedAnnouncements
-    return sortedAnnouncements.filter((ann) => {
-      const wasReadOnLoad = initialReadSet.has(ann.id)
-      const isBookmarked = bookmarkedIds.has(ann.id)
-      if (readTab === 'unread' && wasReadOnLoad) return false
-      if (readTab === 'read' && !wasReadOnLoad) return false
-      if (readTab === 'bookmarks' && !isBookmarked) return false
-      return true
-    })
-  }, [sortedAnnouncements, userId, initialReadSet, bookmarkedIds, readTab])
+  // 서버에서 이미 tab/search/status 필터링 + 총계 계산됨 (허수 방지)
+  const filteredAnnouncements = sortedAnnouncements
 
   const selectedAnnouncement = useMemo(
     () => announcements.find(a => a.id === selectedId) || null,

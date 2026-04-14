@@ -79,6 +79,8 @@ export default function FeedsPage() {
       })
       if (selectedCategory !== 'all') params.set('category', selectedCategory)
       if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
+      if (userId && readTab !== 'unread') params.set('tab', readTab)
+      else if (userId) params.set('tab', 'unread')
 
       const res = await fetch(`/api/feeds?${params.toString()}`)
       if (!res.ok) {
@@ -95,7 +97,7 @@ export default function FeedsPage() {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [selectedCategory, debouncedSearch])
+  }, [selectedCategory, debouncedSearch, userId, readTab])
 
   // Reload when filter/search changes
   useEffect(() => {
@@ -145,19 +147,8 @@ export default function FeedsPage() {
     })
   }, [userId, supabase])
 
-  // Filter by read tab — uses initialReadSet (page-load snapshot) for tab filtering
-  const filteredFeeds = useMemo(() => {
-    if (!userId) return feeds
-    return feeds.filter(feed => {
-      const wasReadOnLoad = initialReadSet.has(feed.id)
-      const isBookmarked = bookmarkedIds.has(feed.id)
-
-      if (readTab === 'unread' && wasReadOnLoad) return false
-      if (readTab === 'read' && !wasReadOnLoad) return false
-      if (readTab === 'bookmarks' && !isBookmarked) return false
-      return true
-    })
-  }, [feeds, userId, initialReadSet, bookmarkedIds, readTab])
+  // 서버에서 이미 tab 필터링 + 총계 계산됨 (허수 방지)
+  const filteredFeeds = feeds
 
   const selectedFeed = useMemo(
     () => feeds.find(f => f.id === selectedId) || null,
