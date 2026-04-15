@@ -53,7 +53,7 @@ export default function AnnouncementsPage() {
   const [showDetail, setShowDetail] = useState(false) // mobile toggle
   const sentinelRef = useRef<HTMLDivElement | null>(null)
 
-  const PAGE_SIZE = 50
+  const PAGE_SIZE = 200
 
   // Auth & bookmark/read state
   const [userId, setUserId] = useState<string | null>(null)
@@ -215,7 +215,7 @@ export default function AnnouncementsPage() {
     }
   }, [userId, bookmarkedIds, addToast])
 
-  // Count for read tabs (server already applied search/status filter)
+  // Count for read tabs — 활성 탭은 서버 total 사용 (허수 방지), 비활성은 현재 로드된 범위의 근사치
   const tabCounts = useMemo(() => {
     if (!userId) return { unread: 0, read: 0, bookmarks: 0 }
     let unread = 0, read = 0, bookmarks = 0
@@ -225,8 +225,11 @@ export default function AnnouncementsPage() {
       else unread++
       if (bookmarkedIds.has(ann.id)) bookmarks++
     })
+    if (readTab === 'unread') unread = total
+    else if (readTab === 'read') read = total
+    else if (readTab === 'bookmarks') bookmarks = total
     return { unread, read, bookmarks }
-  }, [userId, sortedAnnouncements, initialReadSet, bookmarkedIds])
+  }, [userId, sortedAnnouncements, initialReadSet, bookmarkedIds, readTab, total])
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 md:px-8">
