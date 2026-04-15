@@ -354,39 +354,60 @@ export default function Home() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-            {/* Primary — BLUE card */}
-            <div className="lg:col-span-2 rounded-2xl bg-blue-600 text-white p-8 md:p-10 flex flex-col justify-between min-h-[240px]">
-              <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="font-bold text-xl md:text-2xl mb-3 tracking-tight">실전 제안서</h3>
-                <p className="text-sm md:text-[15px] text-blue-50 leading-relaxed max-w-md">
-                  실제 수주에 성공한 제안서 그대로. 어떤 구조로, 어떤 말로 평가위원을 설득했는지 확인하세요.
-                </p>
-              </div>
-            </div>
-
-            {/* Secondary — WHITE cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
             {[
-              { icon: Download, title: '즉시 다운로드', desc: '결제 후 5초 안에 PPT/HWP 원본 파일을 받습니다. 폰트·구조 전부 수정 가능.' },
-              { icon: Globe, title: '나라장터 최적화', desc: '나라장터 평가표 항목별로 점수를 챙기는 구조. 감점 포인트를 미리 막습니다.' },
-              { icon: Handshake, title: '전문가 컨설팅', desc: '공고 분석부터 발표 리허설까지. 공공조달 전문가가 낙찰 전략을 함께 짭니다.' },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="group rounded-2xl bg-gray-50 border border-gray-100 p-6 md:p-7 flex flex-col justify-between min-h-[240px] hover:border-blue-200 hover:bg-white hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-500"
-              >
-                <div className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors duration-500">
-                  <item.icon className="w-5 h-5 text-blue-600" />
+              {
+                icon: FileText,
+                title: '실전 제안서',
+                desc: '실제 수주에 성공한 제안서 그대로. 어떤 구조로, 어떤 말로 평가위원을 설득했는지 확인하세요.',
+                primary: true,
+              },
+              {
+                icon: Download,
+                title: '즉시 다운로드',
+                desc: '결제 후 5초 안에 PPT/HWP 원본 파일을 받습니다. 폰트·구조 전부 수정 가능.',
+              },
+              {
+                icon: Globe,
+                title: '나라장터 최적화',
+                desc: '나라장터 평가표 항목별로 점수를 챙기는 구조. 감점 포인트를 미리 막습니다.',
+              },
+              {
+                icon: Handshake,
+                title: '전문가 컨설팅',
+                desc: '공고 분석부터 발표 리허설까지. 공공조달 전문가가 낙찰 전략을 함께 짭니다.',
+              },
+            ].map((item) =>
+              item.primary ? (
+                <div
+                  key={item.title}
+                  className="rounded-2xl bg-blue-600 text-white p-8 md:p-10 flex flex-col justify-between min-h-[280px]"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center">
+                    <item.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-xl md:text-2xl mb-3 tracking-tight">{item.title}</h3>
+                    <p className="text-sm md:text-[15px] text-blue-50 leading-relaxed">
+                      {item.desc}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-base md:text-lg mb-2 tracking-tight text-gray-900">{item.title}</h3>
-                  <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
+              ) : (
+                <div
+                  key={item.title}
+                  className="group rounded-2xl bg-gray-50 border border-gray-100 p-8 md:p-10 flex flex-col justify-between min-h-[280px] hover:border-blue-200 hover:bg-white hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-500"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors duration-500">
+                    <item.icon className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-xl md:text-2xl mb-3 tracking-tight text-gray-900">{item.title}</h3>
+                    <p className="text-sm md:text-[15px] text-gray-500 leading-relaxed">{item.desc}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            )}
           </div>
         </div>
       </section>
