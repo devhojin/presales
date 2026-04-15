@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/fetch-feeds",
       "schedule": "30 23 * * *"
+    },
+    {
+      "path": "/api/cron/send-brief",
+      "schedule": "0 23 * * *"
     }
   ]
 }

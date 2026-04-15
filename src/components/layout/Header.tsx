@@ -170,7 +170,7 @@ export function Header() {
                       <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                     </Link>
                     {profile?.role === 'admin' && (
-                      <Link
+                      <a
                         href="/admin"
                         onClick={() => setProfileMenu(false)}
                         className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-muted/80 transition-colors mx-1.5 rounded-lg"
@@ -179,7 +179,7 @@ export function Header() {
                           <Settings className="w-4 h-4 text-muted-foreground" /> 관리자
                         </span>
                         <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-                      </Link>
+                      </a>
                     )}
                     <div className="my-1 mx-3 border-t border-border" />
                     <button
@@ -259,13 +259,13 @@ export function Header() {
                   나의콘솔
                 </Link>
                 {profile?.role === 'admin' && (
-                  <Link
+                  <a
                     href="/admin"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="w-full flex items-center justify-center h-12 rounded-xl border border-border hover:bg-muted text-sm font-medium transition-colors"
                   >
                     관리자
-                  </Link>
+                  </a>
                 )}
                 <button
                   onClick={() => { handleLogout(); setIsMobileMenuOpen(false) }}

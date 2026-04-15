@@ -6,6 +6,7 @@ import {
   User, Mail, Phone, Building, CreditCard, AlertTriangle, Clock,
   ChevronDown, Image as ImageIcon, XCircle, Trash2,
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase'
 import type { ChatRoom, ChatMessage } from '@/lib/chat'
 
 const BLOCKED_EXTENSIONS = [
@@ -296,10 +297,26 @@ export default function AdminChatPage() {
 
   useEffect(() => { loadRooms() }, [loadRooms])
 
-  // 폴링: 방 목록 5초마다 갱신
+  // Realtime 구독: 채팅방 목록 실시간 갱신 (INSERT / UPDATE)
   useEffect(() => {
-    const interval = setInterval(loadRooms, 5000)
-    return () => clearInterval(interval)
+    const supabase = createClient()
+    const channel = supabase
+      .channel('admin-chat-rooms')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_rooms' },
+        () => { loadRooms() }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'chat_rooms' },
+        () => { loadRooms() }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [loadRooms])
 
   // 메시지 로드
@@ -337,17 +354,26 @@ export default function AdminChatPage() {
     loadMessages(room.id)
   }
 
-  // 폴링: 선택한 방의 메시지 3초마다 갱신
+  // Realtime 구독: 선택한 방의 새 메시지 실시간 수신
   useEffect(() => {
     if (!selectedRoom) return
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/chat/messages?room_id=${selectedRoom.id}`)
-        const data = await res.json()
-        if (data.messages) {
+
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`admin-chat-messages-${selectedRoom.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `room_id=eq.${selectedRoom.id}`,
+        },
+        (payload) => {
+          const newMsg = payload.new as ChatMessage
           setMessages((prev) => {
-            if (prev.length === data.messages.length) return prev
-            return data.messages
+            if (prev.some((m) => m.id === newMsg.id)) return prev
+            return [...prev, newMsg]
           })
           // 읽음 처리
           fetch('/api/chat/read', {
@@ -356,9 +382,12 @@ export default function AdminChatPage() {
             body: JSON.stringify({ room_id: selectedRoom.id }),
           })
         }
-      } catch { /* ignore */ }
-    }, 3000)
-    return () => clearInterval(interval)
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [selectedRoom])
 
   useEffect(() => {
