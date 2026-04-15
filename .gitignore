@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# auto-generated at build time
+/public/work-history.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
