@@ -198,8 +198,6 @@ export default function MyConsolePage() {
         supabase.from('feed_bookmarks').select('post_id').eq('user_id', user.id).order('created_at', { ascending: false }),
       ])
 
-      if (ordersData === null) console.error('orders query failed')
-
       // Purchased products
       const { data: paidOrders } = await supabase
         .from('orders')
