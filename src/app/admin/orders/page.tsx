@@ -124,11 +124,12 @@ interface ConsultingRequest {
 // Constants
 // ===========================
 
-type StatusFilter = 'all' | 'pending' | 'paid' | 'cancelled' | 'refunded'
+type StatusFilter = 'all' | 'pending' | 'pending_transfer' | 'paid' | 'cancelled' | 'refunded'
 
 const STATUS_TABS: { key: StatusFilter; label: string }[] = [
   { key: 'all', label: '전체' },
   { key: 'pending', label: '결제대기' },
+  { key: 'pending_transfer', label: '입금대기' },
   { key: 'paid', label: '결제완료' },
   { key: 'cancelled', label: '취소' },
   { key: 'refunded', label: '환불' },
@@ -136,6 +137,7 @@ const STATUS_TABS: { key: StatusFilter; label: string }[] = [
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; border: string }> = {
   pending: { label: '결제대기', bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' },
+  pending_transfer: { label: '입금대기', bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
   paid: { label: '결제완료', bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
   cancelled: { label: '취소', bg: 'bg-muted', text: 'text-muted-foreground', border: 'border-border' },
   refunded: { label: '환불', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
@@ -855,7 +857,7 @@ function OrderDetailModal({
           <div>
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">상태 변경</h3>
             <div className="bg-muted rounded-xl p-4 flex flex-wrap gap-2">
-              {order.status === 'pending' && (
+              {(order.status === 'pending' || order.status === 'pending_transfer') && (
                 <>
                   <button
                     onClick={() => setConfirmAction({ status: 'paid', label: '결제확인', color: 'bg-green-600 hover:bg-green-700' })}
@@ -1422,7 +1424,7 @@ export default function AdminOrders() {
 
   // Status counts
   const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: orders.length, pending: 0, paid: 0, cancelled: 0, refunded: 0 }
+    const counts: Record<string, number> = { all: orders.length, pending: 0, pending_transfer: 0, paid: 0, cancelled: 0, refunded: 0 }
     for (const o of orders) {
       if (counts[o.status] !== undefined) counts[o.status]++
     }

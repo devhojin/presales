@@ -1,41 +1,116 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useCartStore } from '@/stores/cart-store'
 import { createClient } from '@/lib/supabase'
 import { useToastStore } from '@/stores/toast-store'
 import { loadTossPayments, TossPaymentsWidgets } from '@tosspayments/tosspayments-sdk'
-import { ArrowLeft, ShieldCheck, Loader2 } from 'lucide-react'
+import { ArrowLeft, ShieldCheck, Loader2, CreditCard, Building2, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
 
 const CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY!
+
+type PaymentMethod = 'card' | 'bank_transfer'
 
 export default function CheckoutPage() {
   const { items, getTotal, getDiscountTotal, clearCart } = useCartStore()
   const { addToast } = useToastStore()
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // 채팅 결제 모드 감지
+  const chatPaymentId = searchParams.get('chat_payment_id')
+  const chatAmount = chatPaymentId ? Number(searchParams.get('amount') ?? '0') : null
+  const chatDescription = chatPaymentId ? (searchParams.get('description') ?? '채팅 결제') : null
+  const isChatPayment = chatPaymentId !== null && chatAmount !== null && chatAmount > 0
 
   const [ready, setReady] = useState(false)
   const [loading, setLoading] = useState(true)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [dbOrderId, setDbOrderId] = useState<number | null>(null)
   const [paying, setPaying] = useState(false)
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('card')
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null)
 
   const paidItems = items.filter((item) => item.price > 0)
   const cartTotal = getTotal()
-  const [finalAmount, setFinalAmount] = useState<number>(cartTotal)
+  const [finalAmount, setFinalAmount] = useState<number>(isChatPayment ? (chatAmount ?? 0) : cartTotal)
   const [couponDiscount, setCouponDiscount] = useState<number>(0)
   const [couponCode, setCouponCode] = useState<string | null>(null)
 
   useEffect(() => {
-    if (paidItems.length === 0) {
+    // 채팅 결제: 장바구니 비어있어도 통과
+    if (!isChatPayment && paidItems.length === 0) {
       router.replace('/cart')
+      return
+    }
+    if (isChatPayment && (!chatAmount || chatAmount <= 0)) {
+      addToast('결제 금액이 올바르지 않습니다.', 'error')
+      router.replace('/')
       return
     }
 
     let cancelled = false
+
+    async function initChatPayment() {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          const redirectUrl = `/checkout?chat_payment_id=${chatPaymentId}&amount=${chatAmount}&description=${encodeURIComponent(chatDescription ?? '')}`
+          router.push(`/auth/login?redirect=${encodeURIComponent(redirectUrl)}`)
+          return
+        }
+
+        // 채팅 결제: pending 주문 생성 (order_items 없음)
+        const { data: order, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            user_id: user.id,
+            total_amount: chatAmount,
+            status: 'pending',
+            payment_method: 'card',
+            coupon_discount: 0,
+          })
+          .select('id')
+          .single()
+
+        if (orderError || !order) {
+          addToast('주문 생성에 실패했습니다.', 'error')
+          router.replace('/')
+          return
+        }
+
+        const tossOrderId = `presales_${order.id}_${Date.now()}`
+        if (cancelled) return
+
+        setDbOrderId(order.id)
+        setOrderId(tossOrderId)
+        setFinalAmount(chatAmount ?? 0)
+
+        const tossPayments = await loadTossPayments(CLIENT_KEY)
+        const widgets = tossPayments.widgets({ customerKey: user.id })
+        widgetsRef.current = widgets
+
+        await widgets.setAmount({ currency: 'KRW', value: chatAmount ?? 0 })
+        await Promise.all([
+          widgets.renderPaymentMethods({ selector: '#payment-method', variantKey: 'DEFAULT' }),
+          widgets.renderAgreement({ selector: '#agreement', variantKey: 'AGREEMENT' }),
+        ])
+
+        if (!cancelled) {
+          setReady(true)
+          setLoading(false)
+        }
+      } catch (err) {
+        console.error('[chat checkout init error]', err)
+        if (!cancelled) {
+          addToast('결제 초기화에 실패했습니다.', 'error')
+          setLoading(false)
+        }
+      }
+    }
 
     async function init() {
       try {
@@ -323,22 +398,35 @@ export default function CheckoutPage() {
       }
     }
 
-    init()
+    if (isChatPayment) {
+      initChatPayment()
+    } else {
+      init()
+    }
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function handlePayment() {
+  async function handleCardPayment() {
     if (!widgetsRef.current || !orderId) return
 
     setPaying(true)
     try {
+      const successBase = `${window.location.origin}/checkout/success`
+      const successUrl = isChatPayment && chatPaymentId
+        ? `${successBase}?chat_payment_id=${encodeURIComponent(chatPaymentId)}`
+        : successBase
+
+      const orderName = isChatPayment
+        ? (chatDescription ?? '채팅 결제')
+        : paidItems.length === 1
+          ? paidItems[0].title
+          : `${paidItems[0].title} 외 ${paidItems.length - 1}건`
+
       await widgetsRef.current.requestPayment({
         orderId,
-        orderName: paidItems.length === 1
-          ? paidItems[0].title
-          : `${paidItems[0].title} 외 ${paidItems.length - 1}건`,
-        successUrl: `${window.location.origin}/checkout/success`,
+        orderName,
+        successUrl,
         failUrl: `${window.location.origin}/checkout/fail`,
       })
     } catch (err: unknown) {
@@ -359,6 +447,57 @@ export default function CheckoutPage() {
     }
   }
 
+  async function handleBankTransferPayment() {
+    if (!dbOrderId) return
+
+    setPaying(true)
+    try {
+      const res = await fetch('/api/payment/bank-transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: dbOrderId }),
+      })
+      const data = await res.json() as {
+        success?: boolean
+        orderId?: number
+        orderNumber?: string
+        totalAmount?: number
+        bankAccount?: { bank: string; account: string; holder: string }
+        error?: string
+      }
+
+      if (!res.ok || !data.success) {
+        addToast(data.error || '무통장 주문 처리에 실패했습니다.', 'error')
+        setPaying(false)
+        return
+      }
+
+      clearCart()
+      // 입금 안내 페이지로 이동
+      const params = new URLSearchParams({
+        orderId: String(data.orderId),
+        orderNumber: data.orderNumber || '',
+        amount: String(data.totalAmount),
+        bank: data.bankAccount?.bank || '',
+        account: data.bankAccount?.account || '',
+        holder: data.bankAccount?.holder || '',
+      })
+      router.push(`/checkout/bank-transfer?${params.toString()}`)
+    } catch (err) {
+      console.error('[무통장 결제 오류]', err)
+      addToast('무통장 주문 처리 중 오류가 발생했습니다.', 'error')
+      setPaying(false)
+    }
+  }
+
+  function handlePayment() {
+    if (selectedMethod === 'bank_transfer') {
+      handleBankTransferPayment()
+    } else {
+      handleCardPayment()
+    }
+  }
+
   const formatPrice = (price: number) => {
     if (price === 0) return '무료'
     return new Intl.NumberFormat('ko-KR').format(price) + '원'
@@ -366,32 +505,56 @@ export default function CheckoutPage() {
 
   return (
     <div className="container mx-auto px-4 py-10 max-w-2xl">
-      <Link href="/cart" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6">
-        <ArrowLeft className="w-4 h-4 mr-1" /> 장바구니로 돌아가기
-      </Link>
+      {isChatPayment ? (
+        <button
+          onClick={() => router.back()}
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6 cursor-pointer"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" /> 뒤로가기
+        </button>
+      ) : (
+        <Link href="/cart" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary mb-6">
+          <ArrowLeft className="w-4 h-4 mr-1" /> 장바구니로 돌아가기
+        </Link>
+      )}
 
       <h1 className="text-2xl font-bold mb-8">결제하기</h1>
 
       {/* 주문 요약 */}
       <div className="bg-muted/30 rounded-xl p-5 mb-6 space-y-3">
-        <h2 className="font-semibold text-sm">주문 상품 ({paidItems.length}개)</h2>
-        {paidItems.map((item) => (
-          <div key={item.productId} className="flex justify-between text-sm">
-            <span className="text-muted-foreground line-clamp-1 flex-1 mr-4">{item.title}</span>
-            <span className="font-medium shrink-0">{formatPrice(item.price)}</span>
-          </div>
-        ))}
-        {getDiscountTotal() > 0 && (
-          <div className="flex justify-between text-sm text-red-500">
-            <span>상품 할인</span>
-            <span>-{formatPrice(getDiscountTotal())}</span>
-          </div>
-        )}
-        {couponDiscount > 0 && (
-          <div className="flex justify-between text-sm text-blue-700">
-            <span>쿠폰 할인{couponCode && ` (${couponCode})`}</span>
-            <span>-{formatPrice(couponDiscount)}</span>
-          </div>
+        {isChatPayment ? (
+          <>
+            <div className="flex items-center gap-2 mb-1">
+              <MessageCircle className="w-4 h-4 text-blue-700" />
+              <h2 className="font-semibold text-sm text-blue-800">채팅 결제 요청</h2>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground flex-1 mr-4">{chatDescription}</span>
+              <span className="font-medium shrink-0">{formatPrice(chatAmount ?? 0)}</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 className="font-semibold text-sm">주문 상품 ({paidItems.length}개)</h2>
+            {paidItems.map((item) => (
+              <div key={item.productId} className="flex justify-between text-sm">
+                <span className="text-muted-foreground line-clamp-1 flex-1 mr-4">{item.title}</span>
+                <span className="font-medium shrink-0">{formatPrice(item.price)}</span>
+              </div>
+            ))}
+            {getDiscountTotal() > 0 && (
+              <div className="flex justify-between text-sm text-red-500">
+                <span>상품 할인</span>
+                <span>-{formatPrice(getDiscountTotal())}</span>
+              </div>
+            )}
+            {couponDiscount > 0 && (
+              <div className="flex justify-between text-sm text-blue-700">
+                <span>쿠폰 할인{couponCode && ` (${couponCode})`}</span>
+                <span>-{formatPrice(couponDiscount)}</span>
+              </div>
+            )}
+          </>
         )}
         <div className="border-t pt-3 flex justify-between font-bold text-lg">
           <span>결제 금액</span>
@@ -399,18 +562,73 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {/* 토스 결제 위젯 */}
-      {loading && (
-        <div className="flex items-center justify-center py-20 text-muted-foreground">
-          <Loader2 className="w-6 h-6 animate-spin mr-2" />
-          결제 수단을 불러오는 중...
+      {/* 결제 수단 선택 (채팅 결제는 카드 결제만 지원) */}
+      {!isChatPayment && (
+        <div className="mb-6">
+          <h2 className="font-semibold text-sm mb-3">결제 수단 선택</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => setSelectedMethod('card')}
+              className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-colors cursor-pointer text-left ${
+                selectedMethod === 'card'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/40'
+              }`}
+            >
+              <CreditCard className={`w-5 h-5 shrink-0 ${selectedMethod === 'card' ? 'text-primary' : 'text-muted-foreground'}`} />
+              <div>
+                <p className={`text-sm font-semibold ${selectedMethod === 'card' ? 'text-primary' : 'text-foreground'}`}>카드 결제</p>
+                <p className="text-[11px] text-muted-foreground">토스페이먼츠</p>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedMethod('bank_transfer')}
+              className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-colors cursor-pointer text-left ${
+                selectedMethod === 'bank_transfer'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/40'
+              }`}
+            >
+              <Building2 className={`w-5 h-5 shrink-0 ${selectedMethod === 'bank_transfer' ? 'text-primary' : 'text-muted-foreground'}`} />
+              <div>
+                <p className={`text-sm font-semibold ${selectedMethod === 'bank_transfer' ? 'text-primary' : 'text-foreground'}`}>무통장 입금</p>
+                <p className="text-[11px] text-muted-foreground">계좌이체·세금계산서</p>
+              </div>
+            </button>
+          </div>
         </div>
       )}
 
-      <div id="payment-method" className="mb-4" />
-      <div id="agreement" className="mb-6" />
+      {/* 무통장 입금 안내 */}
+      {!isChatPayment && selectedMethod === 'bank_transfer' && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+          <p className="text-sm font-semibold text-blue-900 mb-2">무통장 입금 안내</p>
+          <ul className="space-y-1 text-xs text-blue-800">
+            <li>• 주문 완료 후 안내 이메일로 계좌 정보가 발송됩니다</li>
+            <li>• 입금 확인 후 영업일 기준 1~2일 내 파일 이용이 가능합니다</li>
+            <li>• 세금계산서 발행이 필요하신 경우 장바구니에서 사업자등록증을 업로드해 주세요</li>
+          </ul>
+        </div>
+      )}
 
-      {ready && (
+      {/* 토스 결제 위젯 (카드 선택 시 또는 채팅 결제 시 표시) */}
+      {(isChatPayment || selectedMethod === 'card') && (
+        <>
+          {loading && (
+            <div className="flex items-center justify-center py-20 text-muted-foreground">
+              <Loader2 className="w-6 h-6 animate-spin mr-2" />
+              결제 수단을 불러오는 중...
+            </div>
+          )}
+          <div id="payment-method" className="mb-4" />
+          <div id="agreement" className="mb-6" />
+        </>
+      )}
+
+      {/* 결제 버튼 */}
+      {((!isChatPayment && selectedMethod === 'bank_transfer') || ready) && (
         <button
           onClick={handlePayment}
           disabled={paying}
@@ -419,7 +637,12 @@ export default function CheckoutPage() {
           {paying ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              결제 처리 중...
+              처리 중...
+            </>
+          ) : !isChatPayment && selectedMethod === 'bank_transfer' ? (
+            <>
+              <Building2 className="w-5 h-5" />
+              {formatPrice(finalAmount)} 무통장 입금 신청
             </>
           ) : (
             <>
@@ -431,7 +654,9 @@ export default function CheckoutPage() {
       )}
 
       <p className="text-[11px] text-muted-foreground text-center mt-4">
-        결제는 토스페이먼츠를 통해 안전하게 처리됩니다
+        {!isChatPayment && selectedMethod === 'bank_transfer'
+          ? '무통장 입금은 입금 확인 후 파일이 제공됩니다'
+          : '결제는 토스페이먼츠를 통해 안전하게 처리됩니다'}
       </p>
     </div>
   )
