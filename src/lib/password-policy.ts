@@ -96,59 +96,67 @@ export function validatePassword(password: string, email?: string): PasswordChec
   return { valid, score, label: labels[score], color: colors[score], errors }
 }
 
-/** 로그인 시도 제한 (KISA: 5회 이하) */
-const LOGIN_ATTEMPT_KEY = 'ps_login_attempts'
-const MAX_ATTEMPTS = 5
-const LOCKOUT_MINUTES = 15
+/** 로그인 시도 제한 (KISA: 5회 이하, 서버사이드 — profiles 테이블 기반) */
 
-interface LoginAttemptData {
-  count: number
-  lockedUntil: number | null
-  lastAttempt: number
+export interface LockCheckResult {
+  locked: boolean
+  remainingMinutes: number
+  failedCount: number
 }
 
-function getAttemptData(): LoginAttemptData {
+export interface RecordFailureResult {
+  locked: boolean
+  attemptsLeft: number
+}
+
+/**
+ * 서버에 로그인 잠금 상태를 조회합니다.
+ * GET /api/auth/login-attempt?email=...
+ */
+export async function checkLoginLock(email: string): Promise<LockCheckResult> {
   try {
-    const raw = localStorage.getItem(LOGIN_ATTEMPT_KEY)
-    if (!raw) return { count: 0, lockedUntil: null, lastAttempt: 0 }
-    return JSON.parse(raw)
+    const res = await fetch(
+      `/api/auth/login-attempt?email=${encodeURIComponent(email)}`,
+      { method: 'GET' }
+    )
+    if (!res.ok) return { locked: false, remainingMinutes: 0, failedCount: 0 }
+    return (await res.json()) as LockCheckResult
   } catch {
-    return { count: 0, lockedUntil: null, lastAttempt: 0 }
+    // 네트워크 오류 시 잠금 없음으로 폴백 (가용성 우선)
+    return { locked: false, remainingMinutes: 0, failedCount: 0 }
   }
 }
 
-function saveAttemptData(data: LoginAttemptData) {
-  localStorage.setItem(LOGIN_ATTEMPT_KEY, JSON.stringify(data))
+/**
+ * 로그인 실패를 서버에 기록합니다.
+ * POST /api/auth/login-attempt  { email }
+ */
+export async function recordLoginFailure(email: string): Promise<RecordFailureResult> {
+  try {
+    const res = await fetch('/api/auth/login-attempt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+    if (!res.ok) return { locked: false, attemptsLeft: 4 }
+    return (await res.json()) as RecordFailureResult
+  } catch {
+    return { locked: false, attemptsLeft: 4 }
+  }
 }
 
-// TODO: 향후 Supabase RPC 또는 Redis로 서버사이드 잠금 마이그레이션 필요 (현재 localStorage 기반은 클라이언트에서 우회 가능)
-export function checkLoginLock(): { locked: boolean; remainingMinutes: number } {
-  const data = getAttemptData()
-  if (data.lockedUntil && Date.now() < data.lockedUntil) {
-    const remaining = Math.ceil((data.lockedUntil - Date.now()) / 60000)
-    return { locked: true, remainingMinutes: remaining }
+/**
+ * 로그인 성공 시 잠금 카운터를 초기화합니다.
+ * DELETE /api/auth/login-attempt  { email }
+ */
+export async function resetLoginAttempts(email: string): Promise<void> {
+  try {
+    await fetch('/api/auth/login-attempt', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+  } catch {
+    // 초기화 실패는 무시 (다음 성공 로그인 시 재시도됨)
   }
-  if (data.lockedUntil && Date.now() >= data.lockedUntil) {
-    saveAttemptData({ count: 0, lockedUntil: null, lastAttempt: 0 })
-  }
-  return { locked: false, remainingMinutes: 0 }
-}
-
-export function recordLoginFailure(): { locked: boolean; attemptsLeft: number } {
-  const data = getAttemptData()
-  data.count++
-  data.lastAttempt = Date.now()
-
-  if (data.count >= MAX_ATTEMPTS) {
-    data.lockedUntil = Date.now() + LOCKOUT_MINUTES * 60 * 1000
-    saveAttemptData(data)
-    return { locked: true, attemptsLeft: 0 }
-  }
-
-  saveAttemptData(data)
-  return { locked: false, attemptsLeft: MAX_ATTEMPTS - data.count }
-}
-
-export function resetLoginAttempts() {
-  localStorage.removeItem(LOGIN_ATTEMPT_KEY)
 }
