@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { logger } from '@/lib/logger'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 const ADMIN_EMAIL = 'admin@amarans.co.kr'
 
@@ -27,6 +28,16 @@ function formatDateKR(isoString: string) {
 
 export async function POST(request: NextRequest) {
   try {
+    const headersList = await headers()
+    const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+    const rl = checkRateLimit(`email:${ip}`, 5, 60000)
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, {
+        status: 429,
+        headers: { 'Retry-After': '60', 'X-RateLimit-Remaining': String(rl.remaining) },
+      })
+    }
+
     // 인증 확인
     const cookieStore = await cookies()
     const supabaseAuth = createServerClient(

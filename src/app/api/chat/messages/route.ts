@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 import { getServiceClient, getAuthUser, isAdmin } from '@/lib/chat'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 /** GET: 특정 방의 메시지 목록 */
 export async function GET(request: NextRequest) {
+  const headersList = await headers()
+  const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+  const rl = checkRateLimit(`chat:${ip}`, 30, 60000)
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, {
+      status: 429,
+      headers: { 'Retry-After': '60', 'X-RateLimit-Remaining': String(rl.remaining) },
+    })
+  }
+
   const { searchParams } = new URL(request.url)
   const roomId = searchParams.get('room_id')
   if (!roomId) return NextResponse.json({ error: 'room_id 필요' }, { status: 400 })
@@ -32,6 +44,16 @@ export async function GET(request: NextRequest) {
 
 /** POST: 메시지 전송 */
 export async function POST(request: NextRequest) {
+  const headersList = await headers()
+  const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+  const rl = checkRateLimit(`chat:${ip}`, 30, 60000)
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, {
+      status: 429,
+      headers: { 'Retry-After': '60', 'X-RateLimit-Remaining': String(rl.remaining) },
+    })
+  }
+
   const body = await request.json()
   const { room_id, content, message_type, file_url, file_name, file_size, file_type, metadata, guest_id } = body
 

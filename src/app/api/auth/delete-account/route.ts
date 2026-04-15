@@ -1,11 +1,22 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { logger } from '@/lib/logger'
+import { checkRateLimit } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
+    const headersList = await headers()
+    const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+    const rl = checkRateLimit(`auth:${ip}`, 10, 60000)
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, {
+        status: 429,
+        headers: { 'Retry-After': '60', 'X-RateLimit-Remaining': String(rl.remaining) },
+      })
+    }
+
     // Request body에서 password 받기
     const body = await request.json()
     const { password } = body
