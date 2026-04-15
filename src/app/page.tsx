@@ -230,72 +230,80 @@ export default function Home() {
 
   return (
     <div>
-      {/* Hero — Asymmetric Split Layout */}
-      <section className="relative min-h-[100dvh] flex items-center bg-[#0C1220] text-white overflow-hidden">
-        {/* Subtle gradient orbs */}
-        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-blue-500/8 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-30%] left-[-10%] w-[500px] h-[500px] bg-blue-700/5 rounded-full blur-[100px]" />
+      {/* Hero — Clean White + Blue Accent + Person */}
+      <section className="relative min-h-[90dvh] flex items-center bg-white overflow-hidden">
+        {/* Blue accent block — right side */}
+        <div className="absolute top-0 right-0 w-[45%] h-full bg-blue-600 hidden md:block" />
+        <div className="absolute top-0 right-0 w-[42%] h-full bg-blue-700 hidden md:block" style={{ clipPath: 'polygon(8% 0, 100% 0, 100% 100%, 0% 100%)' }} />
 
         <div className="max-w-[1400px] mx-auto px-4 md:px-8 w-full py-20 md:py-0 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center">
             {/* Left: Content */}
-            <div className="space-y-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-[11px] font-medium tracking-wide text-blue-300 uppercase">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                실제 낙찰된 제안서만 판매합니다
+            <div className="space-y-7">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-xs font-semibold tracking-wide text-blue-700 uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+                공공조달 제안서 전문
               </div>
 
-              <h1 className="text-4xl md:text-6xl font-bold tracking-tighter leading-[1.08]">
-                낙찰받은 기업들의<br />
-                제안서가
-                <span className="block text-blue-400 mt-1">여기 있습니다</span>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] text-gray-900">
+                낙찰받은 기업의<br />
+                제안서로<br />
+                <span className="text-blue-600">당신의 성공</span>을<br />
+                설계합니다.
               </h1>
 
-              <p className="text-base md:text-lg text-zinc-400 leading-relaxed max-w-[480px]">
-                나라장터·조달청 실제 낙찰 기업이 사용한 기술제안서, 가격제안서, 발표PT 템플릿.
-                처음부터 다시 쓰지 마세요.
+              <p className="text-base md:text-lg text-gray-500 leading-relaxed max-w-[480px]">
+                나라장터·조달청 실제 낙찰 기업이 사용한 제안서를 그대로 받아보세요.
+                처음부터 다시 쓰지 않아도 됩니다.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link
                   href="/store"
-                  className="inline-flex items-center justify-center h-12 px-7 rounded-full bg-blue-500 hover:bg-blue-400 text-white font-medium text-sm transition-all duration-300 active:scale-[0.98] shadow-[0_0_20px_rgba(37,99,235,0.2)]"
+                  className="inline-flex items-center justify-center h-13 px-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-all duration-300 active:scale-[0.98] shadow-lg shadow-blue-600/25"
                 >
-                  낙찰 제안서 보러가기
+                  제안서 템플릿 보기
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Link>
                 <Link
                   href="/consulting"
-                  className="inline-flex items-center justify-center h-12 px-7 rounded-full border border-white/[0.12] text-zinc-300 hover:bg-white/[0.06] font-medium text-sm transition-all duration-300"
+                  className="inline-flex items-center justify-center h-13 px-8 rounded-full border-2 border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-700 font-semibold text-sm transition-all duration-300"
                 >
-                  입찰 전략 무료 상담
+                  무료 상담 받기
                 </Link>
+              </div>
+
+              {/* Trust badges */}
+              <div className="flex items-center gap-6 pt-4">
+                {[
+                  { value: `${stats?.productCount || 71}+`, label: '검증 템플릿' },
+                  { value: '6개', label: '전문 분야' },
+                  { value: '100%', label: '원본 제공' },
+                ].map((s) => (
+                  <div key={s.label} className="text-center">
+                    <p className="text-2xl font-bold text-gray-900">{s.value}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">{s.label}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Right: Stats Grid */}
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { value: '실전 검증', label: '낙찰 기록 보유', accent: false },
-                { value: '6개 분야', label: '실전 제안서 보유', accent: true },
-                { value: '1:1', label: '낙찰 전략 컨설팅', accent: true },
-                { value: '100%', label: '수정 가능한 원본 제공', accent: false },
-              ].map((stat, i) => (
-                <div
-                  key={stat.label}
-                  className={`rounded-2xl p-6 md:p-8 ${
-                    stat.accent
-                      ? 'bg-blue-500/[0.08] border border-blue-500/[0.12]'
-                      : 'bg-white/[0.04] border border-white/[0.06]'
-                  }`}
-                >
-                  <p className="text-2xl md:text-3xl font-bold tracking-tight text-white">{stat.value}</p>
-                  <p className="text-xs text-zinc-400 mt-2 leading-relaxed">{stat.label}</p>
-                </div>
-              ))}
+            {/* Right: Person Image */}
+            <div className="relative hidden md:flex items-end justify-center">
+              <Image
+                src="/images/hero-person.webp"
+                alt="공공조달 전문가"
+                width={500}
+                height={600}
+                className="relative z-10 object-cover"
+                priority
+              />
             </div>
           </div>
         </div>
+
+        {/* Mobile blue accent */}
+        <div className="absolute bottom-0 left-0 right-0 h-2 bg-blue-600 md:hidden" />
       </section>
 
       {/* Value Props — Horizontal scroll on mobile, grid on desktop */}
