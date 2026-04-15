@@ -248,6 +248,24 @@ function extractYoutubeId(input: string): string {
   return input
 }
 
+// Supabase PostgrestError / StorageError 는 Error 인스턴스가 아니므로
+// instanceof Error 검사에서 누락됨 → message 필드를 직접 파내어 노출
+function formatErr(e: unknown): string {
+  if (e instanceof Error) return e.message
+  if (e && typeof e === 'object') {
+    const obj = e as { message?: unknown; error?: unknown; details?: unknown; hint?: unknown; code?: unknown }
+    const parts: string[] = []
+    if (typeof obj.message === 'string') parts.push(obj.message)
+    else if (typeof obj.error === 'string') parts.push(obj.error)
+    if (typeof obj.code === 'string') parts.push(`[${obj.code}]`)
+    if (typeof obj.details === 'string') parts.push(obj.details)
+    if (typeof obj.hint === 'string') parts.push(`(${obj.hint})`)
+    if (parts.length > 0) return parts.join(' ')
+    try { return JSON.stringify(e) } catch { return String(e) }
+  }
+  return String(e ?? '알 수 없는 오류')
+}
+
 // ===========================
 // Main Page
 // ===========================
@@ -343,7 +361,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       await loadProductFiles()
       showToast('파일이 업로드되었습니다.')
     } catch (err) {
-      showToast(`업로드 오류: ${err instanceof Error ? err.message : '알 수 없는 오류'}`)
+      showToast(`업로드 오류: ${formatErr(err)}`)
     } finally {
       setFileUploading(false)
       setFileUploadProgress(0)
@@ -367,7 +385,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       await loadProductFiles()
       showToast('파일이 삭제되었습니다.')
     } catch (err) {
-      showToast(`삭제 오류: ${err instanceof Error ? err.message : '알 수 없는 오류'}`)
+      showToast(`삭제 오류: ${formatErr(err)}`)
     } finally {
       setDeletingFile(false)
     }
@@ -509,7 +527,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       showToast(isNew ? '상품이 등록되었습니다.' : '상품이 수정되었습니다.')
       setTimeout(() => router.push('/admin/products'), 1000)
     } catch (e) {
-      showToast(`저장 오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}`)
+      console.error('[handleSave] error:', e)
+      showToast(`저장 오류: ${formatErr(e)}`)
     } finally {
       setSaving(false)
     }
@@ -525,7 +544,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       showToast('상품이 삭제되었습니다.')
       setTimeout(() => router.push('/admin/products'), 1000)
     } catch (e) {
-      showToast(`삭제 오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}`)
+      showToast(`삭제 오류: ${formatErr(e)}`)
     }
   }
 
@@ -554,7 +573,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       updateField('thumbnail_url', urlData.publicUrl)
       showToast('이미지가 업로드되었습니다.')
     } catch (err) {
-      showToast(`업로드 오류: ${err instanceof Error ? err.message : '알 수 없는 오류'}`)
+      showToast(`업로드 오류: ${formatErr(err)}`)
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
