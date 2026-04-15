@@ -46,7 +46,6 @@ export function PdfPreviewModal({
   const blurPages = previewBlurPages || 2
   const totalPreviewPages = clearPages + blurPages
   const isBlurPage = currentPage > clearPages
-  const remainingPages = totalPages - totalPreviewPages
 
   // Load PDF
   useEffect(() => {
@@ -192,12 +191,12 @@ export function PdfPreviewModal({
                         <Lock className="w-8 h-8 text-gray-400" />
                       </div>
                       <p className="text-base font-semibold text-gray-900 mb-2">
-                        나머지 {remainingPages}페이지는
+                        나머지 페이지는
                         <br />
                         구매 후 확인 가능합니다
                       </p>
                       <p className="text-xs text-gray-500 mb-6">
-                        전체 {totalPages}페이지 중 {clearPages}페이지까지 미리보기
+                        미리보기는 일부만 제공됩니다
                       </p>
                       <button
                         onClick={onPurchaseClick}
