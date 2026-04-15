@@ -1053,7 +1053,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     const file = e.dataTransfer.files[0]
                     if (!file || !file.name.endsWith('.pdf')) { setToast('PDF 파일만 업로드 가능합니다'); return }
                     const supabase = createClient()
-                    const fileName = `preview-${form.title.replace(/[^a-zA-Z0-9가-힣]/g, '_')}-${Date.now()}.pdf`
+                    const fileName = `preview-${Number(id)}-${Date.now()}.pdf`
                     const { error } = await supabase.storage.from('product-previews').upload(fileName, file)
                     if (error) { setToast('업로드 실패: ' + error.message); return }
                     const { data: urlData } = supabase.storage.from('product-previews').getPublicUrl(fileName)
@@ -1072,7 +1072,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                       const file = e.target.files?.[0]
                       if (!file) return
                       const supabase = createClient()
-                      const fileName = `preview-${form.title.replace(/[^a-zA-Z0-9가-힣]/g, '_')}-${Date.now()}.pdf`
+                      const fileName = `preview-${Number(id)}-${Date.now()}.pdf`
                       const { error } = await supabase.storage.from('product-previews').upload(fileName, file)
                       if (error) { setToast('업로드 실패: ' + error.message); return }
                       const { data: urlData } = supabase.storage.from('product-previews').getPublicUrl(fileName)
