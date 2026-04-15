@@ -1483,15 +1483,35 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     <div className="divide-y divide-gray-100 border border-border rounded-xl overflow-hidden">
                       {productFiles.map(file => (
                         <div key={file.id} className="flex items-center gap-3 px-4 py-3 bg-white hover:bg-muted transition-colors group">
-                          <div className="w-8 h-8 bg-primary/8 rounded-xl flex items-center justify-center shrink-0">
-                            <FileText className="w-4 h-4 text-primary" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{file.file_name}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {formatFileSize(file.file_size)} · {new Date(file.created_at).toLocaleDateString('ko-KR')}
-                            </p>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                const res = await fetch('/api/download', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ productId: Number(id), fileId: file.id }),
+                                })
+                                const body = await res.json()
+                                if (!res.ok || !body.url) throw new Error(body.error || '다운로드 실패')
+                                window.location.href = body.url
+                              } catch (e) {
+                                alert(e instanceof Error ? e.message : '다운로드에 실패했습니다')
+                              }
+                            }}
+                            className="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer"
+                            title="다운로드"
+                          >
+                            <div className="w-8 h-8 bg-primary/8 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
+                              <Download className="w-4 h-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{file.file_name}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {formatFileSize(file.file_size)} · {new Date(file.created_at).toLocaleDateString('ko-KR')}
+                              </p>
+                            </div>
+                          </button>
                           <button
                             type="button"
                             onClick={() => setDeleteConfirmFile(file)}

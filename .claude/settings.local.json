@@ -9,7 +9,9 @@
       "mcp__plugin_playwright_playwright__browser_resize",
       "mcp__plugin_playwright_playwright__browser_fill_form",
       "mcp__plugin_playwright_playwright__browser_click",
-      "mcp__plugin_playwright_playwright__browser_console_messages"
+      "mcp__plugin_playwright_playwright__browser_console_messages",
+      "Bash(rm -rf ~/.claude/projects/c--Users-hojin-presales \"/c/Users/hojin/Dropbox/Backup-Project/presales\")",
+      "Read(//c/Users/hojin/**)"
     ]
   }
 }
