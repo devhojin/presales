@@ -1,14 +1,13 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 import { Mail, Lock, Eye, EyeOff, ShieldAlert } from 'lucide-react'
 import { checkLoginLock, recordLoginFailure, resetLoginAttempts } from '@/lib/password-policy'
 
 function LoginForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const reason = searchParams.get('reason')
   const redirectTo = searchParams.get('redirect')
@@ -63,8 +62,10 @@ function LoginForm() {
     resetLoginAttempts()
     // redirect 파라미터가 있으면 해당 경로로, 없으면 /mypage로 이동
     const destination = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/mypage'
-    router.push(destination)
-    router.refresh()
+    // Hard navigation: SPA 라우팅은 방금 세팅된 세션 쿠키가 RSC 요청에 완전히
+    // 전파되기 전 middleware 가 실행되어 /admin 같은 보호 경로에서 404/리다이렉트
+    // 꼬임이 발생함. window.location.href 로 풀페이지 로드하면 쿠키 전파 보장.
+    window.location.href = destination
   }
 
   return (
