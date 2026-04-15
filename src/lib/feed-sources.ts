@@ -102,7 +102,7 @@ export function getSourceName(source: string): string {
 // 카테고리 정의
 export const FEED_CATEGORIES = [
   { id: 'news', label: '스타트업뉴스', color: 'bg-blue-100 text-blue-700' },
-  { id: 'policy', label: '정책소식', color: 'bg-emerald-100 text-emerald-700' },
+  { id: 'policy', label: '정책소식', color: 'bg-blue-100 text-blue-800' },
   { id: 'bid', label: '입찰공고', color: 'bg-orange-100 text-orange-700' },
   { id: 'task', label: '과제공고', color: 'bg-purple-100 text-purple-700' },
   { id: 'event', label: '행사안내', color: 'bg-pink-100 text-pink-700' },

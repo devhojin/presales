@@ -203,7 +203,7 @@ export default function AdminBriefPage() {
         </div>
         <div className="bg-card border border-border/50 rounded-xl p-4">
           <p className="text-xs text-muted-foreground">활성 구독</p>
-          <p className="text-2xl font-bold text-emerald-600 mt-1">{activeCount}</p>
+          <p className="text-2xl font-bold text-blue-700 mt-1">{activeCount}</p>
         </div>
         <div className="bg-card border border-border/50 rounded-xl p-4">
           <p className="text-xs text-muted-foreground">수신 거부</p>
@@ -271,13 +271,13 @@ export default function AdminBriefPage() {
                           className="flex items-center gap-1.5 cursor-pointer"
                         >
                           {sub.status === 'active' ? (
-                            <ToggleRight className="w-5 h-5 text-emerald-500" />
+                            <ToggleRight className="w-5 h-5 text-blue-500" />
                           ) : (
                             <ToggleLeft className="w-5 h-5 text-muted-foreground" />
                           )}
                           <Badge className={`text-xs ${
                             sub.status === 'active'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              ? 'bg-blue-50 text-blue-800 border-blue-200'
                               : 'bg-muted text-muted-foreground border-border'
                           }`}>
                             {sub.status === 'active' ? '활성' : sub.status === 'unsubscribed' ? '수신거부' : sub.status}
@@ -341,7 +341,7 @@ export default function AdminBriefPage() {
                       <td className="px-4 py-3 text-center">
                         <Badge className={`text-xs ${
                           b.is_published
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            ? 'bg-blue-50 text-blue-800 border-blue-200'
                             : 'bg-muted text-muted-foreground border-border'
                         }`}>
                           {b.is_published ? '공개' : '비공개'}

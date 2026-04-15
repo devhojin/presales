@@ -99,7 +99,7 @@ export default function CheckoutSuccessPage() {
 
   return (
     <div className="container mx-auto px-4 py-20 max-w-lg text-center">
-      <CheckCircle className="w-16 h-16 mx-auto mb-4 text-emerald-500" />
+      <CheckCircle className="w-16 h-16 mx-auto mb-4 text-blue-500" />
       <h1 className="text-2xl font-bold mb-2">결제 완료!</h1>
       <p className="text-muted-foreground mb-8">
         주문이 성공적으로 처리되었습니다.<br />

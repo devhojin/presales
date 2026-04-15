@@ -349,7 +349,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-medium">{maskName(review.reviewer_name)}</span>
                   {review.is_verified_purchase && (
-                    <span className="inline-flex items-center gap-1 text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    <span className="inline-flex items-center gap-1 text-xs text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
                       <ShieldCheck className="w-3 h-3" />
                       구매인증
                     </span>

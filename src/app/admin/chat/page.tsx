@@ -138,7 +138,7 @@ function PaymentRequestModal({ roomId, userId, onClose, onSent }: {
       <div className="bg-background border border-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold flex items-center gap-2">
-            <CreditCard className="w-4 h-4 text-emerald-600" /> 결제 요청
+            <CreditCard className="w-4 h-4 text-blue-700" /> 결제 요청
           </h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground cursor-pointer"><X className="w-4 h-4" /></button>
         </div>
@@ -149,7 +149,7 @@ function PaymentRequestModal({ roomId, userId, onClose, onSent }: {
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
+              className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/30"
               placeholder="커스텀 제안서 패키지"
             />
           </div>
@@ -158,7 +158,7 @@ function PaymentRequestModal({ roomId, userId, onClose, onSent }: {
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500/30 resize-none"
+              className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/30 resize-none"
               rows={2}
               placeholder="상세 설명 (선택)"
             />
@@ -168,7 +168,7 @@ function PaymentRequestModal({ roomId, userId, onClose, onSent }: {
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value.replace(/[^0-9,]/g, ''))}
-              className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
+              className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/30"
               placeholder="99,000"
             />
           </div>
@@ -180,7 +180,7 @@ function PaymentRequestModal({ roomId, userId, onClose, onSent }: {
           <button
             onClick={handleSubmit}
             disabled={!title.trim() || !amount || sending}
-            className="w-full py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors cursor-pointer disabled:opacity-50"
+            className="w-full py-2.5 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors cursor-pointer disabled:opacity-50"
           >
             {sending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : '결제 요청 보내기'}
           </button>
@@ -543,20 +543,20 @@ export default function AdminChatPage() {
       const meta = msg.metadata as { title: string; amount: number; status: string }
       return (
         <div key={msg.id} className="flex justify-center my-3">
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 max-w-[320px] w-full">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 max-w-[320px] w-full">
             <div className="flex items-center gap-2 mb-2">
-              <CreditCard className="w-4 h-4 text-emerald-600" />
-              <span className="text-xs font-semibold text-emerald-700">결제 요청</span>
+              <CreditCard className="w-4 h-4 text-blue-700" />
+              <span className="text-xs font-semibold text-blue-800">결제 요청</span>
               <span className={`ml-auto text-[10px] font-medium px-2 py-0.5 rounded-full ${
                 meta.status === 'pending' ? 'bg-yellow-100 text-yellow-700'
-                : meta.status === 'paid' ? 'bg-emerald-100 text-emerald-700'
+                : meta.status === 'paid' ? 'bg-blue-100 text-blue-800'
                 : 'bg-red-100 text-red-600'
               }`}>
                 {meta.status === 'pending' ? '대기' : meta.status === 'paid' ? '완료' : '취소'}
               </span>
             </div>
             <p className="font-medium text-sm">{meta.title}</p>
-            <p className="text-lg font-bold text-emerald-700 mt-1">{formatAmount(meta.amount)}</p>
+            <p className="text-lg font-bold text-blue-800 mt-1">{formatAmount(meta.amount)}</p>
             <p className="text-[10px] text-muted-foreground mt-2">{formatFullTime(msg.created_at)}</p>
           </div>
         </div>
@@ -572,7 +572,7 @@ export default function AdminChatPage() {
             </p>
           )}
           <div className={`px-3 py-2 rounded-2xl text-sm break-words ${
-            isAdmin ? 'bg-emerald-600 text-white rounded-br-md' : 'bg-muted/70 text-foreground rounded-bl-md'
+            isAdmin ? 'bg-blue-700 text-white rounded-br-md' : 'bg-muted/70 text-foreground rounded-bl-md'
           }`}>
             {(msg.message_type === 'image' && msg.file_url) ? (
               <a href={msg.file_url} target="_blank" rel="noopener noreferrer">
@@ -619,7 +619,7 @@ export default function AdminChatPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="검색..."
-                className="w-full pl-9 pr-3 py-2 text-sm border border-border/50 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500/30"
+                className="w-full pl-9 pr-3 py-2 text-sm border border-border/50 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500/30"
               />
             </div>
             <div className="flex gap-1 mt-2">
@@ -628,7 +628,7 @@ export default function AdminChatPage() {
                   key={f}
                   onClick={() => setFilter(f)}
                   className={`text-xs px-2.5 py-1 rounded-full transition-colors cursor-pointer ${
-                    filter === f ? 'bg-emerald-600 text-white' : 'bg-muted/50 text-muted-foreground hover:bg-muted'
+                    filter === f ? 'bg-blue-700 text-white' : 'bg-muted/50 text-muted-foreground hover:bg-muted'
                   }`}
                 >
                   {f === 'all' ? '전체' : f === 'unread' ? '읽지않음' : f === 'member' ? '회원' : '비회원'}
@@ -658,7 +658,7 @@ export default function AdminChatPage() {
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium shrink-0 ${
                         room.room_type === 'member'
-                          ? 'bg-emerald-50 text-emerald-700'
+                          ? 'bg-blue-50 text-blue-800'
                           : 'bg-zinc-100 text-zinc-600'
                       }`}>
                         {room.room_type === 'member' ? <User className="w-3.5 h-3.5" /> : 'G'}
@@ -672,7 +672,7 @@ export default function AdminChatPage() {
                       <div className="flex flex-col items-end">
                         <p className="text-[10px] text-muted-foreground">{formatTime(room.last_message_at)}</p>
                         {room.admin_unread_count > 0 && (
-                          <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold bg-emerald-600 text-white rounded-full mt-0.5">
+                          <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold bg-blue-700 text-white rounded-full mt-0.5">
                             {room.admin_unread_count}
                           </span>
                         )}
@@ -710,11 +710,11 @@ export default function AdminChatPage() {
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setShowMemberModal(true)}
-                    className="flex items-center gap-2 hover:text-emerald-600 transition-colors cursor-pointer"
+                    className="flex items-center gap-2 hover:text-blue-700 transition-colors cursor-pointer"
                   >
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
                       selectedRoom.room_type === 'member'
-                        ? 'bg-emerald-50 text-emerald-700'
+                        ? 'bg-blue-50 text-blue-800'
                         : 'bg-zinc-100 text-zinc-600'
                     }`}>
                       {selectedRoom.room_type === 'member' ? <User className="w-3.5 h-3.5" /> : 'G'}
@@ -732,7 +732,7 @@ export default function AdminChatPage() {
                   {selectedRoom.room_type === 'member' && selectedRoom.user_id && selectedRoom.status === 'open' && (
                     <button
                       onClick={() => setShowPaymentModal(true)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-800 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
                     >
                       <CreditCard className="w-3.5 h-3.5" /> 결제요청
                     </button>
@@ -788,13 +788,13 @@ export default function AdminChatPage() {
                       onPaste={handlePaste}
                       placeholder="메시지를 입력하세요..."
                       rows={1}
-                      className="flex-1 resize-none border border-border/50 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500/30 max-h-20"
+                      className="flex-1 resize-none border border-border/50 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/30 max-h-20"
                       style={{ minHeight: '36px' }}
                     />
                     <button
                       onClick={sendMessage}
                       disabled={!input.trim() || sending}
-                      className="text-emerald-600 hover:text-emerald-700 p-1.5 shrink-0 cursor-pointer disabled:opacity-30"
+                      className="text-blue-700 hover:text-blue-800 p-1.5 shrink-0 cursor-pointer disabled:opacity-30"
                     >
                       {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                     </button>

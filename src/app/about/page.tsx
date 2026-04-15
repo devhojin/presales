@@ -147,7 +147,7 @@ export default function AboutPage() {
             {
               icon: '🏛',
               title: '공공조달 · SI 제안',
-              color: 'from-emerald-500 to-emerald-600',
+              color: 'from-blue-500 to-blue-700',
               items: [
                 '수도권 광역시 지능형교통시스템(ITS) 유지관리 용역',
                 '경기도 스마트빌리지 보급 및 확산사업 (AI 기반 서비스)',

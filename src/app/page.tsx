@@ -79,7 +79,7 @@ function FeaturedCard({ product, categoryNames }: { product: DbProduct; category
               <FileText className="w-10 h-10 text-zinc-400" />
             </div>
           )}
-          <Badge className={`absolute top-3 left-3 text-[10px] font-semibold tracking-wide ${product.is_free ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-zinc-100 text-zinc-700 border-zinc-200'}`}>
+          <Badge className={`absolute top-3 left-3 text-[10px] font-semibold tracking-wide ${product.is_free ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-zinc-100 text-zinc-700 border-zinc-200'}`}>
             {product.is_free ? 'FREE' : 'PREMIUM'}
           </Badge>
           {!product.is_free && discount > 0 && <Badge className="absolute top-3 right-3 bg-red-500 text-white border-0 text-[10px]">-{discount}%</Badge>}
@@ -233,22 +233,22 @@ export default function Home() {
       {/* Hero — Asymmetric Split Layout */}
       <section className="relative min-h-[100dvh] flex items-center bg-[#0C1220] text-white overflow-hidden">
         {/* Subtle gradient orbs */}
-        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-emerald-500/8 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-30%] left-[-10%] w-[500px] h-[500px] bg-emerald-600/5 rounded-full blur-[100px]" />
+        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-blue-500/8 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-30%] left-[-10%] w-[500px] h-[500px] bg-blue-700/5 rounded-full blur-[100px]" />
 
         <div className="max-w-[1400px] mx-auto px-4 md:px-8 w-full py-20 md:py-0 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center">
             {/* Left: Content */}
             <div className="space-y-8">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-[11px] font-medium tracking-wide text-emerald-300 uppercase">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/[0.08] text-[11px] font-medium tracking-wide text-blue-300 uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
                 실제 낙찰된 제안서만 판매합니다
               </div>
 
               <h1 className="text-4xl md:text-6xl font-bold tracking-tighter leading-[1.08]">
                 낙찰받은 기업들의<br />
                 제안서가
-                <span className="block text-emerald-400 mt-1">여기 있습니다</span>
+                <span className="block text-blue-400 mt-1">여기 있습니다</span>
               </h1>
 
               <p className="text-base md:text-lg text-zinc-400 leading-relaxed max-w-[480px]">
@@ -259,7 +259,7 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link
                   href="/store"
-                  className="inline-flex items-center justify-center h-12 px-7 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white font-medium text-sm transition-all duration-300 active:scale-[0.98] shadow-[0_0_20px_rgba(16,185,129,0.2)]"
+                  className="inline-flex items-center justify-center h-12 px-7 rounded-full bg-blue-500 hover:bg-blue-400 text-white font-medium text-sm transition-all duration-300 active:scale-[0.98] shadow-[0_0_20px_rgba(37,99,235,0.2)]"
                 >
                   낙찰 제안서 보러가기
                   <ArrowRight className="ml-2 w-4 h-4" />
@@ -285,7 +285,7 @@ export default function Home() {
                   key={stat.label}
                   className={`rounded-2xl p-6 md:p-8 ${
                     stat.accent
-                      ? 'bg-emerald-500/[0.08] border border-emerald-500/[0.12]'
+                      ? 'bg-blue-500/[0.08] border border-blue-500/[0.12]'
                       : 'bg-white/[0.04] border border-white/[0.06]'
                   }`}
                 >
@@ -390,7 +390,7 @@ export default function Home() {
               </div>
               <Link
                 href="/store?price=paid"
-                className="shrink-0 inline-flex items-center justify-center h-11 px-6 rounded-full bg-emerald-500 text-white text-sm font-medium hover:bg-emerald-400 transition-all duration-300 active:scale-[0.98]"
+                className="shrink-0 inline-flex items-center justify-center h-11 px-6 rounded-full bg-blue-500 text-white text-sm font-medium hover:bg-blue-400 transition-all duration-300 active:scale-[0.98]"
               >
                 낙찰 검증 템플릿 보기 <ArrowRight className="ml-1.5 w-4 h-4" />
               </Link>
@@ -436,7 +436,7 @@ export default function Home() {
 
       {/* CTA */}
       <section className="py-24 md:py-32 bg-[#0C1220] text-white relative overflow-hidden">
-        <div className="absolute top-[-20%] left-[50%] -translate-x-1/2 w-[800px] h-[400px] bg-emerald-500/8 rounded-full blur-[120px]" />
+        <div className="absolute top-[-20%] left-[50%] -translate-x-1/2 w-[800px] h-[400px] bg-blue-500/8 rounded-full blur-[120px]" />
         <div className="max-w-[1400px] mx-auto px-4 md:px-8 text-center relative z-10">
           <h2 className="text-2xl md:text-4xl font-bold tracking-tighter mb-4">
             입찰 준비, 뭐부터 해야 할지<br className="md:hidden" /> 막막하신가요?
@@ -447,7 +447,7 @@ export default function Home() {
           </p>
           <Link
             href="/consulting"
-            className="inline-flex items-center justify-center h-12 px-8 rounded-full bg-emerald-500 text-white hover:bg-emerald-400 font-medium text-sm transition-all duration-300 active:scale-[0.98] shadow-[0_0_30px_rgba(16,185,129,0.2)]"
+            className="inline-flex items-center justify-center h-12 px-8 rounded-full bg-blue-500 text-white hover:bg-blue-400 font-medium text-sm transition-all duration-300 active:scale-[0.98] shadow-[0_0_30px_rgba(37,99,235,0.2)]"
           >
             무료 입찰 상담 받기
             <ArrowRight className="ml-2 w-4 h-4" />

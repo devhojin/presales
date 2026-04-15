@@ -60,8 +60,8 @@ const statusConfig: Record<string, { label: string; class: string; bg: string }>
   },
   completed: {
     label: '완료',
-    class: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-    bg: 'bg-emerald-500',
+    class: 'bg-blue-50 text-blue-800 border border-blue-200',
+    bg: 'bg-blue-500',
   },
   cancelled: {
     label: '취소',
@@ -300,7 +300,7 @@ function ConsultingDetailModal({
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
               신청자 정보
               {request.user_id ? (
-                <Badge className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px]">등록 회원</Badge>
+                <Badge className="bg-blue-50 text-blue-800 border border-blue-200 text-[10px]">등록 회원</Badge>
               ) : (
                 <Badge className="bg-muted text-muted-foreground border border-border text-[10px]">비회원</Badge>
               )}
@@ -416,7 +416,7 @@ function ConsultingDetailModal({
                 {request.status === 'confirmed' && (
                   <button
                     onClick={() => handleStatusClick('completed')}
-                    className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 transition-colors"
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded-xl hover:bg-blue-800 transition-colors"
                   >
                     <CheckCircle className="w-4 h-4" />
                     완료

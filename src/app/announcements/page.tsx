@@ -260,7 +260,7 @@ export default function AnnouncementsPage() {
               onClick={() => setFilterStatus(f)}
               className={`px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest border transition-all duration-300 cursor-pointer ${
                 filterStatus === f
-                  ? f === 'active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  ? f === 'active' ? 'bg-blue-50 text-blue-800 border-blue-200'
                     : f === 'closed' ? 'bg-zinc-100 text-zinc-700 border-zinc-200'
                     : 'bg-primary text-primary-foreground border-primary'
                   : 'border-border/50 hover:border-border hover:bg-muted'

@@ -342,7 +342,7 @@ function ProductRowCells({
       {/* Price */}
       <td className="px-3 py-3 text-right">
         {product.is_free || product.price === 0 ? (
-          <span className="font-medium text-emerald-600">무료</span>
+          <span className="font-medium text-blue-700">무료</span>
         ) : (
           <div>
             <span className="text-sm font-medium text-foreground">
@@ -359,7 +359,7 @@ function ProductRowCells({
       {/* 무료/유료 */}
       <td className="px-3 py-3">
         <Badge
-          className={`text-xs border ${product.is_free ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-primary/8 text-primary border-primary/20'}`}
+          className={`text-xs border ${product.is_free ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-primary/8 text-primary border-primary/20'}`}
         >
           {product.is_free ? '무료' : '유료'}
         </Badge>
@@ -369,7 +369,7 @@ function ProductRowCells({
         <Badge
           className={
             product.is_published
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              ? 'bg-blue-50 text-blue-800 border-blue-200'
               : 'bg-muted text-muted-foreground border-border'
           }
         >
@@ -850,7 +850,7 @@ export default function AdminProducts() {
                 onClick={() => { setPriceFilter(tab.key); setPage(1) }}
                 className={`px-3 py-2 text-sm font-medium rounded-xl transition cursor-pointer ${
                   priceFilter === tab.key
-                    ? tab.key === 'paid' ? 'bg-emerald-600 text-white' : tab.key === 'free' ? 'bg-blue-600 text-white' : 'bg-gray-900 text-white'
+                    ? tab.key === 'paid' ? 'bg-blue-700 text-white' : tab.key === 'free' ? 'bg-blue-600 text-white' : 'bg-gray-900 text-white'
                     : 'text-muted-foreground hover:bg-muted'
                 }`}
               >
@@ -921,7 +921,7 @@ export default function AdminProducts() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleBulkPublish(true)}
-                className="px-3 py-1.5 text-xs font-medium text-emerald-700 bg-white border border-emerald-200 rounded-xl hover:bg-emerald-50 transition-colors"
+                className="px-3 py-1.5 text-xs font-medium text-blue-800 bg-white border border-blue-200 rounded-xl hover:bg-blue-50 transition-colors"
               >
                 일괄 공개
               </button>

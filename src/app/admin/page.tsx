@@ -267,7 +267,7 @@ function RevenueChartTooltip({ active, payload, label }: { active?: boolean; pay
       <p className="font-bold text-zinc-800 mb-1.5">{String(label).replace(/-/g, '.')}</p>
       {payload.map((p, i) => (
         <div key={i} className="flex items-center gap-2">
-          <span className={`w-3 h-3 rounded-sm inline-block ${p.dataKey === 'revenue' ? 'bg-emerald-400' : 'bg-zinc-300'}`} />
+          <span className={`w-3 h-3 rounded-sm inline-block ${p.dataKey === 'revenue' ? 'bg-blue-400' : 'bg-zinc-300'}`} />
           <span className="text-zinc-600">{p.dataKey === 'revenue' ? '주문 완료' : '주문취소'}</span>
           <span className="font-semibold text-zinc-900 ml-auto pl-4">{p.value.toLocaleString()}</span>
         </div>
@@ -311,7 +311,7 @@ function RevenueChart({ data, period }: { data: DailyRevenue[]; period: Period }
       {/* Header: Legend + Toggle */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-5 text-xs text-zinc-500">
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-emerald-400 inline-block" /> 주문 완료</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-blue-400 inline-block" /> 주문 완료</span>
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-zinc-200 inline-block" /> 주문취소</span>
         </div>
         {period !== '전체' && (
@@ -1168,7 +1168,7 @@ export default function AdminDashboard() {
                         {new Date(log.time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    <Badge className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">{log.count}건 공개</Badge>
+                    <Badge className="text-xs bg-blue-50 text-blue-800 border-blue-200">{log.count}건 공개</Badge>
                   </div>
                 ))}
                 <div className="flex items-center justify-between pt-2 border-t border-border/50">
@@ -1205,7 +1205,7 @@ export default function AdminDashboard() {
                         {new Date(log.time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
-                    <Badge className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">{log.count}건 공개</Badge>
+                    <Badge className="text-xs bg-blue-50 text-blue-800 border-blue-200">{log.count}건 공개</Badge>
                   </div>
                 ))}
                 <div className="flex items-center justify-between pt-2 border-t border-border/50">

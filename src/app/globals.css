@@ -116,8 +116,8 @@ input[type="checkbox"], input[type="radio"], select, label[for],
   --popover: #FFFFFF;
   --popover-foreground: #18181B;
 
-  /* Primary: Deep emerald — trust, authority, growth */
-  --primary: #059669;
+  /* Primary: Cobalt Blue — trust, intelligence, professionalism */
+  --primary: #2563EB;
   --primary-foreground: #FFFFFF;
 
   --secondary: #F4F4F5;
@@ -126,33 +126,33 @@ input[type="checkbox"], input[type="radio"], select, label[for],
   --muted: #F4F4F5;
   --muted-foreground: #71717A;
 
-  --accent: #F4F4F5;
-  --accent-foreground: #18181B;
+  --accent: #F0F4FF;
+  --accent-foreground: #1E3A8A;
 
   --destructive: #DC2626;
 
-  --border: #E4E4E7;
-  --input: #E4E4E7;
-  --ring: #A1A1AA;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #93C5FD;
 
-  /* Chart colors — muted emerald scale */
-  --chart-1: #059669;
-  --chart-2: #10B981;
-  --chart-3: #34D399;
-  --chart-4: #6EE7B7;
-  --chart-5: #A7F3D0;
+  /* Chart colors — blue scale */
+  --chart-1: #2563EB;
+  --chart-2: #3B82F6;
+  --chart-3: #60A5FA;
+  --chart-4: #93C5FD;
+  --chart-5: #BFDBFE;
 
   --radius: 0.75rem;
 
   /* Sidebar (admin) */
   --sidebar: #FAFAF9;
   --sidebar-foreground: #18181B;
-  --sidebar-primary: #059669;
+  --sidebar-primary: #2563EB;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #F4F4F5;
-  --sidebar-accent-foreground: #18181B;
-  --sidebar-border: #E4E4E7;
-  --sidebar-ring: #A1A1AA;
+  --sidebar-accent: #F0F4FF;
+  --sidebar-accent-foreground: #1E3A8A;
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #93C5FD;
 }
 
 .dark {
@@ -163,31 +163,31 @@ input[type="checkbox"], input[type="radio"], select, label[for],
   --card-foreground: #FAFAFA;
   --popover: #18181B;
   --popover-foreground: #FAFAFA;
-  --primary: #34D399;
-  --primary-foreground: #052E16;
+  --primary: #60A5FA;
+  --primary-foreground: #1E3A8A;
   --secondary: #27272A;
   --secondary-foreground: #FAFAFA;
   --muted: #27272A;
   --muted-foreground: #A1A1AA;
-  --accent: #27272A;
-  --accent-foreground: #FAFAFA;
+  --accent: #1E293B;
+  --accent-foreground: #BFDBFE;
   --destructive: #EF4444;
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.12);
-  --ring: #52525B;
-  --chart-1: #34D399;
-  --chart-2: #10B981;
-  --chart-3: #059669;
-  --chart-4: #047857;
-  --chart-5: #065F46;
+  --ring: #3B82F6;
+  --chart-1: #60A5FA;
+  --chart-2: #3B82F6;
+  --chart-3: #2563EB;
+  --chart-4: #1D4ED8;
+  --chart-5: #1E3A8A;
   --sidebar: #18181B;
   --sidebar-foreground: #FAFAFA;
-  --sidebar-primary: #34D399;
-  --sidebar-primary-foreground: #052E16;
-  --sidebar-accent: #27272A;
-  --sidebar-accent-foreground: #FAFAFA;
+  --sidebar-primary: #60A5FA;
+  --sidebar-primary-foreground: #1E3A8A;
+  --sidebar-accent: #1E293B;
+  --sidebar-accent-foreground: #BFDBFE;
   --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #52525B;
+  --sidebar-ring: #3B82F6;
 }
 
 @layer base {

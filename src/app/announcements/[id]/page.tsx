@@ -245,7 +245,7 @@ export default function AnnouncementDetailPage({ params }: { params: Promise<{ i
         )}
 
         {/* Related Proposals CTA */}
-        <div className="bg-gradient-to-r from-emerald-50 to-emerald-50/50 rounded-2xl p-8 md:p-12 border border-emerald-200/50">
+        <div className="bg-gradient-to-r from-blue-50 to-blue-50/50 rounded-2xl p-8 md:p-12 border border-blue-200/50">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
               <h3 className="text-lg font-semibold tracking-tight text-foreground mb-2">

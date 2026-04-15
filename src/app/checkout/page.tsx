@@ -388,7 +388,7 @@ export default function CheckoutPage() {
           </div>
         )}
         {couponDiscount > 0 && (
-          <div className="flex justify-between text-sm text-emerald-600">
+          <div className="flex justify-between text-sm text-blue-700">
             <span>쿠폰 할인{couponCode && ` (${couponCode})`}</span>
             <span>-{formatPrice(couponDiscount)}</span>
           </div>

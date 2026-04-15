@@ -38,7 +38,7 @@ const ICON_MAP: Record<string, typeof HelpCircle> = {
 function getCategoryIcon(iconName: string) { return ICON_MAP[iconName] || HelpCircle }
 
 const COLORS = [
-  'bg-blue-50 text-blue-600', 'bg-emerald-50 text-emerald-600', 'bg-orange-50 text-orange-600',
+  'bg-blue-50 text-blue-600', 'bg-blue-50 text-blue-700', 'bg-orange-50 text-orange-600',
   'bg-purple-50 text-purple-600', 'bg-pink-50 text-pink-600', 'bg-cyan-50 text-cyan-600',
 ]
 
@@ -187,10 +187,10 @@ export function FaqClient() {
 
         {/* CTA */}
         <div className="max-w-3xl mx-auto mt-12 rounded-2xl bg-zinc-900 p-8 md:p-10 text-center text-white">
-          <MessageCircle className="w-10 h-10 text-emerald-400 mx-auto mb-4" />
+          <MessageCircle className="w-10 h-10 text-blue-400 mx-auto mb-4" />
           <h3 className="text-lg font-bold tracking-tight mb-2">원하는 답변을 찾지 못하셨나요?</h3>
           <p className="text-sm text-zinc-400 mb-6">전문 컨설턴트가 직접 도와드립니다</p>
-          <Link href="/consulting" className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white px-6 py-3 rounded-full text-sm font-medium transition-all active:scale-[0.98] cursor-pointer">
+          <Link href="/consulting" className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white px-6 py-3 rounded-full text-sm font-medium transition-all active:scale-[0.98] cursor-pointer">
             <MessageCircle className="w-4 h-4" /> 컨설팅 문의하기
           </Link>
         </div>

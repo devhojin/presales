@@ -364,23 +364,23 @@ export function ChatWidget() {
       const meta = msg.metadata as { title: string; amount: number; status: string; payment_request_id: string }
       return (
         <div key={msg.id} className="flex justify-center my-3">
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 max-w-[280px] w-full">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 max-w-[280px] w-full">
             <div className="flex items-center gap-2 mb-2">
-              <CreditCard className="w-4 h-4 text-emerald-600" />
-              <span className="text-xs font-semibold text-emerald-700">결제 요청</span>
+              <CreditCard className="w-4 h-4 text-blue-700" />
+              <span className="text-xs font-semibold text-blue-800">결제 요청</span>
             </div>
             <p className="font-medium text-sm text-foreground">{meta.title}</p>
-            <p className="text-lg font-bold text-emerald-700 mt-1">{formatAmount(meta.amount)}</p>
+            <p className="text-lg font-bold text-blue-800 mt-1">{formatAmount(meta.amount)}</p>
             {meta.status === 'pending' && user && !isMe && (
               <button
                 onClick={() => handlePayment(meta.payment_request_id)}
-                className="mt-3 w-full py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors cursor-pointer"
+                className="mt-3 w-full py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors cursor-pointer"
               >
                 결제하기
               </button>
             )}
             {meta.status === 'paid' && (
-              <div className="mt-2 text-xs text-emerald-600 font-medium">결제 완료</div>
+              <div className="mt-2 text-xs text-blue-700 font-medium">결제 완료</div>
             )}
             {meta.status === 'cancelled' && (
               <div className="mt-2 text-xs text-red-500 font-medium">취소됨</div>
@@ -402,7 +402,7 @@ export function ChatWidget() {
           <div
             className={`px-3 py-2 rounded-2xl text-sm break-words ${
               isMe
-                ? 'bg-emerald-600 text-white rounded-br-md'
+                ? 'bg-blue-700 text-white rounded-br-md'
                 : 'bg-muted/70 text-foreground rounded-bl-md'
             }`}
           >
@@ -453,7 +453,7 @@ export function ChatWidget() {
     return (
       <button
         onClick={toggle}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 cursor-pointer"
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-blue-700 hover:bg-blue-800 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 cursor-pointer"
         title="채팅 문의"
       >
         <MessageCircle className="w-6 h-6" />
@@ -464,10 +464,10 @@ export function ChatWidget() {
   return (
     <div className="fixed bottom-6 right-6 z-50 w-[380px] h-[540px] bg-background border border-border/60 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-emerald-600 text-white px-4 py-3 flex items-center justify-between shrink-0">
+      <div className="bg-blue-700 text-white px-4 py-3 flex items-center justify-between shrink-0">
         <div>
           <h3 className="font-semibold text-sm">프리세일즈 상담</h3>
-          <p className="text-[11px] text-emerald-100">
+          <p className="text-[11px] text-blue-100">
             {user ? '회원 상담' : '비회원 문의'}
             {roomStatus === 'closed' && ' (종료됨)'}
           </p>
@@ -547,7 +547,7 @@ export function ChatWidget() {
             onPaste={handlePaste}
             placeholder="메시지를 입력하세요..."
             rows={1}
-            className="flex-1 resize-none border border-border/50 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500/30 max-h-20 bg-background"
+            className="flex-1 resize-none border border-border/50 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/30 max-h-20 bg-background"
             style={{ minHeight: '36px' }}
           />
 
@@ -555,7 +555,7 @@ export function ChatWidget() {
           <button
             onClick={sendMessage}
             disabled={!input.trim() || sending}
-            className="text-emerald-600 hover:text-emerald-700 p-1.5 shrink-0 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+            className="text-blue-700 hover:text-blue-800 p-1.5 shrink-0 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
             title="전송"
           >
             {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}

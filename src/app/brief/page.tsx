@@ -135,7 +135,7 @@ export default function BriefPage() {
             </p>
           </div>
           {subscribeDone ? (
-            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-medium border border-emerald-200">
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-50 text-blue-800 text-sm font-medium border border-blue-200">
               <CheckCircle2 className="w-4 h-4" />
               구독 완료
             </div>

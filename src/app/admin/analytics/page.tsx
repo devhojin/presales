@@ -494,7 +494,7 @@ export default function AnalyticsPage() {
     { label: '방문자 수', value: funnelData.visitors, color: 'bg-primary' },
     { label: '상품 조회 (/store/)', value: funnelData.storeViews, color: 'bg-indigo-500' },
     { label: '장바구니 (주문 생성)', value: funnelData.orders, color: 'bg-amber-500' },
-    { label: '구매 완료', value: funnelData.completed, color: 'bg-emerald-500' },
+    { label: '구매 완료', value: funnelData.completed, color: 'bg-blue-500' },
   ]
   const funnelMax = Math.max(funnelData.visitors, 1)
 

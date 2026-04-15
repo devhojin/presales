@@ -41,7 +41,7 @@ function UnsubscribeInner() {
       <div className="rounded-2xl border border-border/50 bg-card p-8 text-center">
         <div className="mb-6 flex justify-center">
           {status === 'loading' && <Loader2 className="w-12 h-12 text-muted-foreground animate-spin" />}
-          {status === 'success' && <CheckCircle2 className="w-12 h-12 text-emerald-600" />}
+          {status === 'success' && <CheckCircle2 className="w-12 h-12 text-blue-700" />}
           {status === 'error' && <XCircle className="w-12 h-12 text-red-500" />}
         </div>
 

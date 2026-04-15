@@ -383,7 +383,7 @@ export default function AdminFeedsPage() {
                   {log.status !== '대기' && (
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       <span>수집 <strong className="text-foreground">{log.fetched}</strong></span>
-                      <span>신규 <strong className="text-emerald-600">{log.inserted}</strong></span>
+                      <span>신규 <strong className="text-blue-700">{log.inserted}</strong></span>
                       <span>중복 <strong>{log.skipped}</strong></span>
                     </div>
                   )}

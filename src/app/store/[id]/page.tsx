@@ -276,8 +276,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             {product.thumbnail_url ? (
               <Image src={product.thumbnail_url} alt={product.title} width={400} height={300} className="w-full h-auto object-contain max-h-[500px]" />
             ) : (
-              <div className="w-full aspect-[4/3] bg-gradient-to-br from-emerald-900 to-emerald-700 flex items-center justify-center">
-                <FileText className="w-16 h-16 text-emerald-200" />
+              <div className="w-full aspect-[4/3] bg-gradient-to-br from-blue-950 to-blue-800 flex items-center justify-center">
+                <FileText className="w-16 h-16 text-blue-200" />
               </div>
             )}
             <Badge className={`absolute top-4 left-4 border font-bold tracking-tight ${product.is_free ? 'bg-primary text-white border-primary' : 'bg-zinc-900 text-white border-zinc-900'}`}>
@@ -330,14 +330,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           </div>
 
           {matchDiscount && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
-              <p className="text-sm font-semibold text-emerald-800 mb-1">
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+              <p className="text-sm font-semibold text-blue-900 mb-1">
                 구매 이력 할인 적용 가능!
               </p>
-              <p className="text-sm text-emerald-700">
+              <p className="text-sm text-blue-800">
                 <span className="font-medium">{matchDiscount.sourceTitle}</span>을 이미 구매하셨으므로
               </p>
-              <p className="text-lg font-bold text-emerald-800 mt-1">
+              <p className="text-lg font-bold text-blue-900 mt-1">
                 {formatPrice(matchDiscount.discountAmount)} 할인 → 최종가 {formatPrice(Math.max(0, product.price - matchDiscount.discountAmount))}
               </p>
             </div>
@@ -622,8 +622,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                     {p.thumbnail_url ? (
                       <Image src={p.thumbnail_url} alt={p.title} width={400} height={300} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-emerald-900 to-emerald-700 flex items-center justify-center">
-                        <FileText className="w-10 h-10 text-emerald-200" />
+                      <div className="w-full h-full bg-gradient-to-br from-blue-950 to-blue-800 flex items-center justify-center">
+                        <FileText className="w-10 h-10 text-blue-200" />
                       </div>
                     )}
                   </div>

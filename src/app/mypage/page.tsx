@@ -94,8 +94,8 @@ type BookmarkModalItem =
 
 const statusMap: Record<string, { label: string; class: string }> = {
   pending: { label: '대기', class: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-  paid: { label: '결제완료', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  completed: { label: '완료', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  paid: { label: '결제완료', class: 'bg-blue-50 text-blue-800 border-blue-200' },
+  completed: { label: '완료', class: 'bg-blue-50 text-blue-800 border-blue-200' },
   cancelled: { label: '취소', class: 'bg-red-50 text-red-700 border-red-200' },
   refunded: { label: '환불', class: 'bg-muted text-muted-foreground border-border' },
   pending_refund: { label: '환불문의', class: 'bg-orange-50 text-orange-700 border-orange-200' },
@@ -313,7 +313,7 @@ export default function MyConsolePage() {
       const prod = Array.isArray(item.products) ? item.products[0] : item.products
       const hasDiscount = (item.discount_amount ?? 0) > 0 && item.original_price && item.original_price > item.price
       if (hasDiscount) {
-        return `<tr><td>${prod?.title || '상품'}<br/><span style="color:#059669;font-size:11px">할인 -${(item.discount_amount || 0).toLocaleString()}원</span></td><td style="text-align:right"><span style="color:#999;text-decoration:line-through;font-size:11px">${(item.original_price || 0).toLocaleString()}원</span><br/>${item.price.toLocaleString()}원</td></tr>`
+        return `<tr><td>${prod?.title || '상품'}<br/><span style="color:#2563EB;font-size:11px">할인 -${(item.discount_amount || 0).toLocaleString()}원</span></td><td style="text-align:right"><span style="color:#999;text-decoration:line-through;font-size:11px">${(item.original_price || 0).toLocaleString()}원</span><br/>${item.price.toLocaleString()}원</td></tr>`
       }
       return `<tr><td>${prod?.title || '상품'}</td><td style="text-align:right">${item.price.toLocaleString()}원</td></tr>`
     }).join('')
@@ -341,7 +341,7 @@ export default function MyConsolePage() {
   }, [orders, orderFilter])
 
   const catLabel = (c: string) => ({ news: '뉴스', policy: '정책', bid: '입찰', task: '과제', event: '행사' }[c] || c)
-  const catColor = (c: string) => ({ news: 'bg-blue-100 text-blue-700', policy: 'bg-emerald-100 text-emerald-700', bid: 'bg-orange-100 text-orange-700', task: 'bg-purple-100 text-purple-700', event: 'bg-pink-100 text-pink-700' }[c] || 'bg-muted text-muted-foreground')
+  const catColor = (c: string) => ({ news: 'bg-blue-100 text-blue-700', policy: 'bg-blue-100 text-blue-800', bid: 'bg-orange-100 text-orange-700', task: 'bg-purple-100 text-purple-700', event: 'bg-pink-100 text-pink-700' }[c] || 'bg-muted text-muted-foreground')
 
   // ===========================
   // Loading
@@ -375,7 +375,7 @@ export default function MyConsolePage() {
             )}
           </div>
           <Separator className="mb-6" />
-          {profileMsg && <div className={`mb-4 px-4 py-3 rounded-lg text-sm ${profileMsg.includes('완료') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>{profileMsg}</div>}
+          {profileMsg && <div className={`mb-4 px-4 py-3 rounded-lg text-sm ${profileMsg.includes('완료') ? 'bg-blue-50 text-blue-800 border border-blue-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>{profileMsg}</div>}
 
           {!editingProfile ? (
             <div className="space-y-4">
@@ -412,11 +412,11 @@ export default function MyConsolePage() {
             {!showPasswordSection && <button onClick={() => { setShowPasswordSection(true); setPwMsg(''); setNewPassword(''); setConfirmPassword('') }} className="text-sm text-primary hover:underline cursor-pointer">변경하기</button>}
           </div>
           <Separator className="mb-6" />
-          {pwMsg && <div className={`mb-4 px-4 py-3 rounded-lg text-sm ${pwMsg.includes('완료') ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>{pwMsg}</div>}
+          {pwMsg && <div className={`mb-4 px-4 py-3 rounded-lg text-sm ${pwMsg.includes('완료') ? 'bg-blue-50 text-blue-800 border border-blue-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>{pwMsg}</div>}
           {!showPasswordSection ? <p className="text-sm text-muted-foreground">&quot;변경하기&quot; 버튼을 클릭하세요.</p> : (
             <div className="space-y-4">
               <div><label className="block text-xs text-muted-foreground mb-1.5">새 비밀번호</label><div className="relative"><input type={showNewPw ? 'text' : 'password'} value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full px-3 pr-10 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="새 비밀번호" /><button type="button" onClick={() => setShowNewPw(!showNewPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer">{showNewPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div>
-                {newPassword && <div className="mt-2 space-y-1"><div className="flex gap-1">{[0,1,2,3].map(i => <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i <= pwCheck.score ? pwCheck.color : 'bg-gray-200'}`} />)}</div><p className={`text-xs ${pwCheck.valid ? 'text-emerald-600' : 'text-muted-foreground'}`}>강도: {pwCheck.label}</p>{pwCheck.errors.length > 0 && <ul className="text-xs text-red-500 space-y-0.5">{pwCheck.errors.map((e, i) => <li key={i}>{e}</li>)}</ul>}</div>}
+                {newPassword && <div className="mt-2 space-y-1"><div className="flex gap-1">{[0,1,2,3].map(i => <div key={i} className={`h-1.5 flex-1 rounded-full transition-colors ${i <= pwCheck.score ? pwCheck.color : 'bg-gray-200'}`} />)}</div><p className={`text-xs ${pwCheck.valid ? 'text-blue-700' : 'text-muted-foreground'}`}>강도: {pwCheck.label}</p>{pwCheck.errors.length > 0 && <ul className="text-xs text-red-500 space-y-0.5">{pwCheck.errors.map((e, i) => <li key={i}>{e}</li>)}</ul>}</div>}
               </div>
               <div><label className="block text-xs text-muted-foreground mb-1.5">비밀번호 확인</label><div className="relative"><input type={showConfirmPw ? 'text' : 'password'} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full px-3 pr-10 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" placeholder="비밀번호 확인" /><button type="button" onClick={() => setShowConfirmPw(!showConfirmPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer">{showConfirmPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div>{confirmPassword && newPassword !== confirmPassword && <p className="text-xs text-red-500 mt-1">비밀번호가 일치하지 않습니다.</p>}</div>
               <div className="flex gap-2">
@@ -460,10 +460,10 @@ export default function MyConsolePage() {
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 pb-12">
       {/* Row 1: Welcome Banner */}
-      <div className="rounded-2xl bg-gradient-to-r from-zinc-900 to-emerald-900 text-white p-6 md:p-8 mt-6 mb-6">
+      <div className="rounded-2xl bg-gradient-to-r from-zinc-900 to-blue-950 text-white p-6 md:p-8 mt-6 mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-emerald-300 text-sm font-medium mb-1">나의콘솔</p>
+            <p className="text-blue-300 text-sm font-medium mb-1">나의콘솔</p>
             <h1 className="text-2xl md:text-3xl font-bold mb-2">
               안녕하세요, {profile?.name || '회원'}님
             </h1>
@@ -496,7 +496,7 @@ export default function MyConsolePage() {
           { label: '내 주문', value: kpi.orders, icon: Package, color: 'text-primary bg-primary/10', href: '#orders' },
           { label: '다운로드', value: kpi.downloads, icon: Download, color: 'text-orange-600 bg-orange-50', href: '#orders' },
           { label: '공고 즐겨찾기', value: annBookmarks.length, icon: Megaphone, color: 'text-blue-600 bg-blue-50', href: '#bookmarks' },
-          { label: '피드 즐겨찾기', value: feedBookmarks.length, icon: Rss, color: 'text-emerald-600 bg-emerald-50', href: '#bookmarks' },
+          { label: '피드 즐겨찾기', value: feedBookmarks.length, icon: Rss, color: 'text-blue-700 bg-blue-50', href: '#bookmarks' },
         ].map(card => (
           <Link key={card.label} href={card.href}
             className="group bg-card border border-border/50 rounded-2xl p-5 hover:shadow-md transition-all cursor-pointer">
@@ -569,7 +569,7 @@ export default function MyConsolePage() {
                                 <div className="min-w-0">
                                   <p className="text-sm font-medium truncate">{prod?.title || '-'}</p>
                                   {hasDiscount && (
-                                    <p className="text-[10px] text-emerald-600 mt-0.5">
+                                    <p className="text-[10px] text-blue-700 mt-0.5">
                                       할인 -{formatPrice(item.discount_amount || 0)}
                                     </p>
                                   )}
@@ -582,7 +582,7 @@ export default function MyConsolePage() {
                                     <p className="text-sm font-medium">{formatPrice(item.price)}</p>
                                   </div>
                                   {(order.status === 'paid' || order.status === 'completed') && prod && (
-                                    <button type="button" onClick={e => { e.stopPropagation(); handleProductDownload(prod.id, prod.title) }} className="px-3 py-1 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 flex items-center gap-1 cursor-pointer"><Download className="w-3 h-3" />다운로드</button>
+                                    <button type="button" onClick={e => { e.stopPropagation(); handleProductDownload(prod.id, prod.title) }} className="px-3 py-1 rounded-lg bg-blue-700 text-white text-xs font-medium hover:bg-blue-800 flex items-center gap-1 cursor-pointer"><Download className="w-3 h-3" />다운로드</button>
                                   )}
                                 </div>
                               </div>
@@ -621,7 +621,7 @@ export default function MyConsolePage() {
               <div className="space-y-3">
                 {activities.map((a, i) => (
                   <div key={i} className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${a.type === 'order' ? 'bg-primary/10 text-primary' : a.type === 'download' ? 'bg-orange-50 text-orange-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${a.type === 'order' ? 'bg-primary/10 text-primary' : a.type === 'download' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-700'}`}>
                       {a.type === 'order' ? <Package className="w-4 h-4" /> : a.type === 'download' ? <Download className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
                     </div>
                     <p className="text-sm text-foreground flex-1 truncate">{a.text}</p>
@@ -642,7 +642,7 @@ export default function MyConsolePage() {
             <h3 className="text-sm font-semibold mb-3">빠른 링크</h3>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: '스토어', href: '/store', icon: Store, color: 'from-primary to-emerald-600' },
+                { label: '스토어', href: '/store', icon: Store, color: 'from-primary to-blue-700' },
                 { label: '컨설팅', href: '/consulting', icon: HelpCircle, color: 'from-violet-500 to-violet-600' },
                 { label: '공고사업', href: '/announcements', icon: Megaphone, color: 'from-blue-500 to-blue-600' },
                 { label: 'IT피드', href: '/feeds', icon: Rss, color: 'from-orange-400 to-orange-500' },
@@ -709,7 +709,7 @@ export default function MyConsolePage() {
                     const expired = ann.end_date ? new Date(ann.end_date) < new Date() : false
                     return (
                       <button type="button" key={`a-${ann.id}`} onClick={() => setBookmarkModal({ type: 'announcement', data: ann })} className="w-full flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-muted/50 transition-colors group cursor-pointer text-left">
-                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${expired || ann.status === 'closed' ? 'bg-zinc-100 text-zinc-500' : 'bg-emerald-50 text-emerald-700'}`}>
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded font-semibold shrink-0 ${expired || ann.status === 'closed' ? 'bg-zinc-100 text-zinc-500' : 'bg-blue-50 text-blue-800'}`}>
                           {expired || ann.status === 'closed' ? '마감' : '공고'}
                         </span>
                         <span className="text-xs text-foreground truncate flex-1 group-hover:text-primary transition-colors">{ann.title}</span>
@@ -806,7 +806,7 @@ export default function MyConsolePage() {
                               <p className="text-[11px] text-muted-foreground mt-2 line-clamp-2">{c.description}</p>
                             )}
                             <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-                              <p className="flex items-center gap-1.5"><Check className="w-3 h-3 text-emerald-500" /> 최소 주문: {minOrderLabel}</p>
+                              <p className="flex items-center gap-1.5"><Check className="w-3 h-3 text-blue-500" /> 최소 주문: {minOrderLabel}</p>
                               <p className="flex items-center gap-1.5"><Clock className="w-3 h-3 text-muted-foreground" /> 유효 기간: {validLabel}</p>
                             </div>
                           </div>
@@ -888,7 +888,7 @@ export default function MyConsolePage() {
                           </div>
                         </div>
                         {hasDiscount && (
-                          <p className="text-[11px] text-emerald-600 mt-1 pl-6">
+                          <p className="text-[11px] text-blue-700 mt-1 pl-6">
                             ▸ 할인 -{formatPrice(item.discount_amount || 0)}
                           </p>
                         )}
@@ -905,7 +905,7 @@ export default function MyConsolePage() {
                       {totalDiscount > 0 && (
                         <div className="flex items-center justify-between text-xs">
                           <p className="text-muted-foreground">할인 합계</p>
-                          <p className="text-emerald-600 font-medium">-{formatPrice(totalDiscount)}</p>
+                          <p className="text-blue-700 font-medium">-{formatPrice(totalDiscount)}</p>
                         </div>
                       )}
                       <div className="flex items-center justify-between">
@@ -946,7 +946,7 @@ export default function MyConsolePage() {
                 {bookmarkModal.type === 'announcement' ? (
                   <>
                     <div className="flex items-center gap-2 mb-2">
-                      <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${(bookmarkModal.data.end_date && new Date(bookmarkModal.data.end_date) < new Date()) || bookmarkModal.data.status === 'closed' ? 'bg-zinc-100 text-zinc-500' : 'bg-emerald-50 text-emerald-700'}`}>
+                      <span className={`text-[10px] px-2 py-0.5 rounded font-semibold ${(bookmarkModal.data.end_date && new Date(bookmarkModal.data.end_date) < new Date()) || bookmarkModal.data.status === 'closed' ? 'bg-zinc-100 text-zinc-500' : 'bg-blue-50 text-blue-800'}`}>
                         {(bookmarkModal.data.end_date && new Date(bookmarkModal.data.end_date) < new Date()) || bookmarkModal.data.status === 'closed' ? '마감' : '공고'}
                       </span>
                       {bookmarkModal.data.organization && <span className="text-xs text-muted-foreground">{bookmarkModal.data.organization}</span>}

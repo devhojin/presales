@@ -579,7 +579,7 @@ export default function CouponsPage() {
                             {use.order_number ? `주문 ${use.order_number}` : '-'} · {new Date(use.created_at).toLocaleString('ko-KR')}
                           </p>
                         </div>
-                        <p className="text-sm font-semibold text-emerald-600 shrink-0 ml-3">
+                        <p className="text-sm font-semibold text-blue-700 shrink-0 ml-3">
                           -{use.applied_amount.toLocaleString()}원
                         </p>
                       </div>

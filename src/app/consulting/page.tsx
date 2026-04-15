@@ -140,8 +140,8 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
 
         {submitted ? (
           <div className="p-8 text-center">
-            <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
-              <Check className="w-8 h-8 text-emerald-600" />
+            <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mx-auto mb-4">
+              <Check className="w-8 h-8 text-blue-700" />
             </div>
             <h3 className="text-lg font-bold text-foreground mb-2">문의가 접수되었습니다</h3>
             <p className="text-sm text-muted-foreground mb-6">24시간 이내에 담당자가 연락드리겠습니다.</p>

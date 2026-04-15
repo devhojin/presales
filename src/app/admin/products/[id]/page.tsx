@@ -1082,7 +1082,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   />
                   {form.preview_pdf_url ? (
                     <div>
-                      <p className="text-sm text-emerald-600 font-medium mb-1">✅ PDF 등록됨</p>
+                      <p className="text-sm text-blue-700 font-medium mb-1">✅ PDF 등록됨</p>
                       <p className="text-xs text-muted-foreground">{form.preview_pdf_url.split('/').pop()}</p>
                       <p className="text-xs text-primary mt-2">클릭하거나 새 파일을 드래그해서 교체</p>
                     </div>
@@ -1560,7 +1560,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               </label>
               <div className="flex items-center gap-2 pt-1">
                 {form.is_published ? (
-                  <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                  <Badge className="bg-blue-50 text-blue-800 border-blue-200">
                     <Eye className="w-3 h-3 mr-1" />
                     공개
                   </Badge>

@@ -756,7 +756,7 @@ function OrderDetailModal({
                     <p className="text-[11px] text-muted-foreground mb-1">적용 쿠폰</p>
                     <p className="text-sm font-medium text-foreground">
                       {order.coupon_code}
-                      {order.coupon_discount ? <span className="text-emerald-600 ml-2">(-{formatWon(order.coupon_discount)})</span> : null}
+                      {order.coupon_discount ? <span className="text-blue-700 ml-2">(-{formatWon(order.coupon_discount)})</span> : null}
                     </p>
                   </div>
                 )}

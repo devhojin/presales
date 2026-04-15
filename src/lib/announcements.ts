@@ -99,7 +99,7 @@ export function getStatusBadgeClass(status: string, endDate: string | null): str
   if (status === 'closed' || expired) {
     return 'bg-zinc-100 text-zinc-500 border-zinc-200'
   }
-  return 'bg-emerald-50 text-emerald-700 border-emerald-200'
+  return 'bg-blue-50 text-blue-800 border-blue-200'
 }
 
 // 상태 라벨

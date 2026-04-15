@@ -98,11 +98,11 @@ function ProductCard({ product, onFileTypeClick, categoryNames, searchQuery }: {
           {product.thumbnail_url ? (
             <Image src={product.thumbnail_url} alt={product.title} width={400} height={300} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-emerald-900 to-emerald-700 flex items-center justify-center">
-              <FileText className="w-12 h-12 text-emerald-100 opacity-60" />
+            <div className="w-full h-full bg-gradient-to-br from-blue-950 to-blue-800 flex items-center justify-center">
+              <FileText className="w-12 h-12 text-blue-100 opacity-60" />
             </div>
           )}
-          <Badge className={`absolute top-3 left-3 border text-xs font-semibold uppercase tracking-widest ${product.is_free ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-zinc-100 text-zinc-700 border-zinc-200'}`}>
+          <Badge className={`absolute top-3 left-3 border text-xs font-semibold uppercase tracking-widest ${product.is_free ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-zinc-100 text-zinc-700 border-zinc-200'}`}>
             {product.is_free ? 'FREE' : 'PREMIUM'}
           </Badge>
           {!product.is_free && discount > 0 && (

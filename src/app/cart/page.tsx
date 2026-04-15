@@ -380,7 +380,7 @@ export default function CartPage() {
                     {item.originalPrice > item.price && (
                       <>
                         <span className="text-xs text-muted-foreground line-through">{formatPrice(item.originalPrice)}</span>
-                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-medium">
+                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-medium">
                           <Sparkles className="w-3 h-3" />
                           구매 이력 할인
                         </div>
@@ -428,10 +428,10 @@ export default function CartPage() {
 
             {/* 적용된 쿠폰 표시 */}
             {appliedCoupon ? (
-              <div className="flex items-center justify-between text-sm p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+              <div className="flex items-center justify-between text-sm p-3 bg-blue-50 border border-blue-200 rounded-xl">
                 <div className="min-w-0">
-                  <p className="text-emerald-700 font-semibold truncate">✓ {appliedCoupon.name || appliedCoupon.code}</p>
-                  <p className="text-xs text-emerald-600 mt-0.5">
+                  <p className="text-blue-800 font-semibold truncate">✓ {appliedCoupon.name || appliedCoupon.code}</p>
+                  <p className="text-xs text-blue-700 mt-0.5">
                     {appliedCoupon.discount_type === 'percentage'
                       ? `${appliedCoupon.discount_value}% 할인`
                       : `${appliedCoupon.discount_value.toLocaleString()}원 할인`}
@@ -548,14 +548,14 @@ export default function CartPage() {
               />
 
               {businessCertName ? (
-                <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-emerald-200 bg-emerald-50/50">
+                <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-blue-200 bg-blue-50/50">
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center shrink-0">
-                      <Check className="w-4 h-4 text-emerald-600" />
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                      <Check className="w-4 h-4 text-blue-700" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{businessCertName}</p>
-                      <p className="text-[11px] text-emerald-600">업로드 완료</p>
+                      <p className="text-[11px] text-blue-700">업로드 완료</p>
                     </div>
                   </div>
                   <button
@@ -632,7 +632,7 @@ export default function CartPage() {
                 </div>
               )}
               {getCouponDiscount() > 0 && (
-                <div className="flex justify-between text-emerald-600 font-medium">
+                <div className="flex justify-between text-blue-700 font-medium">
                   <span>쿠폰 할인</span>
                   <span>-{formatPrice(getCouponDiscount())}</span>
                 </div>
@@ -712,7 +712,7 @@ export default function CartPage() {
                 <button
                   onClick={handleFreeItemsOnly}
                   disabled={processing}
-                  className="w-full h-11 rounded-lg border-2 border-emerald-500 text-emerald-700 text-sm font-medium hover:bg-emerald-50 transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full h-11 rounded-lg border-2 border-blue-500 text-blue-800 text-sm font-medium hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   <Gift className="w-4 h-4" />
                   {processing ? '처리 중...' : `무료 상품만 먼저 받기 (${freeItems.length}개)`}

@@ -421,7 +421,7 @@ export default function AdminReviewsPage() {
                       <Badge
                         className={`border ${
                           review.is_published
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            ? 'bg-blue-50 text-blue-800 border-blue-200'
                             : 'bg-muted text-muted-foreground border-border'
                         }`}
                       >
@@ -617,7 +617,7 @@ export default function AdminReviewsPage() {
                   className={`inline-flex items-center gap-2 px-4 py-2 text-sm rounded-xl transition-colors disabled:opacity-50 cursor-pointer ${
                     selectedReview.is_published
                       ? 'bg-muted text-foreground hover:bg-muted'
-                      : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                      : 'bg-blue-50 text-blue-800 hover:bg-blue-100'
                   }`}
                 >
                   {selectedReview.is_published ? (
