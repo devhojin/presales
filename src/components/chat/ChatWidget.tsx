@@ -120,7 +120,7 @@ export function ChatWidget() {
     return () => window.removeEventListener('open-chat-widget', handler)
   }, [])
 
-  // 메시지 로드
+  // 초기 메시지 로드
   useEffect(() => {
     if (!roomId || !isOpen) return
     const loadMessages = async () => {
@@ -147,47 +147,41 @@ export function ChatWidget() {
     loadMessages()
   }, [roomId, isOpen, user, guestId])
 
-  // 폴링 방식으로 새 메시지 감지 (3초 주기)
+  // Realtime 구독: 새 메시지 실시간 수신
   useEffect(() => {
     if (!roomId || !isOpen) return
 
-    const pollMessages = async () => {
-      try {
-        if (user) {
-          const res = await fetch(`/api/chat/messages?room_id=${roomId}`)
-          const data = await res.json()
-          if (data.messages) {
-            setMessages((prev) => {
-              if (prev.length === data.messages.length) return prev
-              return data.messages
-            })
-          }
-        } else if (guestId) {
-          const res = await fetch('/api/chat/guest', {
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`chat-messages-${roomId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newMsg = payload.new as ChatMessage
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === newMsg.id)) return prev
+            return [...prev, newMsg]
+          })
+          // 읽음 처리
+          fetch('/api/chat/read', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ room_id: roomId, guest_id: guestId }),
           })
-          const data = await res.json()
-          if (data.messages) {
-            setMessages((prev) => {
-              if (prev.length === data.messages.length) return prev
-              return data.messages
-            })
-          }
         }
-        // 읽음 처리
-        fetch('/api/chat/read', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ room_id: roomId, guest_id: guestId }),
-        })
-      } catch { /* ignore */ }
-    }
+      )
+      .subscribe()
 
-    const interval = setInterval(pollMessages, 3000)
-    return () => clearInterval(interval)
-  }, [roomId, isOpen, user, guestId])
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [roomId, isOpen, guestId])
 
   // 스크롤 관리
   useEffect(() => {
@@ -371,9 +365,9 @@ export function ChatWidget() {
             </div>
             <p className="font-medium text-sm text-foreground">{meta.title}</p>
             <p className="text-lg font-bold text-blue-800 mt-1">{formatAmount(meta.amount)}</p>
-            {meta.status === 'pending' && user && !isMe && (
+            {meta.status === 'pending' && !isMe && (
               <button
-                onClick={() => handlePayment(meta.payment_request_id)}
+                onClick={() => handlePayment(meta.payment_request_id, meta.amount, meta.title)}
                 className="mt-3 w-full py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors cursor-pointer"
               >
                 결제하기
@@ -437,15 +431,13 @@ export function ChatWidget() {
     )
   }
 
-  const handlePayment = async (paymentRequestId: string) => {
-    // 결제 완료 처리 (간단 버전 - 추후 토스페이먼츠 연동)
-    try {
-      await fetch('/api/chat/payment-request', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: paymentRequestId, status: 'paid' }),
-      })
-    } catch { /* ignore */ }
+  const handlePayment = (paymentRequestId: string, amount: number, title: string) => {
+    const params = new URLSearchParams({
+      chat_payment_id: paymentRequestId,
+      amount: String(amount),
+      description: title,
+    })
+    window.location.href = `/checkout?${params.toString()}`
   }
 
   // 플로팅 버튼 (닫혀있을 때)

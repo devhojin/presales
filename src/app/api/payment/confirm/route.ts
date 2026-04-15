@@ -50,10 +50,11 @@ export async function POST(request: NextRequest) {
 
     // 2. 요청 바디 파싱
     const body = await request.json()
-    const { paymentKey, orderId, amount } = body as {
+    const { paymentKey, orderId, amount, chat_payment_id } = body as {
       paymentKey: string
       orderId: string
       amount: number
+      chat_payment_id?: string
     }
 
     if (!paymentKey || !orderId || !amount) {
@@ -171,20 +172,70 @@ export async function POST(request: NextRequest) {
         .is('used_at', null)
     }
 
-    // 5. 주문 확인 이메일 발송 (비동기, 실패해도 결제 성공)
-    try {
-      const baseUrl = request.nextUrl.origin
-      await fetch(`${baseUrl}/api/email/order-confirm`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Cookie: request.headers.get('cookie') || '',
-        },
-        body: JSON.stringify({ orderId: dbOrderId }),
-      })
-    } catch (emailErr) {
-      const message = emailErr instanceof Error ? emailErr.message : '알 수 없는 오류'
-      logger.error('주문 확인 이메일 발송 실패', 'payment/confirm', { error: message })
+    // 5. 채팅 결제요청 상태 업데이트 (chat_payment_id가 있을 때)
+    if (chat_payment_id) {
+      try {
+        const now = new Date().toISOString()
+        const { data: pr } = await supabase
+          .from('chat_payment_requests')
+          .update({ status: 'paid', paid_at: now, order_id: dbOrderId })
+          .eq('id', chat_payment_id)
+          .eq('user_id', user.id)
+          .select('room_id, title, message_id')
+          .single()
+
+        if (pr) {
+          // 메시지 metadata의 status도 paid로 업데이트
+          if (pr.message_id) {
+            const { data: msgRow } = await supabase
+              .from('chat_messages')
+              .select('metadata')
+              .eq('id', pr.message_id)
+              .single()
+            if (msgRow) {
+              await supabase
+                .from('chat_messages')
+                .update({
+                  metadata: {
+                    ...(msgRow.metadata as Record<string, unknown>),
+                    status: 'paid',
+                  },
+                })
+                .eq('id', pr.message_id)
+            }
+          }
+          // 시스템 메시지 추가
+          await supabase.from('chat_messages').insert({
+            room_id: pr.room_id,
+            sender_id: 'system',
+            sender_type: 'system',
+            message_type: 'system',
+            content: `결제 완료: ${pr.title}`,
+          })
+        }
+      } catch (chatErr) {
+        const message = chatErr instanceof Error ? chatErr.message : '알 수 없는 오류'
+        logger.error('채팅 결제요청 상태 업데이트 실패', 'payment/confirm', { error: message })
+        // 결제 자체는 성공했으므로 에러를 클라이언트에 전파하지 않음
+      }
+    }
+
+    // 6. 주문 확인 이메일 발송 (비동기, 실패해도 결제 성공)
+    if (!chat_payment_id) {
+      try {
+        const baseUrl = request.nextUrl.origin
+        await fetch(`${baseUrl}/api/email/order-confirm`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Cookie: request.headers.get('cookie') || '',
+          },
+          body: JSON.stringify({ orderId: dbOrderId }),
+        })
+      } catch (emailErr) {
+        const message = emailErr instanceof Error ? emailErr.message : '알 수 없는 오류'
+        logger.error('주문 확인 이메일 발송 실패', 'payment/confirm', { error: message })
+      }
     }
 
     return NextResponse.json({ success: true, orderId: dbOrderId })
