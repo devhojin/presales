@@ -72,6 +72,7 @@ interface ProductForm {
   badge_sale: boolean
   seller: string
   related_product_ids: number[]
+  preview_images: string[]
 }
 
 // ===========================
@@ -111,6 +112,7 @@ const EMPTY_FORM: ProductForm = {
   badge_sale: false,
   seller: '프리세일즈',
   related_product_ids: [],
+  preview_images: [],
 }
 
 // ===========================
@@ -450,6 +452,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           badge_sale: p.badge_sale ?? false,
           seller: p.seller || '프리세일즈',
           related_product_ids: Array.isArray(p.related_product_ids) ? p.related_product_ids : [],
+          preview_images: Array.isArray(p.preview_images) ? p.preview_images : [],
         })
         setDownloadCount(p.download_count || 0)
         setCreatedAt(p.created_at || '')
@@ -517,6 +520,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         badge_sale: form.badge_sale,
         seller: form.seller || null,
         related_product_ids: form.related_product_ids,
+        preview_images: form.preview_images,
         updated_at: new Date().toISOString(),
       }
 
@@ -1156,6 +1160,92 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 />
                 <p className="text-xs text-muted-foreground mt-1">PDF 미리보기가 없을 때 상품 상세에 표시될 안내 문구</p>
               </div>
+            </div>
+          </section>
+
+          {/* ─── 이미지 미리보기 ─── */}
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+              🖼️ 이미지 미리보기
+            </h2>
+            <div className="space-y-4">
+              {/* 업로드 드래그 영역 */}
+              <div
+                onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5') }}
+                onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary', 'bg-primary/5') }}
+                onDrop={async (e) => {
+                  e.preventDefault()
+                  e.currentTarget.classList.remove('border-primary', 'bg-primary/5')
+                  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))
+                  if (!files.length) return
+                  const supabase = createClient()
+                  const newUrls: string[] = []
+                  for (const file of files) {
+                    const ext = file.name.split('.').pop() ?? 'jpg'
+                    const fileName = `preview-images/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+                    const { error } = await supabase.storage.from('product-previews').upload(fileName, file)
+                    if (!error) {
+                      const { data } = supabase.storage.from('product-previews').getPublicUrl(fileName)
+                      newUrls.push(data.publicUrl)
+                    }
+                  }
+                  if (newUrls.length) {
+                    updateField('preview_images', [...form.preview_images, ...newUrls])
+                    showToast(`${newUrls.length}개 이미지 업로드 완료`)
+                  }
+                }}
+                className="border-2 border-dashed border-border rounded-xl p-6 text-center transition-colors cursor-pointer hover:border-gray-400"
+                onClick={() => document.getElementById('preview-images-input')?.click()}
+              >
+                <input
+                  id="preview-images-input"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files ?? []).filter(f => f.type.startsWith('image/'))
+                    if (!files.length) return
+                    const supabase = createClient()
+                    const newUrls: string[] = []
+                    for (const file of files) {
+                      const ext = file.name.split('.').pop() ?? 'jpg'
+                      const fileName = `preview-images/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+                      const { error } = await supabase.storage.from('product-previews').upload(fileName, file)
+                      if (!error) {
+                        const { data } = supabase.storage.from('product-previews').getPublicUrl(fileName)
+                        newUrls.push(data.publicUrl)
+                      }
+                    }
+                    if (newUrls.length) {
+                      updateField('preview_images', [...form.preview_images, ...newUrls])
+                      showToast(`${newUrls.length}개 이미지 업로드 완료`)
+                    }
+                    e.target.value = ''
+                  }}
+                />
+                <p className="text-2xl mb-2">🖼️</p>
+                <p className="text-sm text-muted-foreground">이미지를 드래그하거나 클릭해서 업로드 (여러 장 가능)</p>
+              </div>
+
+              {/* 등록된 이미지 목록 - 그리드 */}
+              {form.preview_images.length > 0 && (
+                <div className="grid grid-cols-3 gap-3">
+                  {form.preview_images.map((url, idx) => (
+                    <div key={idx} className="relative group rounded-xl overflow-hidden border border-border">
+                      <img src={url} alt={`미리보기 ${idx + 1}`} className="w-full aspect-[4/3] object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => updateField('preview_images', form.preview_images.filter((_, i) => i !== idx))}
+                        className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                      <span className="absolute bottom-2 left-2 text-[10px] bg-black/50 text-white px-1.5 py-0.5 rounded">{idx + 1}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
 
