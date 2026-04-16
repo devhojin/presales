@@ -145,8 +145,8 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
 
   function maskName(name: string | null | undefined): string {
     if (!name || name.length === 0) return '익명'
-    if (name.length === 1) return name + '**'
-    return name[0] + '**'
+    if (name.length === 1) return name + 'OO'
+    return name[0] + 'OO'
   }
 
   function formatDate(dateStr: string): string {
