@@ -65,7 +65,7 @@ interface ProductForm {
   features: string[]
   specs: SpecItem[]
   file_types: string[]
-  document_orientation: '가로형' | '세로형'
+  document_orientation: string[]
   badge_new: boolean
   badge_best: boolean
   badge_sale: boolean
@@ -104,7 +104,7 @@ const EMPTY_FORM: ProductForm = {
   features: [''],
   specs: [{ label: '', value: '' }],
   file_types: [],
-  document_orientation: '가로형',
+  document_orientation: ['가로형'],
   badge_new: false,
   badge_best: false,
   badge_sale: false,
@@ -440,7 +440,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           features: features.length > 0 ? features : [''],
           specs: specs.length > 0 ? specs : [{ label: '', value: '' }],
           file_types: Array.isArray(p.file_types) ? p.file_types : [],
-          document_orientation: p.document_orientation || '가로형',
+          document_orientation: Array.isArray(p.document_orientation)
+            ? p.document_orientation
+            : p.document_orientation ? [p.document_orientation] : ['가로형'],
           badge_new: p.badge_new ?? false,
           badge_best: p.badge_best ?? false,
           badge_sale: p.badge_sale ?? false,
@@ -1228,32 +1230,39 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 </div>
               </div>
 
-              {/* 문서 형태 (라디오) */}
+              {/* 문서 형태 (체크박스 — 중복선택 가능) */}
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
                   <Monitor className="w-3 h-3" />
                   문서 형태
                 </label>
                 <div className="flex gap-3">
-                  {(['가로형', '세로형'] as const).map(orient => (
-                    <label
-                      key={orient}
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border cursor-pointer transition-colors ${
-                        form.document_orientation === orient
-                          ? 'bg-primary/8 border-blue-300 text-primary'
-                          : 'bg-white border-border text-muted-foreground hover:bg-muted'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="documentOrientation"
-                        checked={form.document_orientation === orient}
-                        onChange={() => updateField('document_orientation', orient)}
-                        className="w-4 h-4 border-border text-primary focus:ring-primary"
-                      />
-                      <span className="text-sm font-medium">{orient}</span>
-                    </label>
-                  ))}
+                  {(['가로형', '세로형'] as const).map(orient => {
+                    const checked = form.document_orientation.includes(orient)
+                    return (
+                      <label
+                        key={orient}
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border cursor-pointer transition-colors ${
+                          checked
+                            ? 'bg-primary/8 border-blue-300 text-primary'
+                            : 'bg-white border-border text-muted-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            const next = checked
+                              ? form.document_orientation.filter(v => v !== orient)
+                              : [...form.document_orientation, orient]
+                            updateField('document_orientation', next.length > 0 ? next : [orient])
+                          }}
+                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                        />
+                        <span className="text-sm font-medium">{orient}</span>
+                      </label>
+                    )
+                  })}
                 </div>
               </div>
             </div>
