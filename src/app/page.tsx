@@ -90,24 +90,24 @@ function FeaturedCard({ product, categoryNames }: { product: DbProduct; category
             {inCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
           </button>
         </div>
-        <div className="p-5 space-y-2.5">
+        <div className="p-3.5 space-y-1.5">
           <div className="flex gap-1.5 flex-wrap">
             {categoryNames.map((name) => (
-              <span key={name} className="text-[11px] text-muted-foreground font-medium">{name}</span>
+              <span key={name} className="text-[10px] text-muted-foreground font-medium">{name}</span>
             ))}
           </div>
-          <h3 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors duration-300">{product.title}</h3>
-          <div className="flex items-center gap-2">
-            {product.is_free ? <span className="text-base font-bold text-primary">무료</span> : (
+          <h3 className="font-semibold text-xs leading-snug line-clamp-2 group-hover:text-primary transition-colors duration-300">{product.title}</h3>
+          <div className="flex items-center gap-1.5">
+            {product.is_free ? <span className="text-sm font-bold text-primary">무료</span> : (
               <>
-                <span className="text-base font-bold text-foreground">{formatPrice(product.price)}</span>
-                {product.original_price > product.price && <span className="text-xs text-muted-foreground line-through">{formatPrice(product.original_price)}</span>}
+                <span className="text-sm font-bold text-foreground">{formatPrice(product.price)}</span>
+                {product.original_price > product.price && <span className="text-[10px] text-muted-foreground line-through">{formatPrice(product.original_price)}</span>}
               </>
             )}
           </div>
           {product.review_count > 0 && (
-            <div className="flex items-center gap-1 text-xs">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+            <div className="flex items-center gap-1 text-[10px]">
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
               <span className="font-medium text-foreground">{product.review_avg.toFixed(1)}</span>
               <span className="text-muted-foreground">({product.review_count})</span>
             </div>
@@ -202,13 +202,13 @@ export default function Home() {
       const featured = [...allProducts]
         .filter(p => !p.is_free && p.price > 0)
         .sort((a, b) => (b.download_count || 0) - (a.download_count || 0))
-        .slice(0, 6)
+        .slice(0, 15)
 
-      if (featured.length < 6) {
+      if (featured.length < 15) {
         const freeOnes = allProducts
           .filter(p => p.is_free && !featured.some(f => f.id === p.id))
           .sort((a, b) => (b.download_count || 0) - (a.download_count || 0))
-        featured.push(...freeOnes.slice(0, 6 - featured.length))
+        featured.push(...freeOnes.slice(0, 15 - featured.length))
       }
 
       setProducts(featured)
@@ -450,10 +450,10 @@ export default function Home() {
               <ArrowRight className="ml-1.5 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {loadingProducts
-              ? Array.from({ length: 6 }).map((_, i) => <FeaturedCardSkeleton key={i} />)
-              : products.slice(0, 6).map((product) => (
+              ? Array.from({ length: 15 }).map((_, i) => <FeaturedCardSkeleton key={i} />)
+              : products.slice(0, 15).map((product) => (
                   <FeaturedCard key={product.id} product={product} categoryNames={getCategoryNames(product)} />
                 ))
             }
