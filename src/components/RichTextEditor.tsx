@@ -7,7 +7,7 @@ import Link from '@tiptap/extension-link'
 import TextAlign from '@tiptap/extension-text-align'
 import Placeholder from '@tiptap/extension-placeholder'
 import Image from '@tiptap/extension-image'
-import { useRef } from 'react'
+import { useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
@@ -42,6 +42,18 @@ function ToolbarButton({ onClick, active, children, title }: {
 
 export function RichTextEditor({ content, onChange, placeholder }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const uploadingRef = useRef(false)
+
+  const handleImageUploadFromClipboard = useCallback(async (file: File) => {
+    if (uploadingRef.current) return
+    uploadingRef.current = true
+    try {
+      await handleImageUploadInternal(file)
+    } finally {
+      uploadingRef.current = false
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const editor = useEditor({
     extensions: [
@@ -56,6 +68,33 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML())
     },
+    editorProps: {
+      handlePaste(_view, event) {
+        const items = event.clipboardData?.items
+        if (!items) return false
+        for (const item of items) {
+          if (item.type.startsWith('image/')) {
+            event.preventDefault()
+            const file = item.getAsFile()
+            if (file) handleImageUploadFromClipboard(file)
+            return true
+          }
+        }
+        return false
+      },
+      handleDrop(_view, event) {
+        const files = event.dataTransfer?.files
+        if (!files?.length) return false
+        for (const file of files) {
+          if (file.type.startsWith('image/')) {
+            event.preventDefault()
+            handleImageUploadFromClipboard(file)
+            return true
+          }
+        }
+        return false
+      },
+    },
   })
 
   if (!editor) return null
@@ -67,7 +106,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     }
   }
 
-  const handleImageUpload = async (file: File) => {
+  const handleImageUploadInternal = async (file: File) => {
     if (file.size > 5 * 1024 * 1024) {
       alert('이미지 크기는 5MB 이하여야 합니다.')
       return
@@ -167,7 +206,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0]
-          if (file) handleImageUpload(file)
+          if (file) handleImageUploadInternal(file)
           e.target.value = ''
         }}
       />
