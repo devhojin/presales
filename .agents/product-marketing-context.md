@@ -1,6 +1,6 @@
 # Product Marketing Context
 
-*Last updated: 2026-04-16*
+*Last updated: 2026-04-16 (마케팅 전면 개선 세션 반영)*
 
 ## Product Overview
 **One-liner:** 공공조달 입찰에서 실제 낙찰된 제안서 템플릿을 구매·다운로드할 수 있는 마켓플레이스
@@ -186,7 +186,14 @@
 **Business goal:** 공공조달 제안서 시장에서 No.1 마켓플레이스 포지션 확보
 **Conversion action:** 제안서 템플릿 구매 + 다운로드 (무료 샘플 → 유료 전환 퍼널)
 **Current metrics:**
-- 51개 활성 상품
-- presales-zeta.vercel.app에서 운영 중 (presales.co.kr 도메인 연결 예정)
+- 51개 활성 상품 (DB 실시간 연동)
+- presales.co.kr 도메인 운영 중 (Vercel)
 - PG 결제 연동 준비 중 (토스페이먼츠)
 - GA4 미등록 상태 (측정 ID 등록 대기)
+
+**2026-04-16 구현 완료:**
+- SEO 전면 보강 (메타데이터, JSON-LD, 사이트맵, OG 이미지, 카테고리 URL)
+- Roy.Chae 컨설턴트 캐릭터 + 성공사례 + 가격 앵커링
+- 전환 장치 (Exit intent, 무료→유료 업셀, 최근 본 상품 날개배너, Toast 액션)
+- 카피라이팅 한글화 + 통일 (FREE→무료, 나의콘솔→마이페이지 등)
+- UX 개선 (전체 동의, 히어로 검색, 신규상품 섹션, 필터 노출 등)
