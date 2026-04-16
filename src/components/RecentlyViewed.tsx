@@ -29,7 +29,9 @@ export function RecentlyViewed() {
   if (items.length === 0) return null
 
   return (
-    <div className="hidden xl:block fixed right-[50px] top-1/2 -translate-y-1/2 z-30">
+    <div className="hidden xl:block fixed right-[50px] top-1/2 -translate-y-1/2 z-30 animate-[float_4s_ease-in-out_infinite]"
+      style={{ animation: 'float 4s ease-in-out infinite' }}>
+      <style>{`@keyframes float { 0%,100%{transform:translateY(-50%)} 50%{transform:translateY(calc(-50% - 10px))} }`}</style>
       {collapsed ? (
         <button
           onClick={() => setCollapsed(false)}
