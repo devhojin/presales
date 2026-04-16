@@ -1208,7 +1208,7 @@ export default function AdminOrders() {
   const [search, setSearch] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
-  const [pageSize, setPageSize] = useState(20)
+  const [pageSize, setPageSize] = useState(100)
   const [currentPage, setCurrentPage] = useState(1)
 
   // Selection
