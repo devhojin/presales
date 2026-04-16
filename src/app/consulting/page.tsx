@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Check, X, Clock, Video, FileText, Star, Upload, Loader2, MessageSquare } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 
 // ===========================
 // Consulting Inquiry Modal
@@ -23,6 +24,7 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+  const { handleMouseDown, modalStyle } = useDraggableModal()
 
   // 로그인 회원이면 이름/이메일 자동 채우기
   useEffect(() => {
@@ -151,9 +153,9 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[5vh]" role="dialog" aria-modal="true" aria-labelledby="consulting-modal-title">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" style={modalStyle}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 sticky top-0 bg-card rounded-t-2xl z-10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 sticky top-0 bg-card rounded-t-2xl z-10 cursor-move" onMouseDown={handleMouseDown}>
           <h2 id="consulting-modal-title" className="text-lg font-bold text-foreground">컨설팅 문의</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-muted-foreground">
             <X className="w-5 h-5" />

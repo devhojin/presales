@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import type { DbReview } from '@/lib/types'
 import { Badge } from '@/components/ui/badge'
 import { ReviewStars } from '@/components/reviews/ReviewStars'
@@ -47,6 +48,8 @@ function DeleteModal({
   onConfirm: () => void
   onCancel: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel()
@@ -64,9 +67,10 @@ function DeleteModal({
     >
       <div
         className="bg-white rounded-xl shadow-xl max-w-sm w-full mx-4 p-6"
+        style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4 cursor-move" onMouseDown={handleMouseDown}>
           <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
             <Trash2 className="w-5 h-5 text-red-600" />
           </div>
@@ -102,6 +106,7 @@ export default function AdminReviewsPage() {
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [ratingFilter, setRatingFilter] = useState<number | null>(null)
+  const dragDetail = useDraggableModal()
   const [selectedReview, setSelectedReview] = useState<DbReview | null>(null)
   const [toggling, setToggling] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<DbReview | null>(null)
@@ -489,11 +494,12 @@ export default function AdminReviewsPage() {
         >
           <div
             className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 max-h-[85vh] overflow-y-auto"
+            style={dragDetail.modalStyle}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">
               {/* Header */}
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 cursor-move" onMouseDown={dragDetail.handleMouseDown}>
                 <h3 className="font-semibold text-lg">리뷰 상세</h3>
                 <div className="flex items-center gap-2">
                   <button

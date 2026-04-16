@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { Badge } from '@/components/ui/badge'
 import {
   Search,
@@ -129,6 +130,7 @@ function StatusConfirmModal({
   onCancel: () => void
   loading: boolean
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const targetLabel = statusConfig[targetStatus]?.label || targetStatus
 
   useEffect(() => {
@@ -142,8 +144,8 @@ function StatusConfirmModal({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
-        <div className="flex items-center gap-3 mb-4">
+      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4" style={modalStyle}>
+        <div className="flex items-center gap-3 mb-4 cursor-move" onMouseDown={handleMouseDown}>
           <div className="w-10 h-10 rounded-full bg-primary/8 flex items-center justify-center">
             <CheckCircle className="w-5 h-5 text-primary" />
           </div>
@@ -198,6 +200,7 @@ function ConsultingDetailModal({
   onClose: () => void
   onStatusChange: (id: number, status: string) => Promise<void>
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const [showConfirm, setShowConfirm] = useState(false)
   const [targetStatus, setTargetStatus] = useState('')
   const [confirmLoading, setConfirmLoading] = useState(false)
@@ -273,9 +276,9 @@ function ConsultingDetailModal({
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col overflow-hidden" style={modalStyle}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 cursor-move" onMouseDown={handleMouseDown}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
               {(request.name || '?')[0]}

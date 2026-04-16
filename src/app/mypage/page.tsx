@@ -14,6 +14,7 @@ import {
 import { createClient } from '@/lib/supabase'
 import { validatePassword } from '@/lib/password-policy'
 import { useToastStore } from '@/stores/toast-store'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 
 // ===========================
 // Types
@@ -123,6 +124,13 @@ function relativeTime(date: Date): string {
 export default function MyConsolePage() {
   const router = useRouter()
   const { addToast } = useToastStore()
+
+  // Draggable modal hooks
+  const { handleMouseDown: deleteAccountMouseDown, modalStyle: deleteAccountStyle } = useDraggableModal()
+  const { handleMouseDown: couponMouseDown, modalStyle: couponStyle } = useDraggableModal()
+  const { handleMouseDown: receiptMouseDown, modalStyle: receiptStyle } = useDraggableModal()
+  const { handleMouseDown: bookmarkDragMouseDown, modalStyle: bookmarkDragStyle } = useDraggableModal()
+  const { handleMouseDown: refundMouseDown, modalStyle: refundStyle } = useDraggableModal()
 
   // Data state
   const [loading, setLoading] = useState(true)
@@ -436,8 +444,8 @@ export default function MyConsolePage() {
         {/* Delete Account Modal */}
         {showDeleteAccount && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowDeleteAccount(false)}>
-            <div className="bg-background rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl" onClick={e => e.stopPropagation()}>
-              <div className="flex items-center gap-2 mb-3"><AlertTriangle className="w-5 h-5 text-red-500" /><h3 className="text-lg font-semibold">회원 탈퇴</h3></div>
+            <div className="bg-background rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl" style={deleteAccountStyle} onClick={e => e.stopPropagation()}>
+              <div className="flex items-center gap-2 mb-3 cursor-move" onMouseDown={deleteAccountMouseDown}><AlertTriangle className="w-5 h-5 text-red-500" /><h3 className="text-lg font-semibold">회원 탈퇴</h3></div>
               <p className="text-sm text-muted-foreground mb-4">탈퇴하면 모든 데이터가 삭제됩니다. 정말 탈퇴하시겠습니까?</p>
               <div className="mb-4"><label className="text-sm font-medium mb-2 block">비밀번호 확인</label><div className="relative"><input type={showDeleteAccountPw ? 'text' : 'password'} placeholder="비밀번호 입력" value={deleteAccountPassword} onChange={e => setDeleteAccountPassword(e.target.value)} className="w-full h-10 px-3 rounded-lg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary" /><button type="button" onClick={() => setShowDeleteAccountPw(!showDeleteAccountPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer">{showDeleteAccountPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div></div>
               <div className="flex gap-3">
@@ -749,8 +757,8 @@ export default function MyConsolePage() {
       {/* Coupon Modal */}
       {showCouponModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowCouponModal(false)}>
-          <div className="bg-background rounded-2xl max-w-md w-full max-h-[85vh] shadow-xl flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-6 border-b border-border/50 shrink-0">
+          <div className="bg-background rounded-2xl max-w-md w-full max-h-[85vh] shadow-xl flex flex-col" style={couponStyle} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-border/50 shrink-0 cursor-move" onMouseDown={couponMouseDown}>
               <div className="flex items-center gap-2">
                 <Tag className="w-5 h-5 text-pink-600" />
                 <h3 className="text-lg font-semibold">내 쿠폰</h3>
@@ -829,9 +837,9 @@ export default function MyConsolePage() {
         const statusInfo = statusMap[receiptOrder.status] || { label: receiptOrder.status, class: 'bg-muted text-muted-foreground border-border' }
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setReceiptOrder(null)}>
-            <div className="bg-background rounded-2xl max-w-lg w-full max-h-[85vh] shadow-xl flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="bg-background rounded-2xl max-w-lg w-full max-h-[85vh] shadow-xl flex flex-col" style={receiptStyle} onClick={e => e.stopPropagation()}>
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-border/50 shrink-0">
+              <div className="flex items-center justify-between p-6 border-b border-border/50 shrink-0 cursor-move" onMouseDown={receiptMouseDown}>
                 <div>
                   <h3 className="text-lg font-semibold">주문서</h3>
                   <p className="text-xs font-mono text-muted-foreground mt-1">{receiptOrder.order_number}</p>
@@ -937,9 +945,9 @@ export default function MyConsolePage() {
       {/* Bookmark Detail Modal */}
       {bookmarkModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setBookmarkModal(null)}>
-          <div className="bg-background rounded-2xl max-w-2xl w-full max-h-[85vh] shadow-xl flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="bg-background rounded-2xl max-w-2xl w-full max-h-[85vh] shadow-xl flex flex-col" style={bookmarkDragStyle} onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="flex items-start justify-between p-6 border-b border-border/50 shrink-0">
+            <div className="flex items-start justify-between p-6 border-b border-border/50 shrink-0 cursor-move" onMouseDown={bookmarkDragMouseDown}>
               <div className="flex-1 min-w-0">
                 {bookmarkModal.type === 'announcement' ? (
                   <>
@@ -1017,8 +1025,8 @@ export default function MyConsolePage() {
       {/* Refund Modal */}
       {refundOrderId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => { setRefundOrderId(null); setRefundReason('') }}>
-          <div className="bg-background rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4"><h3 className="text-lg font-semibold">환불 문의</h3><button type="button" onClick={() => { setRefundOrderId(null); setRefundReason('') }} className="text-muted-foreground hover:text-foreground cursor-pointer"><X className="w-5 h-5" /></button></div>
+          <div className="bg-background rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl" style={refundStyle} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4 cursor-move" onMouseDown={refundMouseDown}><h3 className="text-lg font-semibold">환불 문의</h3><button type="button" onClick={() => { setRefundOrderId(null); setRefundReason('') }} className="text-muted-foreground hover:text-foreground cursor-pointer"><X className="w-5 h-5" /></button></div>
             <p className="text-sm text-muted-foreground mb-4">환불 사유를 입력해주세요.</p>
             <textarea value={refundReason} onChange={e => setRefundReason(e.target.value)} rows={4} placeholder="환불 사유를 상세히 입력해주세요..." className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none mb-4" />
             <div className="flex gap-3">

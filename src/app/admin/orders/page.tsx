@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { Badge } from '@/components/ui/badge'
 import {
   Search,
@@ -212,6 +213,8 @@ function ConfirmModal({
   onCancel: () => void
   loading: boolean
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel()
@@ -223,8 +226,8 @@ function ConfirmModal({
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
-        <h3 className="text-sm font-semibold text-foreground mb-2">{title}</h3>
+      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4" style={modalStyle}>
+        <h3 className="text-sm font-semibold text-foreground mb-2 cursor-move" onMouseDown={handleMouseDown}>{title}</h3>
         <p className="text-sm text-muted-foreground mb-6">{message}</p>
         <div className="flex gap-3 justify-end">
           <button
@@ -296,6 +299,7 @@ function MemberDetailModal({
   member: Profile
   onClose: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const [activeTab, setActiveTab] = useState<MemberModalTab>('info')
   const [orders, setOrders] = useState<Order[]>([])
   const [consulting, setConsulting] = useState<ConsultingRequest[]>([])
@@ -359,9 +363,9 @@ function MemberDetailModal({
     <div className="fixed inset-0 z-[60] flex items-start justify-center pt-[5vh] pb-[5vh]">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col overflow-hidden" style={modalStyle}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 cursor-move" onMouseDown={handleMouseDown}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
               {(member.name || '?')[0]}
@@ -532,6 +536,7 @@ function OrderDetailModal({
   onStatusChange: (orderId: number, status: string) => Promise<void>
   onMemoSave: (orderId: number, memo: string) => Promise<void>
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const [memos, setMemos] = useState<MemoEntry[]>(parseMemos(order.admin_memo))
   const [newMemo, setNewMemo] = useState('')
   const [memoSaving, setMemoSaving] = useState(false)
@@ -598,9 +603,9 @@ function OrderDetailModal({
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[3vh] pb-[3vh]">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[94vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[94vh] flex flex-col overflow-hidden" style={modalStyle}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0 cursor-move" onMouseDown={handleMouseDown}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center">
               <FileText className="w-5 h-5 text-primary" />
@@ -929,6 +934,7 @@ function ProductPurchaseHistoryModal({
   productTitle: string
   onClose: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const [entries, setEntries] = useState<PurchaseHistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -1000,9 +1006,9 @@ function ProductPurchaseHistoryModal({
   return (
     <div className="fixed inset-0 z-[65] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col overflow-hidden" style={modalStyle}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0 cursor-move" onMouseDown={handleMouseDown}>
           <div>
             <h2 className="text-base font-semibold text-foreground">구매내역</h2>
             <p className="text-xs text-muted-foreground break-words mt-0.5">{productTitle}</p>
@@ -1071,6 +1077,7 @@ function DownloadHistoryModal({
   order: Order
   onClose: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const [rows, setRows] = useState<DownloadHistoryRow[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -1143,9 +1150,9 @@ function DownloadHistoryModal({
   return (
     <div className="fixed inset-0 z-[65] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col overflow-hidden" style={modalStyle}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0 cursor-move" onMouseDown={handleMouseDown}>
           <div>
             <h2 className="text-base font-semibold text-foreground">다운로드 이력</h2>
             <p className="text-xs text-muted-foreground font-mono mt-0.5">{order.order_number}</p>

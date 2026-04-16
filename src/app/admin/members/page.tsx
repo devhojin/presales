@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { Badge } from '@/components/ui/badge'
 import {
   Search,
@@ -245,6 +246,8 @@ function ConfirmModal({
   onCancel: () => void
   loading: boolean
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel()
@@ -256,8 +259,8 @@ function ConfirmModal({
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
-        <div className="flex items-center gap-3 mb-4">
+      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4" style={modalStyle}>
+        <div className="flex items-center gap-3 mb-4 cursor-move" onMouseDown={handleMouseDown}>
           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${iconBg}`}>
             {icon}
           </div>
@@ -303,6 +306,7 @@ function MemoModal({
   onSave: (memoJson: string) => Promise<void>
   onCancel: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const [memos, setMemos] = useState<MemoEntry[]>(() => parseMemberMemos(initialMemoRaw))
   const [newContent, setNewContent] = useState('')
   const [saving, setSaving] = useState(false)
@@ -347,8 +351,8 @@ function MemoModal({
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4 max-h-[80vh] flex flex-col">
-        <div className="flex items-center justify-between mb-4 shrink-0">
+      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4 max-h-[80vh] flex flex-col" style={modalStyle}>
+        <div className="flex items-center justify-between mb-4 shrink-0 cursor-move" onMouseDown={handleMouseDown}>
           <h3 className="text-sm font-semibold text-foreground">
             관리자 메모 - {memberName || '(이름 없음)'}
           </h3>
@@ -581,6 +585,7 @@ function MemberDetailModal({
   defaultTab?: ModalTab
   onMemberUpdated?: (updated: Profile) => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const [activeTab, setActiveTab] = useState<ModalTab>(defaultTab)
   const [orders, setOrders] = useState<Order[]>([])
   const [downloads, setDownloads] = useState<DownloadLog[]>([])
@@ -736,9 +741,9 @@ function MemberDetailModal({
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[5vh] pb-[5vh]">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col overflow-hidden" style={modalStyle}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 cursor-move" onMouseDown={handleMouseDown}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
               {(member.name || '?')[0]}

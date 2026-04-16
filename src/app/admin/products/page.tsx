@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
@@ -118,6 +119,8 @@ function DeleteModal({
   onConfirm: () => void
   onCancel: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel()
@@ -135,9 +138,10 @@ function DeleteModal({
     >
       <div
         className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6"
+        style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4 cursor-move" onMouseDown={handleMouseDown}>
           <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
             <Trash2 className="w-5 h-5 text-red-600" />
           </div>
@@ -176,6 +180,8 @@ function BulkDeleteModal({
   onConfirm: () => void
   onCancel: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel()
@@ -193,9 +199,10 @@ function BulkDeleteModal({
     >
       <div
         className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6"
+        style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4 cursor-move" onMouseDown={handleMouseDown}>
           <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
             <Trash2 className="w-5 h-5 text-red-600" />
           </div>
@@ -241,6 +248,7 @@ function DownloadDetailModal({
   product: Product
   onClose: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const [logs, setLogs] = useState<DownloadLog[]>([])
   const [loadingLogs, setLoadingLogs] = useState(true)
   const supabase = useMemo(() => createClient(), [])
@@ -294,10 +302,11 @@ function DownloadDetailModal({
     >
       <div
         className="bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col"
+        style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border cursor-move" onMouseDown={handleMouseDown}>
           <div>
             <h3 className="text-base font-bold text-foreground">다운로드 내역</h3>
             <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[400px]">{product.title}</p>
@@ -612,6 +621,7 @@ export default function AdminProducts() {
   const [downloadDetailProduct, setDownloadDetailProduct] = useState<Product | null>(null)
 
   const supabase = useMemo(() => createClient(), [])
+  const dragBulkPrice = useDraggableModal()
 
   const loadProducts = useCallback(async () => {
     const { data } = await supabase
@@ -1303,9 +1313,9 @@ export default function AdminProducts() {
         {showBulkPrice && (
           <div className="fixed inset-0 z-50 flex items-start justify-center pt-[5vh]" onClick={() => setShowBulkPrice(false)}>
             <div className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" />
-            <div className="relative bg-card rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="relative bg-card rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden flex flex-col" style={dragBulkPrice.modalStyle} onClick={e => e.stopPropagation()}>
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 cursor-move" onMouseDown={dragBulkPrice.handleMouseDown}>
                 <div>
                   <h2 className="text-lg font-bold tracking-tight">가격 일괄 수정</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">

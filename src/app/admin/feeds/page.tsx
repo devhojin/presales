@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import {
   RefreshCw, Search, Eye, EyeOff, ExternalLink, Trash2, Loader2, X,
   AlertCircle, Rss, ArrowLeft, Clock,
@@ -28,6 +29,7 @@ type ModalType = 'delete' | 'permanentDelete' | null
 function ConfirmModal({ type, count, onConfirm, onCancel }: {
   type: ModalType; count: number; onConfirm: () => void; onCancel: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   useEffect(() => {
     if (!type) return
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
@@ -38,8 +40,8 @@ function ConfirmModal({ type, count, onConfirm, onCancel }: {
   const isPerma = type === 'permanentDelete'
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onCancel}>
-      <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" onClick={e => e.stopPropagation()}>
-        <h3 className="text-lg font-bold mb-3">{isPerma ? '완전삭제 확인' : '삭제 확인'}</h3>
+      <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" style={modalStyle} onClick={e => e.stopPropagation()}>
+        <h3 className="text-lg font-bold mb-3 cursor-move select-none" onMouseDown={handleMouseDown}>{isPerma ? '완전삭제 확인' : '삭제 확인'}</h3>
         <p className="text-sm text-muted-foreground mb-4">
           선택한 <strong>{count}건</strong>을 {isPerma ? '완전삭제' : '삭제'}하시겠습니까?
           {isPerma && <span className="block text-red-600 mt-1">완전삭제된 피드는 다시 수집되지 않습니다.</span>}
@@ -54,6 +56,7 @@ function ConfirmModal({ type, count, onConfirm, onCancel }: {
 }
 
 export default function AdminFeedsPage() {
+  const { handleMouseDown: handleFetchModalMouseDown, modalStyle: fetchModalStyle } = useDraggableModal()
   const supabase = useMemo(() => createClient(), [])
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -364,9 +367,9 @@ export default function AdminFeedsPage() {
       {/* Fetch Progress Modal */}
       {fetchModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => { if (fetchDone) setFetchModal(false) }}>
-          <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" style={fetchModalStyle} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold flex items-center gap-2">
+              <h3 className="text-lg font-bold flex items-center gap-2 cursor-move select-none" onMouseDown={handleFetchModalMouseDown}>
                 {fetchDone ? <Rss className="w-5 h-5 text-primary" /> : <Loader2 className="w-5 h-5 animate-spin text-primary" />}
                 IT피드 수집 {fetchDone ? '완료' : '진행 중'}
               </h3>

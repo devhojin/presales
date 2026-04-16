@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import {
   Plus, Search, Megaphone, Calendar, Building2, ExternalLink, Eye, EyeOff,
   Trash2, X, Loader2, RefreshCw, Clock, AlertCircle, ArrowLeft,
@@ -25,6 +26,7 @@ const TYPE_COLORS: Record<string, string> = { government: 'bg-primary/10 text-pr
 function ConfirmModal({ type, count, onConfirm, onCancel }: {
   type: 'delete' | 'permanent-delete' | 'publish' | 'unpublish' | null; count: number; onConfirm: () => void; onCancel: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   useEffect(() => {
     if (!type) return
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
@@ -39,8 +41,8 @@ function ConfirmModal({ type, count, onConfirm, onCancel }: {
   const btnColor = isPermanent ? 'bg-red-600' : isPublish ? 'bg-primary' : isUnpublish ? 'bg-zinc-600' : 'bg-orange-500'
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onCancel}>
-      <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" onClick={e => e.stopPropagation()}>
-        <h3 className="text-lg font-bold mb-3">{label} 확인</h3>
+      <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" style={modalStyle} onClick={e => e.stopPropagation()}>
+        <h3 className="text-lg font-bold mb-3 cursor-move select-none" onMouseDown={handleMouseDown}>{label} 확인</h3>
         <p className="text-sm text-muted-foreground mb-4">
           선택한 <strong>{count}건</strong>을 {label} 처리하시겠습니까?
           {isPermanent && <span className="block text-red-600 mt-1">완전삭제된 공고는 복구할 수 없습니다.</span>}
@@ -57,6 +59,7 @@ function ConfirmModal({ type, count, onConfirm, onCancel }: {
 }
 
 export default function AdminAnnouncementsPage() {
+  const { handleMouseDown: handleFetchModalMouseDown, modalStyle: fetchModalStyle } = useDraggableModal()
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [tab, setTab] = useState<Tab>('all')
@@ -345,9 +348,9 @@ export default function AdminAnnouncementsPage() {
       {/* Fetch Progress Modal */}
       {fetchModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => { if (fetchDone) setFetchModal(false) }}>
-          <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" style={fetchModalStyle} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold flex items-center gap-2">
+              <h3 className="text-lg font-bold flex items-center gap-2 cursor-move select-none" onMouseDown={handleFetchModalMouseDown}>
                 {fetchDone ? <Megaphone className="w-5 h-5 text-primary" /> : <Loader2 className="w-5 h-5 animate-spin text-primary" />}
                 공고 수집 {fetchDone ? '완료' : '진행 중'}
               </h3>

@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { useToastStore } from '@/stores/toast-store'
 import * as gtag from '@/lib/gtag'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 
 interface OwnedCoupon {
   id: string
@@ -52,6 +53,7 @@ export default function CartPage() {
   const certInputRef = useRef<HTMLInputElement>(null)
 
   const router = useRouter()
+  const { handleMouseDown: clearConfirmMouseDown, modalStyle: clearConfirmStyle } = useDraggableModal()
 
   // 세션 복원
   useEffect(() => {
@@ -735,9 +737,10 @@ export default function CartPage() {
         >
           <div
             className="bg-background rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl"
+            style={clearConfirmStyle}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold mb-2">장바구니 비우기</h3>
+            <h3 className="text-lg font-semibold mb-2 cursor-move" onMouseDown={clearConfirmMouseDown}>장바구니 비우기</h3>
             <p className="text-sm text-muted-foreground mb-6">장바구니를 비우시겠습니까?</p>
             <div className="flex gap-3">
               <button

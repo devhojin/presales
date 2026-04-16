@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Pencil, Trash2, CheckCircle, X, Loader2, Search } from 'lucide-react'
 import { useToastStore } from '@/stores/toast-store'
@@ -92,6 +93,8 @@ function DeleteModal({
   onConfirm: () => void
   onCancel: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel()
@@ -109,9 +112,10 @@ function DeleteModal({
     >
       <div
         className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6"
+        style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4 cursor-move" onMouseDown={handleMouseDown}>
           <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
             <Trash2 className="w-5 h-5 text-red-600" />
           </div>
@@ -279,6 +283,7 @@ function MatchModal({
       thumbnail_url: match.target_product.thumbnail_url,
     } : null
   )
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const [discountType, setDiscountType] = useState<'auto' | 'manual'>(match?.discount_type || 'auto')
   const [discountAmount, setDiscountAmount] = useState(match?.discount_amount?.toString() || '0')
   const [sourceQuery, setSourceQuery] = useState('')
@@ -334,10 +339,11 @@ function MatchModal({
     >
       <div
         className="bg-white rounded-2xl shadow-xl max-w-2xl w-full mx-4 p-6 max-h-[90vh] overflow-y-auto"
+        style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 cursor-move" onMouseDown={handleMouseDown}>
           <h2 className="text-xl font-bold text-foreground">
             {match ? '매칭 수정' : '새 매칭 추가'}
           </h2>

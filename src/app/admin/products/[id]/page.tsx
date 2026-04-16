@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import {
   ArrowLeft, Save, Eye, EyeOff, Trash2, Play, Plus, X,
   ImageIcon, FileText, Tag, Upload, Loader2, Code, Monitor,
@@ -271,6 +272,7 @@ function formatErr(e: unknown): string {
 // ===========================
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { handleMouseDown: handleDeleteFileModalMouseDown, modalStyle: deleteFileModalStyle } = useDraggableModal()
   const { id } = use(params)
   const router = useRouter()
   const isNew = id === 'new'
@@ -680,6 +682,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         >
           <div
             className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4"
+            style={deleteFileModalStyle}
             onClick={e => e.stopPropagation()}
           >
             <button
@@ -689,7 +692,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             >
               <X className="w-4 h-4" />
             </button>
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-4 cursor-move select-none" onMouseDown={handleDeleteFileModalMouseDown}>
               <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center">
                 <AlertCircle className="w-5 h-5 text-red-500" />
               </div>
