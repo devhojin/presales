@@ -16,7 +16,6 @@ import {
   ChevronLeft,
   ChevronRight,
   CheckCircle,
-  Copy,
   Download,
   DollarSign,
   Loader2,
@@ -223,6 +222,125 @@ function BulkDeleteModal({
 }
 
 // ===========================
+// Download Detail Modal
+// ===========================
+
+interface DownloadLog {
+  id: number
+  product_id: number
+  user_id: string
+  file_name: string | null
+  downloaded_at: string
+  profiles: { name: string | null; email: string | null } | null
+}
+
+function DownloadDetailModal({
+  product,
+  onClose,
+}: {
+  product: Product
+  onClose: () => void
+}) {
+  const [logs, setLogs] = useState<DownloadLog[]>([])
+  const [loadingLogs, setLoadingLogs] = useState(true)
+  const supabase = useMemo(() => createClient(), [])
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      setLoadingLogs(true)
+      const { data } = await supabase
+        .from('download_logs')
+        .select('id, product_id, user_id, file_name, downloaded_at, profiles(name, email)')
+        .eq('product_id', product.id)
+        .order('downloaded_at', { ascending: false })
+      if (data) setLogs(data as unknown as DownloadLog[])
+      setLoadingLogs(false)
+    }
+    fetchLogs()
+  }, [product.id, supabase])
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <div>
+            <h3 className="text-base font-bold text-foreground">다운로드 내역</h3>
+            <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[400px]">{product.title}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-xl hover:bg-muted flex items-center justify-center"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto">
+          {loadingLogs ? (
+            <div className="flex items-center justify-center py-16 text-muted-foreground text-sm">
+              로딩 중...
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="flex items-center justify-center py-16 text-muted-foreground text-sm">
+              다운로드 내역이 없습니다
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="bg-muted sticky top-0">
+                <tr className="border-b border-border">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">회원명</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">이메일</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">파일명</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">다운로드 일시</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.map((log) => (
+                  <tr key={log.id} className="border-b border-border/50 hover:bg-muted/30">
+                    <td className="px-4 py-3 text-sm">{log.profiles?.name || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{log.profiles?.email || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground max-w-[200px] truncate">{log.file_name || '-'}</td>
+                    <td className="px-4 py-3 text-center text-xs text-muted-foreground">
+                      {log.downloaded_at ? log.downloaded_at.replace('T', ' ').slice(0, 16) : '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+        {/* Footer */}
+        <div className="px-6 py-3 border-t border-border flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-muted transition-colors"
+          >
+            닫기
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ===========================
 // Sortable Row
 // ===========================
 
@@ -230,16 +348,20 @@ function SortableProductRow({
   product,
   onTogglePublish,
   onDelete,
-  onClone,
   selected,
   onSelect,
+  globalRank,
+  categoryRank,
+  onDownloadDetail,
 }: {
   product: Product
   onTogglePublish: (id: number, current: boolean) => void
   onDelete: (id: number) => void
-  onClone: (id: number) => void
   selected: boolean
   onSelect: (id: number) => void
+  globalRank: number | null
+  categoryRank: number | null
+  onDownloadDetail: (product: Product) => void
 }) {
   const {
     attributes,
@@ -290,7 +412,9 @@ function SortableProductRow({
         product={product}
         onTogglePublish={onTogglePublish}
         onDelete={onDelete}
-        onClone={onClone}
+        globalRank={globalRank}
+        categoryRank={categoryRank}
+        onDownloadDetail={onDownloadDetail}
       />
     </tr>
   )
@@ -304,18 +428,32 @@ function ProductRowCells({
   product,
   onTogglePublish,
   onDelete,
-  onClone,
+  globalRank,
+  categoryRank,
+  onDownloadDetail,
 }: {
   product: Product
   onTogglePublish: (id: number, current: boolean) => void
   onDelete: (id: number) => void
-  onClone: (id: number) => void
+  globalRank: number | null
+  categoryRank: number | null
+  onDownloadDetail: (product: Product) => void
 }) {
   return (
     <>
       {/* Title + external link */}
       <td className="px-3 py-3">
         <div className="flex items-center gap-2">
+          <div className="text-[10px] text-muted-foreground leading-tight text-center min-w-[36px]">
+            {globalRank !== null ? (
+              <>
+                <div className="font-bold text-foreground">#{globalRank}</div>
+                <div>카{categoryRank}</div>
+              </>
+            ) : (
+              <div className="text-muted-foreground">-</div>
+            )}
+          </div>
           <Link
             href={`/admin/products/${product.id}`}
             className="text-sm font-medium text-foreground hover:text-primary truncate max-w-[300px] block"
@@ -377,8 +515,13 @@ function ProductRowCells({
         </Badge>
       </td>
       {/* Download count */}
-      <td className="px-3 py-3 text-center text-sm text-muted-foreground">
-        {product.download_count}
+      <td className="px-3 py-3 text-center">
+        <button
+          onClick={() => onDownloadDetail(product)}
+          className="text-sm text-primary hover:underline cursor-pointer"
+        >
+          {product.download_count}
+        </button>
       </td>
       {/* Created date */}
       <td className="px-3 py-3 text-center text-xs text-muted-foreground">
@@ -394,13 +537,6 @@ function ProductRowCells({
           >
             <Pencil className="w-4 h-4" />
           </Link>
-          <button
-            onClick={() => onClone(product.id)}
-            className="p-1.5 rounded-md hover:bg-purple-50 text-muted-foreground hover:text-purple-600 transition-colors"
-            title="상품 복제"
-          >
-            <Copy className="w-4 h-4" />
-          </button>
           <button
             onClick={() => onTogglePublish(product.id, product.is_published)}
             className={`p-1.5 rounded-md transition-colors ${product.is_published ? 'text-primary hover:bg-primary/8' : 'text-muted-foreground hover:bg-muted'}`}
@@ -450,6 +586,7 @@ export default function AdminProducts() {
   const [bulkPriceData, setBulkPriceData] = useState<{ id: number; title: string; price: number; original_price: number; is_free: boolean; newPrice: number }[]>([])
   const [bulkPriceLoading, setBulkPriceLoading] = useState(false)
   const [bulkPriceSaving, setBulkPriceSaving] = useState(false)
+  const [downloadDetailProduct, setDownloadDetailProduct] = useState<Product | null>(null)
 
   const supabase = useMemo(() => createClient(), [])
 
@@ -549,25 +686,6 @@ export default function AdminProducts() {
     loadProducts()
   }
 
-  // Clone product
-  const handleClone = async (id: number) => {
-    const product = products.find((p) => p.id === id)
-    if (!product) return
-    const { data: full } = await supabase.from('products').select('*').eq('id', id).single()
-    if (!full) return
-    const { id: _id, created_at: _ca, updated_at: _ua, ...rest } = full as Record<string, unknown>
-    const clone = {
-      ...rest,
-      title: `${full.title} (복제)`,
-      download_count: 0,
-      is_published: false,
-      sort_order: null,
-    }
-    await supabase.from('products').insert(clone)
-    setToast('상품이 복제되었습니다')
-    loadProducts()
-  }
-
   // Selection helpers — these are called at render time so they
   // will correctly capture the paginated slice via closure
   const toggleSelectAll = (currentPaginated: Product[]) => {
@@ -614,6 +732,20 @@ export default function AdminProducts() {
     setBulkDeleteConfirm(false)
     loadProducts()
   }
+
+  // Rank map (published only, sort_order 기준)
+  const rankMap = useMemo(() => {
+    const map = new Map<number, { global: number; category: number }>()
+    const published = products.filter((p) => p.is_published)
+    const catCounters = new Map<number, number>()
+    published.forEach((p, idx) => {
+      const catId = p.category_id || 0
+      const catRank = (catCounters.get(catId) || 0) + 1
+      catCounters.set(catId, catRank)
+      map.set(p.id, { global: idx + 1, category: catRank })
+    })
+    return map
+  }, [products])
 
   // Status counts
   const statusCounts = useMemo(
@@ -1016,17 +1148,22 @@ export default function AdminProducts() {
                       items={paginated.map((p) => p.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      {paginated.map((product) => (
-                        <SortableProductRow
-                          key={product.id}
-                          product={product}
-                          onTogglePublish={handleTogglePublish}
-                          onDelete={handleDelete}
-                          onClone={handleClone}
-                          selected={selectedIds.has(product.id)}
-                          onSelect={toggleSelect}
-                        />
-                      ))}
+                      {paginated.map((product) => {
+                        const rank = rankMap.get(product.id)
+                        return (
+                          <SortableProductRow
+                            key={product.id}
+                            product={product}
+                            onTogglePublish={handleTogglePublish}
+                            onDelete={handleDelete}
+                            selected={selectedIds.has(product.id)}
+                            onSelect={toggleSelect}
+                            globalRank={rank?.global ?? null}
+                            categoryRank={rank?.category ?? null}
+                            onDownloadDetail={setDownloadDetailProduct}
+                          />
+                        )
+                      })}
                     </SortableContext>
                   </DndContext>
                 ) : (
@@ -1052,7 +1189,9 @@ export default function AdminProducts() {
                         product={product}
                         onTogglePublish={handleTogglePublish}
                         onDelete={handleDelete}
-                        onClone={handleClone}
+                        globalRank={rankMap.get(product.id)?.global ?? null}
+                        categoryRank={rankMap.get(product.id)?.category ?? null}
+                        onDownloadDetail={setDownloadDetailProduct}
                       />
                     </tr>
                   ))
@@ -1119,6 +1258,14 @@ export default function AdminProducts() {
             count={selectedIds.size}
             onConfirm={handleBulkDelete}
             onCancel={() => setBulkDeleteConfirm(false)}
+          />
+        )}
+
+        {/* Download Detail Modal */}
+        {downloadDetailProduct !== null && (
+          <DownloadDetailModal
+            product={downloadDetailProduct}
+            onClose={() => setDownloadDetailProduct(null)}
           />
         )}
 
