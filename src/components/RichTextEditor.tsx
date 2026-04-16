@@ -43,16 +43,30 @@ function ToolbarButton({ onClick, active, children, title }: {
 export function RichTextEditor({ content, onChange, placeholder }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const uploadingRef = useRef(false)
+  const editorRef = useRef<ReturnType<typeof useEditor>>(null)
 
-  const handleImageUploadFromClipboard = useCallback(async (file: File) => {
-    if (uploadingRef.current) return
+  const uploadImage = useCallback(async (file: File) => {
+    const ed = editorRef.current
+    if (!ed || uploadingRef.current) return
     uploadingRef.current = true
     try {
-      await handleImageUploadInternal(file)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('이미지 크기는 5MB 이하여야 합니다.')
+        return
+      }
+      const supabase = createClient()
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
+      const fileName = `blog/inline/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+      const { error } = await supabase.storage.from('product-thumbnails').upload(fileName, file)
+      if (error) {
+        alert('이미지 업로드 실패: ' + error.message)
+        return
+      }
+      const { data: urlData } = supabase.storage.from('product-thumbnails').getPublicUrl(fileName)
+      ed.chain().focus().setImage({ src: urlData.publicUrl }).run()
     } finally {
       uploadingRef.current = false
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const editor = useEditor({
@@ -76,7 +90,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
           if (item.type.startsWith('image/')) {
             event.preventDefault()
             const file = item.getAsFile()
-            if (file) handleImageUploadFromClipboard(file)
+            if (file) uploadImage(file)
             return true
           }
         }
@@ -88,7 +102,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
         for (const file of files) {
           if (file.type.startsWith('image/')) {
             event.preventDefault()
-            handleImageUploadFromClipboard(file)
+            uploadImage(file)
             return true
           }
         }
@@ -97,6 +111,9 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     },
   })
 
+  // editorRef를 항상 최신 editor 인스턴스로 유지
+  editorRef.current = editor
+
   if (!editor) return null
 
   const addLink = () => {
@@ -104,26 +121,6 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     if (url) {
       editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
     }
-  }
-
-  const handleImageUploadInternal = async (file: File) => {
-    if (file.size > 5 * 1024 * 1024) {
-      alert('이미지 크기는 5MB 이하여야 합니다.')
-      return
-    }
-
-    const supabase = createClient()
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
-    const fileName = `blog/inline/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-
-    const { error } = await supabase.storage.from('product-thumbnails').upload(fileName, file)
-    if (error) {
-      alert('이미지 업로드 실패: ' + error.message)
-      return
-    }
-
-    const { data: urlData } = supabase.storage.from('product-thumbnails').getPublicUrl(fileName)
-    editor.chain().focus().setImage({ src: urlData.publicUrl }).run()
   }
 
   return (
@@ -206,7 +203,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0]
-          if (file) handleImageUploadInternal(file)
+          if (file) uploadImage(file)
           e.target.value = ''
         }}
       />
