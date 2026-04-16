@@ -20,14 +20,15 @@ export async function GET(request: NextRequest) {
   const tab = searchParams.get('tab') || '' // '', unread, read, bookmarks
 
   try {
-    const anon = createClient(
+    const service = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false } }
     )
 
-    // 로그인 사용자 식별 (tab 필터용)
+    // 로그인 사용자 식별 (tab 필터 + 카운트 계산용)
     let userId: string | null = null
-    if (tab === 'unread' || tab === 'read' || tab === 'bookmarks') {
+    {
       const cookieStore = await cookies()
       const auth = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -52,11 +53,6 @@ export async function GET(request: NextRequest) {
     }
     let bookmarkSnaps: BookmarkSnap[] = []
     if (userId && (tab === 'unread' || tab === 'read' || tab === 'bookmarks')) {
-      const service = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { persistSession: false } }
-      )
       if (tab === 'bookmarks') {
         const { data } = await service
           .from('feed_bookmarks')
@@ -78,10 +74,10 @@ export async function GET(request: NextRequest) {
 
     // 빈 in-리스트면 결과 없음
     if (idFilter?.op === 'in' && idFilter.ids.length === 0) {
-      return NextResponse.json({ posts: [], total: 0, page, pageSize })
+      return NextResponse.json({ posts: [], total: 0, page, pageSize, counts: { unread: 0, read: 0, bookmarks: 0 } })
     }
 
-    let query = anon
+    let query = service
       .from('community_posts')
       .select('*', { count: 'exact' })
       .eq('is_published', true)
@@ -128,11 +124,38 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // 탭별 카운트 (로그인 시 서버에서 정확하게 계산)
+    let unreadCount = 0, readCount = 0, bookmarkCount = 0
+    if (userId) {
+      const { data: readData } = await service
+        .from('feed_reads')
+        .select('post_id')
+        .eq('user_id', userId)
+        .limit(100000)
+      const readIds = (readData || []).map(r => r.post_id)
+      const { data: bmData } = await service
+        .from('feed_bookmarks')
+        .select('post_id')
+        .eq('user_id', userId)
+        .limit(100000)
+
+      const { count: totalPub } = await service
+        .from('community_posts')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_published', true)
+        .eq('status', 'published')
+
+      readCount = readIds.length
+      unreadCount = (totalPub || 0) - readCount
+      bookmarkCount = (bmData || []).length
+    }
+
     return NextResponse.json({
       posts: finalPosts,
       total: tab === 'bookmarks' ? bookmarkSnaps.length : total || 0,
       page,
       pageSize,
+      counts: { unread: unreadCount, read: readCount, bookmarks: bookmarkCount },
     })
   } catch (err) {
     return NextResponse.json(

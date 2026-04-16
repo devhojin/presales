@@ -59,6 +59,7 @@ export default function FeedsClient() {
   const [readMap, setReadMap] = useState<Map<string, string>>(new Map()) // 실시간 (회색 스타일용)
   const [initialReadSet, setInitialReadSet] = useState<Set<string>>(new Set()) // 페이지 진입 시점 (탭 필터용)
   const [readTab, setReadTab] = useState<ReadTab>('unread')
+  const [serverCounts, setServerCounts] = useState<{ unread: number; read: number; bookmarks: number }>({ unread: 0, read: 0, bookmarks: 0 })
 
   // Load user
   useEffect(() => {
@@ -87,9 +88,10 @@ export default function FeedsClient() {
         const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
         throw new Error(body.error || '데이터를 불러오지 못했습니다')
       }
-      const body = (await res.json()) as { posts: FeedItem[]; total: number }
+      const body = (await res.json()) as { posts: FeedItem[]; total: number; counts?: { unread: number; read: number; bookmarks: number } }
       setFeeds(prev => append ? [...prev, ...body.posts] : body.posts)
       setTotal(body.total)
+      if (body.counts) setServerCounts(body.counts)
       setPage(pageNum)
     } catch (e) {
       setError(e instanceof Error ? e.message : '데이터를 불러오는 중 오류가 발생했습니다')
@@ -212,21 +214,8 @@ export default function FeedsClient() {
     })
   }, [addToast])
 
-  // Tab counts — 활성 탭은 서버 total 사용 (허수 방지), 비활성은 현재 로드된 범위의 근사치
-  const tabCounts = useMemo(() => {
-    if (!userId) return { unread: 0, read: 0, bookmarks: 0 }
-    let unread = 0, read = 0, bookmarks = 0
-    feeds.forEach(feed => {
-      const wasReadOnLoad = initialReadSet.has(feed.id)
-      if (wasReadOnLoad) read++
-      else unread++
-      if (bookmarkedIds.has(feed.id)) bookmarks++
-    })
-    if (readTab === 'unread') unread = total
-    else if (readTab === 'read') read = total
-    else if (readTab === 'bookmarks') bookmarks = total
-    return { unread, read, bookmarks }
-  }, [userId, feeds, initialReadSet, bookmarkedIds, readTab, total])
+  // 서버에서 받은 정확한 카운트 사용 (허수 방지)
+  const tabCounts = serverCounts
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 md:px-8">
