@@ -39,11 +39,13 @@ export function PdfPreviewModal({
   const [error, setError] = useState('')
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  // Calculate clear/blur pages
-  const clearPages = previewClearPages > 0
+  // Calculate clear/blur pages (선명 페이지 최대 20장 제한)
+  const MAX_CLEAR_PAGES = 20
+  const rawClearPages = previewClearPages > 0
     ? previewClearPages
     : Math.min(15, Math.max(3, Math.ceil(totalPages * 0.05)))
-  const blurPages = previewBlurPages || 2
+  const clearPages = Math.min(rawClearPages, MAX_CLEAR_PAGES)
+  const blurPages = Math.min(previewBlurPages || 2, 5)
   const totalPreviewPages = clearPages + blurPages
   const isBlurPage = currentPage > clearPages
 
@@ -60,12 +62,23 @@ export function PdfPreviewModal({
         const pdfjs = await import('pdfjs-dist')
         pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
 
-        const doc = await pdfjs.getDocument(pdfUrl).promise
+        const loadingTask = pdfjs.getDocument({
+          url: pdfUrl,
+          withCredentials: false,
+        })
+        const doc = await loadingTask.promise
         setPdfDoc(doc)
         setLoading(false)
-      } catch (err) {
+      } catch (err: unknown) {
         console.error('PDF load error:', err)
-        setError('PDF를 불러올 수 없습니다.')
+        const message = err instanceof Error ? err.message : String(err)
+        if (message.includes('Missing PDF') || message.includes('Invalid PDF')) {
+          setError('유효하지 않은 PDF 파일입니다.')
+        } else if (message.includes('fetch') || message.includes('network') || message.includes('Failed')) {
+          setError('PDF 파일을 불러올 수 없습니다. 파일 URL을 확인해주세요.')
+        } else {
+          setError('PDF를 불러올 수 없습니다.')
+        }
         setLoading(false)
       }
     }

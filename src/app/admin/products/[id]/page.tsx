@@ -495,8 +495,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         description_html: form.description_html || null,
         youtube_id: form.youtube_id || null,
         preview_pdf_url: form.preview_pdf_url || null,
-        preview_clear_pages: parseInt(form.preview_clear_pages) || 0,
-        preview_blur_pages: parseInt(form.preview_blur_pages) || 2,
+        preview_clear_pages: Math.min(20, parseInt(form.preview_clear_pages) || 0),
+        preview_blur_pages: Math.min(5, parseInt(form.preview_blur_pages) || 2),
         preview_note: form.preview_note || null,
         price: form.is_free ? 0 : form.price,
         original_price: form.is_free ? 0 : form.original_price,
@@ -1129,12 +1129,13 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   <input
                     type="number"
                     min="0"
+                    max="20"
                     value={form.preview_clear_pages}
-                    onChange={e => updateField('preview_clear_pages', e.target.value)}
+                    onChange={e => updateField('preview_clear_pages', String(Math.min(20, Math.max(0, parseInt(e.target.value) || 0))))}
                     placeholder="0 (자동: 전체의 5%)"
                     className={inputClass}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">0이면 자동 (전체의 5%, 최소3, 최대15)</p>
+                  <p className="text-xs text-muted-foreground mt-1">0이면 자동 (전체의 5%, 최소3). <span className="font-medium text-amber-600">최대 20장</span></p>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1.5">블러 페이지 수</label>
