@@ -340,6 +340,24 @@ export default function Home() {
               </div>
             ))}
           </div>
+
+          {/* Category boxes */}
+          <div className="grid grid-cols-3 gap-4 mt-10">
+            {categoryCounts.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/store?category=${cat.id}`}
+                aria-label={`${cat.name} 카테고리 보기`}
+                className="group flex flex-col items-center justify-center p-6 rounded-2xl border border-gray-100 bg-white hover:border-blue-200 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-500 text-center"
+              >
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mb-3 group-hover:bg-blue-100 transition-colors duration-500">
+                  <FileText className="w-5 h-5 text-blue-600" />
+                </div>
+                <span className="font-semibold text-sm tracking-tight text-gray-900 group-hover:text-blue-600 transition-colors duration-300">{cat.name}</span>
+                <span className="text-xs text-gray-400 mt-1">{cat.count}개</span>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -408,38 +426,6 @@ export default function Home() {
                 </div>
               )
             )}
-          </div>
-        </div>
-      </section>
-
-      {/* Category Showcase */}
-      <section className="py-20 md:py-28 bg-gray-50 border-y border-gray-100">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-8">
-          <div className="flex items-end justify-between mb-10 md:mb-12">
-            <div>
-              <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-3">CATEGORIES</p>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">카테고리별 탐색</h2>
-            </div>
-            <Link href="/store" className="hidden md:inline-flex items-center text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors group">
-              전체보기
-              <ChevronRight className="w-4 h-4 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            {categoryCounts.map((cat) => (
-              <Link
-                key={cat.id}
-                href={`/store?category=${cat.id}`}
-                aria-label={`${cat.name} 카테고리 보기`}
-                className="group flex flex-col items-center justify-center p-6 rounded-2xl border border-gray-100 bg-white hover:border-blue-200 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-500 text-center"
-              >
-                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mb-3 group-hover:bg-blue-100 transition-colors duration-500">
-                  <FileText className="w-5 h-5 text-blue-600" />
-                </div>
-                <span className="font-semibold text-sm tracking-tight text-gray-900 group-hover:text-blue-600 transition-colors duration-300">{cat.name}</span>
-                <span className="text-xs text-gray-400 mt-1">{cat.count}개</span>
-              </Link>
-            ))}
           </div>
         </div>
       </section>
