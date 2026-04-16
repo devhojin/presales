@@ -224,9 +224,10 @@ export function Header() {
 
       {/* Mobile Menu — Full overlay (불투명 배경 + 스크롤 차단) */}
       <div
-        className={`md:hidden fixed inset-0 top-16 bg-background z-50 transition-all duration-500 overflow-y-auto ${
+        className={`md:hidden absolute left-0 right-0 top-16 bg-background z-[60] transition-all duration-500 overflow-y-auto ${
           isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
+        style={{ height: isMobileMenuOpen ? 'calc(100dvh - 4rem)' : 0 }}
       >
         <div className="flex flex-col px-6 pt-8 pb-6 min-h-full">
           <nav className="space-y-1 flex-1">
