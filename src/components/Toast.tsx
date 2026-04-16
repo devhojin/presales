@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useToastStore } from '@/stores/toast-store'
+import type { ToastAction } from '@/stores/toast-store'
 import { CheckCircle, Info, XCircle, X } from 'lucide-react'
 
 const iconMap = {
@@ -22,7 +24,7 @@ const iconColorMap = {
   error: 'text-red-500',
 }
 
-function ToastItem({ id, message, type = 'success' }: { id: string; message: string; type?: 'success' | 'info' | 'error' }) {
+function ToastItem({ id, message, type = 'success', action }: { id: string; message: string; type?: 'success' | 'info' | 'error'; action?: ToastAction }) {
   const { removeToast } = useToastStore()
   const [visible, setVisible] = useState(false)
 
@@ -41,7 +43,14 @@ function ToastItem({ id, message, type = 'success' }: { id: string; message: str
       }`}
     >
       <Icon className={`w-5 h-5 shrink-0 ${iconColorMap[type]}`} />
-      <p className="text-sm font-medium flex-1">{message}</p>
+      <p className="text-sm font-medium flex-1">
+        {message}
+        {action && (
+          <Link href={action.href} className="ml-2 text-xs font-semibold underline underline-offset-2 hover:text-primary transition-colors">
+            {action.label}
+          </Link>
+        )}
+      </p>
       <button onClick={() => removeToast(id)} className="shrink-0 hover:opacity-70 transition-opacity cursor-pointer">
         <X className="w-4 h-4" />
       </button>
@@ -58,7 +67,7 @@ export function ToastContainer() {
     <div className="fixed top-20 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none">
       {toasts.map((toast) => (
         <div key={toast.id} className="pointer-events-auto">
-          <ToastItem id={toast.id} message={toast.message} type={toast.type} />
+          <ToastItem id={toast.id} message={toast.message} type={toast.type} action={toast.action} />
         </div>
       ))}
     </div>

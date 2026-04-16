@@ -454,7 +454,7 @@ export function ChatWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-[380px] h-[540px] bg-background border border-border/60 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+    <div className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[380px] h-[100dvh] sm:h-[540px] sm:max-h-[calc(100dvh-6rem)] bg-background border border-border/60 sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
       {/* Header */}
       <div className="bg-blue-700 text-white px-4 py-3 flex items-center justify-between shrink-0">
         <div>

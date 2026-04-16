@@ -11,7 +11,7 @@ import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, ArrowRight, ShoppingCart, Check, Download, Play, BookOpen, FileDown, Copy, Share2, Mail, FileText, AlertTriangle, Lightbulb, Image as ImageIcon, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ShoppingCart, Check, Download, Play, BookOpen, FileDown, Copy, Share2, Mail, FileText, AlertTriangle, Lightbulb, ShieldCheck, Image as ImageIcon, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { PdfPreviewModal } from '@/components/pdf-preview-modal'
 import { ProductReviews } from '@/components/reviews/ProductReviews'
 import * as gtag from '@/lib/gtag'
@@ -332,7 +332,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
               </div>
             )}
             <Badge className={`absolute top-4 left-4 border font-bold tracking-tight ${product.is_free ? 'bg-primary text-white border-primary' : 'bg-zinc-900 text-white border-zinc-900'}`}>
-              {product.is_free ? 'FREE' : '유료'}
+              {product.is_free ? '무료' : '유료'}
             </Badge>
           </div>
 
@@ -406,6 +406,13 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
             </div>
           )}
 
+          {!product.is_free && (
+            <div className="flex items-start gap-2 mt-3 p-3 rounded-lg bg-blue-50 border border-blue-100">
+              <Lightbulb className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+              <p className="text-xs text-blue-800">컨설팅 외주 대비 <span className="font-semibold">1/10 이하 비용</span>으로 동일한 품질의 출발점을 확보하세요.</p>
+            </div>
+          )}
+
           <Separator className="my-6" />
 
           <div className="space-y-2 text-sm divide-y divide-border/50">
@@ -435,6 +442,11 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
               <p className="text-muted-foreground">다운로드</p>
               <p className="font-medium">{product.download_count}회</p>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-3">
+            <ShieldCheck className="w-4 h-4 text-green-600" />
+            <span>100% 편집 가능한 원본 파일 · 즉시 다운로드</span>
           </div>
 
           <Separator className="my-6" />
@@ -675,7 +687,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
             href="/consulting"
             className="shrink-0 inline-flex items-center justify-center h-11 px-6 rounded-full bg-primary text-white text-sm font-semibold hover:shadow-[0_8px_30px_rgba(5,150,105,0.4)] transition-all duration-300 active:scale-[0.98]"
           >
-            컨설팅 문의하기 <ArrowRight className="ml-1.5 w-4 h-4" />
+            전문가에게 맞춤 제안서 받기 <ArrowRight className="ml-1.5 w-4 h-4" />
           </Link>
         </div>
       )}
@@ -683,7 +695,8 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
       {/* Related */}
       {related.length > 0 && (
         <div className="mt-14">
-          <h2 className="text-2xl font-bold mb-8 tracking-tight">함께 보면 좋은 상품</h2>
+          <h2 className="text-2xl font-bold tracking-tight">함께 보면 좋은 상품</h2>
+          <p className="text-sm text-muted-foreground mt-1 mb-8">같은 분야의 인기 템플릿</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {related.slice(0, 4).map((p) => (
               <Link key={p.id} href={`/store/${p.id}`} className="group">

@@ -303,6 +303,28 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-3 pt-4 border-t border-border">
+              {/* 전체 동의 */}
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreeTerms && agreePrivacy && agreeOverseas && agreeAge && agreeMarketing}
+                  onChange={(e) => {
+                    const checked = e.target.checked
+                    setAgreeTerms(checked)
+                    setAgreePrivacy(checked)
+                    setAgreeOverseas(checked)
+                    setAgreeAge(checked)
+                    setAgreeMarketing(checked)
+                  }}
+                  className="w-5 h-5 rounded border border-border cursor-pointer accent-primary"
+                />
+                <div>
+                  <span className="text-sm font-semibold text-foreground">전체 동의</span>
+                  <span className="text-xs text-muted-foreground ml-1.5">(필수 및 선택 항목 포함)</span>
+                </div>
+              </label>
+              <div className="border-t border-border/50" />
+
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"

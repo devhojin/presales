@@ -338,7 +338,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
         <div className="py-12 text-center text-muted-foreground">불러오는 중...</div>
       ) : reviews.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">아직 리뷰가 없습니다.</p>
+          <p className="text-muted-foreground">아직 리뷰가 없습니다. 이 제안서로 입찰에 성공하셨다면 경험을 공유해주세요!</p>
         </div>
       ) : (
         <div className="space-y-4">

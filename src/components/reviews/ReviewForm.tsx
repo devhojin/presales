@@ -202,7 +202,7 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="상품에 대한 솔직한 리뷰를 작성해주세요."
+          placeholder="이 제안서가 입찰 준비에 어떻게 도움이 되었나요? 솔직한 경험을 공유해주세요."
           rows={4}
           className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
         />

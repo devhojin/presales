@@ -33,6 +33,17 @@ function DayBadge({ dday }: { dday: number | null }) {
   )
 }
 
+// Helper function to extract search keywords from announcement title
+function extractSearchKeywords(title: string): string {
+  const stopWords = ['및', '등', '의', '에', '을', '를', '이', '가', '는', '은', '로', '으로', '사업', '용역', '공고', '입찰', '조달', '구매', '계약', '관한', '대한', '위한', '수행', '업체', '선정', '공급']
+  const words = title
+    .replace(/[[\]()（）「」『』\d년월일호차]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length >= 2 && !stopWords.includes(w))
+    .slice(0, 3)
+  return words.join(' ')
+}
+
 export default function AnnouncementsClient() {
   const { addToast } = useToastStore()
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
@@ -551,7 +562,7 @@ function AnnouncementDetail({
             </a>
           )}
           <Link
-            href="/store"
+            href={`/store?q=${encodeURIComponent(extractSearchKeywords(ann.title))}`}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-all"
           >
             관련 제안서 찾기

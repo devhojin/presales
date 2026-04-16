@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCartStore } from '@/stores/cart-store'
 import { createClient } from '@/lib/supabase'
 import { useToastStore } from '@/stores/toast-store'
 import { loadTossPayments, TossPaymentsWidgets } from '@tosspayments/tosspayments-sdk'
-import { ArrowLeft, ShieldCheck, Loader2, CreditCard, Building2, MessageCircle } from 'lucide-react'
+import { ArrowLeft, ShieldCheck, Loader2, CreditCard, Building2, MessageCircle, ChevronDown, Upload, Check } from 'lucide-react'
 import Link from 'next/link'
 
 const CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY!
@@ -32,6 +32,95 @@ export default function CheckoutPage() {
   const [paying, setPaying] = useState(false)
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('card')
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null)
+
+  // 세금계산서/추가정보
+  const [showExtraInfo, setShowExtraInfo] = useState(false)
+  const [taxContactInfo, setTaxContactInfo] = useState('')
+  const [businessCertUrl, setBusinessCertUrl] = useState<string | null>(null)
+  const [businessCertName, setBusinessCertName] = useState<string | null>(null)
+  const [businessCertPath, setBusinessCertPath] = useState<string | null>(null)
+  const [depositMemo, setDepositMemo] = useState('')
+  const [cardMemo, setCardMemo] = useState('')
+  const [uploadingCert, setUploadingCert] = useState(false)
+  const certInputRef = useRef<HTMLInputElement>(null)
+
+  // 세션 복원 (세금계산서 정보)
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('presales-tax-info')
+      if (raw) {
+        const data = JSON.parse(raw)
+        setTaxContactInfo(data.tax_contact_info || '')
+        setBusinessCertUrl(data.business_cert_url || null)
+        setBusinessCertName(data.business_cert_name || null)
+        setBusinessCertPath(data.business_cert_path || null)
+        setDepositMemo(data.deposit_memo || '')
+        setCardMemo(data.card_memo || '')
+      }
+    } catch { /* noop */ }
+  }, [])
+
+  // 세션 저장 (입력 변경 시)
+  const saveTaxInfo = useCallback(() => {
+    const data = {
+      tax_contact_info: taxContactInfo,
+      business_cert_url: businessCertUrl,
+      business_cert_name: businessCertName,
+      business_cert_path: businessCertPath,
+      deposit_memo: depositMemo,
+      card_memo: cardMemo,
+    }
+    sessionStorage.setItem('presales-tax-info', JSON.stringify(data))
+  }, [taxContactInfo, businessCertUrl, businessCertName, businessCertPath, depositMemo, cardMemo])
+
+  useEffect(() => {
+    saveTaxInfo()
+  }, [saveTaxInfo])
+
+  async function handleCertUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      addToast('파일 크기는 10MB 이하여야 합니다.', 'error')
+      return
+    }
+    const allowedExts = ['.pdf', '.jpg', '.jpeg', '.png', '.webp']
+    const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'))
+    if (!allowedExts.includes(ext)) {
+      addToast('PDF, JPG, PNG, WEBP 파일만 업로드 가능합니다.', 'error')
+      return
+    }
+    setUploadingCert(true)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { addToast('로그인이 필요합니다.', 'error'); return }
+      const path = `${user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+      const { error: uploadError } = await supabase.storage
+        .from('business-certs')
+        .upload(path, file, { cacheControl: '3600', upsert: false })
+      if (uploadError) { addToast(`업로드 실패: ${uploadError.message}`, 'error'); return }
+      const { data: signed } = await supabase.storage
+        .from('business-certs')
+        .createSignedUrl(path, 60)
+      setBusinessCertUrl(signed?.signedUrl || null)
+      setBusinessCertName(file.name)
+      setBusinessCertPath(path)
+      addToast('사업자등록증이 업로드되었습니다.', 'success')
+    } catch (err) {
+      addToast('업로드 중 오류가 발생했습니다.', 'error')
+      console.error('Cert upload error', err)
+    } finally {
+      setUploadingCert(false)
+      if (certInputRef.current) certInputRef.current.value = ''
+    }
+  }
+
+  function removeCert() {
+    setBusinessCertUrl(null)
+    setBusinessCertName(null)
+    setBusinessCertPath(null)
+  }
 
   const paidItems = items.filter((item) => item.price > 0)
   const cartTotal = getTotal()
@@ -561,6 +650,118 @@ export default function CheckoutPage() {
           <span className="text-primary">{formatPrice(finalAmount)}</span>
         </div>
       </div>
+
+      {/* 추가정보 (세금계산서 / 메모) */}
+      {!isChatPayment && (
+        <div className="mb-6 border border-border/50 rounded-xl overflow-hidden">
+          <button onClick={() => setShowExtraInfo(!showExtraInfo)} className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors cursor-pointer">
+            <span className="text-sm font-medium">세금계산서 / 추가정보</span>
+            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showExtraInfo ? 'rotate-180' : ''}`} />
+          </button>
+          {showExtraInfo && (
+            <div className="px-4 pb-4 space-y-4 border-t border-border/50">
+              {/* 세금계산서 담당자 정보 */}
+              <div className="pt-4">
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  세금계산서 필요 시 아래 내용 입력 필수
+                </label>
+                <p className="text-[11px] text-muted-foreground mb-2">담당자 성명, 전화번호, 이메일 주소</p>
+                <textarea
+                  value={taxContactInfo}
+                  onChange={(e) => setTaxContactInfo(e.target.value)}
+                  placeholder="예) 홍길동 / 010-1234-5678 / hong@example.com"
+                  rows={3}
+                  className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all resize-none"
+                />
+              </div>
+
+              {/* 사업자등록증 업로드 */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  세금계산서 필요 시 사업자등록증 업로드 필수
+                </label>
+                <p className="text-[11px] text-muted-foreground mb-2">PDF, JPG, PNG 형식 · 10MB 이하</p>
+
+                <input
+                  ref={certInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/*"
+                  onChange={handleCertUpload}
+                  className="hidden"
+                />
+
+                {businessCertName ? (
+                  <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-blue-200 bg-blue-50/50">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                        <Check className="w-4 h-4 text-blue-700" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{businessCertName}</p>
+                        <p className="text-[11px] text-blue-700">업로드 완료</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeCert}
+                      className="text-xs text-muted-foreground hover:text-red-500 cursor-pointer shrink-0"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => certInputRef.current?.click()}
+                    disabled={uploadingCert}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {uploadingCert ? (
+                      <>
+                        <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
+                        <span className="text-sm text-muted-foreground">업로드 중...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">파일 올리기</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {/* 무통장 입금 메모 */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  무통장 입금 후 빠른 확인을 원하시면 &apos;우측 하단 채널톡&apos; 문의 부탁드립니다.
+                </label>
+                <input
+                  type="text"
+                  value={depositMemo}
+                  onChange={(e) => setDepositMemo(e.target.value)}
+                  placeholder="입금자명 또는 입금 시점을 입력해주세요"
+                  className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                />
+              </div>
+
+              {/* 카드 결제 메모 */}
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  신용카드 결제의 경우 세금계산서 발행되지 않습니다. 매출전표를 활용하시면 됩니다.
+                </label>
+                <input
+                  type="text"
+                  value={cardMemo}
+                  onChange={(e) => setCardMemo(e.target.value)}
+                  placeholder="메모할 내용이 있으면 입력해주세요 (선택)"
+                  className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 결제 수단 선택 (채팅 결제는 카드 결제만 지원) */}
       {!isChatPayment && (

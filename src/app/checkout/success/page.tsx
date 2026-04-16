@@ -116,8 +116,8 @@ export default function CheckoutSuccessPage() {
         </p>
       ) : (
         <p className="text-muted-foreground mb-8">
-          주문이 성공적으로 처리되었습니다.<br />
-          나의콘솔에서 문서를 다운로드하세요.
+          주문이 완료되었습니다.<br />
+          마이페이지에서 문서를 다운로드하세요.
         </p>
       )}
       <div className="flex gap-3 justify-center">
@@ -134,7 +134,7 @@ export default function CheckoutSuccessPage() {
               href="/mypage"
               className="h-11 px-6 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors inline-flex items-center"
             >
-              나의콘솔로 이동
+              내 문서 다운로드하러 가기
             </Link>
             <Link
               href="/store"
@@ -145,6 +145,18 @@ export default function CheckoutSuccessPage() {
           </>
         )}
       </div>
+
+      {/* 활용 가이드 */}
+      {!isChatPayment && (
+        <div className="mt-8 max-w-md mx-auto text-left bg-muted/50 rounded-xl p-6">
+          <h3 className="text-sm font-semibold mb-3">이렇게 활용하세요</h3>
+          <ol className="space-y-2 text-xs text-muted-foreground">
+            <li className="flex gap-2"><span className="font-bold text-primary">1.</span> 마이페이지에서 원본 파일을 다운로드하세요</li>
+            <li className="flex gap-2"><span className="font-bold text-primary">2.</span> PPT/HWP를 열어 자사 내용으로 교체하세요</li>
+            <li className="flex gap-2"><span className="font-bold text-primary">3.</span> 평가표 항목을 체크하며 최종 검토하세요</li>
+          </ol>
+        </div>
+      )}
     </div>
   )
 }

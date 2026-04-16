@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -101,16 +101,88 @@ function CountUp({ target, suffix = '' }: { target: number; suffix?: string }) {
   return <><span ref={ref}>0</span>{suffix}</>
 }
 
+/**
+ * Decimal count-up: animates to a decimal value (e.g. 4.8)
+ * Self-contained implementation with IntersectionObserver + requestAnimationFrame
+ */
+function DecimalCountUp({ target, suffix = '', decimals = 1 }: { target: number; suffix?: string; decimals?: number }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const started = useRef(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started.current) {
+          started.current = true
+          const startTime = performance.now()
+          const duration = 2000
+          function animate(now: number) {
+            const progress = Math.min((now - startTime) / duration, 1)
+            const eased = 1 - Math.pow(1 - progress, 3)
+            el!.textContent = (target * eased).toFixed(decimals)
+            if (progress < 1) requestAnimationFrame(animate)
+          }
+          requestAnimationFrame(animate)
+          observer.unobserve(el)
+        }
+      },
+      { threshold: 0.5 },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [target, decimals])
+
+  return <><span ref={ref}>0</span>{suffix}</>
+}
+
 /* ============================================================
    Main Page
    ============================================================ */
 export default function UsPage() {
   const [heroReady, setHeroReady] = useState(false)
   const [productThumbs, setProductThumbs] = useState<{ id: string; title: string; thumbnail_url: string }[]>([])
+  const [totalDownloads, setTotalDownloads] = useState(0)
+  const [productCount, setProductCount] = useState(0)
+  const [reviewAvg, setReviewAvg] = useState(0)
 
   useEffect(() => {
     const t = setTimeout(() => setHeroReady(true), 300)
     return () => clearTimeout(t)
+  }, [])
+
+  // Fetch real stats from Supabase
+  useEffect(() => {
+    const supabase = createClient()
+
+    // Product count
+    supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_published', true)
+      .then(({ count }) => {
+        if (count != null) setProductCount(count)
+      })
+
+    // Total downloads + review average
+    supabase
+      .from('products')
+      .select('download_count, review_avg')
+      .eq('is_published', true)
+      .then(({ data }) => {
+        if (data) {
+          const downloads = data.reduce((sum, p) => sum + (p.download_count || 0), 0)
+          setTotalDownloads(downloads)
+
+          const withReviews = data.filter((p) => p.review_avg != null && p.review_avg > 0)
+          if (withReviews.length > 0) {
+            const avg = withReviews.reduce((sum, p) => sum + p.review_avg, 0) / withReviews.length
+            setReviewAvg(Math.round(avg * 10) / 10)
+          }
+        }
+      })
   }, [])
 
   useEffect(() => {
@@ -275,7 +347,7 @@ export default function UsPage() {
       <section className="bg-[#0a0a0a] text-white py-24 md:py-32 px-6">
         <div className="max-w-5xl mx-auto">
           <Reveal className="text-center mb-16">
-            <p className="text-xs text-blue-400 font-semibold uppercase tracking-[4px] mb-3">ECOSYSTEM</p>
+            <p className="text-xs text-blue-400 font-semibold tracking-[4px] mb-3">입찰 생태계</p>
             <h2 className="text-2xl md:text-4xl font-bold tracking-tight">제안서만이 아닙니다</h2>
             <p className="text-zinc-400 mt-4 max-w-lg mx-auto">입찰 성공에 필요한 모든 것이 여기 있습니다</p>
           </Reveal>
@@ -308,21 +380,25 @@ export default function UsPage() {
       <section className="bg-[#0d0f14] text-white py-24 md:py-32 px-6">
         <div className="max-w-5xl mx-auto">
           <Reveal className="text-center mb-16">
-            <p className="text-xs text-blue-400 font-semibold uppercase tracking-[4px] mb-3">TRACK RECORD</p>
+            <p className="text-xs text-blue-400 font-semibold tracking-[4px] mb-3">수주 실적</p>
             <h2 className="text-2xl md:text-4xl font-bold tracking-tight">숫자가 말합니다</h2>
           </Reveal>
 
           {/* 숫자 */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
             {[
-              { target: 1200, suffix: '+', label: '누적 다운로드' },
-              { target: 51, suffix: '', label: '검증된 템플릿' },
-              { target: 93, suffix: '%', label: '재구매율' },
-              { target: 48, suffix: '', label: '평균 만족도 (5점)' },
+              { target: totalDownloads || 0, suffix: '+', label: '누적 다운로드', decimal: false },
+              { target: productCount || 0, suffix: '', label: '검증된 템플릿', decimal: false },
+              { target: 93, suffix: '%', label: '재구매율', decimal: false },
+              { target: reviewAvg || 0, suffix: '', label: '평균 만족도 (5점)', decimal: true },
             ].map((stat) => (
               <Reveal key={stat.label} className="text-center">
                 <p className="text-3xl md:text-5xl font-bold text-blue-400 tabular-nums">
-                  <CountUp target={stat.target} suffix={stat.suffix} />
+                  {stat.decimal ? (
+                    <DecimalCountUp target={stat.target} suffix={stat.suffix} />
+                  ) : (
+                    <CountUp target={stat.target} suffix={stat.suffix} />
+                  )}
                 </p>
                 <p className="text-xs text-zinc-500 mt-2">{stat.label}</p>
               </Reveal>
@@ -364,7 +440,7 @@ export default function UsPage() {
               href="/store"
               className="inline-flex items-center gap-2 h-14 px-10 rounded-full bg-blue-500 text-white font-semibold text-base hover:bg-blue-400 transition-all active:scale-[0.98] shadow-[0_0_30px_rgba(37,99,235,0.2)]"
             >
-              전체 51개 템플릿 보기
+              전체 {productCount || ''}개 템플릿 보기
               <ArrowRight className="w-5 h-5" />
             </Link>
           </Reveal>
@@ -378,7 +454,7 @@ export default function UsPage() {
                   style={{ animation: 'marquee-scroll 30s linear infinite' }}
                 >
                   {[...productThumbs, ...productThumbs].map((p, i) => (
-                    <div key={`${p.id}-${i}`} className="flex-shrink-0 w-40 md:w-48">
+                    <Link key={`${p.id}-${i}`} href={`/store/${p.id}`} className="flex-shrink-0 w-40 md:w-48">
                       <div className="rounded-xl border border-white/[0.08] overflow-hidden bg-white/[0.03] hover:border-blue-500/30 transition-colors">
                         <Image
                           src={p.thumbnail_url}
@@ -388,7 +464,7 @@ export default function UsPage() {
                           className="w-full h-auto"
                         />
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -404,7 +480,7 @@ export default function UsPage() {
         </div>
         <div className="relative z-10 max-w-xl text-center space-y-10">
           <Reveal>
-            <p className="text-xs text-blue-400 font-semibold uppercase tracking-[4px]">OUR BELIEF</p>
+            <p className="text-xs text-blue-400 font-semibold tracking-[4px]">우리의 철학</p>
           </Reveal>
           <Reveal delay={200}>
             <p className="text-xl md:text-2xl lg:text-3xl leading-[1.8] tracking-tight font-medium">
@@ -438,7 +514,7 @@ export default function UsPage() {
             </h2>
           </Reveal>
           <Reveal delay={200}>
-            <p className="text-white/70 mb-10">1,200개 기업이 선택한 제안서 템플릿</p>
+            <p className="text-white/70 mb-10">{totalDownloads > 0 ? `${totalDownloads.toLocaleString()}+ 다운로드 달성` : ''} 제안서 템플릿</p>
           </Reveal>
           <Reveal delay={400} className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
             <Link

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { type DbProduct, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
-import { FileText, Download, Globe, Handshake, ArrowRight, ShoppingCart, Check, Star, Quote, ChevronRight } from 'lucide-react'
+import { FileText, Download, Globe, Handshake, ArrowRight, ShoppingCart, Check, Star, Quote, ChevronRight, Search } from 'lucide-react'
 
 interface StatsData {
   productCount: number
@@ -80,7 +80,7 @@ function FeaturedCard({ product, categoryNames }: { product: DbProduct; category
             </div>
           )}
           <Badge className={`absolute top-3 left-3 text-[10px] font-semibold tracking-wide ${product.is_free ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-zinc-100 text-zinc-700 border-zinc-200'}`}>
-            {product.is_free ? 'FREE' : 'PREMIUM'}
+            {product.is_free ? '무료' : '유료'}
           </Badge>
           {!product.is_free && discount > 0 && <Badge className="absolute top-3 right-3 bg-red-500 text-white border-0 text-[10px]">-{discount}%</Badge>}
           <button
@@ -124,6 +124,7 @@ export default function Home() {
   const [stats, setStats] = useState<StatsData | null>(null)
   const [categoryCounts, setCategoryCounts] = useState<CategoryCount[]>([])
   const [reviews, setReviews] = useState<ReviewData[]>([])
+  const [newProducts, setNewProducts] = useState<DbProduct[]>([])
   const [loadingProducts, setLoadingProducts] = useState(true)
 
   useEffect(() => {
@@ -199,6 +200,11 @@ export default function Home() {
         setReviews(mapped)
       }
 
+      const newArrivals = [...allProducts]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 4)
+      setNewProducts(newArrivals)
+
       const featured = [...allProducts]
         .filter(p => !p.is_free && p.price > 0)
         .sort((a, b) => (b.download_count || 0) - (a.download_count || 0))
@@ -268,6 +274,16 @@ export default function Home() {
                   무료 상담 받기
                 </Link>
               </div>
+
+              {/* Hero Search */}
+              <div className="mt-6 max-w-[480px]">
+                <form onSubmit={(e) => { e.preventDefault(); const q = (e.currentTarget.elements.namedItem('q') as HTMLInputElement).value; if (q.trim()) window.location.href = `/store?q=${encodeURIComponent(q.trim())}` }} className="relative">
+                  <input name="q" type="text" placeholder="어떤 제안서를 찾고 계세요? (예: IoT, 스마트시티)" className="w-full h-12 pl-5 pr-12 rounded-full bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all" />
+                  <button type="submit" className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center transition-colors">
+                    <Search className="w-4 h-4 text-white" />
+                  </button>
+                </form>
+              </div>
             </div>
 
             {/* Right: Bento — [Portrait 1] [Blue stat / White stat] [Portrait 2] */}
@@ -288,7 +304,7 @@ export default function Home() {
               <div className="rounded-2xl bg-blue-600 text-white p-5 flex flex-col justify-between">
                 <p className="text-xs font-semibold uppercase tracking-wider text-blue-100">검증 템플릿</p>
                 <div>
-                  <p className="text-4xl font-extrabold tracking-tight leading-none">{stats?.productCount || 71}<span className="text-2xl">+</span></p>
+                  <p className="text-4xl font-extrabold tracking-tight leading-none">{stats?.productCount || 0}<span className="text-2xl">+</span></p>
                   <p className="text-[11px] text-blue-100 mt-2 leading-snug">실제 낙찰 기록이 있는<br />제안서만 엄선</p>
                 </div>
               </div>
@@ -329,7 +345,7 @@ export default function Home() {
           {/* Stats strip — below bento, full width */}
           <div className="grid grid-cols-3 md:grid-cols-4 gap-6 md:gap-10 mt-14 md:mt-20 pt-10 border-t border-gray-200">
             {[
-              { value: `${stats?.productCount || 71}+`, label: '검증 템플릿' },
+              { value: `${stats?.productCount || 0}+`, label: '검증 템플릿' },
               { value: '6', label: '전문 분야' },
               { value: '100%', label: '원본 파일 제공' },
               { value: '5분', label: '결제 후 즉시 다운로드', hideOnMobile: true },
@@ -365,7 +381,7 @@ export default function Home() {
       <section className="py-20 md:py-28 bg-white">
         <div className="max-w-[1400px] mx-auto px-4 md:px-8">
           <div className="mb-12 md:mb-16 max-w-2xl">
-            <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-3">WHY PRESALES</p>
+            <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-3">왜 프리세일즈</p>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 leading-tight">
               낙찰 기록이 있는 제안서,<br />
               한 페이지에서 전부.
@@ -430,13 +446,35 @@ export default function Home() {
         </div>
       </section>
 
+      {/* New Arrivals */}
+      {!loadingProducts && newProducts.length > 0 && (
+        <section className="py-16 md:py-20 bg-gray-50">
+          <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+            <div className="flex items-end justify-between mb-10">
+              <div>
+                <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-2">신규 등록</p>
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight">새로 등록된 템플릿</h2>
+              </div>
+              <Link href="/store?sort=latest" className="hidden md:inline-flex items-center h-10 px-5 rounded-full border border-border bg-card hover:bg-muted text-sm font-medium transition-all duration-300 group">
+                전체보기 <ArrowRight className="ml-1.5 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+              {newProducts.map((product) => (
+                <FeaturedCard key={product.id} product={product} categoryNames={getCategoryNames(product)} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Featured Products */}
       <section className="py-24 md:py-32">
         <div className="max-w-[1400px] mx-auto px-4 md:px-8">
           <div className="flex items-end justify-between mb-12">
             <div>
               <div className="flex items-center gap-3 mb-3">
-                <p className="text-xs font-semibold text-primary uppercase tracking-widest">BEST SELLERS</p>
+                <p className="text-xs font-semibold text-primary uppercase tracking-widest">인기 제안서</p>
                 <Badge className="bg-amber-50 text-amber-700 border-amber-200/50 text-[10px] font-semibold">TOP</Badge>
               </div>
               <h2 className="text-2xl md:text-3xl font-bold tracking-tight">인기 상품</h2>
@@ -446,7 +484,7 @@ export default function Home() {
               href="/store"
               className="hidden md:inline-flex items-center h-10 px-5 rounded-full border border-border bg-card hover:bg-muted text-sm font-medium transition-all duration-300 group"
             >
-              전체보기
+              {stats?.productCount || 0}개+ 전체 템플릿 보기
               <ArrowRight className="ml-1.5 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
@@ -482,7 +520,7 @@ export default function Home() {
         <section className="py-24 md:py-32 bg-card border-y border-border/50">
           <div className="max-w-[1400px] mx-auto px-4 md:px-8">
             <div className="text-center mb-14">
-              <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">TESTIMONIALS</p>
+              <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">낙찰 후기</p>
               <h2 className="text-2xl md:text-3xl font-bold tracking-tight">낙찰 후기</h2>
               <p className="text-muted-foreground mt-2">"이 제안서로 실제 수주했습니다"</p>
             </div>
@@ -511,6 +549,22 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* Post-Review CTA */}
+      <section className="py-16 md:py-20 bg-white">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-4">검증된 제안서로 다음 입찰을 준비하세요</h2>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">실제 낙찰 기록이 있는 제안서 {stats?.productCount || 0}개+를 지금 확인하세요.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/store" className="inline-flex items-center justify-center h-12 px-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-all duration-300 active:scale-[0.98] shadow-lg shadow-blue-600/25">
+              제안서 템플릿 보기 <ArrowRight className="ml-2 w-4 h-4" />
+            </Link>
+            <Link href="/store?price=free" className="inline-flex items-center justify-center h-12 px-8 rounded-full bg-white border border-gray-200 text-gray-800 hover:border-blue-300 hover:text-blue-700 font-semibold text-sm transition-all duration-300">
+              무료 샘플 먼저 받기
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* CTA */}
       <section className="py-24 md:py-32 bg-[#0C1220] text-white relative overflow-hidden">

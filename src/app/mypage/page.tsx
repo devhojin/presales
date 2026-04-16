@@ -87,6 +87,14 @@ interface DbCoupon {
   is_active: boolean
 }
 
+interface ConsultingRequest {
+  id: string
+  package_type: string
+  status: string
+  created_at: string
+  message: string | null
+}
+
 interface BookmarkAnn { id: string; title: string; organization: string | null; status: string; end_date: string | null; source_url: string | null; description?: string | null; start_date?: string | null }
 interface BookmarkFeed { id: string; title: string; category: string; external_url: string | null; content?: string | null; source_name?: string | null; created_at?: string | null }
 type BookmarkModalItem =
@@ -100,6 +108,13 @@ const statusMap: Record<string, { label: string; class: string }> = {
   cancelled: { label: '취소', class: 'bg-red-50 text-red-700 border-red-200' },
   refunded: { label: '환불', class: 'bg-muted text-muted-foreground border-border' },
   pending_refund: { label: '환불문의', class: 'bg-orange-50 text-orange-700 border-orange-200' },
+}
+
+const consultingStatusMap: Record<string, { label: string; class: string }> = {
+  pending: { label: '접수', class: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+  in_progress: { label: '진행중', class: 'bg-blue-50 text-blue-800 border-blue-200' },
+  completed: { label: '완료', class: 'bg-green-50 text-green-700 border-green-200' },
+  cancelled: { label: '취소', class: 'bg-red-50 text-red-700 border-red-200' },
 }
 
 const formatPrice = (price: number) => new Intl.NumberFormat('ko-KR').format(price) + '원'
@@ -145,6 +160,7 @@ export default function MyConsolePage() {
   const [receiptOrder, setReceiptOrder] = useState<Order | null>(null)
   const [coupons, setCoupons] = useState<DbCoupon[]>([])
   const [showCouponModal, setShowCouponModal] = useState(false)
+  const [consultingRequests, setConsultingRequests] = useState<ConsultingRequest[]>([])
 
   // KPI counts
   const [kpi, setKpi] = useState({ orders: 0, bookmarks: 0, downloads: 0, chats: 0 })
@@ -277,6 +293,14 @@ export default function MyConsolePage() {
           return true
         })
       setCoupons(available as DbCoupon[])
+
+      // 컨설팅 문의 내역
+      const { data: consultingData } = await supabase
+        .from('consulting_requests')
+        .select('id, package_type, status, created_at, message')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      setConsultingRequests((consultingData || []) as ConsultingRequest[])
     }
     load()
   }, [router])
@@ -365,7 +389,7 @@ export default function MyConsolePage() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
         <button onClick={() => { setOverlay(null); setEditingProfile(false); setShowPasswordSection(false) }} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 cursor-pointer">
-          <ArrowLeft className="w-4 h-4" /> 나의콘솔로 돌아가기
+          <ArrowLeft className="w-4 h-4" /> 마이페이지로 돌아가기
         </button>
 
         <h1 className="text-2xl font-bold mb-8">내 정보</h1>
@@ -469,7 +493,7 @@ export default function MyConsolePage() {
       <div className="rounded-2xl bg-gradient-to-r from-zinc-900 to-blue-950 text-white p-6 md:p-8 mt-6 mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-blue-300 text-sm font-medium mb-1">나의콘솔</p>
+            <p className="text-blue-300 text-sm font-medium mb-1">마이페이지</p>
             <h1 className="text-2xl md:text-3xl font-bold mb-2">
               안녕하세요, {profile?.name || '회원'}님
             </h1>
@@ -521,6 +545,46 @@ export default function MyConsolePage() {
           <User className="w-4 h-4" /> 내 정보 관리
         </button>
       </div>
+
+      {/* 내 상품 (다운로드) */}
+      {purchasedProducts.length > 0 && (
+        <div className="mb-6">
+          <div className="bg-card border border-border/50 rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Download className="w-4 h-4 text-primary" />
+              <h2 className="font-semibold">내 상품</h2>
+              <span className="text-xs text-muted-foreground">{purchasedProducts.length}개</span>
+            </div>
+            <div className="grid gap-3">
+              {purchasedProducts.map(item => (
+                <div key={item.id} className="flex items-center justify-between p-4 border border-border/50 rounded-xl hover:shadow-sm transition-shadow">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {item.thumbnail_url ? (
+                      <img src={item.thumbnail_url} alt={item.title} className="w-12 h-12 rounded-lg object-cover bg-muted shrink-0" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                        <FileText className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.format || '문서'}{item.file_size ? ` · ${item.file_size}` : ''}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleProductDownload(item.id, item.title)}
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors cursor-pointer shrink-0 ml-3 flex items-center gap-1.5"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    다운로드
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Row 3: Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -611,6 +675,32 @@ export default function MyConsolePage() {
               </div>
             )}
           </div>
+
+          {/* Consulting Inquiry History */}
+          {consultingRequests.length > 0 && (
+            <div className="bg-card border border-border/50 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <HelpCircle className="w-4 h-4 text-primary" />
+                <h2 className="font-semibold">컨설팅 문의 내역</h2>
+                <span className="text-xs text-muted-foreground">{consultingRequests.length}건</span>
+              </div>
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {consultingRequests.map(req => {
+                  const statusInfo = consultingStatusMap[req.status] || { label: req.status, class: 'bg-muted text-muted-foreground border-border' }
+                  return (
+                    <div key={req.id} className="flex items-center justify-between p-3 rounded-xl border border-border/50 hover:bg-muted/30 transition-colors">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{req.package_type || '컨설팅 문의'}</p>
+                        {req.message && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{req.message}</p>}
+                        <p className="text-[11px] text-muted-foreground mt-1">{formatDate(req.created_at)}</p>
+                      </div>
+                      <Badge className={`text-xs border shrink-0 ml-3 ${statusInfo.class}`}>{statusInfo.label}</Badge>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Recent Activity */}
           <div className="bg-card border border-border/50 rounded-2xl p-6">

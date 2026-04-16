@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useCartStore } from '@/stores/cart-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ShoppingCart, Trash2, X, ArrowLeft, Gift, Sparkles, FileText, Upload, Check, Loader2 } from 'lucide-react'
+import { ShoppingCart, Trash2, X, ArrowLeft, Gift, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { useToastStore } from '@/stores/toast-store'
@@ -42,47 +42,10 @@ export default function CartPage() {
   const [ownedCoupons, setOwnedCoupons] = useState<OwnedCoupon[]>([])
   const [couponMode, setCouponMode] = useState<'select' | 'code'>('select')
 
-  // 세금계산서/추가정보 입력 상태
-  const [taxContactInfo, setTaxContactInfo] = useState('')
-  const [businessCertUrl, setBusinessCertUrl] = useState<string | null>(null)
-  const [businessCertName, setBusinessCertName] = useState<string | null>(null)
-  const [businessCertPath, setBusinessCertPath] = useState<string | null>(null)
-  const [depositMemo, setDepositMemo] = useState('')
-  const [cardMemo, setCardMemo] = useState('')
-  const [uploadingCert, setUploadingCert] = useState(false)
-  const certInputRef = useRef<HTMLInputElement>(null)
 
   const router = useRouter()
   const { handleMouseDown: clearConfirmMouseDown, modalStyle: clearConfirmStyle } = useDraggableModal()
 
-  // 세션 복원
-  useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem('presales-tax-info')
-      if (raw) {
-        const data = JSON.parse(raw)
-        setTaxContactInfo(data.tax_contact_info || '')
-        setBusinessCertUrl(data.business_cert_url || null)
-        setBusinessCertName(data.business_cert_name || null)
-        setBusinessCertPath(data.business_cert_path || null)
-        setDepositMemo(data.deposit_memo || '')
-        setCardMemo(data.card_memo || '')
-      }
-    } catch { /* noop */ }
-  }, [])
-
-  // 세션 저장 (입력 변경 시)
-  useEffect(() => {
-    const data = {
-      tax_contact_info: taxContactInfo,
-      business_cert_url: businessCertUrl,
-      business_cert_name: businessCertName,
-      business_cert_path: businessCertPath,
-      deposit_memo: depositMemo,
-      card_memo: cardMemo,
-    }
-    sessionStorage.setItem('presales-tax-info', JSON.stringify(data))
-  }, [taxContactInfo, businessCertUrl, businessCertName, businessCertPath, depositMemo, cardMemo])
 
   // 내 보유 쿠폰 로드
   useEffect(() => {
@@ -166,7 +129,7 @@ export default function CartPage() {
       gtag.trackPurchase(String(order.id), 0)
       // Remove only free items from cart
       freeItems.forEach((item) => removeItem(item.productId))
-      addToast('무료 상품이 처리되었습니다! 나의콘솔에서 다운로드하세요.', 'success')
+      addToast('무료 상품이 처리되었습니다! 마이페이지에서 다운로드하세요.', 'success')
       router.push('/mypage')
       router.refresh()
     } catch {
@@ -190,61 +153,6 @@ export default function CartPage() {
     return Math.min(appliedCoupon.discount_value, cartTotal)
   }
 
-  async function handleCertUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (file.size > 10 * 1024 * 1024) {
-      addToast('파일 크기는 10MB 이하여야 합니다.', 'error')
-      return
-    }
-    const allowedExts = ['.pdf', '.jpg', '.jpeg', '.png', '.webp']
-    const ext = file.name.toLowerCase().slice(file.name.lastIndexOf('.'))
-    if (!allowedExts.includes(ext)) {
-      addToast('PDF, JPG, PNG, WEBP 파일만 업로드 가능합니다.', 'error')
-      return
-    }
-
-    setUploadingCert(true)
-    try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        addToast('로그인이 필요합니다.', 'error')
-        return
-      }
-      const path = `${user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
-      const { error: uploadError } = await supabase.storage
-        .from('business-certs')
-        .upload(path, file, { cacheControl: '3600', upsert: false })
-
-      if (uploadError) {
-        addToast(`업로드 실패: ${uploadError.message}`, 'error')
-        return
-      }
-
-      // 60초 서명 URL (관리자는 언제든 새로 생성)
-      const { data: signed } = await supabase.storage
-        .from('business-certs')
-        .createSignedUrl(path, 60)
-
-      setBusinessCertUrl(signed?.signedUrl || null)
-      setBusinessCertName(file.name)
-      setBusinessCertPath(path)
-      addToast('사업자등록증이 업로드되었습니다.', 'success')
-    } catch (err) {
-      addToast('업로드 중 오류가 발생했습니다.', 'error')
-      console.error('Cert upload error', err)
-    } finally {
-      setUploadingCert(false)
-      if (certInputRef.current) certInputRef.current.value = ''
-    }
-  }
-
-  function removeCert() {
-    setBusinessCertUrl(null)
-    setBusinessCertName(null)
-    setBusinessCertPath(null)
-  }
 
   function applyOwnedCoupon(coupon: OwnedCoupon) {
     const cartTotal = getTotal()
@@ -349,12 +257,12 @@ export default function CartPage() {
         <div className="text-center py-24 text-muted-foreground">
           <ShoppingCart className="w-14 h-14 mx-auto mb-5 opacity-20" />
           <p className="text-lg font-semibold text-foreground tracking-tight">장바구니가 비어있습니다</p>
-          <p className="text-sm mt-2 mb-8">마음에 드는 템플릿을 담아보세요</p>
+          <p className="text-sm mt-2 mb-8">아직 템플릿을 담지 않았네요. 인기 제안서부터 확인해보세요.</p>
           <Link
             href="/store"
             className="inline-flex items-center h-11 px-6 rounded-full bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition-all duration-300 active:scale-[0.98]"
           >
-            문서 스토어 둘러보기
+            인기 템플릿 보기
           </Link>
         </div>
       ) : (
@@ -511,114 +419,6 @@ export default function CartPage() {
             )}
           </div>
 
-          {/* 추가정보 입력 (세금계산서/사업자등록증/무통장/카드 메모) */}
-          <div className="border border-border/50 rounded-2xl p-5 bg-card">
-            <h3 className="text-sm font-semibold mb-3">추가정보 입력</h3>
-
-            <div className="border-l-4 border-blue-400 bg-blue-50/50 px-4 py-2 rounded-r-lg mb-5">
-              <p className="text-xs text-foreground">아래 내용 해당 시 확인 바랍니다</p>
-            </div>
-
-            {/* 세금계산서 담당자 정보 */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-foreground mb-1">
-                세금계산서 필요 시 아래 내용 입력 필수
-              </label>
-              <p className="text-[11px] text-muted-foreground mb-2">담당자 성명, 전화번호, 이메일 주소</p>
-              <textarea
-                value={taxContactInfo}
-                onChange={(e) => setTaxContactInfo(e.target.value)}
-                placeholder="예) 홍길동 / 010-1234-5678 / hong@example.com"
-                rows={3}
-                className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all resize-none"
-              />
-            </div>
-
-            {/* 사업자등록증 업로드 */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-foreground mb-1">
-                세금계산서 필요 시 사업자등록증 업로드 필수
-              </label>
-              <p className="text-[11px] text-muted-foreground mb-2">PDF, JPG, PNG 형식 · 10MB 이하</p>
-
-              <input
-                ref={certInputRef}
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/*"
-                onChange={handleCertUpload}
-                className="hidden"
-              />
-
-              {businessCertName ? (
-                <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-blue-200 bg-blue-50/50">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
-                      <Check className="w-4 h-4 text-blue-700" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{businessCertName}</p>
-                      <p className="text-[11px] text-blue-700">업로드 완료</p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={removeCert}
-                    className="text-xs text-muted-foreground hover:text-red-500 cursor-pointer shrink-0"
-                  >
-                    삭제
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => certInputRef.current?.click()}
-                  disabled={uploadingCert}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  {uploadingCert ? (
-                    <>
-                      <Loader2 className="w-4 h-4 text-muted-foreground animate-spin" />
-                      <span className="text-sm text-muted-foreground">업로드 중...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">파일 올리기</span>
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-
-            {/* 무통장 입금 메모 */}
-            <div className="mb-5">
-              <label className="block text-sm font-medium text-foreground mb-1">
-                무통장 입금 후 빠른 확인을 원하시면 &apos;우측 하단 채널톡&apos; 문의 부탁드립니다.
-              </label>
-              <input
-                type="text"
-                value={depositMemo}
-                onChange={(e) => setDepositMemo(e.target.value)}
-                placeholder="입금자명 또는 입금 시점을 입력해주세요"
-                className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-              />
-            </div>
-
-            {/* 카드 결제 메모 */}
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                신용카드 결제의 경우 세금계산서 발행되지 않습니다. 매출전표를 활용하시면 됩니다.
-              </label>
-              <input
-                type="text"
-                value={cardMemo}
-                onChange={(e) => setCardMemo(e.target.value)}
-                placeholder="메모할 내용이 있으면 입력해주세요 (선택)"
-                className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
-              />
-            </div>
-          </div>
-
           {/* Summary */}
           <div className="rounded-2xl border border-border/50 bg-card p-6 md:p-8 space-y-5">
             <h2 className="font-semibold text-lg tracking-tight">주문 요약</h2>
@@ -690,7 +490,7 @@ export default function CartPage() {
                         // GA4: purchase event
                         gtag.trackPurchase(String(order.id), 0)
                         clearCart()
-                        addToast('주문이 완료되었습니다! 나의콘솔에서 다운로드하세요.', 'success')
+                        addToast('주문이 완료되었습니다! 마이페이지에서 다운로드하세요.', 'success')
                         router.push('/mypage')
                         router.refresh()
                       } catch {

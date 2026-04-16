@@ -115,7 +115,7 @@ function ProductCard({
             </div>
           )}
           <Badge className={`absolute top-3 left-3 border text-xs font-semibold uppercase tracking-widest ${product.is_free ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-zinc-100 text-zinc-700 border-zinc-200'}`}>
-            {product.is_free ? 'FREE' : 'PREMIUM'}
+            {product.is_free ? '무료' : '유료'}
           </Badge>
           {!product.is_free && discount > 0 && (
             <Badge className="absolute top-3 right-3 bg-red-500 text-white border-0 text-xs font-semibold">-{discount}%</Badge>
@@ -142,9 +142,12 @@ function ProductCard({
           <h3 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors duration-300">
             {searchQuery ? highlightText(product.title, searchQuery) : product.title}
           </h3>
+          {product.description && (
+            <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">{product.description}</p>
+          )}
           <div className="flex items-center gap-2">
             {product.is_free ? (
-              <span className="text-base font-bold text-primary">FREE</span>
+              <span className="text-base font-bold text-primary">무료</span>
             ) : (
               <>
                 <span className="text-base font-bold text-primary">{formatPrice(product.price)}</span>
@@ -466,7 +469,7 @@ export default function StoreClient() {
     selectedFileType !== null ||
     selectedPriceRange !== null ||
     searchQuery !== ''
-  const detailFilterCount = (selectedFileType ? 1 : 0) + (selectedPriceType ? 1 : 0) + (selectedPriceRange ? 1 : 0)
+  const detailFilterCount = (selectedFileType ? 1 : 0) + (selectedPriceRange ? 1 : 0)
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 md:px-8">
@@ -475,7 +478,7 @@ export default function StoreClient() {
           <Store className="w-7 h-7 text-primary" />
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">문서 스토어</h1>
         </div>
-        <p className="text-muted-foreground">공공조달 입찰에 필요한 모든 문서 템플릿</p>
+        <p className="text-muted-foreground">낙찰 기록이 검증된 제안서 — 지금 바로 검색하세요</p>
         <p className="text-xs text-blue-600 mt-2">PDF 구매 후 PPT 원본 구매 시 PDF 구매금액이 자동 차감됩니다</p>
       </div>
 
@@ -510,6 +513,21 @@ export default function StoreClient() {
               }`}
             >
               {cat.name}
+            </button>
+          ))}
+        </div>
+
+        {/* 무료/유료 필터 (항상 표시) */}
+        <div className="flex flex-wrap gap-2">
+          {priceTypes.map((pt) => (
+            <button
+              key={pt.id}
+              onClick={() => applyFilters({ price: selectedPriceType === pt.id ? null : pt.id })}
+              className={`px-4 py-2 min-h-[40px] rounded-full text-xs font-semibold uppercase tracking-widest border transition-all duration-300 cursor-pointer ${
+                selectedPriceType === pt.id ? pt.color : 'border-border/50 hover:border-border hover:bg-muted'
+              }`}
+            >
+              {pt.label}
             </button>
           ))}
         </div>
@@ -568,20 +586,6 @@ export default function StoreClient() {
               ))}
             </div>
 
-            {/* 무료/유료 필터 */}
-            <div className="flex flex-wrap gap-2">
-              {priceTypes.map((pt) => (
-                <button
-                  key={pt.id}
-                  onClick={() => applyFilters({ price: selectedPriceType === pt.id ? null : pt.id })}
-                  className={`px-4 py-2 min-h-[40px] rounded-full text-xs font-semibold uppercase tracking-widest border transition-all duration-300 cursor-pointer ${
-                    selectedPriceType === pt.id ? pt.color : 'border-border/50 hover:border-border hover:bg-muted'
-                  }`}
-                >
-                  {pt.label}
-                </button>
-              ))}
-            </div>
           </div>
         )}
       </div>
@@ -614,7 +618,7 @@ export default function StoreClient() {
           onChange={(e) => applyFilters({ sort: e.target.value as SortOrder })}
           className="text-xs border border-border/50 rounded-xl px-4 py-2.5 bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-all"
         >
-          <option value="recommended">기본순</option>
+          <option value="recommended">추천순</option>
           <option value="price_asc">가격 낮은순</option>
           <option value="price_desc">가격 높은순</option>
           <option value="newest">최신순</option>

@@ -12,7 +12,7 @@ const navLinks = [
   { href: '/us', label: '우리는' },
   { href: '/store', label: '문서 스토어' },
   { href: '/consulting', label: '컨설팅' },
-  { href: '/announcements', label: '공고 사업' },
+  { href: '/announcements', label: '입찰 공고' },
   { href: '/feeds', label: 'IT피드' },
   { href: '/brief', label: '모닝 브리프' },
   { href: '/faq', label: '고객지원' },
@@ -165,7 +165,7 @@ export function Header() {
                       className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-muted/80 transition-colors mx-1.5 rounded-lg"
                     >
                       <span className="flex items-center gap-2.5">
-                        <User className="w-4 h-4 text-muted-foreground" /> 나의콘솔
+                        <User className="w-4 h-4 text-muted-foreground" /> 마이페이지
                       </span>
                       <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                     </Link>
@@ -203,7 +203,7 @@ export function Header() {
                   href="/auth/signup"
                   className="inline-flex items-center h-9 px-4 rounded-full text-sm font-medium bg-foreground text-background hover:bg-foreground/90 transition-all duration-300 active:scale-[0.98]"
                 >
-                  시작하기
+                  무료로 시작하기
                 </Link>
               </div>
             )}
@@ -215,6 +215,8 @@ export function Header() {
             <button
               className="min-w-[44px] min-h-[44px] flex items-center justify-center text-foreground"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="메뉴 열기"
+              aria-expanded={isMobileMenuOpen}
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -257,7 +259,7 @@ export function Header() {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full flex items-center justify-center h-12 rounded-xl border border-border hover:bg-muted text-sm font-medium transition-colors"
                 >
-                  나의콘솔
+                  마이페이지
                 </Link>
                 {profile?.role === 'admin' && (
                   <a
@@ -289,7 +291,7 @@ export function Header() {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full flex items-center justify-center h-12 rounded-xl bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition-colors"
                 >
-                  시작하기
+                  무료로 시작하기
                 </Link>
               </>
             )}

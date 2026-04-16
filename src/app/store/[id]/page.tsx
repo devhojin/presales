@@ -78,37 +78,6 @@ export async function generateMetadata(
 }
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const product = await getProduct(id)
-
-  // Product JSON-LD: data is from our own DB, JSON.stringify output is safe
-  const productJsonLd = product
-    ? JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'Product',
-        name: product.title,
-        description: product.description
-          ? product.description.slice(0, 300)
-          : product.title,
-        ...(product.thumbnail_url ? { image: product.thumbnail_url } : {}),
-        offers: {
-          '@type': 'Offer',
-          price: product.is_free ? 0 : product.price,
-          priceCurrency: 'KRW',
-          availability: 'https://schema.org/InStock',
-          url: `https://presales.co.kr/store/${id}`,
-        },
-      })
-    : null
-
-  return (
-    <>
-      {productJsonLd && (
-        // nosec: JSON-LD content is serialized from our own DB via JSON.stringify, not user-controlled HTML
-        // eslint-disable-next-line react/no-danger
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productJsonLd }} />
-      )}
-      <ProductDetailClient params={params} />
-    </>
-  )
+  // Product JSON-LD is rendered in layout.tsx (includes AggregateRating)
+  return <ProductDetailClient params={params} />
 }
