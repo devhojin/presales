@@ -175,12 +175,15 @@ export default function BriefPage() {
         </div>
       ) : (
         <div className="flex gap-4 mb-12 items-start">
-          {/* LEFT: 브리프 리스트 */}
-          <div className={`${showDetail ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[38%] border border-border/50 rounded-2xl overflow-hidden bg-card`}>
-            <div className="px-4 py-3 border-b border-border/50 bg-muted/30">
+          {/* LEFT: 브리프 리스트 (fixed-height + 독립 스크롤) */}
+          <div
+            className={`${showDetail ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[38%] border border-border/50 rounded-2xl overflow-hidden bg-card sticky self-start`}
+            style={{ top: '80px', height: 'calc(100vh - 100px)' }}
+          >
+            <div className="px-4 py-3 border-b border-border/50 bg-muted/30 shrink-0">
               <p className="text-xs text-muted-foreground font-medium">{briefs.length}개 브리프 · 최신순</p>
             </div>
-            <div className="divide-y divide-border/50">
+            <div className="flex-1 overflow-y-auto divide-y divide-border/50">
               {briefs.map((b) => {
                 const isActive = b.id === selectedId
                 return (
