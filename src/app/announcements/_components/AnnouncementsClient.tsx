@@ -61,6 +61,7 @@ export default function AnnouncementsClient() {
   const [readMap, setReadMap] = useState<Map<string, string>>(new Map()) // id → read_at (실시간, 회색 스타일용)
   const [initialReadSet, setInitialReadSet] = useState<Set<string>>(new Set()) // 페이지 진입 시점 읽음 (탭 필터용)
   const [readTab, setReadTab] = useState<ReadTab>('unread')
+  const [serverCounts, setServerCounts] = useState<{ active: number; closed: number; unread: number; read: number; bookmarks: number }>({ active: 0, closed: 0, unread: 0, read: 0, bookmarks: 0 })
 
   // Load user session
   useEffect(() => {
@@ -85,9 +86,10 @@ export default function AnnouncementsClient() {
 
       const res = await fetch(`/api/announcements?${params.toString()}`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const body = (await res.json()) as { announcements: Announcement[]; total: number }
+      const body = (await res.json()) as { announcements: Announcement[]; total: number; counts?: { active: number; closed: number; unread: number; read: number; bookmarks: number } }
       setAnnouncements(prev => append ? [...prev, ...body.announcements] : body.announcements)
       setTotal(body.total)
+      if (body.counts) setServerCounts(body.counts)
       setPage(pageNum)
     } catch {
       // keep prior data on failure
@@ -215,21 +217,8 @@ export default function AnnouncementsClient() {
     }
   }, [userId, bookmarkedIds, addToast])
 
-  // Count for read tabs — 활성 탭은 서버 total 사용 (허수 방지), 비활성은 현재 로드된 범위의 근사치
-  const tabCounts = useMemo(() => {
-    if (!userId) return { unread: 0, read: 0, bookmarks: 0 }
-    let unread = 0, read = 0, bookmarks = 0
-    sortedAnnouncements.forEach(ann => {
-      const wasReadOnLoad = initialReadSet.has(ann.id)
-      if (wasReadOnLoad) read++
-      else unread++
-      if (bookmarkedIds.has(ann.id)) bookmarks++
-    })
-    if (readTab === 'unread') unread = total
-    else if (readTab === 'read') read = total
-    else if (readTab === 'bookmarks') bookmarks = total
-    return { unread, read, bookmarks }
-  }, [userId, sortedAnnouncements, initialReadSet, bookmarkedIds, readTab, total])
+  // 서버에서 받은 정확한 카운트 사용
+  const tabCounts = serverCounts
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 md:px-8">
@@ -270,6 +259,13 @@ export default function AnnouncementsClient() {
               }`}
             >
               {f === 'all' ? '전체' : f === 'active' ? '모집중' : '마감'}
+              {f !== 'all' && (
+                <span className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-full ${
+                  filterStatus === f ? 'bg-white/30' : 'bg-muted text-muted-foreground'
+                }`}>
+                  {f === 'active' ? serverCounts.active : serverCounts.closed}
+                </span>
+              )}
             </button>
           ))}
         </div>

@@ -134,11 +134,44 @@ export async function GET(request: NextRequest) {
       finalAnns = [...finalAnns, ...restored]
     }
 
+    // 상태별 카운트 (모집중/마감)
+    let activeCount = 0, closedCount = 0
+    {
+      let cq = supabase.from('announcements').select('*', { count: 'exact', head: true }).eq('is_published', true)
+      if (search) cq = cq.or(`title.ilike.%${search}%,organization.ilike.%${search}%,description.ilike.%${search}%`)
+      if (idFilter) {
+        if (idFilter.op === 'in') cq = cq.in('id', idFilter.ids)
+        else if (idFilter.ids.length > 0) cq = cq.not('id', 'in', `(${idFilter.ids.join(',')})`)
+      }
+      const [ac, cc] = await Promise.all([
+        cq.eq('status', 'active').or(`end_date.gte.${today},end_date.is.null`),
+        supabase.from('announcements').select('*', { count: 'exact', head: true }).eq('is_published', true)
+          .or(`status.eq.closed,end_date.lt.${today}`)
+          .then(r => r),
+      ])
+      activeCount = ac.count || 0
+      closedCount = cc.count || 0
+    }
+
+    // 탭별 카운트 (로그인 시)
+    let unreadCount = 0, readCount = 0, bookmarkCount = 0
+    if (userId) {
+      const { data: readData } = await supabase.from('announcement_reads').select('announcement_id').eq('user_id', userId).limit(100000)
+      const readIds = (readData || []).map(r => r.announcement_id)
+      const { data: bmData } = await supabase.from('announcement_bookmarks').select('announcement_id').eq('user_id', userId).limit(100000)
+
+      const { count: totalPub } = await supabase.from('announcements').select('*', { count: 'exact', head: true }).eq('is_published', true)
+      readCount = readIds.length
+      unreadCount = (totalPub || 0) - readCount
+      bookmarkCount = (bmData || []).length
+    }
+
     return NextResponse.json({
       announcements: finalAnns,
       total: tab === 'bookmarks' ? bookmarkSnaps.length : total || 0,
       page,
       pageSize,
+      counts: { active: activeCount, closed: closedCount, unread: unreadCount, read: readCount, bookmarks: bookmarkCount },
     })
   } catch (err) {
     return NextResponse.json(
