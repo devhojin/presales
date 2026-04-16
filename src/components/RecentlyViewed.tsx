@@ -29,18 +29,18 @@ export function RecentlyViewed() {
   if (items.length === 0) return null
 
   return (
-    <div className="hidden xl:block fixed right-0 top-1/2 -translate-y-1/2 z-30">
+    <div className="hidden xl:block fixed right-[50px] top-1/2 -translate-y-1/2 z-30">
       {collapsed ? (
         <button
           onClick={() => setCollapsed(false)}
-          className="bg-card border border-border/50 border-r-0 rounded-l-xl px-2 py-3 shadow-lg hover:bg-muted transition-colors cursor-pointer"
+          className="bg-card border border-border/50 rounded-xl px-2 py-3 shadow-lg hover:bg-muted transition-colors cursor-pointer"
           title="최근 본 상품 열기"
         >
           <Clock className="w-4 h-4 text-muted-foreground mb-1" />
           <span className="text-[10px] text-muted-foreground font-medium writing-vertical">{items.length}</span>
         </button>
       ) : (
-        <div className="bg-card border border-border/50 border-r-0 rounded-l-2xl shadow-xl w-[140px] overflow-hidden">
+        <div className="bg-card border border-border/50 rounded-2xl shadow-xl w-[140px] overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/30">
             <div className="flex items-center gap-1.5">
