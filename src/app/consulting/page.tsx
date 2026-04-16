@@ -18,10 +18,31 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
     package_type: initialPackage || 'spot',
     message: '',
   })
+  const [userId, setUserId] = useState<string | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+
+  // 로그인 회원이면 이름/이메일 자동 채우기
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setUserId(user.id)
+        supabase.from('profiles').select('name, email').eq('id', user.id).single()
+          .then(({ data }) => {
+            if (data) {
+              setForm(f => ({
+                ...f,
+                name: f.name || data.name || '',
+                email: f.email || data.email || '',
+              }))
+            }
+          })
+      }
+    })
+  }, [])
 
   useEffect(() => {
     if (isOpen) {
@@ -84,6 +105,7 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
       const { data: insertedRows, error: insertErr } = await supabase
         .from('consulting_requests')
         .insert({
+          user_id: userId,
           name: form.name,
           phone: form.phone,
           email: form.email,
