@@ -256,12 +256,30 @@ function DownloadDetailModal({
   useEffect(() => {
     const fetchLogs = async () => {
       setLoadingLogs(true)
-      const { data } = await supabase
+      // download_logs 조회
+      const { data: dlData } = await supabase
         .from('download_logs')
-        .select('id, product_id, user_id, file_name, downloaded_at, profiles(name, email)')
+        .select('id, product_id, user_id, file_name, downloaded_at')
         .eq('product_id', product.id)
         .order('downloaded_at', { ascending: false })
-      if (data) setLogs(data as unknown as DownloadLog[])
+
+      if (dlData && dlData.length > 0) {
+        // user_id들로 profiles 별도 조회
+        const userIds = [...new Set(dlData.map(d => d.user_id).filter(Boolean))]
+        const { data: profilesData } = userIds.length > 0
+          ? await supabase.from('profiles').select('id, name, email').in('id', userIds)
+          : { data: [] }
+
+        const profileMap = new Map<string, { name: string | null; email: string | null }>()
+        profilesData?.forEach((p: { id: string; name: string | null; email: string | null }) => profileMap.set(p.id, p))
+
+        setLogs(dlData.map(d => ({
+          ...d,
+          profiles: d.user_id ? profileMap.get(d.user_id) || null : null,
+        })) as DownloadLog[])
+      } else {
+        setLogs([])
+      }
       setLoadingLogs(false)
     }
     fetchLogs()
@@ -352,6 +370,7 @@ function SortableProductRow({
   onSelect,
   globalRank,
   categoryRank,
+  categoryName,
   onDownloadDetail,
 }: {
   product: Product
@@ -361,6 +380,7 @@ function SortableProductRow({
   onSelect: (id: number) => void
   globalRank: number | null
   categoryRank: number | null
+  categoryName: string
   onDownloadDetail: (product: Product) => void
 }) {
   const {
@@ -414,6 +434,7 @@ function SortableProductRow({
         onDelete={onDelete}
         globalRank={globalRank}
         categoryRank={categoryRank}
+        categoryName={categoryName}
         onDownloadDetail={onDownloadDetail}
       />
     </tr>
@@ -430,6 +451,7 @@ function ProductRowCells({
   onDelete,
   globalRank,
   categoryRank,
+  categoryName,
   onDownloadDetail,
 }: {
   product: Product
@@ -437,6 +459,7 @@ function ProductRowCells({
   onDelete: (id: number) => void
   globalRank: number | null
   categoryRank: number | null
+  categoryName: string
   onDownloadDetail: (product: Product) => void
 }) {
   return (
@@ -444,11 +467,11 @@ function ProductRowCells({
       {/* Title + external link */}
       <td className="px-3 py-3">
         <div className="flex items-center gap-2">
-          <div className="text-[10px] text-muted-foreground leading-tight text-center min-w-[36px]">
+          <div className="text-[10px] text-muted-foreground leading-tight text-center min-w-[40px]">
             {globalRank !== null ? (
               <>
                 <div className="font-bold text-foreground">#{globalRank}</div>
-                <div>카{categoryRank}</div>
+                <div title={`${categoryName} ${categoryRank}위`}>{categoryName}{categoryRank}</div>
               </>
             ) : (
               <div className="text-muted-foreground">-</div>
@@ -573,7 +596,7 @@ export default function AdminProducts() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [priceFilter, setPriceFilter] = useState<'all' | 'paid' | 'free'>('all')
   const [categoryFilter, setCategoryFilter] = useState<number | null>(null)
-  const [pageSize, setPageSize] = useState<number>(20)
+  const [pageSize, setPageSize] = useState<number>(100)
   const [page, setPage] = useState(1)
   const [toast, setToast] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -735,17 +758,19 @@ export default function AdminProducts() {
 
   // Rank map (published only, sort_order 기준)
   const rankMap = useMemo(() => {
-    const map = new Map<number, { global: number; category: number }>()
+    const map = new Map<number, { global: number; category: number; categoryName: string }>()
+    const catNameMap = new Map<number, string>()
+    categories.forEach(c => catNameMap.set(c.id, c.name))
     const published = products.filter((p) => p.is_published)
     const catCounters = new Map<number, number>()
     published.forEach((p, idx) => {
       const catId = p.category_id || 0
       const catRank = (catCounters.get(catId) || 0) + 1
       catCounters.set(catId, catRank)
-      map.set(p.id, { global: idx + 1, category: catRank })
+      map.set(p.id, { global: idx + 1, category: catRank, categoryName: catNameMap.get(catId) || '' })
     })
     return map
-  }, [products])
+  }, [products, categories])
 
   // Status counts
   const statusCounts = useMemo(
@@ -1160,6 +1185,7 @@ export default function AdminProducts() {
                             onSelect={toggleSelect}
                             globalRank={rank?.global ?? null}
                             categoryRank={rank?.category ?? null}
+                            categoryName={rank?.categoryName ?? ''}
                             onDownloadDetail={setDownloadDetailProduct}
                           />
                         )
@@ -1191,6 +1217,7 @@ export default function AdminProducts() {
                         onDelete={handleDelete}
                         globalRank={rankMap.get(product.id)?.global ?? null}
                         categoryRank={rankMap.get(product.id)?.category ?? null}
+                        categoryName={rankMap.get(product.id)?.categoryName ?? ''}
                         onDownloadDetail={setDownloadDetailProduct}
                       />
                     </tr>
