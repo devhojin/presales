@@ -42,7 +42,7 @@ export function RecentlyViewed() {
           <span className="text-[10px] text-muted-foreground font-medium writing-vertical">{items.length}</span>
         </button>
       ) : (
-        <div className="bg-card border border-border/50 rounded-2xl shadow-xl w-[140px] overflow-hidden">
+        <div className="bg-card border border-border/50 rounded-2xl shadow-xl w-[180px] overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/30">
             <div className="flex items-center gap-1.5">
