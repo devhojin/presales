@@ -483,7 +483,7 @@ export default function StoreClient() {
         <p className="text-xs text-blue-600 mt-2">PDF 구매 후 PPT 원본 구매 시 PDF 구매금액이 자동 차감됩니다</p>
       </div>
 
-      {/* 최근 본 상품 */}
+      {/* 최근 본 상품 — 우측 날개 배너 */}
       <RecentlyViewed />
 
       <div className="relative mb-8">
