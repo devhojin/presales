@@ -447,6 +447,13 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
             )}
           </div>
 
+          {/* PDF 상품 안내 */}
+          {product.format?.toLowerCase().includes('pdf') && !product.is_free && (
+            <p className="text-xs text-blue-600 bg-blue-50 rounded-xl px-4 py-2.5 text-center leading-relaxed">
+              PDF 상품 구매 후 PPT 원본 구매 시 구매금액이 자동 차감됩니다
+            </p>
+          )}
+
           {/* Product Files List */}
           {canDownload && productFiles.length > 1 && (
             <div className="border border-border/50 rounded-2xl p-4 space-y-2">
@@ -729,10 +736,13 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                 <><ShoppingCart className="w-4 h-4" /> {product.is_free ? '무료 받기' : `장바구니 담기`}</>}
             </button>
           )}
+          {product.format?.toLowerCase().includes('pdf') && !product.is_free && (
+            <p className="text-[10px] text-blue-600 text-center mt-1">PDF 구매 후 PPT 원본 구매 시 금액 자동 차감</p>
+          )}
         </div>
       </div>
       {/* Spacer for mobile sticky CTA */}
-      <div className="sm:hidden h-20" />
+      <div className="sm:hidden h-24" />
     </div>
   )
 }
