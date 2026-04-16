@@ -196,9 +196,9 @@ export default function AdminAnnouncementsPage() {
   ]
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)] gap-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
             <Megaphone className="w-5 h-5 text-primary" />
@@ -221,7 +221,7 @@ export default function AdminAnnouncementsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-border/50">
+      <div className="border-b border-border/50 shrink-0">
         <div className="flex gap-1 -mb-px">
           {TABS.map(t => (
             <button key={t.key} onClick={() => { setTab(t.key); setCurrentPage(1); setSelectedIds(new Set()) }}
@@ -233,7 +233,7 @@ export default function AdminAnnouncementsPage() {
       </div>
 
       {/* Search + Actions */}
-      <div className="flex gap-3 items-center">
+      <div className="flex gap-3 items-center shrink-0">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input type="text" placeholder="공고명 또는 기관명..." value={search} onChange={e => setSearch(e.target.value)}
@@ -267,7 +267,7 @@ export default function AdminAnnouncementsPage() {
       ) : error ? (
         <div className="text-center py-16"><AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-2" /><p className="text-sm text-red-500">{error}</p></div>
       ) : (
-        <div className="flex gap-0 border border-border/50 rounded-2xl bg-card overflow-hidden h-[calc(100vh-220px)] min-h-[500px]">
+        <div className="flex gap-0 border border-border/50 rounded-2xl bg-card overflow-hidden flex-1 min-h-0">
           {/* LEFT: List (내부 스크롤 — 휠 내릴 때 이쪽만 움직임) */}
           <div className={`${showDetail ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-[38%] border-r border-border/50 overflow-hidden`}>
             {/* Select all header */}

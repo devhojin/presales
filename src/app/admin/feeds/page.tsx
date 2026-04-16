@@ -233,9 +233,9 @@ export default function AdminFeedsPage() {
   ]
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)] gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-xl font-bold flex items-center gap-2"><Rss className="w-5 h-5 text-primary" />IT피드 관리</h1>
           <p className="text-sm text-muted-foreground mt-0.5">스타트업 뉴스, 정책소식 등을 관리합니다</p>
@@ -300,7 +300,7 @@ export default function AdminFeedsPage() {
       ) : error ? (
         <div className="text-center py-12"><AlertCircle className="w-8 h-8 text-destructive mx-auto mb-2" /><p className="text-sm text-destructive">{error}</p></div>
       ) : (
-        <div className="flex gap-0 border border-border/50 rounded-2xl bg-card overflow-hidden h-[calc(100vh-220px)] min-h-[500px]">
+        <div className="flex gap-0 border border-border/50 rounded-2xl bg-card overflow-hidden flex-1 min-h-0">
           {/* LEFT: List (내부 스크롤 — 휠 내릴 때 이쪽만 움직임) */}
           <div className={`${showDetail ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-[38%] border-r border-border/50 overflow-hidden`}>
             <div className="px-4 py-2.5 border-b border-border/50 bg-muted/30 flex items-center gap-3 shrink-0">
