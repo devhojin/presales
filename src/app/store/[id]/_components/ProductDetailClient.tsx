@@ -14,6 +14,9 @@ import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, ArrowRight, ShoppingCart, Check, Download, Play, BookOpen, FileDown, Copy, Share2, Mail, FileText, AlertTriangle, Lightbulb, ShieldCheck, Image as ImageIcon, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { PdfPreviewModal } from '@/components/pdf-preview-modal'
 import { ProductReviews } from '@/components/reviews/ProductReviews'
+import { FreeToProUpsell } from '@/components/FreeToProUpsell'
+import { RecentlyViewed } from '@/components/RecentlyViewed'
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed'
 import * as gtag from '@/lib/gtag'
 
 type TabId = 'info' | 'video' | 'review'
@@ -92,12 +95,14 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
   const [productFiles, setProductFiles] = useState<ProductFile[]>([])
   const [downloading, setDownloading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showFreeUpsell, setShowFreeUpsell] = useState(false)
   const [matchDiscount, setMatchDiscount] = useState<{
     sourceTitle: string
     discountAmount: number
   } | null>(null)
   const { toggleItem, isInCart } = useCartStore()
   const { addToast } = useToastStore()
+  const { addItem: addRecentlyViewed } = useRecentlyViewed()
 
   useEffect(() => {
     async function load() {
@@ -117,6 +122,8 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
         setProduct(data)
         // GA4: product view
         gtag.trackProductView(String(data.id), data.title, data.price ?? undefined)
+        // 최근 본 상품 기록
+        addRecentlyViewed({ id: data.id, title: data.title, thumbnail_url: data.thumbnail_url, price: data.price })
 
         // Load product files
         const { data: filesData } = await supabase
@@ -258,6 +265,10 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
       gtag.trackDownload(product.title, ext)
       // 로컬 다운로드 카운트 반영 (서버에서 실제 증가 처리됨)
       setProduct(prev => prev ? { ...prev, download_count: (prev.download_count || 0) + 1 } : prev)
+      // 무료 상품 다운로드 후 유료 업셀 표시
+      if (product.is_free) {
+        setTimeout(() => setShowFreeUpsell(true), 1500)
+      }
     } catch {
       addToast('다운로드 중 오류가 발생했습니다', 'error')
     } finally {
@@ -508,7 +519,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                     thumbnail: product.thumbnail_url || '',
                     format: product.format || '',
                   })
-                  addToast(wasInCart ? '장바구니에서 제거되었습니다' : '장바구니에 추가되었습니다', wasInCart ? 'info' : 'success')
+                  addToast(wasInCart ? '장바구니에서 제거되었습니다' : '장바구니에 추가되었습니다', wasInCart ? 'info' : 'success', wasInCart ? undefined : { label: '장바구니 보기', href: '/cart' })
                 }}
                 className={`flex-1 h-13 rounded-full font-semibold text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-[0.98] ${
                   inCart
@@ -751,7 +762,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                 thumbnail: product.thumbnail_url || '',
                 format: product.format || '',
               })
-              addToast('장바구니에 추가되었습니다', 'success')
+              addToast('장바구니에 추가되었습니다', 'success', { label: '장바구니 보기', href: '/cart' })
             }
           }}
         />
@@ -827,6 +838,19 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
       </div>
       {/* Spacer for mobile sticky CTA */}
       <div className="sm:hidden h-24" />
+
+      {/* 최근 본 상품 */}
+      <RecentlyViewed />
+
+      {/* 무료→유료 업셀 모달 */}
+      {product.is_free && (
+        <FreeToProUpsell
+          productId={product.id}
+          categoryId={product.category_id}
+          isOpen={showFreeUpsell}
+          onClose={() => setShowFreeUpsell(false)}
+        />
+      )}
     </div>
   )
 }

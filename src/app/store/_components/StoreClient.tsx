@@ -10,6 +10,7 @@ import { useToastStore } from '@/stores/toast-store'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { type DbProduct, type DbCategory, formatPrice, priceTypes } from '@/lib/types'
+import { RecentlyViewed } from '@/components/RecentlyViewed'
 
 const LIMIT = 12
 
@@ -100,7 +101,7 @@ function ProductCard({
       thumbnail: product.thumbnail_url || '',
       format: product.format || '',
     })
-    addToast(wasInCart ? '장바구니에서 제거되었습니다' : '장바구니에 추가되었습니다', wasInCart ? 'info' : 'success')
+    addToast(wasInCart ? '장바구니에서 제거되었습니다' : '장바구니에 추가되었습니다', wasInCart ? 'info' : 'success', wasInCart ? undefined : { label: '장바구니 보기', href: '/cart' })
   }
 
   return (
@@ -481,6 +482,9 @@ export default function StoreClient() {
         <p className="text-muted-foreground">낙찰 기록이 검증된 제안서 — 지금 바로 검색하세요</p>
         <p className="text-xs text-blue-600 mt-2">PDF 구매 후 PPT 원본 구매 시 PDF 구매금액이 자동 차감됩니다</p>
       </div>
+
+      {/* 최근 본 상품 */}
+      <RecentlyViewed />
 
       <div className="relative mb-8">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
