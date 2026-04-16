@@ -496,7 +496,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         youtube_id: form.youtube_id || null,
         preview_pdf_url: form.preview_pdf_url || null,
         preview_clear_pages: Math.min(20, parseInt(form.preview_clear_pages) || 0),
-        preview_blur_pages: Math.min(5, parseInt(form.preview_blur_pages) || 2),
+        preview_blur_pages: 0, // 시스템 자동 계산 (70% 선명 / 30% 블러)
         preview_note: form.preview_note || null,
         price: form.is_free ? 0 : form.price,
         original_price: form.is_free ? 0 : form.original_price,
@@ -1125,29 +1125,17 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">선명 페이지 수 (0=자동)</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">미리보기 페이지 수 (0=자동)</label>
                   <input
                     type="number"
                     min="0"
                     max="20"
                     value={form.preview_clear_pages}
                     onChange={e => updateField('preview_clear_pages', String(Math.min(20, Math.max(0, parseInt(e.target.value) || 0))))}
-                    placeholder="0 (자동: 전체의 5%)"
+                    placeholder="0 (자동)"
                     className={inputClass}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">0이면 자동 (전체의 5%, 최소3). <span className="font-medium text-amber-600">최대 20장</span></p>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">블러 페이지 수</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.preview_blur_pages}
-                    onChange={e => updateField('preview_blur_pages', e.target.value)}
-                    placeholder="2"
-                    className={inputClass}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">흐리게 보여줄 페이지 수</p>
+                  <p className="text-xs text-muted-foreground mt-1">0이면 자동 계산. <span className="font-medium text-amber-600">최대 20장</span>. 70% 선명 / 30% 블러 자동 적용</p>
                 </div>
               </div>
               <div>

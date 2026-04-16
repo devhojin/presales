@@ -740,9 +740,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           isOpen={showPdfPreview}
           onClose={() => setShowPdfPreview(false)}
           pdfUrl={product.preview_pdf_url}
-          totalPages={product.pages || 30}
-          previewClearPages={product.preview_clear_pages || 0}
-          previewBlurPages={product.preview_blur_pages || 2}
+          previewPages={product.preview_clear_pages || Math.min(15, Math.max(3, Math.ceil((product.pages || 30) * 0.3)))}
           productTitle={product.title}
           price={product.price}
           purchaseLabel={inCart ? '장바구니로 이동' : `장바구니 담기 ${formatPrice(product.price)}`}
