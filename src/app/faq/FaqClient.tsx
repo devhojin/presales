@@ -13,6 +13,7 @@ import {
   AccordionContent,
 } from '@/components/ui/accordion'
 import { createClient } from '@/lib/supabase'
+import { useChatWidgetStore } from '@/stores/chat-store'
 
 interface FaqItem {
   id: number
@@ -43,6 +44,7 @@ const COLORS = [
 ]
 
 export function FaqClient() {
+  const { open: openChat } = useChatWidgetStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [categories, setCategories] = useState<FaqCategory[]>([])
   const [loading, setLoading] = useState(true)
@@ -213,9 +215,17 @@ export function FaqClient() {
             <MessageCircle className="w-10 h-10 text-blue-400 mx-auto mb-4" />
             <h3 className="text-lg font-bold tracking-tight mb-2">원하는 답변을 찾지 못하셨나요?</h3>
             <p className="text-sm text-zinc-400 mb-6">전문 컨설턴트가 직접 도와드립니다</p>
-            <Link href="/consulting" className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white px-6 py-3 rounded-full text-sm font-medium transition-all active:scale-[0.98] cursor-pointer">
-              <MessageCircle className="w-4 h-4" /> 컨설팅 문의하기
-            </Link>
+            <div className="flex items-center justify-center gap-3">
+              <button
+                onClick={openChat}
+                className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-full text-sm font-medium transition-all active:scale-[0.98] cursor-pointer border border-white/20"
+              >
+                <MessageCircle className="w-4 h-4" /> 채팅 문의하기
+              </button>
+              <Link href="/consulting" className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white px-6 py-3 rounded-full text-sm font-medium transition-all active:scale-[0.98] cursor-pointer">
+                <Headphones className="w-4 h-4" /> 컨설팅 문의하기
+              </Link>
+            </div>
           </div>
         </div>
       </div>
