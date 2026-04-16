@@ -423,7 +423,7 @@ function AdminFeedDetail({ feed, onTogglePublish, onBack }: {
   feed: FeedItem; onTogglePublish: () => void; onBack: () => void
 }) {
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 overflow-hidden">
       <div className="lg:hidden px-4 py-3 border-b border-border/50">
         <button onClick={onBack} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer">
           <ArrowLeft className="w-4 h-4" /> 목록으로
