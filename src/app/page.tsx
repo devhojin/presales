@@ -450,7 +450,7 @@ export default function Home() {
               <ArrowRight className="ml-1.5 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
             {loadingProducts
               ? Array.from({ length: 15 }).map((_, i) => <FeaturedCardSkeleton key={i} />)
               : products.slice(0, 15).map((product) => (
