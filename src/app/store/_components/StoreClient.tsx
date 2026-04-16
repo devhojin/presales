@@ -229,7 +229,7 @@ function Pagination({
   }
 
   return (
-    <div className="flex items-center justify-center gap-1 mt-12">
+    <div className="flex items-center justify-center gap-1 mt-12 mb-20">
       <button
         onClick={() => onPage(page - 1)}
         disabled={page === 1}
