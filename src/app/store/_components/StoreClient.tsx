@@ -476,6 +476,7 @@ export default function StoreClient() {
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">문서 스토어</h1>
         </div>
         <p className="text-muted-foreground">공공조달 입찰에 필요한 모든 문서 템플릿</p>
+        <p className="text-xs text-blue-600 mt-2">PDF 구매 후 PPT 원본 구매 시 PDF 구매금액이 자동 차감됩니다</p>
       </div>
 
       <div className="relative mb-8">
