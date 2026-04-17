@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { uploadFile } from '@/lib/storage-upload'
 import { useDraggableModal } from '@/hooks/useDraggableModal'
 import {
   ArrowLeft, Save, Eye, EyeOff, Trash2, Play, Plus, X,
@@ -329,7 +330,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     setProductFiles(data || [])
   }
 
-  // Upload download file
+  // Upload download file — TUS resumable (50GB 까지)
   const handleDownloadFileUpload = async (file: File) => {
     if (isNew) {
       showToast('상품을 먼저 저장한 후 파일을 업로드해주세요.')
@@ -338,15 +339,18 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     setFileUploading(true)
     setFileUploadProgress(0)
     try {
-      const supabase = createClient()
       const filePath = `products/${id}/${file.name}`
-      const { error: uploadError } = await supabase.storage
-        .from('product-files')
-        .upload(filePath, file, { upsert: true })
-      if (uploadError) throw uploadError
+      // 실제 업로드 진행률은 95% 까지만 반영, 나머지 5% 는 DB insert 단계
+      const result = await uploadFile({
+        bucket: 'product-files',
+        path: filePath,
+        file,
+        upsert: true,
+        onProgress: (pct) => setFileUploadProgress(Math.min(95, Math.round(pct * 0.95))),
+      })
+      if (!result.ok) throw new Error(result.error)
 
-      setFileUploadProgress(70)
-
+      const supabase = createClient()
       const { data: urlData } = supabase.storage
         .from('product-files')
         .getPublicUrl(filePath)
@@ -568,16 +572,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     }
     setUploading(true)
     try {
-      const supabase = createClient()
       const ext = file.name.split('.').pop() || 'jpg'
       const filePath = `${isNew ? 'temp' : id}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`
-      const { error: uploadError } = await supabase.storage
-        .from('product-thumbnails')
-        .upload(filePath, file, { upsert: true })
-      if (uploadError) throw uploadError
-      const { data: urlData } = supabase.storage
-        .from('product-thumbnails')
-        .getPublicUrl(filePath)
+      const result = await uploadFile({ bucket: 'product-thumbnails', path: filePath, file, upsert: true })
+      if (!result.ok) throw new Error(result.error)
+      const { data: urlData } = createClient().storage.from('product-thumbnails').getPublicUrl(filePath)
       updateField('thumbnail_url', urlData.publicUrl)
       showToast('이미지가 업로드되었습니다.')
     } catch (err) {
@@ -1232,11 +1231,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     e.currentTarget.classList.remove('border-primary', 'bg-primary/8/50')
                     const file = e.dataTransfer.files[0]
                     if (!file || !file.name.endsWith('.pdf')) { setToast('PDF 파일만 업로드 가능합니다'); return }
-                    const supabase = createClient()
                     const fileName = `preview-${Number(id)}-${Date.now()}.pdf`
-                    const { error } = await supabase.storage.from('product-previews').upload(fileName, file)
-                    if (error) { setToast('업로드 실패: ' + error.message); return }
-                    const { data: urlData } = supabase.storage.from('product-previews').getPublicUrl(fileName)
+                    const result = await uploadFile({ bucket: 'product-previews', path: fileName, file })
+                    if (!result.ok) { setToast('업로드 실패: ' + result.error); return }
+                    const { data: urlData } = createClient().storage.from('product-previews').getPublicUrl(fileName)
                     updateField('preview_pdf_url', urlData.publicUrl)
                     setToast('PDF 업로드 완료')
                   }}
@@ -1251,11 +1249,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     onChange={async (e) => {
                       const file = e.target.files?.[0]
                       if (!file) return
-                      const supabase = createClient()
                       const fileName = `preview-${Number(id)}-${Date.now()}.pdf`
-                      const { error } = await supabase.storage.from('product-previews').upload(fileName, file)
-                      if (error) { setToast('업로드 실패: ' + error.message); return }
-                      const { data: urlData } = supabase.storage.from('product-previews').getPublicUrl(fileName)
+                      const result = await uploadFile({ bucket: 'product-previews', path: fileName, file })
+                      if (!result.ok) { setToast('업로드 실패: ' + result.error); return }
+                      const { data: urlData } = createClient().storage.from('product-previews').getPublicUrl(fileName)
                       updateField('preview_pdf_url', urlData.publicUrl)
                       setToast('PDF 업로드 완료')
                     }}
@@ -1324,8 +1321,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   for (const file of files) {
                     const ext = file.name.split('.').pop() ?? 'jpg'
                     const fileName = `preview-images/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-                    const { error } = await supabase.storage.from('product-previews').upload(fileName, file)
-                    if (!error) {
+                    const result = await uploadFile({ bucket: 'product-previews', path: fileName, file })
+                    if (result.ok) {
                       const { data } = supabase.storage.from('product-previews').getPublicUrl(fileName)
                       newUrls.push(data.publicUrl)
                     }
@@ -1352,8 +1349,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     for (const file of files) {
                       const ext = file.name.split('.').pop() ?? 'jpg'
                       const fileName = `preview-images/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-                      const { error } = await supabase.storage.from('product-previews').upload(fileName, file)
-                      if (!error) {
+                      const result = await uploadFile({ bucket: 'product-previews', path: fileName, file })
+                      if (result.ok) {
                         const { data } = supabase.storage.from('product-previews').getPublicUrl(fileName)
                         newUrls.push(data.publicUrl)
                       }
