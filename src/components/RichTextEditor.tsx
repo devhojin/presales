@@ -2,11 +2,11 @@
 
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
 import TextAlign from '@tiptap/extension-text-align'
 import Placeholder from '@tiptap/extension-placeholder'
 import Image from '@tiptap/extension-image'
+// StarterKit 이 Link, Underline 을 이미 포함하므로 별도 import 제거 (중복 extension 경고 방지)
 import { useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import {
@@ -70,9 +70,11 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
   }, [])
 
   const editor = useEditor({
+    // Tiptap v3 + Next.js SSR 필수: immediatelyRender=false 없으면 hydration mismatch 로 전체 페이지 에러 바운더리 폴백
+    immediatelyRender: false,
     extensions: [
-      StarterKit,
-      Underline,
+      // StarterKit 의 기본 Link 설정을 override 하기 위해 StarterKit 의 link 비활성화 + 별도 configure
+      StarterKit.configure({ link: false }),
       Link.configure({ openOnClick: false }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Placeholder.configure({ placeholder: placeholder || '내용을 입력하세요...' }),
