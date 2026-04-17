@@ -1316,10 +1316,12 @@ export default function AdminOrders() {
   // Memo save handler
   const handleMemoSave = useCallback(async (orderId: number, memo: string) => {
     const supabase = createClient()
-    await supabase.from('orders').update({ admin_memo: memo, updated_at: new Date().toISOString() }).eq('id', orderId)
+    const { error } = await supabase.from('orders').update({ admin_memo: memo, updated_at: new Date().toISOString() }).eq('id', orderId)
+    if (error) { setToast(`메모 저장 실패: ${error.message}`); return }
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, admin_memo: memo } : o))
     )
+    setToast('메모가 저장되었습니다')
   }, [])
 
   // Bulk status change

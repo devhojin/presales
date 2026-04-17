@@ -163,25 +163,27 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
     const isHelpful = helpfulSet.has(reviewId)
 
     if (isHelpful) {
-      await supabase
+      const { error } = await supabase
         .from('review_helpful')
         .delete()
         .eq('user_id', user.id)
         .eq('review_id', reviewId)
+      if (error) { alert(`도움됨 취소 실패: ${error.message}`); return }
       setHelpfulSet((prev) => {
         const next = new Set(prev)
         next.delete(reviewId)
         return next
       })
-      // Decrement
-      await supabase.rpc('decrement_helpful', { rid: reviewId })
+      const { error: rpcErr } = await supabase.rpc('decrement_helpful', { rid: reviewId })
+      if (rpcErr) console.warn('[reviews] helpful_count 감소 실패:', rpcErr.message)
     } else {
-      await supabase
+      const { error } = await supabase
         .from('review_helpful')
         .insert({ user_id: user.id, review_id: reviewId })
+      if (error) { alert(`도움됨 등록 실패: ${error.message}`); return }
       setHelpfulSet((prev) => new Set(prev).add(reviewId))
-      // Increment
-      await supabase.rpc('increment_helpful', { rid: reviewId })
+      const { error: rpcErr } = await supabase.rpc('increment_helpful', { rid: reviewId })
+      if (rpcErr) console.warn('[reviews] helpful_count 증가 실패:', rpcErr.message)
     }
 
     // Update local state
@@ -215,12 +217,13 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
       .eq('is_published', true)
 
     const count = remaining?.length ?? 0
-    const avg = count > 0 ? remaining!.reduce((s, r) => s + r.rating, 0) / count : 0
+    const avg = count > 0 ? (remaining ?? []).reduce((s, r) => s + r.rating, 0) / count : 0
 
-    await supabase
+    const { error: statsErr } = await supabase
       .from('products')
       .update({ review_count: count, review_avg: Math.round(avg * 10) / 10 })
       .eq('id', productId)
+    if (statsErr) console.warn('[reviews] 상품 통계 업데이트 실패:', statsErr.message)
 
     setDeleteTarget(null)
     setUserReview(null)

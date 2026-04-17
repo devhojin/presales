@@ -213,12 +213,17 @@ export default function AdminReviewsPage() {
     setToggling(true)
     const supabase = createClient()
     const newVal = !review.is_published
-    await supabase
+    const { error: toggleErr } = await supabase
       .from('reviews')
       .update({ is_published: newVal })
       .eq('id', review.id)
+    if (toggleErr) {
+      alert(`공개 전환 실패: ${toggleErr.message}`)
+      setToggling(false)
+      return
+    }
 
-    // Update product stats
+    // Update product stats (실패해도 토글은 성공했으므로 경고만)
     const { data: publishedReviews } = await supabase
       .from('reviews')
       .select('rating')
@@ -229,10 +234,11 @@ export default function AdminReviewsPage() {
     const count = pReviews.length
     const avg = count > 0 ? pReviews.reduce((s, r) => s + r.rating, 0) / count : 0
 
-    await supabase
+    const { error: statsErr } = await supabase
       .from('products')
       .update({ review_count: count, review_avg: Math.round(avg * 10) / 10 })
       .eq('id', review.product_id)
+    if (statsErr) console.warn('[reviews] 상품 통계 업데이트 실패:', statsErr.message)
 
     setReviews((prev) =>
       prev.map((r) =>
@@ -265,10 +271,11 @@ export default function AdminReviewsPage() {
     const pReviews = publishedReviews || []
     const count = pReviews.length
     const avg = count > 0 ? pReviews.reduce((s, r) => s + r.rating, 0) / count : 0
-    await supabase
+    const { error: statsErr } = await supabase
       .from('products')
       .update({ review_count: count, review_avg: Math.round(avg * 10) / 10 })
       .eq('id', deleteTarget.product_id)
+    if (statsErr) console.warn('[reviews] 상품 통계 업데이트 실패:', statsErr.message)
 
     setReviews((prev) => prev.filter((r) => r.id !== deleteTarget.id))
     setTotalCount((c) => c - 1)
@@ -281,10 +288,15 @@ export default function AdminReviewsPage() {
     if (!selectedReview) return
     setReplySaving(true)
     const supabase = createClient()
-    await supabase
+    const { error } = await supabase
       .from('reviews')
       .update({ admin_reply: replyText.trim() || null })
       .eq('id', selectedReview.id)
+    if (error) {
+      alert(`답글 저장 실패: ${error.message}`)
+      setReplySaving(false)
+      return
+    }
     const updated = { ...selectedReview, admin_reply: replyText.trim() || null }
     setReviews((prev) => prev.map((r) => r.id === selectedReview.id ? updated : r))
     setSelectedReview(updated)

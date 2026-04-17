@@ -681,15 +681,23 @@ export default function AdminProducts() {
 
       setSaving(true)
       try {
-        const promises = changedUpdates.map((u) =>
-          supabase.from('products').update({ sort_order: u.sort_order }).eq('id', u.id)
+        // Supabase 는 error 를 reject 안 하고 { error } 로 반환 → try/catch 로만은 부족
+        const results = await Promise.all(
+          changedUpdates.map((u) =>
+            supabase.from('products').update({ sort_order: u.sort_order }).eq('id', u.id)
+          )
         )
-        await Promise.all(promises)
-        setProducts(reordered.map((p, i) => ({ ...p, sort_order: i + 1 })))
-        setToast('순서가 변경되었습니다')
-      } catch {
+        const firstError = results.find((r) => r.error)?.error
+        if (firstError) {
+          setProducts(products)
+          setToast(`순서 변경 실패: ${firstError.message}`)
+        } else {
+          setProducts(reordered.map((p, i) => ({ ...p, sort_order: i + 1 })))
+          setToast('순서가 변경되었습니다')
+        }
+      } catch (e) {
         setProducts(products)
-        setToast('순서 변경 실패')
+        setToast(`순서 변경 실패: ${e instanceof Error ? e.message : '알 수 없는 오류'}`)
       } finally {
         setSaving(false)
       }
@@ -777,12 +785,22 @@ export default function AdminProducts() {
     })
   }
 
-  // Bulk publish/unpublish
+  // Bulk publish/unpublish — 성공/실패 분리 집계
   const handleBulkPublish = async (publish: boolean) => {
     if (selectedIds.size === 0) return
     const ids = Array.from(selectedIds)
-    await Promise.all(ids.map((id) => supabase.from('products').update({ is_published: publish }).eq('id', id)))
-    setToast(publish ? `${ids.length}개 상품이 공개되었습니다` : `${ids.length}개 상품이 비공개되었습니다`)
+    const results = await Promise.all(
+      ids.map((id) => supabase.from('products').update({ is_published: publish }).eq('id', id))
+    )
+    const failed = results.filter((r) => r.error).length
+    const succeeded = results.length - failed
+    if (failed === 0) {
+      setToast(publish ? `${succeeded}개 상품이 공개되었습니다` : `${succeeded}개 상품이 비공개되었습니다`)
+    } else if (succeeded === 0) {
+      setToast(`변경 실패: ${results.find((r) => r.error)?.error?.message}`)
+    } else {
+      setToast(`${succeeded}개 성공, ${failed}개 실패`)
+    }
     setSelectedIds(new Set())
     loadProducts()
   }

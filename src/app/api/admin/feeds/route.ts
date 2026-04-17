@@ -101,8 +101,10 @@ export async function GET(request: NextRequest) {
 
     // Search filter (title, content, author_name)
     if (search) {
+      // ilike 패턴 문자(%, _) 이스케이프 → DoS 유발 패턴 남용 방지
+      const safe = search.replace(/[%_\\]/g, (m) => '\\' + m)
       query = query.or(
-        `title.ilike.%${search}%,content.ilike.%${search}%,author_name.ilike.%${search}%`
+        `title.ilike.%${safe}%,content.ilike.%${safe}%,author_name.ilike.%${safe}%`
       )
     }
 

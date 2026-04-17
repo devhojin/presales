@@ -173,27 +173,29 @@ export default function AdminFeedsPage() {
 
   const handleTogglePublish = async (id: string, publish: boolean) => {
     const { error } = await supabase.from('community_posts').update({ is_published: publish }).eq('id', id)
-    if (!error) {
-      setFeeds(prev => prev.map(f => f.id === id ? { ...f, is_published: publish } : f))
-      showToast(publish ? '공개 전환' : '비공개 전환')
-    }
+    if (error) { showToast(`변경 실패: ${error.message}`); return }
+    setFeeds(prev => prev.map(f => f.id === id ? { ...f, is_published: publish } : f))
+    showToast(publish ? '공개 전환' : '비공개 전환')
   }
 
   const handleBulkPublish = async () => {
     const ids = Array.from(selectedIds)
     const { error } = await supabase.from('community_posts').update({ is_published: true }).in('id', ids)
-    if (!error) { showToast(`${ids.length}건 공개`); setSelectedIds(new Set()); fetchFeeds() }
+    if (error) { showToast(`일괄 공개 실패: ${error.message}`); return }
+    showToast(`${ids.length}건 공개`); setSelectedIds(new Set()); fetchFeeds()
   }
 
   const handleBulkUnpublish = async () => {
     const ids = Array.from(selectedIds)
     const { error } = await supabase.from('community_posts').update({ is_published: false }).in('id', ids)
-    if (!error) { showToast(`${ids.length}건 비공개`); setSelectedIds(new Set()); fetchFeeds() }
+    if (error) { showToast(`일괄 비공개 실패: ${error.message}`); return }
+    showToast(`${ids.length}건 비공개`); setSelectedIds(new Set()); fetchFeeds()
   }
 
   const handlePublishAll = async () => {
     const { error } = await supabase.from('community_posts').update({ is_published: true }).eq('is_published', false)
-    if (!error) { showToast('전체 공개 완료'); setSelectedIds(new Set()); fetchFeeds() }
+    if (error) { showToast(`전체 공개 실패: ${error.message}`); return }
+    showToast('전체 공개 완료'); setSelectedIds(new Set()); fetchFeeds()
   }
 
   const handleDelete = async () => {
@@ -213,10 +215,14 @@ export default function AdminFeedsPage() {
       const ids = Array.from(selectedIds)
       const selected = feeds.filter(f => ids.includes(f.id))
       const toBlock = selected.filter(f => f.source !== 'manual').map(f => ({ source: f.source, external_id: f.id, title: f.title, reason: '관리자 완전삭제' }))
-      if (toBlock.length > 0) await supabase.from('blocked_community_posts').upsert(toBlock, { onConflict: 'source,external_id' })
-      await supabase.from('community_posts').delete().in('id', ids)
+      if (toBlock.length > 0) {
+        const { error: blockErr } = await supabase.from('blocked_community_posts').upsert(toBlock, { onConflict: 'source,external_id' })
+        if (blockErr) { showToast(`차단 목록 업데이트 실패: ${blockErr.message}`); return }
+      }
+      const { error: delErr } = await supabase.from('community_posts').delete().in('id', ids)
+      if (delErr) { showToast(`완전삭제 실패: ${delErr.message}`); return }
       showToast(`${ids.length}건 완전삭제`); setSelectedIds(new Set()); await fetchFeeds()
-    } catch { showToast('완전삭제 실패') }
+    } catch (e) { showToast(`완전삭제 실패: ${e instanceof Error ? e.message : '알 수 없는 오류'}`) }
     finally { setDeleting(false); setModalType(null) }
   }
 

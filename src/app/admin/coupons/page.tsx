@@ -184,7 +184,8 @@ export default function CouponsPage() {
 
   async function toggleActive(id: string, current: boolean) {
     const supabase = createClient()
-    await supabase.from('coupons').update({ is_active: !current }).eq('id', id)
+    const { error } = await supabase.from('coupons').update({ is_active: !current }).eq('id', id)
+    if (error) { alert(`쿠폰 활성 변경 실패: ${error.message}`); return }
     setCoupons((prev) =>
       prev.map((c) => (c.id === id ? { ...c, is_active: !current } : c))
     )

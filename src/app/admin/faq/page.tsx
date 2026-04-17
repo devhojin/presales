@@ -335,25 +335,29 @@ export default function AdminFaqPage() {
 
   // Toggle FAQ active status
   const toggleFaqActive = async (faq: FaqItem) => {
-    await supabase.from('faqs').update({ is_active: !faq.is_active }).eq('id', faq.id)
+    const { error } = await supabase.from('faqs').update({ is_active: !faq.is_active }).eq('id', faq.id)
+    if (error) { alert(`FAQ 활성 변경 실패: ${error.message}`); return }
     fetchData()
   }
 
   // Toggle category active status
   const toggleCategoryActive = async (cat: FaqCategory) => {
-    await supabase.from('faq_categories').update({ is_active: !cat.is_active }).eq('id', cat.id)
+    const { error } = await supabase.from('faq_categories').update({ is_active: !cat.is_active }).eq('id', cat.id)
+    if (error) { alert(`카테고리 활성 변경 실패: ${error.message}`); return }
     fetchData()
   }
 
   // Save FAQ (create or update)
   const saveFaq = async (data: { category_id: number; question: string; answer: string }) => {
     if (editingFaq?.id) {
-      await supabase.from('faqs').update(data).eq('id', editingFaq.id)
+      const { error } = await supabase.from('faqs').update(data).eq('id', editingFaq.id)
+      if (error) { alert(`FAQ 수정 실패: ${error.message}`); return }
     } else {
       const maxOrder = categories
         .find((c) => c.id === data.category_id)
         ?.faqs.reduce((max, f) => Math.max(max, f.sort_order), 0) ?? 0
-      await supabase.from('faqs').insert({ ...data, sort_order: maxOrder + 1 })
+      const { error } = await supabase.from('faqs').insert({ ...data, sort_order: maxOrder + 1 })
+      if (error) { alert(`FAQ 등록 실패: ${error.message}`); return }
     }
     setEditingFaq(null)
     fetchData()
@@ -362,10 +366,12 @@ export default function AdminFaqPage() {
   // Save category (create or update)
   const saveCategory = async (data: { name: string; icon: string }) => {
     if (editingCategory?.id) {
-      await supabase.from('faq_categories').update(data).eq('id', editingCategory.id)
+      const { error } = await supabase.from('faq_categories').update(data).eq('id', editingCategory.id)
+      if (error) { alert(`카테고리 수정 실패: ${error.message}`); return }
     } else {
       const maxOrder = categories.reduce((max, c) => Math.max(max, c.sort_order), 0)
-      await supabase.from('faq_categories').insert({ ...data, sort_order: maxOrder + 1 })
+      const { error } = await supabase.from('faq_categories').insert({ ...data, sort_order: maxOrder + 1 })
+      if (error) { alert(`카테고리 등록 실패: ${error.message}`); return }
     }
     setEditingCategory(null)
     fetchData()
@@ -374,7 +380,8 @@ export default function AdminFaqPage() {
   // Delete FAQ
   const deleteFaq = async () => {
     if (!deletingFaq) return
-    await supabase.from('faqs').delete().eq('id', deletingFaq.id)
+    const { error } = await supabase.from('faqs').delete().eq('id', deletingFaq.id)
+    if (error) { alert(`FAQ 삭제 실패: ${error.message}`); return }
     setDeletingFaq(null)
     fetchData()
   }
@@ -382,7 +389,8 @@ export default function AdminFaqPage() {
   // Delete category (cascade)
   const deleteCategory = async () => {
     if (!deletingCategory) return
-    await supabase.from('faq_categories').delete().eq('id', deletingCategory.id)
+    const { error } = await supabase.from('faq_categories').delete().eq('id', deletingCategory.id)
+    if (error) { alert(`카테고리 삭제 실패: ${error.message}`); return }
     setDeletingCategory(null)
     fetchData()
   }

@@ -83,16 +83,19 @@ export default function SignupPage() {
       return
     }
 
-    // Update profile with additional info
+    // Update profile with additional info (실패해도 가입은 성공 — 마이페이지에서 재입력 가능)
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      await supabase.from('profiles').update({
+      const { error: profileErr } = await supabase.from('profiles').update({
         name: form.name,
         company: form.company,
         phone: form.phone,
         marketing_opt_in: agreeMarketing,
         marketing_opt_in_at: agreeMarketing ? new Date().toISOString() : null,
       }).eq('id', user.id)
+      if (profileErr) {
+        console.warn('[signup] 프로필 부가정보 저장 실패:', profileErr.message)
+      }
 
       // 회원가입 축하 쿠폰 자동 발급 (WELCOME10K)
       const { data: welcome } = await supabase
@@ -102,11 +105,14 @@ export default function SignupPage() {
         .eq('is_active', true)
         .maybeSingle()
       if (welcome) {
-        await supabase.from('user_coupons').insert({
+        const { error: couponErr } = await supabase.from('user_coupons').insert({
           user_id: user.id,
           coupon_id: welcome.id,
           source: 'signup',
         })
+        if (couponErr) {
+          console.warn('[signup] WELCOME10K 쿠폰 발급 실패:', couponErr.message)
+        }
       }
     }
 

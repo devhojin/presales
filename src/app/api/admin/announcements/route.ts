@@ -90,7 +90,9 @@ export async function GET(request: NextRequest) {
 
     // Search filter (title, organization, description)
     if (search) {
-      query = query.or(`title.ilike.%${search}%,organization.ilike.%${search}%,description.ilike.%${search}%`)
+      // ilike 패턴 문자(%, _) 이스케이프 → DoS 유발 패턴 남용 방지
+      const safe = search.replace(/[%_\\]/g, (m) => '\\' + m)
+      query = query.or(`title.ilike.%${safe}%,organization.ilike.%${safe}%,description.ilike.%${safe}%`)
     }
 
     // Pagination

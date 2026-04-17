@@ -157,7 +157,13 @@ export default function AdminAnnouncementsPage() {
 
   const handleTogglePublish = async (id: string, publish: boolean) => {
     const res = await fetch('/api/admin/announcements', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, is_published: publish }) })
-    if (res.ok) { showToast(publish ? '공개 전환' : '비공개 전환'); await fetchAnnouncements() }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({} as { error?: string }))
+      showToast(`변경 실패: ${body.error || res.statusText}`)
+      return
+    }
+    showToast(publish ? '공개 전환' : '비공개 전환')
+    await fetchAnnouncements()
   }
 
   const handleBulkAction = async (action: 'publish' | 'unpublish' | 'delete' | 'permanent-delete') => {
@@ -165,15 +171,21 @@ export default function AdminAnnouncementsPage() {
     setDeleting(true)
     try {
       const ids = Array.from(selectedIds)
+      let res: Response
       if (action === 'publish' || action === 'unpublish') {
-        await fetch('/api/admin/announcements', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, is_published: action === 'publish' }) })
-        showToast(`${ids.length}건 ${action === 'publish' ? '공개' : '비공개'}`)
+        res = await fetch('/api/admin/announcements', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, is_published: action === 'publish' }) })
       } else {
-        await fetch('/api/admin/announcements', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, permanent: action === 'permanent-delete' }) })
-        showToast(`${ids.length}건 ${action === 'permanent-delete' ? '완전삭제' : '삭제'}`)
+        res = await fetch('/api/admin/announcements', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, permanent: action === 'permanent-delete' }) })
       }
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({} as { error?: string }))
+        showToast(`작업 실패: ${body.error || res.statusText}`)
+        return
+      }
+      const label = action === 'publish' ? '공개' : action === 'unpublish' ? '비공개' : action === 'permanent-delete' ? '완전삭제' : '삭제'
+      showToast(`${ids.length}건 ${label}`)
       setSelectedIds(new Set()); await fetchAnnouncements()
-    } catch (e) { showToast('작업 실패') }
+    } catch (e) { showToast(`작업 실패: ${e instanceof Error ? e.message : '알 수 없는 오류'}`) }
     finally { setDeleting(false); setModalType(null) }
   }
 

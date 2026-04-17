@@ -126,8 +126,9 @@ export default function CartPage() {
       }))
       const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
       if (itemsError) {
-        // 주문 헤더만 생긴 반쪽 주문 방지 — rollback
-        await supabase.from('orders').delete().eq('id', order.id)
+        // 주문 헤더만 생긴 반쪽 주문 방지 — rollback (롤백 자체 실패해도 사용자는 이미 에러 안내)
+        const { error: rollbackErr } = await supabase.from('orders').delete().eq('id', order.id)
+        if (rollbackErr) console.error('[cart] 주문 롤백 실패 (고아 주문 가능):', rollbackErr.message)
         addToast('주문 상품 등록에 실패했습니다. 다시 시도해주세요.', 'error')
         return
       }
@@ -494,7 +495,8 @@ export default function CartPage() {
                         }))
                         const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
                         if (itemsError) {
-                          await supabase.from('orders').delete().eq('id', order.id)
+                          const { error: rollbackErr } = await supabase.from('orders').delete().eq('id', order.id)
+                          if (rollbackErr) console.error('[cart] 주문 롤백 실패 (고아 주문 가능):', rollbackErr.message)
                           addToast('주문 상품 등록에 실패했습니다. 다시 시도해주세요.', 'error')
                           return
                         }

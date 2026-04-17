@@ -162,10 +162,11 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
     if (allReviews) {
       const count = allReviews.length
       const avg = count > 0 ? allReviews.reduce((s, r) => s + r.rating, 0) / count : 0
-      await supabase
+      const { error: statsErr } = await supabase
         .from('products')
         .update({ review_count: count, review_avg: Math.round(avg * 10) / 10 })
         .eq('id', productId)
+      if (statsErr) console.warn('[ReviewForm] 상품 통계 업데이트 실패:', statsErr.message)
     }
 
     setSubmitting(false)

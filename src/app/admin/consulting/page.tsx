@@ -507,10 +507,11 @@ export default function AdminConsulting() {
   const handleStatusChange = useCallback(async (id: number, status: string) => {
     const supabase = createClient()
     const now = new Date().toISOString()
-    await supabase
+    const { error } = await supabase
       .from('consulting_requests')
       .update({ status, updated_at: now })
       .eq('id', id)
+    if (error) { alert(`상태 변경 실패: ${error.message}`); return }
     setRequests((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status, updated_at: now } : r))
     )
