@@ -1139,13 +1139,21 @@ export default function AdminMembers() {
 
   async function handleRoleChange(id: string, newRole: string) {
     const supabase = createClient()
-    await supabase.from('profiles').update({ role: newRole }).eq('id', id)
+    const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', id)
+    if (error) {
+      alert(`권한 변경 실패: ${error.message}`)
+      return
+    }
     setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, role: newRole } : m)))
   }
 
   async function handleMemoSave(id: string, memo: string) {
     const supabase = createClient()
-    await supabase.from('profiles').update({ admin_memo: memo }).eq('id', id)
+    const { error } = await supabase.from('profiles').update({ admin_memo: memo }).eq('id', id)
+    if (error) {
+      alert(`메모 저장 실패: ${error.message}`)
+      return
+    }
     setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, admin_memo: memo } : m)))
   }
 
@@ -1153,7 +1161,16 @@ export default function AdminMembers() {
     setActionLoading(true)
     try {
       const supabase = createClient()
-      await supabase.from('profiles').delete().eq('id', id)
+      const { error } = await supabase.from('profiles').delete().eq('id', id)
+      if (error) {
+        const isFkViolation = error.code === '23503' || /foreign key|violates/i.test(error.message || '')
+        alert(
+          isFkViolation
+            ? '이 회원은 주문/리뷰 등 이력이 있어 완전 삭제할 수 없습니다.'
+            : `삭제 실패: ${error.message}`
+        )
+        return
+      }
       setMembers((prev) => prev.filter((m) => m.id !== id))
       setSelectedIds((prev) => {
         const next = new Set(prev)

@@ -699,7 +699,11 @@ export default function AdminProducts() {
 
   // Toggle publish
   const handleTogglePublish = async (id: number, current: boolean) => {
-    await supabase.from('products').update({ is_published: !current }).eq('id', id)
+    const { error } = await supabase.from('products').update({ is_published: !current }).eq('id', id)
+    if (error) {
+      setToast(`변경 실패: ${error.message}`)
+      return
+    }
     setToast(current ? '비공개로 변경되었습니다' : '공개로 변경되었습니다')
     loadProducts()
   }

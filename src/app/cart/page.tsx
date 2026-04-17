@@ -124,7 +124,13 @@ export default function CartPage() {
         product_id: item.productId,
         price: 0,
       }))
-      await supabase.from('order_items').insert(orderItems)
+      const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
+      if (itemsError) {
+        // 주문 헤더만 생긴 반쪽 주문 방지 — rollback
+        await supabase.from('orders').delete().eq('id', order.id)
+        addToast('주문 상품 등록에 실패했습니다. 다시 시도해주세요.', 'error')
+        return
+      }
       // GA4: purchase event
       gtag.trackPurchase(String(order.id), 0)
       // Remove only free items from cart
@@ -486,7 +492,12 @@ export default function CartPage() {
                           product_id: item.productId,
                           price: 0,
                         }))
-                        await supabase.from('order_items').insert(orderItems)
+                        const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
+                        if (itemsError) {
+                          await supabase.from('orders').delete().eq('id', order.id)
+                          addToast('주문 상품 등록에 실패했습니다. 다시 시도해주세요.', 'error')
+                          return
+                        }
                         // GA4: purchase event
                         gtag.trackPurchase(String(order.id), 0)
                         clearCart()

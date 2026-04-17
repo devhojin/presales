@@ -249,7 +249,12 @@ export default function AdminReviewsPage() {
     if (!deleteTarget) return
     setDeleting(true)
     const supabase = createClient()
-    await supabase.from('reviews').delete().eq('id', deleteTarget.id)
+    const { error: delError } = await supabase.from('reviews').delete().eq('id', deleteTarget.id)
+    if (delError) {
+      alert(`리뷰 삭제 실패: ${delError.message}`)
+      setDeleting(false)
+      return
+    }
 
     // Update product stats
     const { data: publishedReviews } = await supabase

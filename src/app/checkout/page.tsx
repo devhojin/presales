@@ -405,7 +405,15 @@ export default function CheckoutPage() {
           }
 
           // 기존 order_items 삭제 후 재생성
-          await supabase.from('order_items').delete().eq('order_id', existingOrder.id)
+          const { error: delItemsError } = await supabase
+            .from('order_items')
+            .delete()
+            .eq('order_id', existingOrder.id)
+          if (delItemsError) {
+            addToast('기존 주문 상품 정리에 실패했습니다. 다시 시도해주세요.', 'error')
+            router.replace('/cart')
+            return
+          }
           order = existingOrder
           orderError = null
         } else {
@@ -444,7 +452,12 @@ export default function CheckoutPage() {
             discount_source_product_id: discount?.discountSourceProductId ?? null,
           }
         })
-        await supabase.from('order_items').insert(orderItems)
+        const { error: insertItemsError } = await supabase.from('order_items').insert(orderItems)
+        if (insertItemsError) {
+          addToast('주문 상품 등록에 실패했습니다. 다시 시도해주세요.', 'error')
+          router.replace('/cart')
+          return
+        }
 
         const tossOrderId = `presales_${order.id}_${Date.now()}`
 
@@ -527,10 +540,16 @@ export default function CheckoutPage() {
       console.error('[결제 요청 실패]', error)
       addToast(error.message || '결제 요청에 실패했습니다.', 'error')
 
-      // pending 주문 취소
+      // pending 주문 취소 (실패 시 서버 로그로만 남김 — 사용자 에러 토스트 이미 표시됨)
       if (dbOrderId) {
         const supabase = createClient()
-        await supabase.from('orders').update({ status: 'cancelled' }).eq('id', dbOrderId)
+        const { error: cancelErr } = await supabase
+          .from('orders')
+          .update({ status: 'cancelled' })
+          .eq('id', dbOrderId)
+        if (cancelErr) {
+          console.error('[checkout] pending 주문 취소 실패:', cancelErr)
+        }
       }
       setPaying(false)
     }

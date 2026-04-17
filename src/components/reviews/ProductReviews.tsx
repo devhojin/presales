@@ -197,7 +197,15 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
   async function handleDelete() {
     if (!deleteTarget || !user) return
     const supabase = createClient()
-    await supabase.from('reviews').delete().eq('id', deleteTarget.id).eq('user_id', user.id)
+    const { error: delError } = await supabase
+      .from('reviews')
+      .delete()
+      .eq('id', deleteTarget.id)
+      .eq('user_id', user.id)
+    if (delError) {
+      alert(`리뷰 삭제에 실패했습니다: ${delError.message}`)
+      return
+    }
 
     // Update product stats
     const { data: remaining } = await supabase

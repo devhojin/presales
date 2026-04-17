@@ -1299,7 +1299,11 @@ export default function AdminOrders() {
     if (status === 'paid') updates.paid_at = new Date().toISOString()
     if (status === 'cancelled') updates.cancelled_at = new Date().toISOString()
 
-    await supabase.from('orders').update(updates).eq('id', orderId)
+    const { error } = await supabase.from('orders').update(updates).eq('id', orderId)
+    if (error) {
+      setToast(`주문 상태 변경 실패: ${error.message}`)
+      return
+    }
 
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, ...updates } as Order : o))
@@ -1327,7 +1331,11 @@ export default function AdminOrders() {
     if (status === 'cancelled') updates.cancelled_at = new Date().toISOString()
 
     const ids = Array.from(selectedIds)
-    await supabase.from('orders').update(updates).in('id', ids)
+    const { error } = await supabase.from('orders').update(updates).in('id', ids)
+    if (error) {
+      setToast(`일괄 상태 변경 실패: ${error.message}`)
+      return
+    }
 
     setOrders((prev) =>
       prev.map((o) => (selectedIds.has(o.id) ? { ...o, ...updates } as Order : o))

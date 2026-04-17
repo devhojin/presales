@@ -18,11 +18,14 @@ export default function CheckoutFailPage() {
       const dbOrderId = orderId.split('_')[1]
       if (!dbOrderId) return
       const supabase = createClient()
-      await supabase
+      const { error } = await supabase
         .from('orders')
         .update({ status: 'cancelled' })
         .eq('id', parseInt(dbOrderId, 10))
         .eq('status', 'pending')
+      if (error) {
+        console.error('[checkout/fail] pending 주문 취소 실패:', error)
+      }
     }
     cleanupOrder()
   }, [searchParams])
