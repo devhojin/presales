@@ -713,7 +713,34 @@ export default function AdminProducts() {
     if (deleteConfirmId === null) return
     const id = deleteConfirmId
     setDeleteConfirmId(null)
-    await supabase.from('products').delete().eq('id', id)
+    const { error } = await supabase.from('products').delete().eq('id', id)
+
+    if (error) {
+      // FK 제약 위반: 주문/다운로드/리뷰 이력이 있으면 물리 삭제 불가
+      const isFkViolation = error.code === '23503' || /foreign key|violates/i.test(error.message || '')
+      if (isFkViolation) {
+        const confirmUnpublish = window.confirm(
+          '이 상품은 주문·다운로드·리뷰 이력이 있어 완전 삭제할 수 없습니다.\n대신 비공개 처리하시겠습니까? (스토어에서 숨김, 이력은 보존)'
+        )
+        if (confirmUnpublish) {
+          const { error: unpubErr } = await supabase
+            .from('products')
+            .update({ is_published: false })
+            .eq('id', id)
+          if (unpubErr) {
+            setToast(`비공개 처리 실패: ${unpubErr.message}`)
+          } else {
+            setToast('상품이 비공개 처리되었습니다')
+            setSelectedIds((prev) => { const next = new Set(prev); next.delete(id); return next })
+            loadProducts()
+          }
+        }
+      } else {
+        setToast(`삭제 실패: ${error.message}`)
+      }
+      return
+    }
+
     setToast('상품이 삭제되었습니다')
     setSelectedIds((prev) => { const next = new Set(prev); next.delete(id); return next })
     loadProducts()
@@ -756,11 +783,46 @@ export default function AdminProducts() {
     loadProducts()
   }
 
-  // Bulk delete
+  // Bulk delete — 성공/실패 분리 집계
   const handleBulkDelete = async () => {
     const ids = Array.from(selectedIds)
-    await Promise.all(ids.map((id) => supabase.from('products').delete().eq('id', id)))
-    setToast(`${ids.length}개 상품이 삭제되었습니다`)
+    const results = await Promise.all(
+      ids.map(async (id) => {
+        const { error } = await supabase.from('products').delete().eq('id', id)
+        return { id, error }
+      })
+    )
+    const succeeded = results.filter((r) => !r.error)
+    const failed = results.filter((r) => r.error)
+
+    if (failed.length === 0) {
+      setToast(`${succeeded.length}개 상품이 삭제되었습니다`)
+    } else if (succeeded.length === 0) {
+      const confirmUnpublish = window.confirm(
+        `선택한 ${failed.length}개 상품 모두 주문·다운로드·리뷰 이력이 있어 완전 삭제할 수 없습니다.\n대신 모두 비공개 처리하시겠습니까?`
+      )
+      if (confirmUnpublish) {
+        await Promise.all(
+          failed.map((r) => supabase.from('products').update({ is_published: false }).eq('id', r.id))
+        )
+        setToast(`${failed.length}개 상품이 비공개 처리되었습니다`)
+      } else {
+        setToast(`${failed.length}개 상품 삭제 실패 (이력 존재)`)
+      }
+    } else {
+      const confirmUnpublish = window.confirm(
+        `${succeeded.length}개는 삭제되었고, ${failed.length}개는 이력이 있어 완전 삭제 불가합니다.\n남은 ${failed.length}개를 비공개 처리하시겠습니까?`
+      )
+      if (confirmUnpublish) {
+        await Promise.all(
+          failed.map((r) => supabase.from('products').update({ is_published: false }).eq('id', r.id))
+        )
+        setToast(`삭제 ${succeeded.length}건 · 비공개 전환 ${failed.length}건`)
+      } else {
+        setToast(`삭제 ${succeeded.length}건 · 실패 ${failed.length}건`)
+      }
+    }
+
     setSelectedIds(new Set())
     setBulkDeleteConfirm(false)
     loadProducts()
