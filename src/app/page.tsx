@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { type DbProduct, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
-import { FileText, Download, Globe, Handshake, ArrowRight, ShoppingCart, Check, Star, Quote, ChevronRight, Search } from 'lucide-react'
+import { FileText, Download, Globe, Handshake, ArrowRight, ShoppingCart, Check, Star, Quote, ChevronRight, Search, BookOpen, Presentation, Briefcase, TrendingUp, Wrench } from 'lucide-react'
 
 interface StatsData {
   productCount: number
@@ -31,22 +31,19 @@ interface CategoryCount {
   icon: typeof FileText
 }
 
-const CATEGORY_ICONS: Record<number, typeof FileText> = {
-  1: FileText,
-  2: FileText,
-  3: FileText,
-  4: FileText,
-  5: FileText,
-  6: FileText,
-}
-
-const CATEGORY_SLUGS: Record<number, string> = {
-  1: 'technical-proposal',
-  2: 'bidding-guide',
-  3: 'presentation',
-  4: 'price-proposal',
-  5: 'full-package',
-  6: 'business-plan',
+/**
+ * 카테고리 아이콘 매핑 — DB slug 기반 (id 고정 의존 제거)
+ * 새 카테고리 추가 시 여기에 slug 만 추가하면 되고, 미등록 slug 는 FileText fallback
+ */
+const CATEGORY_ICON_BY_SLUG: Record<string, typeof FileText> = {
+  'technical-proposal': FileText,
+  'proposal': FileText,
+  'bidding-guide': BookOpen,
+  'guide': BookOpen,
+  'presentation': Presentation,
+  'price-proposal': TrendingUp,
+  'full-package': Briefcase,
+  'business-plan': Wrench,
 }
 
 function FeaturedCardSkeleton() {
@@ -141,7 +138,7 @@ export default function Home() {
           .from('products')
           .select('*, categories(id, name, slug)')
           .eq('is_published', true),
-        supabase.from('categories').select('id, name').order('sort_order'),
+        supabase.from('categories').select('id, name, slug').order('sort_order'),
         supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_published', true),
         supabase
           .from('reviews')
@@ -178,11 +175,11 @@ export default function Home() {
           : p.category_id ? [p.category_id] : []
         catIds.forEach((cid: number) => catCountMap.set(cid, (catCountMap.get(cid) || 0) + 1))
       })
-      const dynamicCats: CategoryCount[] = (catData || []).map((c: { id: number; name: string }) => ({
+      const dynamicCats: CategoryCount[] = (catData || []).map((c: { id: number; name: string; slug: string | null }) => ({
         id: c.id,
         name: c.name,
-        icon: CATEGORY_ICONS[c.id] || FileText,
-        slug: CATEGORY_SLUGS[c.id] || '',
+        icon: (c.slug && CATEGORY_ICON_BY_SLUG[c.slug]) || FileText,
+        slug: c.slug || '',
         count: catCountMap.get(c.id) || 0,
       }))
       setCategoryCounts(dynamicCats)

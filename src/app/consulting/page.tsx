@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Check, X, Clock, Video, FileText, Star, Upload, Loader2, MessageSquare, Trophy, Sparkles, Factory, Quote, ShieldCheck, Target, Mic } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { useDraggableModal } from '@/hooks/useDraggableModal'
+import { CONSULTING_PACKAGES, INDUSTRY_CONSULTING_PRICE_FLOOR_WON, formatWonShort } from '@/lib/constants'
 
 // ===========================
 // Consulting Inquiry Modal
@@ -141,11 +142,10 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
 
   if (!isOpen) return null
 
-  const pkgOptions = [
-    { value: 'spot', label: '스팟 상담 (150,000원 / 30분)' },
-    { value: 'review', label: '제안서 리뷰 패키지 (500,000원 / 건)' },
-    { value: 'project', label: '프로젝트 컨설팅 (3,000,000원~ / 프로젝트)' },
-  ]
+  const pkgOptions = Object.values(CONSULTING_PACKAGES).map((pkg) => ({
+    value: pkg.value,
+    label: `${pkg.name} (${pkg.priceLabel})`,
+  }))
 
   const inputClass = "w-full px-3 py-2.5 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
   const labelClass = "block text-xs font-medium text-muted-foreground mb-1.5"
@@ -682,7 +682,7 @@ export default function ConsultingPage() {
             </div>
             <h3 className="font-bold text-sm text-foreground mb-2">합리적 비용</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              컨설팅 외주 500만원+ 대비, 스팟 상담은 <span className="text-primary font-semibold">15만원</span>부터.
+              컨설팅 외주 {formatWonShort(INDUSTRY_CONSULTING_PRICE_FLOOR_WON)}+ 대비, 스팟 상담은 <span className="text-primary font-semibold">{formatWonShort(CONSULTING_PACKAGES.spot.priceWon)}</span>부터.
               핵심만 짚어주는 집중 상담으로 최소 비용, 최대 효과를 만듭니다.
             </p>
           </div>

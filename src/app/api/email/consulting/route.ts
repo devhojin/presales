@@ -6,13 +6,14 @@ import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
 
-const ADMIN_EMAIL = 'admin@amarans.co.kr'
+import { CONSULTING_PACKAGES } from '@/lib/constants'
 
-const PACKAGE_LABELS: Record<string, string> = {
-  spot: '스팟 상담 (150,000원 / 30분)',
-  review: '제안서 리뷰 패키지 (500,000원 / 건)',
-  project: '프로젝트 컨설팅 (3,000,000원~ / 프로젝트)',
-}
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@amarans.co.kr'
+
+// lib/constants.ts 의 CONSULTING_PACKAGES 를 단일 진실 공급원으로 사용
+const PACKAGE_LABELS: Record<string, string> = Object.fromEntries(
+  Object.values(CONSULTING_PACKAGES).map((p) => [p.value, `${p.name} (${p.priceLabel})`])
+)
 
 function formatDateKR(isoString: string) {
   const d = new Date(isoString)
