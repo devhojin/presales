@@ -7,7 +7,7 @@ import { Clock, FileText, X } from 'lucide-react'
 import { formatPrice } from '@/lib/types'
 
 const STORAGE_KEY = 'presales-recently-viewed'
-const MAX_DISPLAY = 5
+const MAX_DISPLAY = 3
 
 interface RecentItem {
   id: number
