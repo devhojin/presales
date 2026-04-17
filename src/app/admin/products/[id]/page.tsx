@@ -1064,6 +1064,158 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             )}
           </section>
 
+          {/* ─── 다운로드 파일 관리 ─── */}
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
+              <Download className="w-4 h-4 text-muted-foreground" />
+              다운로드 파일 관리
+            </h2>
+            <p className="text-xs text-muted-foreground mb-4">구매자가 다운로드할 실제 파일입니다. product-files 버킷에 저장됩니다.</p>
+
+            {isNew ? (
+              <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                상품을 먼저 저장한 후 파일을 업로드할 수 있습니다.
+              </div>
+            ) : (
+              <>
+                {/* Upload area */}
+                <input
+                  ref={downloadFileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0]
+                    if (file) handleDownloadFileUpload(file)
+                  }}
+                />
+                <div
+                  className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
+                    dragOver
+                      ? 'border-blue-400 bg-primary/8/50'
+                      : 'border-border bg-muted hover:border-blue-300 hover:bg-primary/8/20'
+                  }`}
+                  onClick={() => !fileUploading && downloadFileInputRef.current?.click()}
+                  onDragOver={e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setDragOver(true)
+                  }}
+                  onDragLeave={e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setDragOver(false)
+                  }}
+                  onDrop={e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setDragOver(false)
+                    const file = e.dataTransfer.files?.[0]
+                    if (file) handleDownloadFileUpload(file)
+                  }}
+                >
+                  {fileUploading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                      <p className="text-xs text-primary font-medium">업로드 중...</p>
+                      {fileUploadProgress > 0 && (
+                        <div className="w-full max-w-[200px] bg-muted rounded-full h-1.5 mt-1">
+                          <div
+                            className="bg-primary h-1.5 rounded-full transition-all duration-300"
+                            style={{ width: `${fileUploadProgress}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <Upload className="w-8 h-8 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground font-medium">파일을 드래그하거나 클릭하여 업로드</p>
+                      <p className="text-xs text-muted-foreground">PPT, PDF, HWP, XLS, ZIP 등 모든 파일 형식</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* File list */}
+                {productFiles.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">{productFiles.length}개 파일 등록됨</p>
+                    <div className="divide-y divide-gray-100 border border-border rounded-xl overflow-hidden">
+                      {productFiles.map(file => (
+                        <div key={file.id} className="flex items-center gap-3 px-4 py-3 bg-white hover:bg-muted transition-colors group">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                const res = await fetch('/api/download', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ productId: Number(id), fileId: file.id }),
+                                })
+                                const body = await res.json()
+                                if (!res.ok || !body.url) throw new Error(body.error || '다운로드 실패')
+                                window.location.href = body.url
+                              } catch (e) {
+                                alert(e instanceof Error ? e.message : '다운로드에 실패했습니다')
+                              }
+                            }}
+                            className="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer"
+                            title="다운로드"
+                          >
+                            <div className="w-8 h-8 bg-primary/8 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
+                              <Download className="w-4 h-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{file.file_name}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {formatFileSize(file.file_size)} · {new Date(file.created_at).toLocaleDateString('ko-KR')}
+                              </p>
+                            </div>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteConfirmFile(file)}
+                            className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
+                            title="삭제"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {productFiles.length === 0 && !fileUploading && (
+                  <p className="text-center text-xs text-muted-foreground mt-3">등록된 파일이 없습니다</p>
+                )}
+
+                {/* 미리보기 PDF 미등록 경고 */}
+                {productFiles.length > 0 && !form.preview_pdf_url && (() => {
+                  const hasPdfFile = productFiles.some((f: { file_name: string }) => f.file_name?.toLowerCase().endsWith('.pdf'))
+                  const fileExts = productFiles.map((f: { file_name: string }) => f.file_name?.split('.').pop()?.toUpperCase()).join(', ')
+                  return (
+                    <div className="mt-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-semibold text-amber-800">미리보기 PDF가 등록되지 않았습니다</p>
+                          <p className="text-xs text-amber-700 mt-1">
+                            등록된 파일: {fileExts}
+                            {!hasPdfFile && ' — PDF가 아닌 파일은 미리보기가 지원되지 않습니다.'}
+                          </p>
+                          <p className="text-xs text-amber-600 mt-1">
+                            아래의 📖 PDF 미리보기 섹션에서 미리보기용 PDF를 업로드하거나, 안내 문구를 입력해주세요.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </>
+            )}
+          </section>
+
           {/* ─── PDF 미리보기 ─── */}
           <section className="bg-white rounded-xl border border-border p-5">
             <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
@@ -1511,158 +1663,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
             {form.related_product_ids.length > 0 && (
               <p className="text-xs text-muted-foreground mt-2">{form.related_product_ids.length}개 상품이 연결되었습니다</p>
-            )}
-          </section>
-
-          {/* ─── 다운로드 파일 관리 ─── */}
-          <section className="bg-white rounded-xl border border-border p-5">
-            <h2 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
-              <Download className="w-4 h-4 text-muted-foreground" />
-              다운로드 파일 관리
-            </h2>
-            <p className="text-xs text-muted-foreground mb-4">구매자가 다운로드할 실제 파일입니다. product-files 버킷에 저장됩니다.</p>
-
-            {isNew ? (
-              <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                상품을 먼저 저장한 후 파일을 업로드할 수 있습니다.
-              </div>
-            ) : (
-              <>
-                {/* Upload area */}
-                <input
-                  ref={downloadFileInputRef}
-                  type="file"
-                  className="hidden"
-                  onChange={e => {
-                    const file = e.target.files?.[0]
-                    if (file) handleDownloadFileUpload(file)
-                  }}
-                />
-                <div
-                  className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
-                    dragOver
-                      ? 'border-blue-400 bg-primary/8/50'
-                      : 'border-border bg-muted hover:border-blue-300 hover:bg-primary/8/20'
-                  }`}
-                  onClick={() => !fileUploading && downloadFileInputRef.current?.click()}
-                  onDragOver={e => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setDragOver(true)
-                  }}
-                  onDragLeave={e => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setDragOver(false)
-                  }}
-                  onDrop={e => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setDragOver(false)
-                    const file = e.dataTransfer.files?.[0]
-                    if (file) handleDownloadFileUpload(file)
-                  }}
-                >
-                  {fileUploading ? (
-                    <div className="flex flex-col items-center gap-2">
-                      <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-                      <p className="text-xs text-primary font-medium">업로드 중...</p>
-                      {fileUploadProgress > 0 && (
-                        <div className="w-full max-w-[200px] bg-muted rounded-full h-1.5 mt-1">
-                          <div
-                            className="bg-primary h-1.5 rounded-full transition-all duration-300"
-                            style={{ width: `${fileUploadProgress}%` }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-2">
-                      <Upload className="w-8 h-8 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground font-medium">파일을 드래그하거나 클릭하여 업로드</p>
-                      <p className="text-xs text-muted-foreground">PPT, PDF, HWP, XLS, ZIP 등 모든 파일 형식</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* File list */}
-                {productFiles.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">{productFiles.length}개 파일 등록됨</p>
-                    <div className="divide-y divide-gray-100 border border-border rounded-xl overflow-hidden">
-                      {productFiles.map(file => (
-                        <div key={file.id} className="flex items-center gap-3 px-4 py-3 bg-white hover:bg-muted transition-colors group">
-                          <button
-                            type="button"
-                            onClick={async () => {
-                              try {
-                                const res = await fetch('/api/download', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ productId: Number(id), fileId: file.id }),
-                                })
-                                const body = await res.json()
-                                if (!res.ok || !body.url) throw new Error(body.error || '다운로드 실패')
-                                window.location.href = body.url
-                              } catch (e) {
-                                alert(e instanceof Error ? e.message : '다운로드에 실패했습니다')
-                              }
-                            }}
-                            className="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer"
-                            title="다운로드"
-                          >
-                            <div className="w-8 h-8 bg-primary/8 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
-                              <Download className="w-4 h-4 text-primary" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{file.file_name}</p>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {formatFileSize(file.file_size)} · {new Date(file.created_at).toLocaleDateString('ko-KR')}
-                              </p>
-                            </div>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteConfirmFile(file)}
-                            className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
-                            title="삭제"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {productFiles.length === 0 && !fileUploading && (
-                  <p className="text-center text-xs text-muted-foreground mt-3">등록된 파일이 없습니다</p>
-                )}
-
-                {/* 미리보기 PDF 미등록 경고 */}
-                {productFiles.length > 0 && !form.preview_pdf_url && (() => {
-                  const hasPdfFile = productFiles.some((f: { file_name: string }) => f.file_name?.toLowerCase().endsWith('.pdf'))
-                  const fileExts = productFiles.map((f: { file_name: string }) => f.file_name?.split('.').pop()?.toUpperCase()).join(', ')
-                  return (
-                    <div className="mt-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-xs font-semibold text-amber-800">미리보기 PDF가 등록되지 않았습니다</p>
-                          <p className="text-xs text-amber-700 mt-1">
-                            등록된 파일: {fileExts}
-                            {!hasPdfFile && ' — PDF가 아닌 파일은 미리보기가 지원되지 않습니다.'}
-                          </p>
-                          <p className="text-xs text-amber-600 mt-1">
-                            위의 📖 PDF 미리보기 섹션에서 미리보기용 PDF를 업로드하거나, 안내 문구를 입력해주세요.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })()}
-              </>
             )}
           </section>
 

@@ -475,12 +475,12 @@ function ProductRowCells({
     <>
       {/* Title + external link */}
       <td className="px-3 py-3">
-        <div className="flex items-center gap-2">
-          <div className="text-[10px] text-muted-foreground leading-tight text-center min-w-[40px]">
+        <div className="flex items-center gap-3">
+          <div className="text-[10px] text-muted-foreground leading-tight text-center w-[72px] shrink-0 whitespace-nowrap">
             {globalRank !== null ? (
               <>
                 <div className="font-bold text-foreground">#{globalRank}</div>
-                <div title={`${categoryName} ${categoryRank}위`}>{categoryName}{categoryRank}</div>
+                <div title={`${categoryName} ${categoryRank}위`} className="truncate">{categoryName}{categoryRank}</div>
               </>
             ) : (
               <div className="text-muted-foreground">-</div>
