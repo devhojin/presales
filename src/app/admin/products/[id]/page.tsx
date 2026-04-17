@@ -339,7 +339,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     setFileUploading(true)
     setFileUploadProgress(0)
     try {
-      const filePath = `products/${id}/${file.name}`
+      // Supabase Storage key 는 ASCII 만 허용 (TUS 는 특히 엄격)
+      // 사용자가 보는 파일명(file_name) 은 DB 에 원본 한글로 보존, storage key 만 sanitize
+      const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')) : ''
+      const safeKey = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}${ext}`
+      const filePath = `products/${id}/${safeKey}`
       // 실제 업로드 진행률은 95% 까지만 반영, 나머지 5% 는 DB insert 단계
       const result = await uploadFile({
         bucket: 'product-files',
@@ -359,7 +363,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         .from('product_files')
         .insert({
           product_id: Number(id),
-          file_name: file.name,
+          file_name: file.name, // 원본 한글 이름 그대로 보존 (다운로드 시 이 이름으로 저장됨)
           file_url: urlData.publicUrl,
           file_size: file.size,
         })
@@ -382,7 +386,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     setDeletingFile(true)
     try {
       const supabase = createClient()
-      const filePath = `products/${id}/${file.file_name}`
+      // file_url 에서 실제 storage key 추출
+      // 예: https://xxx.supabase.co/storage/v1/object/public/product-files/products/58/1776-abc.pdf
+      //     → products/58/1776-abc.pdf
+      const match = file.file_url?.match(/\/product-files\/(.+)$/)
+      const filePath = match ? decodeURIComponent(match[1]) : `products/${id}/${file.file_name}`
       await supabase.storage.from('product-files').remove([filePath])
       const { error } = await supabase
         .from('product_files')
