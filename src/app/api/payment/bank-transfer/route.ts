@@ -5,13 +5,14 @@ import { cookies } from 'next/headers'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { logger } from '@/lib/logger'
 
-const ADMIN_EMAIL = 'admin@amarans.co.kr'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@amarans.co.kr'
 
-// 입금 계좌 정보 (환경변수 또는 하드코딩)
+// 입금 계좌 정보 (환경변수 우선, 미설정 시 기본값)
+// Vercel → Settings → Environment Variables 에서 값 변경 가능
 const BANK_ACCOUNT = {
-  bank: '기업은행',
-  account: '394-056559-01-013',
-  holder: '(주)아마란스',
+  bank: process.env.BANK_NAME || '기업은행',
+  account: process.env.BANK_ACCOUNT_NUMBER || '394-056559-01-013',
+  holder: process.env.BANK_HOLDER || '(주)아마란스',
 }
 
 function formatKRW(amount: number) {
