@@ -52,7 +52,8 @@ export function PdfPreviewModal({
     async function loadPdf() {
       try {
         const pdfjs = await import('pdfjs-dist')
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`
+        // CSP: worker-src 'self' 범위 내 로컬 파일 사용 (unpkg 차단 회피 + CDN 의존 제거)
+        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
         const loadingTask = pdfjs.getDocument({
           url: pdfUrl,
