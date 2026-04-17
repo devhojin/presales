@@ -146,7 +146,10 @@ export default function AdminAnnouncementsPage() {
           setFetchingNow(false)
           evtSource.close()
         }
-      } catch {}
+      } catch (err) {
+        // SSE 메시지 파싱 실패 — 디버깅 용도로만 로그
+        console.warn('[admin/announcements] SSE 파싱 오류:', err)
+      }
     }
     evtSource.onerror = () => {
       setFetchDone(true)

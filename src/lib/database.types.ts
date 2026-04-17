@@ -1590,6 +1590,7 @@ export type Database = {
       }
       reviews: {
         Row: {
+          admin_reply: string | null
           cons: string | null
           content: string
           created_at: string | null
@@ -1608,6 +1609,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          admin_reply?: string | null
           cons?: string | null
           content: string
           created_at?: string | null
@@ -1626,6 +1628,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          admin_reply?: string | null
           cons?: string | null
           content?: string
           created_at?: string | null
@@ -1772,10 +1775,10 @@ export type Database = {
       }
     }
     Functions: {
+      decrement_helpful: { Args: { rid: number }; Returns: undefined }
+      increment_helpful: { Args: { rid: number }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
       nextval_guest_name: { Args: never; Returns: number }
-      show_limit: { Args: never; Returns: number }
-      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
       [_ in never]: never

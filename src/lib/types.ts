@@ -1,3 +1,15 @@
+/**
+ * DB 엔티티 타입
+ *
+ * 실제 DB 스키마는 database.types.ts 에 자동 생성되어 있으며
+ * (DB sync 완료: admin_reply 컬럼, increment/decrement_helpful RPC 추가됨),
+ * 이 파일의 DbProduct/DbReview 를 `Tables<'...'>['Row']` 로 교체하는 전면 리팩토링은
+ * 각 파일의 로컬 타입(Announcement/TeamMember 등)과 null 가드 업데이트가 수반되므로
+ * 다음 세션에 파일별 점진적 적용 예정.
+ *
+ * 현재는 기존 느슨한 타입 유지 (회귀 방지).
+ */
+
 export interface DbProduct {
   id: number
   title: string

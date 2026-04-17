@@ -113,6 +113,9 @@ function DecimalCountUp({ target, suffix = '', decimals = 1 }: { target: number;
     const el = ref.current
     if (!el) return
 
+    let rafId: number | null = null
+    let cancelled = false
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !started.current) {
@@ -120,19 +123,26 @@ function DecimalCountUp({ target, suffix = '', decimals = 1 }: { target: number;
           const startTime = performance.now()
           const duration = 2000
           function animate(now: number) {
+            if (cancelled) return
+            const node = ref.current
+            if (!node) return
             const progress = Math.min((now - startTime) / duration, 1)
             const eased = 1 - Math.pow(1 - progress, 3)
-            el!.textContent = (target * eased).toFixed(decimals)
-            if (progress < 1) requestAnimationFrame(animate)
+            node.textContent = (target * eased).toFixed(decimals)
+            if (progress < 1) rafId = requestAnimationFrame(animate)
           }
-          requestAnimationFrame(animate)
+          rafId = requestAnimationFrame(animate)
           observer.unobserve(el)
         }
       },
       { threshold: 0.5 },
     )
     observer.observe(el)
-    return () => observer.disconnect()
+    return () => {
+      cancelled = true
+      if (rafId !== null) cancelAnimationFrame(rafId)
+      observer.disconnect()
+    }
   }, [target, decimals])
 
   return <><span ref={ref}>0</span>{suffix}</>

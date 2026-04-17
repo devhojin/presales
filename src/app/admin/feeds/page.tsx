@@ -166,7 +166,9 @@ export default function AdminFeedsPage() {
           setFetchingNow(false)
           evtSource.close()
         }
-      } catch {}
+      } catch (err) {
+        console.warn('[admin/feeds] SSE 파싱 오류:', err)
+      }
     }
     evtSource.onerror = () => { setFetchDone(true); setFetchingNow(false); evtSource.close() }
   }
