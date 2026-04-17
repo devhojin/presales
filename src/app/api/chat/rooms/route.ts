@@ -154,33 +154,69 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ room: newRoom, created: true })
 }
 
-/** PATCH: 채팅방 상태 업데이트 (닫기, 읽음 처리 등) */
+/**
+ * PATCH: 채팅방 상태 업데이트 (닫기, 읽음 처리 등)
+ * 보안: allowedFields 만 허용 — user_id/guest_id/id/created_at 등 민감 컬럼 임의 수정 차단
+ */
+// 역할별 허용 필드 화이트리스트
+const ADMIN_ALLOWED_FIELDS = new Set([
+  'status',
+  'last_message',
+  'last_message_at',
+  'user_unread_count',
+  'admin_unread_count',
+  'hidden_by_admin',
+  'guest_name',
+  'guest_email',
+])
+const MEMBER_ALLOWED_FIELDS = new Set([
+  'status',
+  'user_unread_count', // 본인 읽음 처리
+])
+const GUEST_ALLOWED_FIELDS = new Set([
+  'status',
+  'user_unread_count',
+  'guest_name',
+  'guest_email',
+])
+
+function pickAllowed(
+  updates: Record<string, unknown>,
+  allowed: Set<string>,
+): Record<string, unknown> {
+  const picked: Record<string, unknown> = {}
+  for (const k of Object.keys(updates)) {
+    if (allowed.has(k)) picked[k] = updates[k]
+  }
+  return picked
+}
+
 export async function PATCH(request: NextRequest) {
   const body = await request.json()
-  const { room_id, ...updates } = body
+  const { room_id, guest_id: _guestId, ...updates } = body as Record<string, unknown> & { room_id?: string; guest_id?: string }
   if (!room_id) return NextResponse.json({ error: 'room_id 필요' }, { status: 400 })
 
   const user = await getAuthUser()
   const supabase = getServiceClient()
 
-  // 관리자 확인
+  // 관리자
   if (user) {
     const admin = await isAdmin(user.id)
     if (admin) {
+      const safe = pickAllowed(updates, ADMIN_ALLOWED_FIELDS)
       const { error } = await supabase
         .from('chat_rooms')
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update({ ...safe, updated_at: new Date().toISOString() })
         .eq('id', room_id)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ ok: true })
     }
-  }
 
-  // 회원: 자기 방만 수정 가능
-  if (user) {
+    // 회원: 자기 방만 수정 가능
+    const safe = pickAllowed(updates, MEMBER_ALLOWED_FIELDS)
     const { error } = await supabase
       .from('chat_rooms')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...safe, updated_at: new Date().toISOString() })
       .eq('id', room_id)
       .eq('user_id', user.id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -190,9 +226,10 @@ export async function PATCH(request: NextRequest) {
   // 비회원: guest_id로
   const guestId = body.guest_id
   if (guestId) {
+    const safe = pickAllowed(updates, GUEST_ALLOWED_FIELDS)
     const { error } = await supabase
       .from('chat_rooms')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...safe, updated_at: new Date().toISOString() })
       .eq('id', room_id)
       .eq('guest_id', guestId)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies, headers } from 'next/headers'
 import { logger } from '@/lib/logger'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { checkRateLimitAsync } from '@/lib/rate-limit'
 
 const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY!
 const TOSS_CONFIRM_URL = 'https://api.tosspayments.com/v1/payments/confirm'
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
   try {
     const headersList = await headers()
     const ip = headersList.get('x-forwarded-for') ?? 'unknown'
-    const rl = checkRateLimit(`payment:${ip}`, 5, 60000)
+    const rl = await checkRateLimitAsync(`payment:${ip}`, 5, 60000)
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, {
         status: 429,

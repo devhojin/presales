@@ -3,13 +3,13 @@ import { headers, cookies } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { logger } from '@/lib/logger'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { checkRateLimitAsync } from '@/lib/rate-limit'
 
 export async function POST(request: NextRequest) {
   try {
     const headersList = await headers()
     const ip = headersList.get('x-forwarded-for') ?? 'unknown'
-    const rl = checkRateLimit(`email:${ip}`, 5, 60000)
+    const rl = await checkRateLimitAsync(`email:${ip}`, 5, 60000)
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, {
         status: 429,

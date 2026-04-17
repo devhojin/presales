@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { getServiceClient, getAuthUser, isFileBlocked, getFileType, MAX_FILE_SIZE } from '@/lib/chat'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { checkRateLimitAsync } from '@/lib/rate-limit'
 
 /** POST: 파일 업로드 (Supabase Storage) */
 export async function POST(request: NextRequest) {
   const headersList = await headers()
   const ip = headersList.get('x-forwarded-for') ?? 'unknown'
-  const rl = checkRateLimit(`chat-file:${ip}`, 10, 60000)
+  const rl = await checkRateLimitAsync(`chat-file:${ip}`, 10, 60000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Too many requests' }, {
       status: 429,

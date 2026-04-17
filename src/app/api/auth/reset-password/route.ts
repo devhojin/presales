@@ -3,7 +3,7 @@ import { headers } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { logger } from '@/lib/logger'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { checkRateLimitAsync } from '@/lib/rate-limit'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const headersList = await headers()
     const ip = headersList.get('x-forwarded-for') ?? 'unknown'
     // IP 기준 분당 3회 (이메일 폭격 방지)
-    const rl = checkRateLimit(`reset-password:${ip}`, 3, 60000)
+    const rl = await checkRateLimitAsync(`reset-password:${ip}`, 3, 60000)
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, {
         status: 429,

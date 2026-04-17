@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { getServiceClient, getAuthUser, isAdmin } from '@/lib/chat'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
-import { checkRateLimit } from '@/lib/rate-limit'
+import { checkRateLimitAsync } from '@/lib/rate-limit'
 
 /** GET: 특정 방의 메시지 목록 */
 export async function GET(request: NextRequest) {
   const headersList = await headers()
   const ip = headersList.get('x-forwarded-for') ?? 'unknown'
-  const rl = checkRateLimit(`chat:${ip}`, 30, 60000)
+  const rl = await checkRateLimitAsync(`chat:${ip}`, 30, 60000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Too many requests' }, {
       status: 429,
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const headersList = await headers()
   const ip = headersList.get('x-forwarded-for') ?? 'unknown'
-  const rl = checkRateLimit(`chat:${ip}`, 30, 60000)
+  const rl = await checkRateLimitAsync(`chat:${ip}`, 30, 60000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Too many requests' }, {
       status: 429,
