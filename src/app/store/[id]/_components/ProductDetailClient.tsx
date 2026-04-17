@@ -11,7 +11,7 @@ import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, ArrowRight, ShoppingCart, Check, Download, Play, BookOpen, FileDown, Copy, Share2, Mail, FileText, AlertTriangle, Lightbulb, ShieldCheck, Image as ImageIcon, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ShoppingCart, Check, CheckCircle, Download, Play, BookOpen, FileDown, Copy, Share2, Mail, FileText, AlertTriangle, Lightbulb, ShieldCheck, Image as ImageIcon, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { PdfPreviewModal } from '@/components/pdf-preview-modal'
 import { ProductReviews } from '@/components/reviews/ProductReviews'
 import { FreeToProUpsell } from '@/components/FreeToProUpsell'
@@ -635,7 +635,51 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
         <div className="py-8">
           {/* 상품정보 Tab */}
           {activeTab === 'info' && (
-            <div>
+            <div className="space-y-10">
+              {/* Overview: 핵심 요약 */}
+              {(() => {
+                const ov = (product.overview ?? {}) as { points?: string[]; summary?: string }
+                const points = Array.isArray(ov.points) ? ov.points.filter((p): p is string => typeof p === 'string' && p.trim().length > 0) : []
+                const summary = typeof ov.summary === 'string' ? ov.summary.trim() : ''
+                if (!summary && points.length === 0) return null
+                return (
+                  <section className="rounded-2xl bg-gradient-to-br from-blue-50 to-white border border-blue-100 p-6">
+                    <h3 className="text-sm font-semibold tracking-widest text-blue-600 mb-3">핵심 요약</h3>
+                    {summary && <p className="text-[15px] text-slate-700 leading-relaxed mb-4">{summary}</p>}
+                    {points.length > 0 && (
+                      <ul className="grid gap-2 sm:grid-cols-2">
+                        {points.map((p, i) => (
+                          <li key={i} className="flex items-start gap-2 text-[14px] text-slate-700">
+                            <CheckCircle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                            <span>{p}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                )
+              })()}
+
+              {/* Features: 주요 특징 */}
+              {(() => {
+                const ft = (product.features ?? {}) as { items?: { title: string; description?: string }[] }
+                const items = Array.isArray(ft.items) ? ft.items.filter((f) => f && typeof f.title === 'string' && f.title.trim().length > 0) : []
+                if (items.length === 0) return null
+                return (
+                  <section>
+                    <h3 className="text-lg font-bold tracking-tight mb-4">주요 특징</h3>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {items.map((f, i) => (
+                        <div key={i} className="rounded-xl border border-slate-200 bg-white p-4 hover:shadow-sm transition-shadow">
+                          <p className="font-semibold text-slate-900 mb-1">{f.title}</p>
+                          {f.description && <p className="text-sm text-slate-600 leading-relaxed">{f.description}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )
+              })()}
+
               {product.description_html ? (
                 <div
                   className="product-description text-[15px]"
@@ -643,11 +687,61 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                 />
               ) : product.description ? (
                 <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
-              ) : (
-                <div className="text-center py-16 text-muted-foreground">
-                  <p>등록된 상품 상세 정보가 없습니다.</p>
-                </div>
-              )}
+              ) : null}
+
+              {/* Specs: 상세 스펙 */}
+              {(() => {
+                const sp = (product.specs ?? {}) as { items?: { label: string; value: string }[] }
+                const items = Array.isArray(sp.items) ? sp.items.filter((s) => s && typeof s.label === 'string' && s.label.trim().length > 0) : []
+                if (items.length === 0) return null
+                return (
+                  <section>
+                    <h3 className="text-lg font-bold tracking-tight mb-4">상세 스펙</h3>
+                    <dl className="rounded-xl border border-slate-200 overflow-hidden bg-white">
+                      {items.map((s, i) => (
+                        <div key={i} className={`grid grid-cols-[140px_1fr] text-sm ${i !== items.length - 1 ? 'border-b border-slate-100' : ''}`}>
+                          <dt className="bg-slate-50 px-4 py-3 font-medium text-slate-600">{s.label}</dt>
+                          <dd className="px-4 py-3 text-slate-900">{s.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </section>
+                )
+              })()}
+
+              {/* File Types: 포함 파일 */}
+              {(() => {
+                const ft = (product.file_types ?? {}) as { items?: string[] }
+                const items = Array.isArray(ft.items) ? ft.items.filter((t): t is string => typeof t === 'string' && t.trim().length > 0) : []
+                if (items.length === 0) return null
+                return (
+                  <section>
+                    <h3 className="text-lg font-bold tracking-tight mb-3">포함 파일</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {items.map((t, i) => (
+                        <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium">
+                          <FileText className="w-3.5 h-3.5" />
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </section>
+                )
+              })()}
+
+              {/* 아무것도 없을 때 */}
+              {!product.description_html && !product.description && (() => {
+                const anyExtra =
+                  (product.overview && Object.keys(product.overview).length > 0) ||
+                  (product.features && Object.keys(product.features).length > 0) ||
+                  (product.specs && Object.keys(product.specs).length > 0) ||
+                  (product.file_types && Object.keys(product.file_types).length > 0)
+                return anyExtra ? null : (
+                  <div className="text-center py-16 text-muted-foreground">
+                    <p>등록된 상품 상세 정보가 없습니다.</p>
+                  </div>
+                )
+              })()}
             </div>
           )}
 

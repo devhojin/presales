@@ -20,10 +20,40 @@ export async function GET(request: NextRequest) {
   const roomId = searchParams.get('room_id')
   if (!roomId) return NextResponse.json({ error: 'room_id 필요' }, { status: 400 })
 
-  const limit = parseInt(searchParams.get('limit') || '50')
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50') || 50))
   const before = searchParams.get('before') // 페이지네이션용 cursor
+  const guestId = searchParams.get('guest_id')
 
   const supabase = getServiceClient()
+
+  // 인증: 로그인 유저 또는 room 의 guest_id 소유자만 조회 가능
+  const authUser = await getAuthUser()
+  if (!authUser) {
+    if (!guestId) {
+      return NextResponse.json({ error: '인증 정보 필요' }, { status: 401 })
+    }
+    const { data: room } = await supabase
+      .from('chat_rooms')
+      .select('guest_id')
+      .eq('id', roomId)
+      .single()
+    if (!room || room.guest_id !== guestId) {
+      return NextResponse.json({ error: '방 접근 권한이 없습니다' }, { status: 403 })
+    }
+  } else {
+    const admin = await isAdmin(authUser.id)
+    if (!admin) {
+      // 일반 회원: 자기 방만 접근 가능
+      const { data: room } = await supabase
+        .from('chat_rooms')
+        .select('user_id')
+        .eq('id', roomId)
+        .single()
+      if (!room || room.user_id !== authUser.id) {
+        return NextResponse.json({ error: '방 접근 권한이 없습니다' }, { status: 403 })
+      }
+    }
+  }
 
   let query = supabase
     .from('chat_messages')

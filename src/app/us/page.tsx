@@ -147,6 +147,8 @@ export default function UsPage() {
   const [totalDownloads, setTotalDownloads] = useState(0)
   const [productCount, setProductCount] = useState(0)
   const [reviewAvg, setReviewAvg] = useState(0)
+  const [positiveReviewRate, setPositiveReviewRate] = useState(0)
+  const [testimonials, setTestimonials] = useState<{ quote: string; name: string; role: string }[]>([])
 
   useEffect(() => {
     const t = setTimeout(() => setHeroReady(true), 300)
@@ -182,6 +184,38 @@ export default function UsPage() {
             setReviewAvg(Math.round(avg * 10) / 10)
           }
         }
+      })
+
+    // 긍정 후기 비율 (4점 이상 / 전체) — DB 기반 실제 수치
+    supabase
+      .from('reviews')
+      .select('rating')
+      .eq('is_published', true)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const positive = data.filter((r) => (r.rating ?? 0) >= 4).length
+          setPositiveReviewRate(Math.round((positive / data.length) * 100))
+        }
+      })
+
+    // 실제 후기 3건 (최신 4~5점 + 긴 본문)
+    supabase
+      .from('reviews')
+      .select('content, title, reviewer_name, rating, helpful_count')
+      .eq('is_published', true)
+      .gte('rating', 4)
+      .not('content', 'is', null)
+      .order('helpful_count', { ascending: false })
+      .limit(30)
+      .then(({ data }) => {
+        if (!data || data.length === 0) return
+        const pool = data.filter((r) => (r.content?.length ?? 0) >= 30 && (r.content?.length ?? 0) <= 180)
+        const picks = (pool.length >= 3 ? pool : data).slice(0, 3).map((r) => ({
+          quote: r.content ?? '',
+          name: r.reviewer_name ? `${r.reviewer_name.charAt(0)}○○` : '익명',
+          role: r.title ?? '구매 고객',
+        }))
+        if (picks.length > 0) setTestimonials(picks)
       })
   }, [])
 
@@ -389,7 +423,7 @@ export default function UsPage() {
             {[
               { target: totalDownloads || 0, suffix: '+', label: '누적 다운로드', decimal: false },
               { target: productCount || 0, suffix: '', label: '검증된 템플릿', decimal: false },
-              { target: 93, suffix: '%', label: '재구매율', decimal: false },
+              { target: positiveReviewRate || 0, suffix: '%', label: '긍정 후기 비율', decimal: false },
               { target: reviewAvg || 0, suffix: '', label: '평균 만족도 (5점)', decimal: true },
             ].map((stat) => (
               <Reveal key={stat.label} className="text-center">
@@ -405,14 +439,12 @@ export default function UsPage() {
             ))}
           </div>
 
-          {/* 후기 */}
+          {/* 후기 — DB 기반 실제 후기 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { quote: '입찰 3일 전에 급하게 찾았는데, 진짜 낙찰됐습니다. 구성이 이미 다 잡혀있어서 내용만 바꿨어요.', name: '김○○', role: 'IT 서비스 기업 대표', delay: 0 },
-              { quote: '정부과제 제안서를 처음 써보는데, 이런 레퍼런스가 있다는 것 자체가 혁신이에요.', name: '박○○', role: '스타트업 사업개발 팀장', delay: 150 },
-              { quote: '컨설팅 업체에 500만원 맡기던 걸 이 템플릿 하나로 직접 했습니다.', name: '이○○', role: '중소기업 경영지원실', delay: 300 },
-            ].map((t) => (
-              <Reveal key={t.name} delay={t.delay}>
+            {(testimonials.length > 0 ? testimonials : [
+              { quote: '실제 구매자 후기가 준비되는 대로 여기에 표시됩니다.', name: '', role: '' },
+            ]).map((t, idx) => (
+              <Reveal key={`${t.name}-${idx}`} delay={idx * 150}>
                 <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 hover:border-blue-500/20 transition-colors">
                   <div className="flex gap-0.5 mb-4">
                     {Array.from({ length: 5 }).map((_, i) => (

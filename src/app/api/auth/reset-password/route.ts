@@ -1,15 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { logger } from '@/lib/logger'
+import { checkRateLimit } from '@/lib/rate-limit'
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export async function POST(request: NextRequest) {
   try {
+    const headersList = await headers()
+    const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+    // IP 기준 분당 3회 (이메일 폭격 방지)
+    const rl = checkRateLimit(`reset-password:${ip}`, 3, 60000)
+    if (!rl.allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, {
+        status: 429,
+        headers: { 'Retry-After': '60', 'X-RateLimit-Remaining': String(rl.remaining) },
+      })
+    }
+
     const body = await request.json() as { email: string }
     const { email } = body
 
-    if (!email) {
-      return NextResponse.json({ error: 'email is required' }, { status: 400 })
+    if (!email || typeof email !== 'string' || !EMAIL_REGEX.test(email) || email.length > 254) {
+      // 존재 여부를 노출하지 않기 위해 200 반환
+      return NextResponse.json({ success: true })
     }
 
     const supabase = createClient(

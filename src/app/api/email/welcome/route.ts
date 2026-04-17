@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { headers } from 'next/headers'
+import { headers, cookies } from 'next/headers'
+import { createServerClient } from '@supabase/ssr'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { logger } from '@/lib/logger'
 import { checkRateLimit } from '@/lib/rate-limit'
@@ -16,11 +17,28 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // 인증: 로그인 유저가 자기 이메일로만 환영 메일 요청 가능 (스팸 발송 악용 방지)
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll: () => cookieStore.getAll() } }
+    )
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 })
+    }
+
     const body = await request.json() as { email: string; name: string }
     const { email, name } = body
 
     if (!email || !name) {
       return NextResponse.json({ error: 'email and name are required' }, { status: 400 })
+    }
+
+    // 본인 이메일로만 발송 허용
+    if (user.email?.toLowerCase() !== email.toLowerCase()) {
+      return NextResponse.json({ error: '본인 이메일로만 요청 가능합니다' }, { status: 403 })
     }
 
     const displayName = name || '회원'

@@ -27,6 +27,12 @@ export interface DbProduct {
   updated_at: string
   related_product_ids: number[] | null
   preview_images: string[] | null
+  overview: Record<string, unknown> | { points?: string[]; summary?: string } | null
+  features: Record<string, unknown> | { items?: { title: string; description?: string }[] } | null
+  specs: Record<string, unknown> | { items?: { label: string; value: string }[] } | null
+  file_types: Record<string, unknown> | { items?: string[] } | null
+  seller: string | null
+  document_orientation: string | null
   categories?: { id: number; name: string; slug: string } | null
 }
 
