@@ -79,15 +79,49 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ paymentRequest: pr, message: msg })
 }
 
-/** PATCH: 결제요청 상태 변경 (결제완료/취소) */
+/** PATCH: 결제요청 상태 변경 (결제완료/취소)
+ *  - 'paid' 전환: 요청 당사자(user_id) 또는 관리자
+ *  - 'cancelled' 전환: 관리자만
+ *  - 기타 값 차단
+ */
+const ALLOWED_STATUSES = new Set(['paid', 'cancelled'])
+
 export async function PATCH(request: NextRequest) {
   const user = await getAuthUser()
   if (!user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
 
   const { id, status: newStatus } = await request.json()
   if (!id || !newStatus) return NextResponse.json({ error: 'id, status 필요' }, { status: 400 })
+  if (!ALLOWED_STATUSES.has(newStatus)) {
+    return NextResponse.json({ error: '허용되지 않은 상태값입니다' }, { status: 400 })
+  }
 
   const supabase = getServiceClient()
+
+  // 요청 조회 후 권한 확인
+  const { data: existing, error: fetchErr } = await supabase
+    .from('chat_payment_requests')
+    .select('id, user_id, status')
+    .eq('id', id)
+    .single()
+  if (fetchErr || !existing) {
+    return NextResponse.json({ error: '결제요청을 찾을 수 없습니다' }, { status: 404 })
+  }
+
+  const admin = await isAdmin(user.id)
+  const isOwner = existing.user_id === user.id
+
+  if (newStatus === 'cancelled' && !admin) {
+    return NextResponse.json({ error: '취소는 관리자만 가능합니다' }, { status: 403 })
+  }
+  if (newStatus === 'paid' && !admin && !isOwner) {
+    return NextResponse.json({ error: '본인 결제요청만 처리할 수 있습니다' }, { status: 403 })
+  }
+
+  // 이미 처리된 요청은 재처리 불가 (멱등성)
+  if (existing.status !== 'pending') {
+    return NextResponse.json({ error: '이미 처리된 결제요청입니다' }, { status: 409 })
+  }
 
   const updateData: Record<string, unknown> = { status: newStatus }
   if (newStatus === 'paid') updateData.paid_at = new Date().toISOString()
@@ -97,6 +131,7 @@ export async function PATCH(request: NextRequest) {
     .from('chat_payment_requests')
     .update(updateData)
     .eq('id', id)
+    .eq('status', 'pending')  // optimistic lock
     .select('*, chat_messages:message_id(*)')
     .single()
 

@@ -1,12 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 import { randomBytes } from 'crypto'
+import { checkRateLimitAsync } from '@/lib/rate-limit'
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: IP 당 분당 3회 (구독 폭탄·SMTP 비용 방지)
+    const headersList = await headers()
+    const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+    const rl = await checkRateLimitAsync(`brief-subscribe:${ip}`, 3, 60000)
+    if (!rl.allowed) {
+      return NextResponse.json({ ok: false, error: 'Too many requests' }, {
+        status: 429,
+        headers: { 'Retry-After': '60', 'X-RateLimit-Remaining': String(rl.remaining) },
+      })
+    }
+
     const { email, name } = await request.json() as { email: string; name?: string }
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!email || typeof email !== 'string' || email.length > 254 || !EMAIL_REGEX.test(email)) {
       return NextResponse.json({ ok: false, error: '올바른 이메일 주소가 아닙니다' }, { status: 400 })
+    }
+    // 이름 길이 제한 (DB 오염 방지)
+    if (name && (typeof name !== 'string' || name.length > 100)) {
+      return NextResponse.json({ ok: false, error: '이름이 너무 깁니다' }, { status: 400 })
     }
 
     const service = createClient(

@@ -86,15 +86,22 @@ export async function proxy(req: NextRequest) {
   }
 
   // /admin 경로: role='admin' 체크
-  if (path.startsWith('/admin') && hasSession) {
+  // hasSession 과 user 객체가 동기화 안 될 수 있는 윈도우 대응 (세션 만료 직후 등)
+  if (path.startsWith('/admin') && hasSession && user) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', user!.id)
+      .eq('id', user.id)
       .single()
     if (profile?.role !== 'admin') {
       return NextResponse.redirect(new URL('/mypage', req.url))
     }
+  } else if (path.startsWith('/admin') && !user) {
+    // user 없으면 로그인으로
+    const url = req.nextUrl.clone()
+    url.pathname = '/auth/login'
+    url.searchParams.set('redirect', path)
+    return NextResponse.redirect(url)
   }
 
   // 로그인 상태에서 로그인/회원가입 접근 시 리다이렉트
