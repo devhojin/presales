@@ -41,6 +41,10 @@ export async function GET(request: NextRequest) {
       userId = user?.id ?? null
     }
 
+    // 사용자당 북마크/읽음 목록은 수천 건 정도가 현실적 상한
+    // PostgREST IN 절 URL 길이 제한 있어 실제로도 5000 이상 쓰기 어려움
+    const USER_LIST_LIMIT = 5000
+
     let idFilter: { op: 'in' | 'not_in'; ids: string[] } | null = null
     type AnnBookmarkSnap = {
       announcement_id: string
@@ -60,16 +64,23 @@ export async function GET(request: NextRequest) {
           .from('announcement_bookmarks')
           .select('announcement_id, title, excerpt, url, source, source_name, end_date, snapshot_at, created_at')
           .eq('user_id', userId)
-          .limit(100000)
+          .order('created_at', { ascending: false })
+          .limit(USER_LIST_LIMIT)
         bookmarkSnaps = (data as AnnBookmarkSnap[]) || []
+        if (bookmarkSnaps.length === USER_LIST_LIMIT) {
+          console.warn(`[announcements] user ${userId} bookmark list reached limit ${USER_LIST_LIMIT}`)
+        }
         idFilter = { op: 'in', ids: bookmarkSnaps.map(r => r.announcement_id) }
       } else {
         const { data } = await supabase
           .from('announcement_reads')
           .select('announcement_id')
           .eq('user_id', userId)
-          .limit(100000)
+          .limit(USER_LIST_LIMIT)
         const readIds = (data || []).map(r => r.announcement_id)
+        if (readIds.length === USER_LIST_LIMIT) {
+          console.warn(`[announcements] user ${userId} read list reached limit ${USER_LIST_LIMIT}`)
+        }
         idFilter = { op: tab === 'read' ? 'in' : 'not_in', ids: readIds }
       }
     }
@@ -153,17 +164,17 @@ export async function GET(request: NextRequest) {
       closedCount = cc.count || 0
     }
 
-    // 탭별 카운트 (로그인 시)
+    // 탭별 카운트 (로그인 시) — data 대신 count: 'exact', head: true 사용 (메모리 로드 0)
     let unreadCount = 0, readCount = 0, bookmarkCount = 0
     if (userId) {
-      const { data: readData } = await supabase.from('announcement_reads').select('announcement_id').eq('user_id', userId).limit(100000)
-      const readIds = (readData || []).map(r => r.announcement_id)
-      const { data: bmData } = await supabase.from('announcement_bookmarks').select('announcement_id').eq('user_id', userId).limit(100000)
-
-      const { count: totalPub } = await supabase.from('announcements').select('*', { count: 'exact', head: true }).eq('is_published', true)
-      readCount = readIds.length
-      unreadCount = (totalPub || 0) - readCount
-      bookmarkCount = (bmData || []).length
+      const [readRes, bmRes, totalRes] = await Promise.all([
+        supabase.from('announcement_reads').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+        supabase.from('announcement_bookmarks').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+        supabase.from('announcements').select('*', { count: 'exact', head: true }).eq('is_published', true),
+      ])
+      readCount = readRes.count || 0
+      bookmarkCount = bmRes.count || 0
+      unreadCount = (totalRes.count || 0) - readCount
     }
 
     return NextResponse.json({

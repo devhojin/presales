@@ -39,6 +39,9 @@ export async function GET(request: NextRequest) {
       userId = user?.id ?? null
     }
 
+    // 사용자당 북마크/읽음은 수천 건이 현실적 상한 (PostgREST IN 절 URL 길이 제한)
+    const USER_LIST_LIMIT = 5000
+
     // tab 필터용 post_id 집합 계산
     let idFilter: { op: 'in' | 'not_in'; ids: string[] } | null = null
     type BookmarkSnap = {
@@ -58,16 +61,23 @@ export async function GET(request: NextRequest) {
           .from('feed_bookmarks')
           .select('post_id, title, excerpt, url, source, source_name, snapshot_at, created_at')
           .eq('user_id', userId)
-          .limit(100000)
+          .order('created_at', { ascending: false })
+          .limit(USER_LIST_LIMIT)
         bookmarkSnaps = (data as BookmarkSnap[]) || []
+        if (bookmarkSnaps.length === USER_LIST_LIMIT) {
+          console.warn(`[feeds] user ${userId} bookmark list reached limit ${USER_LIST_LIMIT}`)
+        }
         idFilter = { op: 'in', ids: bookmarkSnaps.map(r => r.post_id) }
       } else {
         const { data } = await service
           .from('feed_reads')
           .select('post_id')
           .eq('user_id', userId)
-          .limit(100000)
+          .limit(USER_LIST_LIMIT)
         const readIds = (data || []).map(r => r.post_id)
+        if (readIds.length === USER_LIST_LIMIT) {
+          console.warn(`[feeds] user ${userId} read list reached limit ${USER_LIST_LIMIT}`)
+        }
         idFilter = { op: tab === 'read' ? 'in' : 'not_in', ids: readIds }
       }
     }
@@ -124,30 +134,17 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 탭별 카운트 (로그인 시 서버에서 정확하게 계산)
+    // 탭별 카운트 (로그인 시) — head:true 로 메모리 로드 없이 count 만
     let unreadCount = 0, readCount = 0, bookmarkCount = 0
     if (userId) {
-      const { data: readData } = await service
-        .from('feed_reads')
-        .select('post_id')
-        .eq('user_id', userId)
-        .limit(100000)
-      const readIds = (readData || []).map(r => r.post_id)
-      const { data: bmData } = await service
-        .from('feed_bookmarks')
-        .select('post_id')
-        .eq('user_id', userId)
-        .limit(100000)
-
-      const { count: totalPub } = await service
-        .from('community_posts')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_published', true)
-        .eq('status', 'published')
-
-      readCount = readIds.length
-      unreadCount = (totalPub || 0) - readCount
-      bookmarkCount = (bmData || []).length
+      const [readRes, bmRes, totalRes] = await Promise.all([
+        service.from('feed_reads').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+        service.from('feed_bookmarks').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+        service.from('community_posts').select('*', { count: 'exact', head: true }).eq('is_published', true).eq('status', 'published'),
+      ])
+      readCount = readRes.count || 0
+      bookmarkCount = bmRes.count || 0
+      unreadCount = (totalRes.count || 0) - readCount
     }
 
     return NextResponse.json({

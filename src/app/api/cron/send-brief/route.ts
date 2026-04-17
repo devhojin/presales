@@ -125,7 +125,9 @@ export async function GET(request: NextRequest) {
         await sendEmail(sub.email, subject, html)
         successCount++
       } catch (e) {
-        console.error(`send-brief: 발송 실패 [${sub.email}]:`, e instanceof Error ? e.message : e)
+        // PII 로그 유출 방지 — 이메일은 도메인만 로그, 전체는 서버사이드 failedEmails 배열에만
+        const mask = sub.email.includes('@') ? `***@${sub.email.split('@')[1]}` : '***'
+        console.error(`send-brief: 발송 실패 [${mask}]:`, e instanceof Error ? e.message : e)
         failCount++
         failedEmails.push(sub.email)
       }
@@ -145,6 +147,11 @@ export async function GET(request: NextRequest) {
 
     console.log(`send-brief: 완료 — 성공 ${successCount}건, 실패 ${failCount}건`)
 
+    // 응답에는 실패 이메일 주소 제외 (CRON_SECRET 유출 시 구독자 PII 노출 방지)
+    // 상세 실패 목록은 서버 로그에서만 확인
+    if (failedEmails.length > 0) {
+      console.error(`send-brief: 실패 ${failedEmails.length}건 (상세 주소는 서버 로그 감사로만)`)
+    }
     return NextResponse.json({
       success: true,
       briefId: brief.id,
@@ -153,7 +160,6 @@ export async function GET(request: NextRequest) {
       totalSubscribers: subList.length,
       successCount,
       failCount,
-      failedEmails: failedEmails.length > 0 ? failedEmails : undefined,
       timestamp: nowUtc.toISOString(),
     })
   } catch (e: unknown) {
