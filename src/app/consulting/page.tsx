@@ -6,6 +6,9 @@ import { Check, X, Clock, Video, FileText, Star, Upload, Loader2, MessageSquare,
 import { createClient } from '@/lib/supabase'
 import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { CONSULTING_PACKAGES, INDUSTRY_CONSULTING_PRICE_FLOOR_WON, formatWonShort } from '@/lib/constants'
+import { uploadFile } from '@/lib/storage-upload'
+
+const CONSULTING_MAX_FILE_SIZE = 1024 * 1024 * 1024 // 1GB
 
 // ===========================
 // Consulting Inquiry Modal
@@ -66,8 +69,8 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     if (!f) return
-    if (f.size > 10 * 1024 * 1024) {
-      setError('파일 크기는 10MB 이하여야 합니다.')
+    if (f.size > CONSULTING_MAX_FILE_SIZE) {
+      setError('파일 크기는 1GB 이하여야 합니다.')
       return
     }
     setError('')
@@ -90,12 +93,18 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
     try {
       const supabase = createClient()
 
-      // Upload file if exists
+      // Upload file if exists — uploadFile() 은 6MB 초과 시 자동 TUS resumable (최대 50GB)
       let fileUrl = ''
       if (file) {
-        const fileName = `inquiry-${Date.now()}-${file.name}`
-        const { error: uploadErr } = await supabase.storage.from('consulting-files').upload(fileName, file)
-        if (!uploadErr) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+        const fileName = `inquiry-${Date.now()}-${safeName}`
+        const result = await uploadFile({
+          bucket: 'consulting-files',
+          path: fileName,
+          file,
+          contentType: file.type,
+        })
+        if (result.ok) {
           const { data: urlData } = supabase.storage.from('consulting-files').getPublicUrl(fileName)
           fileUrl = urlData.publicUrl
         }

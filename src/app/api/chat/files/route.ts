@@ -49,10 +49,10 @@ export async function POST(request: NextRequest) {
     }, { status: 400 })
   }
 
-  // 크기 제한
+  // 크기 제한 (1GB 나지만 Vercel body 한계로 이 라우트는 사실상 ~4MB 까지. 그 이상은 TUS 직접 업로드 사용)
   if (file.size > MAX_FILE_SIZE) {
     return NextResponse.json({
-      error: `파일 크기는 10MB 이하만 가능합니다.`,
+      error: `파일 크기는 1GB 이하만 가능합니다.`,
     }, { status: 400 })
   }
 

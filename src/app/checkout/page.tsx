@@ -355,12 +355,15 @@ export default function CheckoutPage() {
 
         // 2. 주문 생성 또는 재사용 (pending 상태)
         // 기존 pending 주문 확인
+        // 중복 pending 이 있을 경우 .single() 이 throw 하므로 limit(1) + maybeSingle() 로 방어
         const { data: existingOrder } = await supabase
           .from('orders')
           .select('id')
           .eq('user_id', user.id)
           .eq('status', 'pending')
-          .single()
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
 
         let order
         let orderError

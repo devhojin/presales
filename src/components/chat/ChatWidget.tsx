@@ -9,6 +9,8 @@ import {
 import { createClient } from '@/lib/supabase'
 import { useChatWidgetStore, getOrCreateGuestId } from '@/stores/chat-store'
 import type { ChatMessage } from '@/lib/chat'
+import { MAX_FILE_SIZE, MAX_FILE_SIZE_LABEL } from '@/lib/chat-constants'
+import { uploadFile } from '@/lib/storage-upload'
 
 const BLOCKED_EXTENSIONS = [
   '.exe', '.bat', '.cmd', '.com', '.msi', '.scr', '.pif',
@@ -20,6 +22,62 @@ const BLOCKED_EXTENSIONS = [
 function isBlocked(name: string) {
   const ext = name.toLowerCase().slice(name.lastIndexOf('.'))
   return BLOCKED_EXTENSIONS.includes(ext)
+}
+
+type ChatUploadResult = {
+  url: string
+  name: string
+  size: number
+  type: string
+  fileType: 'image' | 'file'
+}
+
+// 인증 사용자는 TUS 직접 업로드(≤1GB), 게스트는 서버 라우트로 fallback(~4MB)
+async function uploadChatFile(
+  file: File,
+  roomId: string,
+  guestId: string | null,
+): Promise<ChatUploadResult | null> {
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  const fileType: 'image' | 'file' = file.type.startsWith('image/') ? 'image' : 'file'
+
+  if (session) {
+    const lastDot = file.name.lastIndexOf('.')
+    const ext = lastDot > 0 ? file.name.slice(lastDot) : ''
+    const safeName = `${roomId}/${Date.now()}_${Math.random().toString(36).slice(2, 10)}${ext}`
+    const result = await uploadFile({
+      bucket: 'chat-files',
+      path: safeName,
+      file,
+      contentType: file.type,
+    })
+    if (!result.ok) return null
+    const { data: urlData } = supabase.storage.from('chat-files').getPublicUrl(safeName)
+    return {
+      url: urlData.publicUrl,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      fileType,
+    }
+  }
+
+  // 게스트 fallback — Vercel body size 한계로 사실상 ~4MB
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('room_id', roomId)
+  if (guestId) formData.append('guest_id', guestId)
+  const res = await fetch('/api/chat/files', { method: 'POST', body: formData })
+  const data = await res.json()
+  if (data.error) return null
+  return {
+    url: data.url,
+    name: data.name,
+    size: data.size,
+    type: data.type,
+    fileType: data.fileType,
+  }
 }
 
 function formatTime(dateStr: string) {
@@ -239,23 +297,17 @@ export function ChatWidget() {
       return
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      setError('파일 크기는 10MB 이하만 가능합니다')
+    if (file.size > MAX_FILE_SIZE) {
+      setError(`파일 크기는 ${MAX_FILE_SIZE_LABEL} 이하만 가능합니다`)
       e.target.value = ''
       return
     }
 
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('room_id', roomId)
-
-      const uploadRes = await fetch('/api/chat/files', { method: 'POST', body: formData })
-      const uploadData = await uploadRes.json()
-
-      if (uploadData.error) {
-        setError(uploadData.error)
+      const uploadData = await uploadChatFile(file, roomId, guestId)
+      if (!uploadData) {
+        setError('파일 업로드에 실패했습니다')
         return
       }
 
@@ -297,15 +349,9 @@ export function ChatWidget() {
         const ext = blob.type.split('/')[1] || 'png'
         const file = new File([blob], `clipboard_${Date.now()}.${ext}`, { type: blob.type })
 
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('room_id', roomId)
-
         try {
-          const uploadRes = await fetch('/api/chat/files', { method: 'POST', body: formData })
-          const uploadData = await uploadRes.json()
-
-          if (!uploadData.error) {
+          const uploadData = await uploadChatFile(file, roomId, guestId)
+          if (uploadData) {
             await fetch('/api/chat/messages', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },

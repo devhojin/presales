@@ -8,6 +8,8 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import type { ChatRoom, ChatMessage } from '@/lib/chat'
+import { MAX_FILE_SIZE, MAX_FILE_SIZE_LABEL } from '@/lib/chat-constants'
+import { uploadFile } from '@/lib/storage-upload'
 
 const BLOCKED_EXTENSIONS = [
   '.exe', '.bat', '.cmd', '.com', '.msi', '.scr', '.pif',
@@ -15,6 +17,36 @@ const BLOCKED_EXTENSIONS = [
   '.ps1', '.ps2', '.psc1', '.psc2', '.reg', '.inf', '.lnk',
   '.dll', '.sys', '.drv', '.cpl',
 ]
+
+type ChatUploadResult = {
+  url: string
+  name: string
+  size: number
+  type: string
+  fileType: 'image' | 'file'
+}
+
+async function uploadAdminChatFile(file: File, roomId: string): Promise<ChatUploadResult | null> {
+  const supabase = createClient()
+  const lastDot = file.name.lastIndexOf('.')
+  const ext = lastDot > 0 ? file.name.slice(lastDot) : ''
+  const safeName = `${roomId}/${Date.now()}_${Math.random().toString(36).slice(2, 10)}${ext}`
+  const result = await uploadFile({
+    bucket: 'chat-files',
+    path: safeName,
+    file,
+    contentType: file.type,
+  })
+  if (!result.ok) return null
+  const { data: urlData } = supabase.storage.from('chat-files').getPublicUrl(safeName)
+  return {
+    url: urlData.publicUrl,
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    fileType: file.type.startsWith('image/') ? 'image' : 'file',
+  }
+}
 
 function isBlocked(name: string) {
   const ext = name.toLowerCase().slice(name.lastIndexOf('.'))
@@ -428,21 +460,16 @@ export default function AdminChatPage() {
       e.target.value = ''
       return
     }
-    if (file.size > 10 * 1024 * 1024) {
-      setError('파일 10MB 이하만 가능')
+    if (file.size > MAX_FILE_SIZE) {
+      setError(`파일 ${MAX_FILE_SIZE_LABEL} 이하만 가능`)
       e.target.value = ''
       return
     }
 
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('room_id', selectedRoom.id)
-      const uploadRes = await fetch('/api/chat/files', { method: 'POST', body: formData })
-      const uploadData = await uploadRes.json()
-
-      if (uploadData.error) { setError(uploadData.error); return }
+      const uploadData = await uploadAdminChatFile(file, selectedRoom.id)
+      if (!uploadData) { setError('파일 업로드 실패'); return }
 
       await fetch('/api/chat/messages', {
         method: 'POST',
@@ -473,13 +500,9 @@ export default function AdminChatPage() {
         setUploading(true)
         const ext = blob.type.split('/')[1] || 'png'
         const file = new File([blob], `clipboard_${Date.now()}.${ext}`, { type: blob.type })
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('room_id', selectedRoom.id)
         try {
-          const uploadRes = await fetch('/api/chat/files', { method: 'POST', body: formData })
-          const uploadData = await uploadRes.json()
-          if (!uploadData.error) {
+          const uploadData = await uploadAdminChatFile(file, selectedRoom.id)
+          if (uploadData) {
             await fetch('/api/chat/messages', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
