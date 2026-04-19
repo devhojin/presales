@@ -50,3 +50,6 @@ documents_presales/작업/
 build-output.log
 .claude/worktrees/
 .playwright-mcp/
+
+# thumbnail regeneration backup snapshots
+public/thumbnails_backup_*/
