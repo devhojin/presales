@@ -211,7 +211,7 @@ export default function AdminAnnouncementsPage() {
   ]
 
   return (
-    <div className="flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)] gap-4">
+    <div className="flex flex-col gap-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
         <div className="flex items-center gap-3">
@@ -282,16 +282,16 @@ export default function AdminAnnouncementsPage() {
       ) : error ? (
         <div className="text-center py-16"><AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-2" /><p className="text-sm text-red-500">{error}</p></div>
       ) : (
-        <div className="flex gap-0 border border-border/50 rounded-2xl bg-card overflow-hidden flex-1 min-h-0">
-          {/* LEFT: List (내부 스크롤 — 휠 내릴 때 이쪽만 움직임) */}
-          <div className={`${showDetail ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-[38%] border-r border-border/50 overflow-hidden`}>
+        <div className="flex gap-4 items-start">
+          {/* LEFT: List (페이지와 함께 스크롤 — 자연 길이) */}
+          <div className={`${showDetail ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-[38%] border border-border/50 rounded-2xl bg-card overflow-hidden`}>
             {/* Select all header */}
             <div className="px-4 py-2.5 border-b border-border/50 bg-muted/30 flex items-center gap-3 shrink-0">
               <input type="checkbox" checked={announcements.length > 0 && announcements.every(a => selectedIds.has(a.id))}
                 onChange={togglePageSelectAll} className="w-4 h-4 rounded cursor-pointer" />
               <span className="text-xs text-muted-foreground">{totalCount}건</span>
             </div>
-            <div className="flex-1 overflow-y-auto divide-y divide-border/50">
+            <div className="divide-y divide-border/50">
               {announcements.map(item => {
                 const expired = isAnnExpired(item)
                 const isActive = item.id === selectedId
@@ -334,9 +334,10 @@ export default function AdminAnnouncementsPage() {
             )}
           </div>
 
-          {/* RIGHT: Detail (고정 — 좌측 스크롤과 독립) */}
+          {/* RIGHT: Detail (sticky — 페이지 스크롤되어도 뷰포트 고정) */}
           <div
-            className={`${showDetail ? 'flex' : 'hidden lg:flex'} flex-col flex-1 overflow-hidden`}
+            className={`${showDetail ? 'flex' : 'hidden lg:flex'} flex-col flex-1 border border-border/50 rounded-2xl bg-card overflow-hidden sticky self-start`}
+            style={{ top: '80px', height: 'calc(100vh - 100px)' }}
           >
             {selectedAnn ? (
               <AdminAnnouncementDetail
@@ -427,8 +428,8 @@ function AdminAnnouncementDetail({ announcement: ann, onTogglePublish, onBack }:
 }) {
   const dday = calcDDay(ann.end_date)
   return (
-    <div className="flex-1 overflow-hidden">
-      <div className="lg:hidden px-4 py-3 border-b border-border/50">
+    <div className="flex-1 overflow-y-auto">
+      <div className="lg:hidden px-4 py-3 border-b border-border/50 sticky top-0 bg-card z-10">
         <button onClick={onBack} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer">
           <ArrowLeft className="w-4 h-4" /> 목록으로
         </button>
