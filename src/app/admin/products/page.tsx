@@ -1200,6 +1200,11 @@ export default function AdminProducts() {
 
         {/* Table Card */}
         <div className="bg-white rounded-xl border border-border overflow-hidden">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted border-b border-border">
@@ -1258,34 +1263,28 @@ export default function AdminProducts() {
                     </td>
                   </tr>
                 ) : isDragEnabled ? (
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
+                  <SortableContext
+                    items={paginated.map((p) => p.id)}
+                    strategy={verticalListSortingStrategy}
                   >
-                    <SortableContext
-                      items={paginated.map((p) => p.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {paginated.map((product) => {
-                        const rank = rankMap.get(product.id)
-                        return (
-                          <SortableProductRow
-                            key={product.id}
-                            product={product}
-                            onTogglePublish={handleTogglePublish}
-                            onDelete={handleDelete}
-                            selected={selectedIds.has(product.id)}
-                            onSelect={toggleSelect}
-                            globalRank={rank?.global ?? null}
-                            categoryRank={rank?.category ?? null}
-                            categoryName={rank?.categoryName ?? ''}
-                            onDownloadDetail={setDownloadDetailProduct}
-                          />
-                        )
-                      })}
-                    </SortableContext>
-                  </DndContext>
+                    {paginated.map((product) => {
+                      const rank = rankMap.get(product.id)
+                      return (
+                        <SortableProductRow
+                          key={product.id}
+                          product={product}
+                          onTogglePublish={handleTogglePublish}
+                          onDelete={handleDelete}
+                          selected={selectedIds.has(product.id)}
+                          onSelect={toggleSelect}
+                          globalRank={rank?.global ?? null}
+                          categoryRank={rank?.category ?? null}
+                          categoryName={rank?.categoryName ?? ''}
+                          onDownloadDetail={setDownloadDetailProduct}
+                        />
+                      )
+                    })}
+                  </SortableContext>
                 ) : (
                   paginated.map((product) => (
                     <tr
@@ -1320,6 +1319,7 @@ export default function AdminProducts() {
               </tbody>
             </table>
           </div>
+          </DndContext>
 
           {/* Pagination */}
           <div className="px-5 py-3 border-t border-border/50 flex items-center justify-between">

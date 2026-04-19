@@ -35,8 +35,6 @@ export function ChatWidget() {
   const pathname = usePathname()
   const { isOpen, toggle, close, roomId, setRoomId } = useChatWidgetStore()
 
-  // 관리자 페이지에서는 채팅 위젯 숨김
-  if (pathname?.startsWith('/admin')) return null
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [guestId, setGuestId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -189,6 +187,9 @@ export function ChatWidget() {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
   }, [messages, showScrollBtn])
+
+  // 관리자 페이지에서는 채팅 위젯 숨김 (훅 호출 순서 보존 위해 렌더 직전에 처리)
+  if (pathname?.startsWith('/admin')) return null
 
   const handleScroll = () => {
     const el = scrollContainerRef.current

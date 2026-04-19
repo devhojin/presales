@@ -1326,6 +1326,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   if (!files.length) return
                   const supabase = createClient()
                   const newUrls: string[] = []
+                  const failed: string[] = []
                   for (const file of files) {
                     const ext = file.name.split('.').pop() ?? 'jpg'
                     const fileName = `preview-images/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
@@ -1333,10 +1334,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     if (result.ok) {
                       const { data } = supabase.storage.from('product-previews').getPublicUrl(fileName)
                       newUrls.push(data.publicUrl)
+                    } else {
+                      failed.push(`${file.name}: ${result.error}`)
                     }
                   }
                   if (newUrls.length) {
                     updateField('preview_images', [...form.preview_images, ...newUrls])
+                  }
+                  if (failed.length) {
+                    showToast(`${newUrls.length}개 성공, ${failed.length}개 실패: ${failed[0]}`)
+                  } else if (newUrls.length) {
                     showToast(`${newUrls.length}개 이미지 업로드 완료`)
                   }
                 }}
@@ -1354,6 +1361,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     if (!files.length) return
                     const supabase = createClient()
                     const newUrls: string[] = []
+                    const failed: string[] = []
                     for (const file of files) {
                       const ext = file.name.split('.').pop() ?? 'jpg'
                       const fileName = `preview-images/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
@@ -1361,10 +1369,16 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                       if (result.ok) {
                         const { data } = supabase.storage.from('product-previews').getPublicUrl(fileName)
                         newUrls.push(data.publicUrl)
+                      } else {
+                        failed.push(`${file.name}: ${result.error}`)
                       }
                     }
                     if (newUrls.length) {
                       updateField('preview_images', [...form.preview_images, ...newUrls])
+                    }
+                    if (failed.length) {
+                      showToast(`${newUrls.length}개 성공, ${failed.length}개 실패: ${failed[0]}`)
+                    } else if (newUrls.length) {
                       showToast(`${newUrls.length}개 이미지 업로드 완료`)
                     }
                     e.target.value = ''
