@@ -32,6 +32,8 @@ export default function CheckoutPage() {
   const [paying, setPaying] = useState(false)
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('card')
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null)
+  // 토스 가상계좌/현금영수증 SMS/이메일 발송에 필요
+  const customerRef = useRef<{ name?: string; email?: string; phone?: string }>({})
 
   // 세금계산서/추가정보
   const [showExtraInfo, setShowExtraInfo] = useState(false)
@@ -177,6 +179,18 @@ export default function CheckoutPage() {
         setDbOrderId(order.id)
         setOrderId(tossOrderId)
         setFinalAmount(chatAmount ?? 0)
+
+        // 가상계좌 SMS/이메일 발송용 고객 정보 캐시
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('name, email, phone')
+          .eq('id', user.id)
+          .maybeSingle()
+        customerRef.current = {
+          name: prof?.name ?? undefined,
+          email: prof?.email ?? user.email ?? undefined,
+          phone: prof?.phone ?? undefined,
+        }
 
         const tossPayments = await loadTossPayments(CLIENT_KEY)
         const widgets = tossPayments.widgets({ customerKey: user.id })
@@ -469,6 +483,18 @@ export default function CheckoutPage() {
         setDbOrderId(order.id)
         setOrderId(tossOrderId)
 
+        // 가상계좌 SMS/이메일 발송용 고객 정보 캐시
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('name, email, phone')
+          .eq('id', user.id)
+          .maybeSingle()
+        customerRef.current = {
+          name: prof?.name ?? undefined,
+          email: prof?.email ?? user.email ?? undefined,
+          phone: prof?.phone ?? undefined,
+        }
+
         // 3. 토스 위젯 초기화
         const tossPayments = await loadTossPayments(CLIENT_KEY)
         const widgets = tossPayments.widgets({ customerKey: user.id })
@@ -528,11 +554,16 @@ export default function CheckoutPage() {
           ? paidItems[0].title
           : `${paidItems[0].title} 외 ${paidItems.length - 1}건`
 
+      const customer = customerRef.current
       await widgetsRef.current.requestPayment({
         orderId,
         orderName,
         successUrl,
         failUrl: `${window.location.origin}/checkout/fail`,
+        // 가상계좌 선택 시 입금 안내 SMS/이메일, 현금영수증 자동 발급에 사용
+        customerName: customer.name,
+        customerEmail: customer.email,
+        customerMobilePhone: customer.phone?.replace(/[^0-9]/g, '') || undefined,
       })
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string }
@@ -801,8 +832,8 @@ export default function CheckoutPage() {
             >
               <CreditCard className={`w-5 h-5 shrink-0 ${selectedMethod === 'card' ? 'text-primary' : 'text-muted-foreground'}`} />
               <div>
-                <p className={`text-sm font-semibold ${selectedMethod === 'card' ? 'text-primary' : 'text-foreground'}`}>카드 결제</p>
-                <p className="text-[11px] text-muted-foreground">토스페이먼츠</p>
+                <p className={`text-sm font-semibold ${selectedMethod === 'card' ? 'text-primary' : 'text-foreground'}`}>카드·가상계좌·간편결제</p>
+                <p className="text-[11px] text-muted-foreground">가상계좌 선택 시 현금영수증 자동 발급</p>
               </div>
             </button>
             <button

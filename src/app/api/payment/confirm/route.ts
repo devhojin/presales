@@ -121,13 +121,23 @@ export async function POST(request: NextRequest) {
     }
 
     // C-2: 주문 상태 업데이트 (race condition 방지)
+    // 가상계좌 결제는 입금 완료 전까지 WAITING_FOR_DEPOSIT → 우리 쪽 status 를 'pending_transfer' 로 유지
+    // 토스 webhook 이 입금 완료를 알릴 때 비로소 status='paid' 로 전환
+    const isVirtualAccountWaiting = tossData.status === 'WAITING_FOR_DEPOSIT'
+    const nextStatus = isVirtualAccountWaiting ? 'pending_transfer' : 'paid'
+
     const { data: updatedOrders, error: updateError } = await supabase
       .from('orders')
       .update({
-        status: 'paid',
+        status: nextStatus,
         payment_method: tossData.method || 'card',
         payment_key: paymentKey,
-        paid_at: new Date().toISOString(),
+        // 가상계좌 정보 (있을 때만)
+        virtual_account: tossData.virtualAccount?.accountNumber || null,
+        virtual_account_bank: tossData.virtualAccount?.bankCode || tossData.virtualAccount?.bank || null,
+        virtual_account_due: tossData.virtualAccount?.dueDate || null,
+        cash_receipt_url: tossData.cashReceipt?.receiptUrl || null,
+        paid_at: isVirtualAccountWaiting ? null : new Date().toISOString(),
       })
       .eq('id', dbOrderId)
       .eq('status', 'pending')
@@ -238,7 +248,21 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, orderId: dbOrderId })
+    return NextResponse.json({
+      success: true,
+      orderId: dbOrderId,
+      status: nextStatus,
+      isVirtualAccount: isVirtualAccountWaiting,
+      virtualAccount: isVirtualAccountWaiting && tossData.virtualAccount
+        ? {
+            accountNumber: tossData.virtualAccount.accountNumber ?? null,
+            bank: tossData.virtualAccount.bankCode ?? tossData.virtualAccount.bank ?? null,
+            dueDate: tossData.virtualAccount.dueDate ?? null,
+            customerName: tossData.virtualAccount.customerName ?? null,
+          }
+        : null,
+      cashReceiptUrl: tossData.cashReceipt?.receiptUrl ?? null,
+    })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '알 수 없는 오류'
     logger.error('결제 확인 API 오류', 'payment/confirm', { error: message })
