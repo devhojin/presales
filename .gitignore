@@ -45,3 +45,7 @@ next-env.d.ts
 
 .vercel
 documents_presales/작업/
+
+# 빌드 산출물 로그
+build-output.log
+.claude/worktrees/
