@@ -38,7 +38,7 @@ export function RecentlyViewed() {
   if (items.length === 0) return null
 
   return (
-    <div className="hidden xl:block fixed right-[50px] bottom-10 z-30">
+    <div className="hidden xl:block fixed right-[50px] bottom-10 z-30 origin-bottom-right scale-[0.7]">
 
       {collapsed ? (
         <button
