@@ -6,7 +6,7 @@ import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
 
-import { CONSULTING_PACKAGES } from '@/lib/constants'
+import { CONSULTING_PACKAGES, SITE_URL } from '@/lib/constants'
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@amarans.co.kr'
 
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
         </ul>
       </div>
 
-      <a href="https://presales.co.kr/consulting" style="display:inline-block;background:#1e40af;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;">
+      <a href="${SITE_URL}/consulting" style="display:inline-block;background:#1e40af;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;">
         컨설팅 페이지 보기
       </a>
     `
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
         </table>
       </div>
 
-      <a href="https://presales.co.kr/admin/consulting" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;">
+      <a href="${SITE_URL}/admin/consulting" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;">
         관리자 컨설팅 확인
       </a>
     `

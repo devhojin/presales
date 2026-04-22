@@ -18,6 +18,7 @@ import { FreeToProUpsell } from '@/components/FreeToProUpsell'
 import { RecentlyViewed } from '@/components/RecentlyViewed'
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed'
 import * as gtag from '@/lib/gtag'
+import { SITE_URL } from '@/lib/constants'
 
 type TabId = 'info' | 'video' | 'review'
 
@@ -570,7 +571,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
 
           {/* Share buttons */}
           {(() => {
-            const pageUrl = typeof window !== 'undefined' ? window.location.href : `https://presales.co.kr/store/${id}`
+            const pageUrl = typeof window !== 'undefined' ? window.location.href : `${SITE_URL}/store/${id}`
             return (
               <div className="flex items-center gap-2 flex-wrap pt-2">
                 <span className="text-xs text-muted-foreground font-medium">공유:</span>

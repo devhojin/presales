@@ -4,6 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { logger } from '@/lib/logger'
+import { SITE_URL } from '@/lib/constants'
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@amarans.co.kr'
 
@@ -217,7 +218,7 @@ export async function POST(request: NextRequest) {
 
           <p style="margin:0 0 16px;font-size:13px;color:#64748b;">입금 후 빠른 확인을 원하시면 우측 하단 채널톡으로 문의해 주세요.</p>
 
-          <a href="https://presales.co.kr/mypage" style="display:inline-block;background:#1e40af;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;">
+          <a href="${SITE_URL}/mypage" style="display:inline-block;background:#1e40af;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;">
             나의콘솔 바로가기
           </a>
         `
@@ -267,7 +268,7 @@ export async function POST(request: NextRequest) {
             </tbody>
           </table>
 
-          <a href="https://presales.co.kr/admin/orders" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;">
+          <a href="${SITE_URL}/admin/orders" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;">
             관리자 주문 확인
           </a>
         `

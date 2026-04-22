@@ -54,20 +54,36 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // 이미 발송한 경우 중복 방지 — sent_at 확인
-    const { data: alreadySent } = await supabase
+    // 이미 발송한 경우 중복 방지 — 원자적 reserve (조건부 update + returning)
+    //   수동 재호출·동시 invocation 시에도 한쪽만 발송하도록 sent_at 를 "발송 중" 타임스탬프로 선점
+    //   이후 실제 발송 완료 후 동일 타임스탬프 그대로 유지
+    const reserveTs = nowUtc.toISOString()
+    const { data: reserved, error: reserveErr } = await supabase
       .from('daily_briefs')
-      .select('sent_at')
+      .update({ sent_at: reserveTs })
       .eq('id', brief.id)
+      .is('sent_at', null)
+      .select('id, sent_at')
       .maybeSingle()
 
-    if (alreadySent?.sent_at) {
-      console.log(`send-brief: id=${brief.id} 이미 발송 완료 (${alreadySent.sent_at}), 건너뜀`)
+    if (reserveErr) {
+      console.error('send-brief: reserve 실패:', reserveErr)
+      return NextResponse.json({ success: false, error: reserveErr.message }, { status: 500 })
+    }
+
+    if (!reserved) {
+      // 이미 다른 invocation이 선점
+      const { data: current } = await supabase
+        .from('daily_briefs')
+        .select('sent_at')
+        .eq('id', brief.id)
+        .maybeSingle()
+      console.log(`send-brief: id=${brief.id} 이미 발송/선점됨 (${current?.sent_at}), 건너뜀`)
       return NextResponse.json({
         success: true,
         skipped: true,
-        reason: '이미 발송된 브리프',
-        sent_at: alreadySent.sent_at,
+        reason: '이미 발송/선점된 브리프',
+        sent_at: current?.sent_at,
         timestamp: nowUtc.toISOString(),
       })
     }
@@ -133,15 +149,16 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // 5. 발송 완료 후 daily_briefs.sent_at 업데이트
-    if (successCount > 0) {
-      const { error: updateErr } = await supabase
+    // 5. 발송 완료 — 선점 타임스탬프 그대로 유지 (reserve 단계에서 이미 기록됨)
+    //    successCount === 0 (전건 실패) 인 경우만 sent_at 되돌려 재시도 가능하게
+    if (successCount === 0 && failCount > 0) {
+      const { error: revertErr } = await supabase
         .from('daily_briefs')
-        .update({ sent_at: nowUtc.toISOString() })
+        .update({ sent_at: null })
         .eq('id', brief.id)
-
-      if (updateErr) {
-        console.error('send-brief: sent_at 업데이트 실패:', updateErr)
+        .eq('sent_at', reserveTs) // 이 invocation의 reserve 만 되돌림
+      if (revertErr) {
+        console.error('send-brief: 전건 실패 후 sent_at revert 실패:', revertErr)
       }
     }
 
@@ -293,7 +310,7 @@ function buildBriefEmailHtml(opts: BriefEmailOptions): string {
               <p style="margin:0 0 8px;font-size:12px;color:#64748b;">
                 <a href="mailto:hojin@amarans.co.kr" style="color:#3b82f6;text-decoration:none;">hojin@amarans.co.kr</a>
                 &nbsp;|&nbsp;
-                <a href="https://presales.co.kr" style="color:#3b82f6;text-decoration:none;">presales.co.kr</a>
+                <a href="${SITE_URL}" style="color:#3b82f6;text-decoration:none;">presales.co.kr</a>
               </p>
               <p style="margin:0;font-size:11px;color:#cbd5e1;">
                 <a href="${unsubscribeUrl}" style="color:#94a3b8;text-decoration:underline;">구독 취소</a>

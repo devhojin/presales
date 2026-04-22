@@ -91,6 +91,21 @@ export async function POST(request: NextRequest) {
   if (!room_id) return NextResponse.json({ error: 'room_id 필요' }, { status: 400 })
   if (!content && !file_url) return NextResponse.json({ error: '내용이 필요합니다' }, { status: 400 })
 
+  // 길이·타입 입력 검증 (DoS/서비스 저해 방지)
+  if (typeof content === 'string' && content.length > 10000) {
+    return NextResponse.json({ error: '메시지가 너무 깁니다 (최대 10,000자)' }, { status: 400 })
+  }
+  if (file_url) {
+    const supabaseUrlBase = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim()
+    // file_url 은 반드시 우리 Supabase storage 이어야 함 (피싱/외부 링크 차단)
+    if (typeof file_url !== 'string' || (supabaseUrlBase && !file_url.startsWith(supabaseUrlBase))) {
+      return NextResponse.json({ error: '허용되지 않은 파일 URL' }, { status: 400 })
+    }
+    if (typeof file_size === 'number' && file_size > 1024 * 1024 * 1024) {
+      return NextResponse.json({ error: '파일 크기가 너무 큽니다 (최대 1GB)' }, { status: 400 })
+    }
+  }
+
   const supabase = getServiceClient()
   const user = await getAuthUser()
 

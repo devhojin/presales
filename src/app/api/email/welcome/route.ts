@@ -4,6 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
+import { SITE_URL } from '@/lib/constants'
 
 export async function POST(request: NextRequest) {
   try {
@@ -88,12 +89,12 @@ export async function POST(request: NextRequest) {
       <table cellpadding="0" cellspacing="0">
         <tr>
           <td style="padding-right:8px;">
-            <a href="https://presales.co.kr/store" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;">
+            <a href="${SITE_URL}/store" style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;">
               스토어 둘러보기
             </a>
           </td>
           <td>
-            <a href="https://presales.co.kr/mypage" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;">
+            <a href="${SITE_URL}/mypage" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:600;">
               나의콘솔 바로가기
             </a>
           </td>
