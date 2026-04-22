@@ -10,7 +10,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { headers } from 'next/headers'
+import { createServerClient } from '@supabase/ssr'
+import { cookies, headers } from 'next/headers'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
 
 const MAX_ATTEMPTS = 5
@@ -154,8 +155,13 @@ export async function POST(req: NextRequest): Promise<NextResponse<{ locked: boo
   return NextResponse.json({ locked: false, attemptsLeft: MAX_ATTEMPTS - newCount })
 }
 
-/** DELETE: 로그인 성공 시 잠금 초기화 */
-export async function DELETE(req: NextRequest): Promise<NextResponse<{ ok: boolean } | { error: string }>> {
+/** DELETE: 로그인 성공 시 잠금 초기화
+ *  반드시 "실제로 인증된 세션"에서만 호출 가능해야 함.
+ *  과거 버전은 email 만 받아 누구든 DELETE로 타인 잠금을 풀 수 있었음 →
+ *  브루트포스 공격자가 5회 실패 후 DELETE 로 풀고 5회 또 시도 가능 (KISA 잠금 완전 우회).
+ *  이제는 요청자의 서버 세션을 검증하고, 세션의 user.id 가 해당 profile 과 일치할 때만 해제.
+ */
+export async function DELETE(): Promise<NextResponse<{ ok: boolean } | { error: string }>> {
   const headersList = await headers()
   const ip = headersList.get('x-forwarded-for') ?? 'unknown'
   const rl = await checkAuthRateLimit(ip)
@@ -166,22 +172,24 @@ export async function DELETE(req: NextRequest): Promise<NextResponse<{ ok: boole
     }) as NextResponse<{ error: string }>
   }
 
-  const body = (await req.json()) as { email?: string }
-  const email = body.email
-  if (!email || !EMAIL_REGEX.test(email)) {
-    return NextResponse.json({ ok: true })
+  // 서버 세션으로 실제 로그인 여부 검증 — body.email 신뢰하지 않음
+  const cookieStore = await cookies()
+  const ssrClient = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: { getAll: () => cookieStore.getAll(), setAll: () => {} } },
+  )
+  const { data: { user } } = await ssrClient.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
   }
 
   const supabase = adminClient()
-  const profile = await findProfileByEmail(supabase, email)
-  if (!profile) {
-    return NextResponse.json({ ok: true })
-  }
-
+  // 세션의 user.id 기준으로만 해제. email 파라미터 더 이상 사용하지 않음.
   await supabase
     .from('profiles')
     .update({ login_failed_count: 0, login_locked_until: null })
-    .eq('id', profile.id)
+    .eq('id', user.id)
 
   return NextResponse.json({ ok: true })
 }

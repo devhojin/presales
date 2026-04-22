@@ -11,11 +11,20 @@ export async function POST(request: NextRequest) {
 
   const { room_id, target_user_id, title, description, amount } = await request.json()
 
-  if (!room_id || !target_user_id || !title || !amount) {
+  if (!room_id || !target_user_id || !title || amount === undefined || amount === null) {
     return NextResponse.json({ error: '필수 항목 누락' }, { status: 400 })
   }
-  if (amount <= 0) {
-    return NextResponse.json({ error: '금액은 0보다 커야 합니다' }, { status: 400 })
+  // amount 엄격 검증: 유한한 양의 정수만 허용 (NaN/Infinity/음수/문자열 차단)
+  const amountNum = typeof amount === 'number' ? amount : Number(amount)
+  if (!Number.isFinite(amountNum) || !Number.isInteger(amountNum) || amountNum <= 0 || amountNum > 1_000_000_000) {
+    return NextResponse.json({ error: '금액은 1원 이상 10억원 이하의 정수여야 합니다' }, { status: 400 })
+  }
+  // title/description 길이 제한
+  if (typeof title !== 'string' || title.length === 0 || title.length > 200) {
+    return NextResponse.json({ error: '제목은 1~200자여야 합니다' }, { status: 400 })
+  }
+  if (description !== undefined && description !== null && (typeof description !== 'string' || description.length > 2000)) {
+    return NextResponse.json({ error: '설명은 2000자 이하여야 합니다' }, { status: 400 })
   }
 
   const supabase = getServiceClient()
@@ -29,7 +38,7 @@ export async function POST(request: NextRequest) {
       admin_id: user.id,
       title,
       description: description || null,
-      amount,
+      amount: amountNum,
     })
     .select()
     .single()
@@ -49,7 +58,7 @@ export async function POST(request: NextRequest) {
         payment_request_id: pr.id,
         title,
         description: description || null,
-        amount,
+        amount: amountNum,
         status: 'pending',
       },
     })
@@ -65,7 +74,7 @@ export async function POST(request: NextRequest) {
     .eq('id', pr.id)
 
   // 채팅방 업데이트
-  const formatAmount = new Intl.NumberFormat('ko-KR').format(amount)
+  const formatAmount = new Intl.NumberFormat('ko-KR').format(amountNum)
   await supabase
     .from('chat_rooms')
     .update({

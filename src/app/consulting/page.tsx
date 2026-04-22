@@ -87,6 +87,15 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
       setError('문의 내용을 입력해주세요.')
       return
     }
+    // 길이 방어 (DB CHECK 제약과 동일한 상한). 서버 제약에 걸리기 전에 명확한 메시지.
+    if (form.name.length > 100) { setError('이름이 너무 깁니다 (최대 100자).'); return }
+    if (form.email.length > 254) { setError('이메일이 너무 깁니다.'); return }
+    if (form.phone.length > 50) { setError('연락처가 올바르지 않습니다.'); return }
+    if (form.company.length > 200) { setError('회사명이 너무 깁니다 (최대 200자).'); return }
+    if (form.message.length > 20000) { setError('문의 내용이 너무 깁니다 (최대 20,000자).'); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setError('올바른 이메일 형식이 아닙니다.'); return
+    }
     setSubmitting(true)
     setError('')
 

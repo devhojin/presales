@@ -113,25 +113,22 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
     const isVerifiedPurchase =
       (orderData && orderData.length > 0) || (productData?.is_free === true)
 
-    const reviewData = {
-      user_id: userId,
-      product_id: productId,
+    // INSERT/UPDATE 페이로드 분리 — RLS가 본인 수정 시 product_id/is_verified_purchase/
+    // is_published/admin_reply/reviewer_name/reviewer_email 위조를 차단한다.
+    // UPDATE 에서는 사용자 편집 가능한 컬럼만 보낸다.
+    const userEditableFields = {
       rating,
       title: title.trim(),
       content: content.trim(),
       pros: null,
       cons: null,
       image_urls: imageUrls,
-      is_verified_purchase: isVerifiedPurchase,
-      is_published: true,
-      reviewer_name: profileData?.name || null,
-      reviewer_email: profileData?.email || null,
     }
 
     if (existingReview) {
       const { error: updateError } = await supabase
         .from('reviews')
-        .update(reviewData)
+        .update(userEditableFields)
         .eq('id', existingReview.id)
         .eq('user_id', userId)
 
@@ -141,6 +138,15 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
         return
       }
     } else {
+      const reviewData = {
+        ...userEditableFields,
+        user_id: userId,
+        product_id: productId,
+        is_verified_purchase: isVerifiedPurchase,
+        is_published: true,
+        reviewer_name: profileData?.name || null,
+        reviewer_email: profileData?.email || null,
+      }
       const { error: insertError } = await supabase
         .from('reviews')
         .insert(reviewData)
