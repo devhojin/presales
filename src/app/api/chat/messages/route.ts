@@ -96,10 +96,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '메시지가 너무 깁니다 (최대 10,000자)' }, { status: 400 })
   }
   if (file_url) {
-    const supabaseUrlBase = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim()
-    // file_url 은 반드시 우리 Supabase storage 이어야 함 (피싱/외부 링크 차단)
-    if (typeof file_url !== 'string' || (supabaseUrlBase && !file_url.startsWith(supabaseUrlBase))) {
+    if (typeof file_url !== 'string') {
       return NextResponse.json({ error: '허용되지 않은 파일 URL' }, { status: 400 })
+    }
+    // /api/chat/files 는 storage path(상대경로) 만 반환하고, TUS 업로드도 path 형태.
+    // 외부 URL(https://evil.com/...) 이나 javascript:, data: 스킴 차단.
+    const hasProtocol = /^[a-z][a-z0-9+.-]*:/i.test(file_url)
+    if (hasProtocol) {
+      const supabaseUrlBase = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim()
+      if (!supabaseUrlBase || !file_url.startsWith(supabaseUrlBase)) {
+        return NextResponse.json({ error: '허용되지 않은 파일 URL' }, { status: 400 })
+      }
     }
     if (typeof file_size === 'number' && file_size > 1024 * 1024 * 1024) {
       return NextResponse.json({ error: '파일 크기가 너무 큽니다 (최대 1GB)' }, { status: 400 })
