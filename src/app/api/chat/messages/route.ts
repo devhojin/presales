@@ -98,9 +98,29 @@ export async function POST(request: NextRequest) {
 
   if (user) {
     const admin = await isAdmin(user.id)
+    // 회원/관리자: 방 소유권 확인 (관리자 제외)
+    if (!admin) {
+      const { data: ownerRoom } = await supabase
+        .from('chat_rooms')
+        .select('user_id')
+        .eq('id', room_id)
+        .single()
+      if (!ownerRoom || ownerRoom.user_id !== user.id) {
+        return NextResponse.json({ error: '방 접근 권한이 없습니다' }, { status: 403 })
+      }
+    }
     senderId = user.id
     senderType = admin ? 'admin' : 'user'
   } else if (guest_id) {
+    // 비회원: guest_id 가 실제로 이 방의 소유자인지 검증 (IDOR 방지)
+    const { data: guestRoom } = await supabase
+      .from('chat_rooms')
+      .select('guest_id')
+      .eq('id', room_id)
+      .single()
+    if (!guestRoom || guestRoom.guest_id !== guest_id) {
+      return NextResponse.json({ error: '방 접근 권한이 없습니다' }, { status: 403 })
+    }
     senderId = guest_id
     senderType = 'guest'
   } else {

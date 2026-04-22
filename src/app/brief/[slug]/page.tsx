@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { SITE_URL } from '@/lib/constants'
+import { safeJsonLd } from '@/lib/json-ld'
 import { BriefDetailClient } from './brief-detail-client'
 
 interface Props {
@@ -72,7 +73,7 @@ export default async function BriefSlugPage({ params }: Props) {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLd({
             '@context': 'https://schema.org',
             '@type': 'Article',
             headline: brief.subject,

@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { SITE_URL, SITE_NAME } from '@/lib/constants'
 import { formatPeriod } from '@/lib/announcements'
+import { safeJsonLd } from '@/lib/json-ld'
 import AnnouncementDetailClient from './_components/AnnouncementDetailClient'
 
 async function getAnnouncement(id: string) {
@@ -77,9 +78,9 @@ export default async function AnnouncementDetailPage({ params }: { params: Promi
   const ann = await getAnnouncement(id)
 
   // NewsArticle JSON-LD for SEO structured data
-  // Content is serialized via JSON.stringify from our own DB — safe from XSS
+  // External RSS feeds can carry </script> or breakout sequences — use safeJsonLd
   const newsArticleJsonLd = ann
-    ? JSON.stringify({
+    ? safeJsonLd({
         '@context': 'https://schema.org',
         '@type': 'NewsArticle',
         headline: ann.title,

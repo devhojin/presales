@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { createServerClient } from '@supabase/ssr'
 import { SITE_URL } from '@/lib/constants'
+import { safeJsonLd } from '@/lib/json-ld'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
@@ -77,7 +78,7 @@ export default async function Layout({ children, params }: { children: React.Rea
   return (
     <>
       {jsonLd && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }} />
       )}
       {children}
     </>
