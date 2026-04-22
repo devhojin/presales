@@ -1,22 +1,12 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-
-// 내부 경로 화이트리스트: open redirect 방지
-// '/' 로 시작하되 '//' 로 시작하지 않고 'http' 스킴 포함하지 않는 경로만 허용
-function sanitizeNext(raw: string | null): string {
-  const fallback = '/mypage'
-  if (!raw) return fallback
-  if (!raw.startsWith('/')) return fallback
-  if (raw.startsWith('//') || raw.startsWith('/\\')) return fallback
-  if (/^\s*(javascript|data|vbscript):/i.test(raw)) return fallback
-  return raw
-}
+import { sanitizeRedirect } from '@/lib/safe-redirect'
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = sanitizeNext(searchParams.get('next'))
+  const next = sanitizeRedirect(searchParams.get('next'), '/mypage')
 
   if (!code) {
     return NextResponse.redirect(`${origin}/auth/login?error=oauth`)

@@ -59,7 +59,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '사용자 이메일을 찾을 수 없습니다' }, { status: 400 })
     }
 
-    const { error: signInError } = await supabaseAuth.auth.signInWithPassword({
+    // 현재 서버 세션 쿠키와 분리된 별도 anon 클라이언트로 비밀번호 확인 —
+    // signInWithPassword 가 쿠키 세션에 영향을 주지 않도록.
+    const verifyClient = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { persistSession: false } },
+    )
+    const { error: signInError } = await verifyClient.auth.signInWithPassword({
       email: userEmail,
       password,
     })
@@ -69,18 +76,22 @@ export async function POST(request: NextRequest) {
     }
 
     // Service Role 클라이언트로 auth.users 삭제
+    // profiles 는 ON DELETE CASCADE 로 auth.users 삭제 시 자동 삭제되므로
+    // 먼저 profile 을 지우면 실패 시 orphan 상태가 된다 → auth.users 삭제 한 번만.
     const supabase = createServiceClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
     )
 
-    // profiles 삭제 (cascade가 없는 경우 명시적으로)
-    await supabase.from('profiles').delete().eq('id', user.id)
-
-    // auth.users 삭제
     const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id)
     if (deleteError) {
-      return NextResponse.json({ error: '계정 삭제에 실패했습니다.' }, { status: 500 })
+      const raw = deleteError.message || ''
+      const isFkViolation = /foreign key|violates|23503/i.test(raw)
+      const clientMsg = isFkViolation
+        ? '주문·리뷰·컨설팅 기록이 있어 계정을 삭제할 수 없습니다. 고객센터(hojin@amarans.co.kr) 로 문의해주세요.'
+        : '계정 삭제에 실패했습니다.'
+      logger.error('계정 삭제 실패', 'auth/delete-account', { userId: user.id, error: raw })
+      return NextResponse.json({ error: clientMsg }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, message: '계정이 삭제되었습니다.' })

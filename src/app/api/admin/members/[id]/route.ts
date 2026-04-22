@@ -47,25 +47,16 @@ export async function PATCH(
       company?: string
     }
 
-    // 2. profiles 업데이트
-    const profileUpdate: Record<string, string | null> = {}
-    if (name !== undefined) profileUpdate.name = name || null
-    if (phone !== undefined) profileUpdate.phone = phone || null
-    if (company !== undefined) profileUpdate.company = company || null
-    if (email !== undefined) profileUpdate.email = email
-
-    if (Object.keys(profileUpdate).length > 0) {
-      const { error: profErr } = await service
-        .from('profiles')
-        .update(profileUpdate)
-        .eq('id', id)
-      if (profErr) {
-        return NextResponse.json({ error: `프로필 수정 실패: ${profErr.message}` }, { status: 500 })
+    // 간단한 포맷 검증 (admin 페이지지만 방어적으로)
+    if (email !== undefined) {
+      if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+        return NextResponse.json({ error: '올바르지 않은 이메일 형식입니다' }, { status: 400 })
       }
     }
 
-    // 3. 이메일 변경 시 auth.users 도 업데이트
-    if (email) {
+    // 2. 이메일 변경 시 auth.users 를 먼저 업데이트 — profiles 와 divergence 방지.
+    //    auth.users 가 unique/포맷 제약 때문에 실패하면 profiles 는 건드리지 않는다.
+    if (email !== undefined && email) {
       const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/admin/users/${id}`
       const res = await fetch(url, {
         method: 'PUT',
@@ -79,6 +70,23 @@ export async function PATCH(
       if (!res.ok) {
         const err = await res.text()
         return NextResponse.json({ error: `이메일 변경 실패: ${err}` }, { status: 500 })
+      }
+    }
+
+    // 3. profiles 업데이트
+    const profileUpdate: Record<string, string | null> = {}
+    if (name !== undefined) profileUpdate.name = name || null
+    if (phone !== undefined) profileUpdate.phone = phone || null
+    if (company !== undefined) profileUpdate.company = company || null
+    if (email !== undefined) profileUpdate.email = email
+
+    if (Object.keys(profileUpdate).length > 0) {
+      const { error: profErr } = await service
+        .from('profiles')
+        .update(profileUpdate)
+        .eq('id', id)
+      if (profErr) {
+        return NextResponse.json({ error: `프로필 수정 실패: ${profErr.message}` }, { status: 500 })
       }
     }
 

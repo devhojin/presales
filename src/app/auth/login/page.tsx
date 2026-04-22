@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 import { Mail, Lock, Eye, EyeOff, ShieldAlert } from 'lucide-react'
 import { checkLoginLock, recordLoginFailure, resetLoginAttempts } from '@/lib/password-policy'
+import { sanitizeRedirect } from '@/lib/safe-redirect'
 
 function LoginForm() {
   const searchParams = useSearchParams()
@@ -80,7 +81,8 @@ function LoginForm() {
     // 성공 시 시도 횟수 초기화
     await resetLoginAttempts(email)
     // redirect 파라미터가 있으면 해당 경로로, 없으면 /mypage로 이동
-    const destination = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/mypage'
+    // open-redirect 방지: '//evil.com', 'javascript:' 등 차단
+    const destination = sanitizeRedirect(redirectTo, '/mypage')
     // Hard navigation: SPA 라우팅은 방금 세팅된 세션 쿠키가 RSC 요청에 완전히
     // 전파되기 전 middleware 가 실행되어 /admin 같은 보호 경로에서 404/리다이렉트
     // 꼬임이 발생함. window.location.href 로 풀페이지 로드하면 쿠키 전파 보장.

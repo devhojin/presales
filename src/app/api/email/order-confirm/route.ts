@@ -37,32 +37,41 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // 인증 확인
-    const cookieStore = await cookies()
-    const supabaseAuth = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              )
-            } catch {
-              // Server Component에서는 무시
-            }
-          },
-        },
-      }
-    )
+    // Internal call 우회: toss webhook / bank-transfer 처럼 쿠키 없이 호출되는
+    // 내부 트리거는 CRON_SECRET 을 X-Internal-Secret 로 전달해 인증을 우회한다.
+    const internalSecret = headersList.get('x-internal-secret')
+    const cronSecret = process.env.CRON_SECRET
+    const isInternalCall = !!(cronSecret && internalSecret && internalSecret === cronSecret)
 
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
+    let callerUserId: string | null = null
+    if (!isInternalCall) {
+      const cookieStore = await cookies()
+      const supabaseAuth = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            getAll() {
+              return cookieStore.getAll()
+            },
+            setAll(cookiesToSet) {
+              try {
+                cookiesToSet.forEach(({ name, value, options }) =>
+                  cookieStore.set(name, value, options)
+                )
+              } catch {
+                // Server Component에서는 무시
+              }
+            },
+          },
+        }
+      )
+
+      const { data: { user }, error: authError } = await supabaseAuth.auth.getUser()
+      if (authError || !user) {
+        return NextResponse.json({ error: '로그인이 필요합니다' }, { status: 401 })
+      }
+      callerUserId = user.id
     }
 
     const body = await request.json()
@@ -101,20 +110,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '주문을 찾을 수 없습니다.' }, { status: 404 })
     }
 
-    // 소유권 확인: 본인 주문 또는 관리자만 허용
-    const { data: userProfile } = await supabase
-      .from('profiles')
-      .select('role, user_id:id')
-      .eq('id', user.id)
-      .single()
-    const isAdmin = userProfile?.role === 'admin'
-    const { data: orderOwner } = await supabase
-      .from('orders')
-      .select('user_id')
-      .eq('id', orderId)
-      .single()
-    if (!isAdmin && orderOwner?.user_id !== user.id) {
-      return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
+    // 소유권 확인: 본인 주문 또는 관리자만 허용 (internal call 은 검증된 토큰으로 우회)
+    if (!isInternalCall && callerUserId) {
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('role, user_id:id')
+        .eq('id', callerUserId)
+        .single()
+      const isAdmin = userProfile?.role === 'admin'
+      const { data: orderOwner } = await supabase
+        .from('orders')
+        .select('user_id')
+        .eq('id', orderId)
+        .single()
+      if (!isAdmin && orderOwner?.user_id !== callerUserId) {
+        return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
+      }
     }
 
     const profile = order.profiles as unknown as { name: string | null; email: string } | null

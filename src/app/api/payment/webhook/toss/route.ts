@@ -140,11 +140,19 @@ export async function POST(request: NextRequest) {
     if (nextStatus === 'paid') {
       try {
         const baseUrl = request.nextUrl.origin
-        await fetch(`${baseUrl}/api/email/order-confirm`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId: dbOrderId, internal: true }),
-        })
+        const internalSecret = process.env.CRON_SECRET
+        if (!internalSecret) {
+          logger.error('토스 webhook: CRON_SECRET 미설정 → 이메일 발송 스킵', 'payment/webhook/toss', { dbOrderId })
+        } else {
+          await fetch(`${baseUrl}/api/email/order-confirm`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Internal-Secret': internalSecret,
+            },
+            body: JSON.stringify({ orderId: dbOrderId }),
+          })
+        }
       } catch (emailErr) {
         const message = emailErr instanceof Error ? emailErr.message : '알 수 없는 오류'
         logger.error('토스 webhook: 이메일 발송 실패(무시)', 'payment/webhook/toss', { error: message })
