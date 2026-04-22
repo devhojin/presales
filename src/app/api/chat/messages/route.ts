@@ -216,5 +216,75 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // 관리자 → 사용자 답변 알림 (Anthropic Fin AI Agent 패턴)
+  //   - 창 닫아도 이메일로 답변 도착 통지
+  //   - 1시간 쿨다운: 짧은 시간에 관리자가 여러 줄 답변해도 한 번만 발송
+  if (senderType === 'admin') {
+    try {
+      const { data: roomInfo } = await supabase
+        .from('chat_rooms')
+        .select('guest_name, guest_email, user_id, last_user_notified_at')
+        .eq('id', room_id)
+        .single() as { data: {
+          guest_name: string | null
+          guest_email: string | null
+          user_id: string | null
+          last_user_notified_at: string | null
+        } | null }
+
+      if (roomInfo) {
+        const oneHourAgo = Date.now() - 60 * 60 * 1000
+        const lastNotified = roomInfo.last_user_notified_at
+          ? new Date(roomInfo.last_user_notified_at).getTime()
+          : 0
+        const inCooldown = lastNotified > oneHourAgo
+
+        if (!inCooldown) {
+          let recipientEmail: string | null = null
+          let recipientName = '고객님'
+
+          if (roomInfo.user_id) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('email, name')
+              .eq('id', roomInfo.user_id)
+              .single()
+            if (profile?.email) {
+              recipientEmail = profile.email
+              recipientName = profile.name || recipientName
+            }
+          } else if (roomInfo.guest_email) {
+            recipientEmail = roomInfo.guest_email
+            recipientName = roomInfo.guest_name || recipientName
+          }
+
+          if (recipientEmail) {
+            const userChatUrl = `${SITE_URL}/?chat=1`
+            const shortId = String(room_id).slice(0, 8)
+            const html = buildEmailHtml(
+              '상담원 답변이 도착했습니다',
+              `<h2 style="margin:0 0 16px;font-size:20px;color:#0f172a;">${recipientName.replace(/</g, '&lt;')}님, 상담원 답변이 도착했습니다</h2>
+               <p style="margin:0 0 8px;color:#334155;">프리세일즈 상담 문의에 답변이 등록되었습니다.</p>
+               <p style="margin:0 0 16px;color:#334155;"><strong>답변 내용:</strong></p>
+               <div style="background:#f8fafc;border-left:3px solid #3b82f6;padding:12px 16px;border-radius:4px;color:#0f172a;white-space:pre-wrap;">${(content || preview).replace(/</g, '&lt;')}</div>
+               <p style="margin:24px 0 0;"><a href="${userChatUrl}" style="display:inline-block;background:#3b82f6;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;">채팅창에서 확인하기</a></p>
+               <p style="margin:24px 0 0;font-size:12px;color:#94a3b8;">기록용 대화 ID: ${shortId}</p>
+               <p style="margin:8px 0 0;font-size:12px;color:#94a3b8;">1시간 내에 추가 답변이 도착해도 별도 알림은 보내지 않습니다. 채팅창에서 전체 대화를 확인하세요.</p>`
+            )
+            await sendEmail(recipientEmail, '[프리세일즈] 상담원 답변 도착', html).catch(err => {
+              console.error('[chat-reply-email] send failed:', err)
+            })
+            await supabase
+              .from('chat_rooms')
+              .update({ last_user_notified_at: new Date().toISOString() })
+              .eq('id', room_id)
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[chat-reply-email] build failed:', err)
+    }
+  }
+
   return NextResponse.json({ message: msg })
 }
