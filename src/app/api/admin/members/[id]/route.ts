@@ -38,6 +38,22 @@ export async function PATCH(
     return NextResponse.json({ error: '관리자만 수정 가능합니다' }, { status: 403 })
   }
 
+  // R14: 대상 회원이 soft-deleted (탈퇴) 상태인지 확인 — 탈퇴 회원 정보는 R13 기조에 따라 동결
+  // 관리자가 실수로 탈퇴 row 의 익명화된 email 을 실제 이메일로 되돌리면 탈퇴 우회됨
+  const { data: target } = await service
+    .from('profiles')
+    .select('deleted_at')
+    .eq('id', id)
+    .maybeSingle()
+  if (!target) {
+    return NextResponse.json({ error: '회원을 찾을 수 없습니다' }, { status: 404 })
+  }
+  if (target.deleted_at) {
+    return NextResponse.json({
+      error: '탈퇴한 회원의 정보는 수정할 수 없습니다 (개인정보 동결)',
+    }, { status: 409 })
+  }
+
   try {
     const body = await request.json()
     const { name, email, phone, company } = body as {

@@ -29,6 +29,25 @@ export async function POST(request: NextRequest) {
 
   const supabase = getServiceClient()
 
+  // R14: room 소유자와 target_user_id 일치 검증 (관리자 실수로 엉뚱한 사용자에게 청구 방지)
+  // - 회원방: room.user_id === target_user_id
+  // - 비회원방: target_user_id 결제요청 불가 (회원만 결제 가능)
+  const { data: room, error: roomErr } = await supabase
+    .from('chat_rooms')
+    .select('user_id, room_type')
+    .eq('id', room_id)
+    .maybeSingle()
+
+  if (roomErr || !room) {
+    return NextResponse.json({ error: '채팅방을 찾을 수 없습니다' }, { status: 404 })
+  }
+  if (room.room_type !== 'member' || !room.user_id) {
+    return NextResponse.json({ error: '비회원 채팅방에는 결제요청을 보낼 수 없습니다' }, { status: 400 })
+  }
+  if (room.user_id !== target_user_id) {
+    return NextResponse.json({ error: 'target_user_id 가 채팅방 소유자와 일치하지 않습니다' }, { status: 400 })
+  }
+
   // 결제요청 레코드 생성
   const { data: pr, error: prErr } = await supabase
     .from('chat_payment_requests')
