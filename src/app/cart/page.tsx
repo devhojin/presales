@@ -95,46 +95,36 @@ export default function CartPage() {
     }
   }, [showClearConfirm, handleKeyDown])
 
+  // 무료 주문 서버 API 호출 공통 헬퍼.
+  //   Round 10 이전: 클라이언트가 직접 orders(status='paid') + order_items INSERT
+  //   → Round 9 order_items RLS (orders.status='pending' 강제) 에 막혀 전면 깨짐.
+  //   → 서버 /api/orders/free 가 service_role 로 처리 + products.is_free 재검증.
+  async function submitFreeOrder(productIds: number[]): Promise<{ ok: boolean; orderId?: string | number }> {
+    const res = await fetch('/api/orders/free', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ productIds }),
+    })
+    if (res.status === 401) {
+      router.push('/auth/login?redirect=/cart')
+      return { ok: false }
+    }
+    const payload = (await res.json().catch(() => null)) as
+      | { success?: boolean; orderId?: string | number; error?: string }
+      | null
+    if (!res.ok || !payload?.success || !payload.orderId) {
+      addToast(payload?.error ?? '주문 처리에 실패했습니다. 다시 시도해주세요.', 'error')
+      return { ok: false }
+    }
+    return { ok: true, orderId: payload.orderId }
+  }
+
   async function handleFreeItemsOnly() {
     setProcessing(true)
     try {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/auth/login?redirect=/cart')
-        return
-      }
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user.id,
-          total_amount: 0,
-          status: 'paid',
-          payment_method: 'free',
-          paid_at: new Date().toISOString(),
-        })
-        .select('id')
-        .single()
-      if (orderError || !order) {
-        addToast('주문 생성에 실패했습니다. 다시 시도해주세요.', 'error')
-        return
-      }
-      const orderItems = freeItems.map((item) => ({
-        order_id: order.id,
-        product_id: item.productId,
-        price: 0,
-      }))
-      const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
-      if (itemsError) {
-        // 주문 헤더만 생긴 반쪽 주문 방지 — rollback (롤백 자체 실패해도 사용자는 이미 에러 안내)
-        const { error: rollbackErr } = await supabase.from('orders').delete().eq('id', order.id)
-        if (rollbackErr) console.error('[cart] 주문 롤백 실패 (고아 주문 가능):', rollbackErr.message)
-        addToast('주문 상품 등록에 실패했습니다. 다시 시도해주세요.', 'error')
-        return
-      }
-      // GA4: purchase event
-      gtag.trackPurchase(String(order.id), 0)
-      // Remove only free items from cart
+      const result = await submitFreeOrder(freeItems.map((item) => item.productId))
+      if (!result.ok || !result.orderId) return
+      gtag.trackPurchase(String(result.orderId), 0)
       freeItems.forEach((item) => removeItem(item.productId))
       addToast('무료 상품이 처리되었습니다! 마이페이지에서 다운로드하세요.', 'success')
       router.push('/mypage')
@@ -467,41 +457,9 @@ export default function CartPage() {
                     if (allFree) {
                       setProcessing(true)
                       try {
-                        const supabase = createClient()
-                        const { data: { user } } = await supabase.auth.getUser()
-                        if (!user) {
-                          router.push('/auth/login?redirect=/cart')
-                          return
-                        }
-                        const { data: order, error: orderError } = await supabase
-                          .from('orders')
-                          .insert({
-                            user_id: user.id,
-                            total_amount: 0,
-                            status: 'paid',
-                            payment_method: 'free',
-                            paid_at: new Date().toISOString(),
-                          })
-                          .select('id')
-                          .single()
-                        if (orderError || !order) {
-                          addToast('주문 생성에 실패했습니다. 다시 시도해주세요.', 'error')
-                          return
-                        }
-                        const orderItems = items.map((item) => ({
-                          order_id: order.id,
-                          product_id: item.productId,
-                          price: 0,
-                        }))
-                        const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
-                        if (itemsError) {
-                          const { error: rollbackErr } = await supabase.from('orders').delete().eq('id', order.id)
-                          if (rollbackErr) console.error('[cart] 주문 롤백 실패 (고아 주문 가능):', rollbackErr.message)
-                          addToast('주문 상품 등록에 실패했습니다. 다시 시도해주세요.', 'error')
-                          return
-                        }
-                        // GA4: purchase event
-                        gtag.trackPurchase(String(order.id), 0)
+                        const result = await submitFreeOrder(items.map((item) => item.productId))
+                        if (!result.ok || !result.orderId) return
+                        gtag.trackPurchase(String(result.orderId), 0)
                         clearCart()
                         addToast('주문이 완료되었습니다! 마이페이지에서 다운로드하세요.', 'success')
                         router.push('/mypage')
