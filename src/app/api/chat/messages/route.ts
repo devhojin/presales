@@ -3,12 +3,13 @@ import { headers } from 'next/headers'
 import { getServiceClient, getAuthUser, isAdmin } from '@/lib/chat'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/client-ip'
 import { SITE_URL } from '@/lib/constants'
 
 /** GET: 특정 방의 메시지 목록 */
 export async function GET(request: NextRequest) {
   const headersList = await headers()
-  const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+  const ip = getClientIp(headersList)
   const rl = await checkRateLimitAsync(`chat:${ip}`, 30, 60000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Too many requests' }, {
@@ -76,7 +77,7 @@ export async function GET(request: NextRequest) {
 /** POST: 메시지 전송 */
 export async function POST(request: NextRequest) {
   const headersList = await headers()
-  const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+  const ip = getClientIp(headersList)
   const rl = await checkRateLimitAsync(`chat:${ip}`, 30, 60000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Too many requests' }, {

@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { createClient } from '@supabase/supabase-js'
 import { randomBytes } from 'crypto'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/client-ip'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -10,7 +11,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate limit: IP 당 분당 3회 (구독 폭탄·SMTP 비용 방지)
     const headersList = await headers()
-    const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+    const ip = getClientIp(headersList)
     const rl = await checkRateLimitAsync(`brief-subscribe:${ip}`, 3, 60000)
     if (!rl.allowed) {
       return NextResponse.json({ ok: false, error: 'Too many requests' }, {

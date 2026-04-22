@@ -6,6 +6,7 @@ import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
 import { escapeHtml } from '@/lib/html-escape'
+import { getClientIp } from '@/lib/client-ip'
 
 import { CONSULTING_PACKAGES, SITE_URL } from '@/lib/constants'
 
@@ -31,7 +32,7 @@ function formatDateKR(isoString: string) {
 export async function POST(request: NextRequest) {
   try {
     const headersList = await headers()
-    const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+    const ip = getClientIp(headersList)
     const rl = await checkRateLimitAsync(`email:${ip}`, 5, 60000)
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, {

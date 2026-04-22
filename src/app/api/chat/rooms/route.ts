@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { getServiceClient, getAuthUser, isAdmin } from '@/lib/chat'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/client-ip'
 
 // UUID v4 형식 검증 (비회원 guest_id — 클라이언트 uuid 생성)
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -90,7 +91,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   // Rate limit: IP 당 분당 10회 (방 무한 생성 DoS 방지)
   const headersList = await headers()
-  const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+  const ip = getClientIp(headersList)
   const rl = await checkRateLimitAsync(`chat-room-create:${ip}`, 10, 60000)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Too many requests' }, {

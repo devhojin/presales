@@ -13,6 +13,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies, headers } from 'next/headers'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/client-ip'
 
 const MAX_ATTEMPTS = 5
 const LOCKOUT_MINUTES = 15
@@ -52,7 +53,7 @@ async function checkAuthRateLimit(ip: string) {
 /** GET: 잠금 상태 확인 */
 export async function GET(req: NextRequest): Promise<NextResponse<LockStatus | { error: string }>> {
   const headersList = await headers()
-  const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+  const ip = getClientIp(headersList)
   const rl = await checkAuthRateLimit(ip)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Too many requests' }, {
@@ -99,7 +100,7 @@ export async function GET(req: NextRequest): Promise<NextResponse<LockStatus | {
 /** POST: 로그인 실패 기록 */
 export async function POST(req: NextRequest): Promise<NextResponse<{ locked: boolean; attemptsLeft: number; remainingMinutes?: number } | { error: string }>> {
   const headersList = await headers()
-  const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+  const ip = getClientIp(headersList)
   const rl = await checkAuthRateLimit(ip)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Too many requests' }, {
@@ -163,7 +164,7 @@ export async function POST(req: NextRequest): Promise<NextResponse<{ locked: boo
  */
 export async function DELETE(): Promise<NextResponse<{ ok: boolean } | { error: string }>> {
   const headersList = await headers()
-  const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+  const ip = getClientIp(headersList)
   const rl = await checkAuthRateLimit(ip)
   if (!rl.allowed) {
     return NextResponse.json({ error: 'Too many requests' }, {

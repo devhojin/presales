@@ -4,11 +4,12 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies, headers } from 'next/headers'
 import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/client-ip'
 
 export async function POST(request: NextRequest) {
   try {
     const headersList = await headers()
-    const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+    const ip = getClientIp(headersList)
     const rl = await checkRateLimitAsync(`auth:${ip}`, 10, 60000)
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, {

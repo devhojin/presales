@@ -4,6 +4,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies, headers } from 'next/headers'
 import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/client-ip'
 
 const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY!
 const TOSS_CONFIRM_URL = 'https://api.tosspayments.com/v1/payments/confirm'
@@ -11,7 +12,7 @@ const TOSS_CONFIRM_URL = 'https://api.tosspayments.com/v1/payments/confirm'
 export async function POST(request: NextRequest) {
   try {
     const headersList = await headers()
-    const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+    const ip = getClientIp(headersList)
     const rl = await checkRateLimitAsync(`payment:${ip}`, 5, 60000)
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, {
@@ -133,7 +134,42 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 3. 토스페이먼츠 결제 승인 요청 (서버 재검증 통과 후)
+    // 2-post. 쿠폰 예약 (토스 confirm 호출 전에 atomic 으로 usage_count++).
+    //   Race window: (재계산→토스→RPC) 흐름에서 max_usage=1 쿠폰에 두 요청이
+    //   동시 진입 시 둘 다 재계산을 통과, 토스에서 둘 다 승인, RPC 는 한 쪽만 성공.
+    //   진 쪽은 결제 완료 후 로그만 남고 할인은 그대로 먹음.
+    //   → "예약 먼저 → 토스 confirm → 실패 시 rollback" 으로 순서 변경.
+    let couponReserved = false
+    if (order.coupon_id) {
+      const { data: rpcResult, error: rpcErr } = await supabase.rpc('increment_coupon_usage', {
+        p_coupon_id: order.coupon_id,
+        p_user_id: user.id,
+        p_order_id: dbOrderId,
+        p_applied_amount: order.coupon_discount || 0,
+      })
+      if (rpcErr) {
+        logger.error('쿠폰 예약 RPC 실패 (토스 호출 차단)', 'payment/confirm', {
+          couponId: order.coupon_id,
+          orderId: dbOrderId,
+          error: rpcErr.message,
+        })
+        return NextResponse.json({ error: '쿠폰 사용 예약에 실패했습니다' }, { status: 500 })
+      }
+      if (rpcResult && (rpcResult as { ok?: boolean }).ok === false) {
+        logger.error('쿠폰 사용 거부', 'payment/confirm', {
+          couponId: order.coupon_id,
+          orderId: dbOrderId,
+          result: rpcResult,
+        })
+        return NextResponse.json(
+          { error: '쿠폰을 사용할 수 없습니다 (사용 횟수 소진 등)' },
+          { status: 409 }
+        )
+      }
+      couponReserved = true
+    }
+
+    // 3. 토스페이먼츠 결제 승인 요청 (서버 재검증 + 쿠폰 예약 완료 후)
     const authHeader = Buffer.from(`${TOSS_SECRET_KEY}:`).toString('base64')
     const tossRes = await fetch(TOSS_CONFIRM_URL, {
       method: 'POST',
@@ -148,6 +184,21 @@ export async function POST(request: NextRequest) {
 
     if (!tossRes.ok) {
       logger.error('토스 결제 승인 실패', 'payment/confirm', tossData)
+      // 쿠폰 예약을 롤백 (예약했는데 결제 실패한 경우).
+      if (couponReserved && order.coupon_id) {
+        const { error: rbErr } = await supabase.rpc('rollback_coupon_usage', {
+          p_coupon_id: order.coupon_id,
+          p_user_id: user.id,
+          p_order_id: dbOrderId,
+        })
+        if (rbErr) {
+          logger.error('쿠폰 rollback 실패 (수동 정정 필요)', 'payment/confirm', {
+            couponId: order.coupon_id,
+            orderId: dbOrderId,
+            error: rbErr.message,
+          })
+        }
+      }
       return NextResponse.json(
         { error: tossData.message || '결제 승인에 실패했습니다' },
         { status: 400 }
@@ -197,31 +248,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '주문이 이미 처리되었거나 상태가 변경되었습니다' }, { status: 409 })
     }
 
-    // 4.5. 쿠폰 사용 기록 + 사용 횟수 증가 + 회원 보유 쿠폰 소진 (atomic RPC)
-    if (order.coupon_id) {
-      const { data: rpcResult, error: rpcErr } = await supabase.rpc('increment_coupon_usage', {
-        p_coupon_id: order.coupon_id,
-        p_user_id: user.id,
-        p_order_id: dbOrderId,
-        p_applied_amount: order.coupon_discount || 0,
-      })
-      if (rpcErr) {
-        // 결제 자체는 이미 성공. 쿠폰 소진만 실패해도 주문은 완료 처리.
-        logger.error('쿠폰 사용 RPC 실패', 'payment/confirm', {
-          couponId: order.coupon_id,
-          orderId: dbOrderId,
-          error: rpcErr.message,
-        })
-      } else if (rpcResult && (rpcResult as { ok?: boolean }).ok === false) {
-        logger.error('쿠폰 사용 거부 (max_usage_exceeded 등)', 'payment/confirm', {
-          couponId: order.coupon_id,
-          orderId: dbOrderId,
-          result: rpcResult,
-        })
-      }
-    }
+    // 4.5. 쿠폰 예약은 이미 토스 confirm 이전에 완료됨 (위 2-post 블록).
 
-    // 5. 채팅 결제요청 상태 업데이트 (chat_payment_id가 있을 때)
+    // 5. 채팅 결제요청 상태 업데이트 (chat_payment_id가 있을 때).
+    //   .eq('status', 'pending') 는 이중 업데이트 방지 (동일 결제요청에 대한 경쟁 요청).
     if (chat_payment_id) {
       try {
         const now = new Date().toISOString()
@@ -230,6 +260,7 @@ export async function POST(request: NextRequest) {
           .update({ status: 'paid', paid_at: now, order_id: dbOrderId })
           .eq('id', chat_payment_id)
           .eq('user_id', user.id)
+          .eq('status', 'pending')
           .select('room_id, title, message_id')
           .single()
 
@@ -404,9 +435,26 @@ async function recomputeExpectedAmount(
     rawTotal += effective
   }
 
-  // 5) 쿠폰 재검증 (만료/활성/최소금액/사용횟수 전부 체크)
+  // 5) 쿠폰 재검증 (만료/활성/최소금액/사용횟수 + 보유 쿠폰 소유권 전부 체크)
   let couponDiscount = 0
   if (couponId) {
+    // 5-a) 보유 쿠폰(user_coupons) 이 있으면 소유 + 미사용 이어야 한다.
+    //     보유 행이 전혀 없으면 code-based 공용 쿠폰 경로로 간주하고 통과시킨다.
+    const { data: ownedRows } = await supabase
+      .from('user_coupons')
+      .select('id, used_at')
+      .eq('user_id', userId)
+      .eq('coupon_id', couponId)
+      .limit(50)
+
+    if (ownedRows && ownedRows.length > 0) {
+      const hasUnused = (ownedRows as Array<{ used_at: string | null }>).some((r) => r.used_at === null)
+      if (!hasUnused) {
+        // 보유 이력은 있지만 전부 소진 → 재사용 시도로 간주하고 쿠폰 미적용.
+        return rawTotal
+      }
+    }
+
     const { data: coupon } = await supabase
       .from('coupons')
       .select('discount_type, discount_value, min_order_amount, valid_from, valid_until, usage_count, max_usage, is_active')

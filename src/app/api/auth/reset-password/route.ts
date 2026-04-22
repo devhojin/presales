@@ -4,13 +4,14 @@ import { createClient } from '@supabase/supabase-js'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/client-ip'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export async function POST(request: NextRequest) {
   try {
     const headersList = await headers()
-    const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+    const ip = getClientIp(headersList)
     // IP 기준 분당 3회 (이메일 폭격 방지)
     const rl = await checkRateLimitAsync(`reset-password:${ip}`, 3, 60000)
     if (!rl.allowed) {

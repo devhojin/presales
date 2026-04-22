@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient, getAuthUser, isAdmin } from '@/lib/chat'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/client-ip'
 import { headers } from 'next/headers'
 
 const SIGNED_URL_EXPIRES_SEC = 60 * 10 // 10분
@@ -8,7 +9,7 @@ const SIGNED_URL_EXPIRES_SEC = 60 * 10 // 10분
 export async function POST(request: NextRequest) {
   try {
     const headersList = await headers()
-    const ip = headersList.get('x-forwarded-for') ?? 'unknown'
+    const ip = getClientIp(headersList)
     const rl = await checkRateLimitAsync(`signed-url:${ip}`, 60, 60000)
     if (!rl.allowed) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
