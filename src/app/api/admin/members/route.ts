@@ -49,7 +49,7 @@ export async function GET() {
   const MEMBER_LIST_LIMIT = 5000
   const { data, error } = await service
     .from('members_with_stats')
-    .select('id, email, name, phone, company, role, admin_memo, created_at, order_count, total_spent, review_count')
+    .select('id, email, name, phone, company, role, admin_memo, created_at, deleted_at, deletion_reason, order_count, total_spent, review_count')
     .order('created_at', { ascending: false })
     .limit(MEMBER_LIST_LIMIT)
 

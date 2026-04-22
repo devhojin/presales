@@ -26,6 +26,7 @@ import {
   Users,
   FileDown,
   Star,
+  AlertTriangle,
 } from 'lucide-react'
 
 // ===========================
@@ -47,6 +48,8 @@ interface Profile {
   role: string
   admin_memo: string | null
   created_at: string
+  deleted_at?: string | null
+  deletion_reason?: string | null
 }
 
 function parseMemberMemos(raw: string | null): MemoEntry[] {
@@ -1079,7 +1082,7 @@ function MemberDetailModal({
 // Main Page
 // ===========================
 
-type FilterTab = 'all' | 'user' | 'admin'
+type FilterTab = 'all' | 'user' | 'admin' | 'deleted'
 
 export default function AdminMembers() {
   const [members, setMembers] = useState<Profile[]>([])
@@ -1187,7 +1190,11 @@ export default function AdminMembers() {
 
   // Filter + Search
   const filtered = useMemo(() => {
-    let result = members
+    // 기본적으로 탈퇴(soft-deleted) 회원은 제외, deleted 탭에서만 노출
+    const isDeleted = (m: Profile) => Boolean(m.deleted_at)
+    let result = filterTab === 'deleted'
+      ? members.filter(isDeleted)
+      : members.filter((m) => !isDeleted(m))
     if (filterTab === 'user') result = result.filter((m) => m.role !== 'admin')
     if (filterTab === 'admin') result = result.filter((m) => m.role === 'admin')
     if (search.trim()) {
@@ -1211,10 +1218,12 @@ export default function AdminMembers() {
     setCurrentPage(1)
   }, [search, filterTab, pageSize])
 
-  // Stats
-  const totalCount = members.length
-  const adminCount = members.filter((m) => m.role === 'admin').length
+  // Stats (탈퇴 회원 제외한 활성 기준)
+  const activeMembers = members.filter((m) => !m.deleted_at)
+  const totalCount = activeMembers.length
+  const adminCount = activeMembers.filter((m) => m.role === 'admin').length
   const userCount = totalCount - adminCount
+  const deletedCount = members.length - activeMembers.length
 
   // Selection
   const allPageSelected = paged.length > 0 && paged.every((m) => selectedIds.has(m.id))
@@ -1249,6 +1258,7 @@ export default function AdminMembers() {
     { key: 'all', label: '전체 사용자', count: totalCount, icon: <Users className="w-4 h-4" /> },
     { key: 'user', label: '일반회원', count: userCount, icon: <User className="w-4 h-4" /> },
     { key: 'admin', label: '관리자', count: adminCount, icon: <Shield className="w-4 h-4" /> },
+    { key: 'deleted', label: '탈퇴 회원', count: deletedCount, icon: <AlertTriangle className="w-4 h-4" /> },
   ]
 
   return (
@@ -1489,15 +1499,25 @@ export default function AdminMembers() {
                           <td className="px-4 py-3 text-sm text-muted-foreground">{m.email}</td>
                           {/* 회원유형 */}
                           <td className="px-4 py-3">
-                            <Badge
-                              className={
-                                m.role === 'admin'
-                                  ? 'bg-red-50 text-red-700 border border-red-200'
-                                  : 'bg-muted text-muted-foreground border border-border'
-                              }
-                            >
-                              {m.role === 'admin' ? '관리자' : '일반'}
-                            </Badge>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <Badge
+                                className={
+                                  m.role === 'admin'
+                                    ? 'bg-red-50 text-red-700 border border-red-200'
+                                    : 'bg-muted text-muted-foreground border border-border'
+                                }
+                              >
+                                {m.role === 'admin' ? '관리자' : '일반'}
+                              </Badge>
+                              {m.deleted_at && (
+                                <Badge
+                                  className="bg-gray-900 text-white border border-gray-900"
+                                  title={m.deletion_reason ? `사유: ${m.deletion_reason}` : '탈퇴'}
+                                >
+                                  탈퇴 {formatDate(m.deleted_at)}
+                                </Badge>
+                              )}
+                            </div>
                           </td>
                           {/* 가입일 (relative) */}
                           <td

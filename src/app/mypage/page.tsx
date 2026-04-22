@@ -192,6 +192,9 @@ export default function MyConsolePage() {
   const [deletingAccount, setDeletingAccount] = useState(false)
   const [deleteAccountPassword, setDeleteAccountPassword] = useState('')
   const [showDeleteAccountPw, setShowDeleteAccountPw] = useState(false)
+  const [deleteConfirmPhrase, setDeleteConfirmPhrase] = useState('')
+  const [deleteReason, setDeleteReason] = useState('')
+  const [hasPasswordIdentity, setHasPasswordIdentity] = useState(true)
 
   // Refund
   const [refundOrderId, setRefundOrderId] = useState<number | null>(null)
@@ -207,6 +210,10 @@ export default function MyConsolePage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.replace('/auth/login'); return }
+
+      // 탈퇴 재인증 방식 판별: email identity 가 있으면 password, 없으면 confirm phrase
+      const identities = (user.identities ?? []) as Array<{ provider?: string }>
+      setHasPasswordIdentity(identities.some((i) => i.provider === 'email'))
 
       const [
         { data: profileData },
@@ -461,20 +468,109 @@ export default function MyConsolePage() {
         <div className="border border-red-200 rounded-2xl p-6">
           <h2 className="font-semibold text-red-600 flex items-center gap-2 mb-4"><AlertTriangle className="w-4 h-4" /> 회원 탈퇴</h2>
           <Separator className="mb-4" />
-          <p className="text-sm text-muted-foreground mb-4">탈퇴하시면 주문 내역과 다운로드 이력이 삭제되며 복구할 수 없습니다.</p>
+          <p className="text-sm text-muted-foreground mb-4">
+            탈퇴 시 개인정보(이름·연락처·이메일 등)는 즉시 익명화됩니다. 다만 주문/결제·다운로드 이력은
+            전자상거래법·소비자분쟁 기준에 따라 일정 기간(최대 5년) 익명 상태로 보존됩니다.
+          </p>
           <button type="button" onClick={() => setShowDeleteAccount(true)} className="h-10 px-5 rounded-lg border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50 cursor-pointer">회원 탈퇴</button>
         </div>
 
         {/* Delete Account Modal */}
         {showDeleteAccount && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowDeleteAccount(false)}>
-            <div className="bg-background rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl" style={deleteAccountStyle} onClick={e => e.stopPropagation()}>
+            <div className="bg-background rounded-xl p-6 max-w-md w-full mx-4 shadow-xl" style={deleteAccountStyle} onClick={e => e.stopPropagation()}>
               <div className="flex items-center gap-2 mb-3 cursor-move" onMouseDown={deleteAccountMouseDown}><AlertTriangle className="w-5 h-5 text-red-500" /><h3 className="text-lg font-semibold">회원 탈퇴</h3></div>
-              <p className="text-sm text-muted-foreground mb-4">탈퇴하면 모든 데이터가 삭제됩니다. 정말 탈퇴하시겠습니까?</p>
-              <div className="mb-4"><label className="text-sm font-medium mb-2 block">비밀번호 확인</label><div className="relative"><input type={showDeleteAccountPw ? 'text' : 'password'} placeholder="비밀번호 입력" value={deleteAccountPassword} onChange={e => setDeleteAccountPassword(e.target.value)} className="w-full h-10 px-3 rounded-lg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary" /><button type="button" onClick={() => setShowDeleteAccountPw(!showDeleteAccountPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer">{showDeleteAccountPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div></div>
+              <p className="text-sm text-muted-foreground mb-4">
+                개인정보는 즉시 익명화되며 재가입이 가능합니다. 주문/결제 이력은 법령에 따라 익명 상태로 보존됩니다.
+              </p>
+
+              {hasPasswordIdentity ? (
+                <div className="mb-3">
+                  <label className="text-sm font-medium mb-2 block">비밀번호 확인 *</label>
+                  <div className="relative">
+                    <input
+                      type={showDeleteAccountPw ? 'text' : 'password'}
+                      placeholder="비밀번호 입력"
+                      value={deleteAccountPassword}
+                      onChange={e => setDeleteAccountPassword(e.target.value)}
+                      className="w-full h-10 px-3 rounded-lg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    <button type="button" onClick={() => setShowDeleteAccountPw(!showDeleteAccountPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer">
+                      {showDeleteAccountPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mb-3">
+                  <label className="text-sm font-medium mb-2 block">확인 문구 입력 *</label>
+                  <input
+                    type="text"
+                    placeholder="탈퇴합니다"
+                    value={deleteConfirmPhrase}
+                    onChange={e => setDeleteConfirmPhrase(e.target.value)}
+                    className="w-full h-10 px-3 rounded-lg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    SNS 로그인 계정입니다. 본인 확인을 위해 <span className="font-semibold text-foreground">탈퇴합니다</span> 를 그대로 입력해주세요.
+                  </p>
+                </div>
+              )}
+
+              <div className="mb-4">
+                <label className="text-sm font-medium mb-2 block">탈퇴 사유 (선택)</label>
+                <textarea
+                  value={deleteReason}
+                  onChange={e => setDeleteReason(e.target.value.slice(0, 300))}
+                  placeholder="개선할 점이 있다면 알려주세요"
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                />
+              </div>
+
               <div className="flex gap-3">
-                <button type="button" onClick={() => { setShowDeleteAccount(false); setDeleteAccountPassword(''); setShowDeleteAccountPw(false) }} className="flex-1 h-10 rounded-lg border border-border text-sm font-medium hover:bg-muted cursor-pointer">취소</button>
-                <button type="button" disabled={deletingAccount || !deleteAccountPassword.trim()} onClick={async () => { setDeletingAccount(true); try { const res = await fetch('/api/auth/delete-account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: deleteAccountPassword }) }); if (!res.ok) { const d = await res.json(); addToast(d.error || '탈퇴 오류', 'error'); return } const supabase = createClient(); await supabase.auth.signOut(); addToast('회원 탈퇴 완료', 'info'); router.push('/'); router.refresh() } catch { addToast('탈퇴 오류', 'error') } finally { setDeletingAccount(false); setShowDeleteAccount(false); setDeleteAccountPassword(''); setShowDeleteAccountPw(false) } }} className="flex-1 h-10 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 cursor-pointer disabled:opacity-50">{deletingAccount ? '처리 중...' : '탈퇴하기'}</button>
+                <button type="button" onClick={() => { setShowDeleteAccount(false); setDeleteAccountPassword(''); setShowDeleteAccountPw(false); setDeleteConfirmPhrase(''); setDeleteReason('') }} className="flex-1 h-10 rounded-lg border border-border text-sm font-medium hover:bg-muted cursor-pointer">취소</button>
+                <button
+                  type="button"
+                  disabled={
+                    deletingAccount ||
+                    (hasPasswordIdentity ? !deleteAccountPassword.trim() : deleteConfirmPhrase.trim() !== '탈퇴합니다')
+                  }
+                  onClick={async () => {
+                    setDeletingAccount(true)
+                    try {
+                      const payload: Record<string, string> = { reason: deleteReason }
+                      if (hasPasswordIdentity) payload.password = deleteAccountPassword
+                      else payload.confirmPhrase = deleteConfirmPhrase
+                      const res = await fetch('/api/auth/delete-account', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                      })
+                      if (!res.ok) {
+                        const d = await res.json().catch(() => ({}))
+                        addToast(d.error || '탈퇴 오류', 'error')
+                        return
+                      }
+                      const supabase = createClient()
+                      await supabase.auth.signOut()
+                      addToast('회원 탈퇴가 완료되었습니다', 'info')
+                      router.push('/')
+                      router.refresh()
+                    } catch {
+                      addToast('탈퇴 오류', 'error')
+                    } finally {
+                      setDeletingAccount(false)
+                      setShowDeleteAccount(false)
+                      setDeleteAccountPassword('')
+                      setShowDeleteAccountPw(false)
+                      setDeleteConfirmPhrase('')
+                      setDeleteReason('')
+                    }
+                  }}
+                  className="flex-1 h-10 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 cursor-pointer disabled:opacity-50"
+                >
+                  {deletingAccount ? '처리 중...' : '탈퇴하기'}
+                </button>
               </div>
             </div>
           </div>

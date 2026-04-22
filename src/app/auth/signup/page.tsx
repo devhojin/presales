@@ -86,12 +86,17 @@ export default function SignupPage() {
     // Update profile with additional info (실패해도 가입은 성공 — 마이페이지에서 재입력 가능)
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
+      const nowIso = new Date().toISOString()
       const { error: profileErr } = await supabase.from('profiles').update({
         name: form.name,
         company: form.company,
         phone: form.phone,
         marketing_opt_in: agreeMarketing,
-        marketing_opt_in_at: agreeMarketing ? new Date().toISOString() : null,
+        marketing_opt_in_at: agreeMarketing ? nowIso : null,
+        terms_agreed_at: nowIso,
+        privacy_agreed_at: nowIso,
+        overseas_agreed_at: nowIso,
+        age_agreed_at: nowIso,
       }).eq('id', user.id)
       if (profileErr) {
         console.warn('[signup] 프로필 부가정보 저장 실패:', profileErr.message)
