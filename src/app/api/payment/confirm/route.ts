@@ -113,6 +113,39 @@ export async function POST(request: NextRequest) {
       if (pr.status !== 'pending') {
         return NextResponse.json({ error: '이미 처리된 결제 요청입니다' }, { status: 409 })
       }
+      // 주문-결제요청 바인딩 검증 (chat_payment_id 금액 치환 공격 차단).
+      //   - chat_payment 주문은 order_items 없이 생성됨 (checkout/page.tsx initChatPayment).
+      //   - cart 주문은 order_items + recomputeExpectedAmount 기반 total_amount 를 가짐.
+      //   짝이 어긋난 경우: 공격자가 cart주문(500k) + chat_payment_id(10k) 로 confirm 호출하면
+      //   이전 로직은 expectedAmount=10k 만 비교해 통과 → 500k 상품을 10k 에 결제.
+      //   → order 가 아이템 없는지 + total_amount === pr.amount 인지 동시 확인.
+      if (Number(order.total_amount) !== Number(pr.amount)) {
+        logger.error('chat_payment 주문 total_amount 불일치 (바인딩 조작 의심)', 'payment/confirm', {
+          orderId: dbOrderId,
+          userId: user.id,
+          orderTotal: order.total_amount,
+          prAmount: pr.amount,
+        })
+        return NextResponse.json(
+          { error: '결제 요청과 주문이 일치하지 않습니다' },
+          { status: 400 }
+        )
+      }
+      const { count: itemCount } = await supabase
+        .from('order_items')
+        .select('*', { count: 'exact', head: true })
+        .eq('order_id', dbOrderId)
+      if ((itemCount ?? 0) > 0) {
+        logger.error('chat_payment 주문에 order_items 존재 (바인딩 조작 의심)', 'payment/confirm', {
+          orderId: dbOrderId,
+          userId: user.id,
+          itemCount,
+        })
+        return NextResponse.json(
+          { error: '결제 요청과 주문이 일치하지 않습니다' },
+          { status: 400 }
+        )
+      }
       expectedAmount = Number(pr.amount)
     } else {
       expectedAmount = await recomputeExpectedAmount(supabase, dbOrderId, user.id, order.coupon_id)
@@ -243,9 +276,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '주문 상태 업데이트에 실패했습니다' }, { status: 500 })
     }
 
-    // 업데이트된 행이 없으면 주문이 이미 처리됨 또는 상태가 변경됨
+    // 업데이트된 행이 없으면 주문이 이미 처리됨 또는 상태가 변경됨 (경쟁 confirm 두 번째 요청).
+    // 이 경로에서 쿠폰이 reserve 된 채 남아 있으면 usage_count 가 부풀려져 max_usage 쿠폰이 조기 소진됨
+    // → 반드시 rollback. Toss 자체는 paymentKey 단위 멱등이라 첫 요청이 이미 성공 반영 중.
     if (!updatedOrders || updatedOrders.length === 0) {
       logger.error('주문 상태 변경 불가', 'payment/confirm', { orderId: dbOrderId, currentStatus: order.status })
+      if (couponReserved && order.coupon_id) {
+        const { error: rbErr } = await supabase.rpc('rollback_coupon_usage', {
+          p_coupon_id: order.coupon_id,
+          p_user_id: user.id,
+          p_order_id: dbOrderId,
+        })
+        if (rbErr) {
+          logger.error('경쟁 경로 쿠폰 rollback 실패 (수동 정정 필요)', 'payment/confirm', {
+            couponId: order.coupon_id,
+            orderId: dbOrderId,
+            error: rbErr.message,
+          })
+        }
+      }
       return NextResponse.json({ error: '주문이 이미 처리되었거나 상태가 변경되었습니다' }, { status: 409 })
     }
 
