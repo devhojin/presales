@@ -239,16 +239,35 @@ export default function CheckoutPage() {
           return
         }
 
-        // 할인 매칭 서버사이드 재검증
+        // 할인 매칭 서버사이드 재검증 — 사용자가 실제 낸 금액 기반 (쿠폰 안분 반영)
         const { data: userPaidOrders } = await supabase
           .from('orders')
-          .select('id, order_items!inner(product_id)')
+          .select('id, coupon_discount, order_items(product_id, price)')
           .eq('user_id', user.id)
-          .eq('status', 'paid')
+          .in('status', ['paid', 'completed'])
 
-        const userPurchasedIds = userPaidOrders?.flatMap(o =>
-          o.order_items.map((oi: { product_id: number }) => oi.product_id)
-        ) || []
+        // source_product_id → 사용자가 실제로 낸 최대 금액
+        //   order_items.price (번들할인 후·쿠폰 전) 에서
+        //   orders.coupon_discount 를 아이템 가격 비율로 안분해 뺀 값
+        const sourceEffectivePaid = new Map<number, number>()
+        for (const o of (userPaidOrders ?? []) as Array<{
+          coupon_discount: number | null
+          order_items: Array<{ product_id: number; price: number }> | null
+        }>) {
+          const orderItems = o.order_items ?? []
+          if (orderItems.length === 0) continue
+          const sumPrice = orderItems.reduce((acc, it) => acc + Number(it.price ?? 0), 0)
+          const coupon = Math.max(0, Number(o.coupon_discount ?? 0))
+          for (const it of orderItems) {
+            const p = Number(it.price ?? 0)
+            if (p <= 0) continue
+            const share = sumPrice > 0 ? Math.floor((coupon * p) / sumPrice) : 0
+            const effective = Math.max(0, p - share)
+            const prev = sourceEffectivePaid.get(it.product_id) ?? 0
+            if (effective > prev) sourceEffectivePaid.set(it.product_id, effective)
+          }
+        }
+        const userPurchasedIds = Array.from(sourceEffectivePaid.keys())
 
         // 상품별 할인 메타 정보 맵 (order_items 저장용)
         const itemDiscountMap = new Map<number, {
@@ -268,13 +287,13 @@ export default function CheckoutPage() {
             .eq('is_active', true)
 
           if (activeMatches && activeMatches.length > 0) {
-            // 소스 상품 가격 + 제목 조회 (auto 타입 + 표기용)
+            // source 상품 제목 조회 (할인 사유 표기용)
             const sourceProductIds = Array.from(new Set(activeMatches.map(m => m.source_product_id)))
-            let sourceProducts: { id: number; price: number; title: string }[] = []
+            let sourceProducts: { id: number; title: string }[] = []
             if (sourceProductIds.length > 0) {
               const { data } = await supabase
                 .from('products')
-                .select('id, price, title')
+                .select('id, title')
                 .in('id', sourceProductIds)
               sourceProducts = data || []
             }
@@ -286,14 +305,12 @@ export default function CheckoutPage() {
               let appliedSourceId: number | null = null
 
               for (const match of itemMatches) {
-                if (userPurchasedIds.includes(match.source_product_id)) {
-                  const discount = match.discount_type === 'auto'
-                    ? (sourceProducts.find(p => p.id === match.source_product_id)?.price || 0)
-                    : match.discount_amount
-                  if (discount > applicableDiscount) {
-                    applicableDiscount = discount
-                    appliedSourceId = match.source_product_id
-                  }
+                const discount = match.discount_type === 'auto'
+                  ? (sourceEffectivePaid.get(match.source_product_id) ?? 0)
+                  : Number(match.discount_amount ?? 0)
+                if (discount > applicableDiscount) {
+                  applicableDiscount = discount
+                  appliedSourceId = match.source_product_id
                 }
               }
 

@@ -162,42 +162,58 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
             .eq('is_active', true)
 
           if (matches && matches.length > 0) {
-            // 사용자의 구매 이력에서 소스 상품 확인
+            // 사용자의 결제 이력 (쿠폰 안분용으로 주문 전체 아이템·coupon_discount 조회)
             const sourceIds = matches.map(m => m.source_product_id)
-            const { data: purchasedSources } = await supabase
+            const { data: paidOrders } = await supabase
               .from('orders')
-              .select('id, order_items!inner(product_id)')
+              .select('id, coupon_discount, order_items(product_id, price)')
               .eq('user_id', user.id)
-              .eq('status', 'paid')
-              .in('order_items.product_id', sourceIds)
+              .in('status', ['paid', 'completed'])
 
-            if (purchasedSources && purchasedSources.length > 0) {
-              // 매칭되는 소스 상품 찾기
-              const purchasedSourceIds = purchasedSources.flatMap(o =>
-                o.order_items.map((oi: { product_id: number }) => oi.product_id)
-              )
-              const applicableMatch = matches.find(m => purchasedSourceIds.includes(m.source_product_id))
-
-              if (applicableMatch) {
-                // 소스 상품 이름 조회
-                const { data: sourceProduct } = await supabase
-                  .from('products')
-                  .select('title, price')
-                  .eq('id', applicableMatch.source_product_id)
-                  .single()
-
-                const discountAmt = applicableMatch.discount_type === 'auto'
-                  ? (sourceProduct?.price || 0)
-                  : applicableMatch.discount_amount
-
-                // 타겟 상품을 이미 구매했으면 할인 표시 안함
-                if (!hasPurchasedThisProduct && discountAmt > 0) {
-                  setMatchDiscount({
-                    sourceTitle: sourceProduct?.title || '',
-                    discountAmount: Math.min(discountAmt, data.price) // 상품 가격 초과 방지
-                  })
-                }
+            // source_product_id → 사용자가 실제 낸 최대 금액 (쿠폰 안분 반영)
+            const sourceEffectivePaid = new Map<number, number>()
+            for (const o of (paidOrders ?? []) as Array<{
+              coupon_discount: number | null
+              order_items: Array<{ product_id: number; price: number }> | null
+            }>) {
+              const items = o.order_items ?? []
+              if (items.length === 0) continue
+              const sumPrice = items.reduce((acc, it) => acc + Number(it.price ?? 0), 0)
+              const coupon = Math.max(0, Number(o.coupon_discount ?? 0))
+              for (const it of items) {
+                const p = Number(it.price ?? 0)
+                if (p <= 0) continue
+                const share = sumPrice > 0 ? Math.floor((coupon * p) / sumPrice) : 0
+                const effective = Math.max(0, p - share)
+                const prev = sourceEffectivePaid.get(it.product_id) ?? 0
+                if (effective > prev) sourceEffectivePaid.set(it.product_id, effective)
               }
+            }
+
+            // 매칭되는 소스 상품 중 가장 큰 할인 제공 매치 찾기
+            let bestMatch: { source_product_id: number; discount: number } | null = null
+            for (const m of matches) {
+              if (!sourceEffectivePaid.has(m.source_product_id)) continue
+              if (!sourceIds.includes(m.source_product_id)) continue
+              const discount = m.discount_type === 'auto'
+                ? (sourceEffectivePaid.get(m.source_product_id) ?? 0)
+                : Number(m.discount_amount ?? 0)
+              if (!bestMatch || discount > bestMatch.discount) {
+                bestMatch = { source_product_id: m.source_product_id, discount }
+              }
+            }
+
+            if (bestMatch && !hasPurchasedThisProduct && bestMatch.discount > 0) {
+              // 소스 상품 이름 조회 (표기용)
+              const { data: sourceProduct } = await supabase
+                .from('products')
+                .select('title')
+                .eq('id', bestMatch.source_product_id)
+                .single()
+              setMatchDiscount({
+                sourceTitle: sourceProduct?.title || '',
+                discountAmount: Math.min(bestMatch.discount, data.price), // 상품 가격 초과 방지
+              })
             }
           }
         }
