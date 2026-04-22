@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { Badge } from '@/components/ui/badge'
+import { fetchSignedUrl } from '@/lib/storage-signed-url'
 import {
   Search,
   X,
@@ -18,7 +19,48 @@ import {
   Clock,
   CheckCircle,
   XCircle,
+  Paperclip,
 } from 'lucide-react'
+
+// "[첨부파일:{path}]" 마커를 서명 URL 로 해석해서 다운로드 버튼 렌더링
+function ConsultingMessageBody({ message }: { message: string | null }) {
+  if (!message) return <span>(메시지 없음)</span>
+  const markerRe = /\[첨부파일:([^\]]+)\]/g
+  const parts: Array<{ type: 'text' | 'file'; value: string }> = []
+  let cursor = 0
+  let match: RegExpExecArray | null
+  while ((match = markerRe.exec(message)) !== null) {
+    if (match.index > cursor) parts.push({ type: 'text', value: message.slice(cursor, match.index) })
+    parts.push({ type: 'file', value: match[1] })
+    cursor = match.index + match[0].length
+  }
+  if (cursor < message.length) parts.push({ type: 'text', value: message.slice(cursor) })
+
+  async function openAttachment(path: string) {
+    const url = await fetchSignedUrl({ bucket: 'consulting-files', storedValue: path })
+    if (url) window.open(url, '_blank', 'noopener,noreferrer')
+    else alert('첨부파일 접근에 실패했습니다.')
+  }
+
+  return (
+    <>
+      {parts.map((p, i) => p.type === 'text'
+        ? <span key={i} className="whitespace-pre-wrap">{p.value}</span>
+        : (
+          <button
+            key={i}
+            type="button"
+            onClick={() => openAttachment(p.value)}
+            className="inline-flex items-center gap-1 text-primary underline underline-offset-2 cursor-pointer hover:opacity-80"
+          >
+            <Paperclip className="w-3.5 h-3.5" />
+            첨부파일 열기
+          </button>
+        )
+      )}
+    </>
+  )
+}
 
 // ===========================
 // Types
@@ -371,9 +413,9 @@ function ConsultingDetailModal({
             <div className="bg-muted rounded-xl p-4">
               <div className="flex items-start gap-2">
                 <MessageSquare className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                  {request.message || '(메시지 없음)'}
-                </p>
+                <div className="text-sm text-foreground leading-relaxed">
+                  <ConsultingMessageBody message={request.message} />
+                </div>
               </div>
             </div>
           </div>

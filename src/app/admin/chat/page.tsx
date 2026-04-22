@@ -10,6 +10,51 @@ import { createClient } from '@/lib/supabase'
 import type { ChatRoom, ChatMessage } from '@/lib/chat'
 import { MAX_FILE_SIZE, MAX_FILE_SIZE_LABEL } from '@/lib/chat-constants'
 import { uploadFile } from '@/lib/storage-upload'
+import { fetchSignedUrl } from '@/lib/storage-signed-url'
+
+// DB 에는 storage path 만 저장 → 렌더 시점에 서명 URL 재발급 (admin 은 모든 방 접근 가능)
+function useAdminChatSignedUrl(storedValue: string | null | undefined) {
+  const [url, setUrl] = useState<string | null>(null)
+  useEffect(() => {
+    if (!storedValue) { setUrl(null); return }
+    let aborted = false
+    fetchSignedUrl({ bucket: 'chat-files', storedValue }).then((signed) => {
+      if (!aborted) setUrl(signed)
+    })
+    return () => { aborted = true }
+  }, [storedValue])
+  return url
+}
+
+function AdminChatImage({ msg }: { msg: ChatMessage }) {
+  const url = useAdminChatSignedUrl(msg.file_url)
+  if (!url) return <span className="text-xs opacity-70">이미지 불러오는 중...</span>
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer">
+      <img src={url} alt={msg.file_name || '이미지'} className="max-w-full max-h-60 rounded-lg" />
+    </a>
+  )
+}
+
+function AdminChatFile({ msg, isAdmin }: { msg: ChatMessage; isAdmin: boolean }) {
+  const url = useAdminChatSignedUrl(msg.file_url)
+  const colorClass = isAdmin ? 'text-white/90 hover:text-white' : 'text-foreground hover:text-primary'
+  if (!url) {
+    return (
+      <span className={`flex items-center gap-2 opacity-70 ${colorClass}`}>
+        <FileText className="w-4 h-4 shrink-0" />
+        <span className="truncate text-xs">{msg.file_name || '파일'}</span>
+      </span>
+    )
+  }
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 ${colorClass}`}>
+      <FileText className="w-4 h-4 shrink-0" />
+      <span className="truncate text-xs">{msg.file_name}</span>
+      <Download className="w-3.5 h-3.5 shrink-0" />
+    </a>
+  )
+}
 
 const BLOCKED_EXTENSIONS = [
   '.exe', '.bat', '.cmd', '.com', '.msi', '.scr', '.pif',
@@ -27,7 +72,6 @@ type ChatUploadResult = {
 }
 
 async function uploadAdminChatFile(file: File, roomId: string): Promise<ChatUploadResult | null> {
-  const supabase = createClient()
   const lastDot = file.name.lastIndexOf('.')
   const ext = lastDot > 0 ? file.name.slice(lastDot) : ''
   const safeName = `${roomId}/${Date.now()}_${Math.random().toString(36).slice(2, 10)}${ext}`
@@ -38,9 +82,9 @@ async function uploadAdminChatFile(file: File, roomId: string): Promise<ChatUplo
     contentType: file.type,
   })
   if (!result.ok) return null
-  const { data: urlData } = supabase.storage.from('chat-files').getPublicUrl(safeName)
+  // DB 에는 storage path 만 저장. 표시 시점에 서명 URL 재발급.
   return {
-    url: urlData.publicUrl,
+    url: safeName,
     name: file.name,
     size: file.size,
     type: file.type,
@@ -627,16 +671,9 @@ export default function AdminChatPage() {
             isAdmin ? 'bg-blue-700 text-white rounded-br-md' : 'bg-muted/70 text-foreground rounded-bl-md'
           }`}>
             {(msg.message_type === 'image' && msg.file_url) ? (
-              <a href={msg.file_url} target="_blank" rel="noopener noreferrer">
-                <img src={msg.file_url} alt={msg.file_name || '이미지'} className="max-w-full max-h-60 rounded-lg" />
-              </a>
+              <AdminChatImage msg={msg} />
             ) : (msg.message_type === 'file' && msg.file_url) ? (
-              <a href={msg.file_url} target="_blank" rel="noopener noreferrer"
-                className={`flex items-center gap-2 ${isAdmin ? 'text-white/90 hover:text-white' : 'text-foreground hover:text-primary'}`}>
-                <FileText className="w-4 h-4 shrink-0" />
-                <span className="truncate text-xs">{msg.file_name}</span>
-                <Download className="w-3.5 h-3.5 shrink-0" />
-              </a>
+              <AdminChatFile msg={msg} isAdmin={isAdmin} />
             ) : (
               <p className="whitespace-pre-wrap">{msg.content}</p>
             )}

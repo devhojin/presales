@@ -270,6 +270,7 @@ function DownloadDetailModal({
         .select('id, product_id, user_id, file_name, downloaded_at')
         .eq('product_id', product.id)
         .order('downloaded_at', { ascending: false })
+        .limit(500)
 
       if (dlData && dlData.length > 0) {
         // user_id들로 profiles 별도 조회

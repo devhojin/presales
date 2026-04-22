@@ -75,15 +75,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: uploadError.message }, { status: 500 })
   }
 
-  // 공개 URL 생성
-  const { data: urlData } = supabase.storage
-    .from('chat-files')
-    .getPublicUrl(fileName)
-
   const fileType = getFileType(file.name)
 
+  // DB 에는 storage path 만 저장. 표시 시점에 /api/storage/signed-url 로 재발급.
   return NextResponse.json({
-    url: urlData.publicUrl,
+    url: fileName,
     name: file.name,
     size: file.size,
     type: file.type,

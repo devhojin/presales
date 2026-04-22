@@ -197,32 +197,28 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '주문이 이미 처리되었거나 상태가 변경되었습니다' }, { status: 409 })
     }
 
-    // 4.5. 쿠폰 사용 기록 + 사용 횟수 증가 + 회원 보유 쿠폰 소진 처리
+    // 4.5. 쿠폰 사용 기록 + 사용 횟수 증가 + 회원 보유 쿠폰 소진 (atomic RPC)
     if (order.coupon_id) {
-      await supabase.from('coupon_uses').insert({
-        coupon_id: order.coupon_id,
-        user_id: user.id,
-        order_id: dbOrderId,
-        applied_amount: order.coupon_discount || 0,
+      const { data: rpcResult, error: rpcErr } = await supabase.rpc('increment_coupon_usage', {
+        p_coupon_id: order.coupon_id,
+        p_user_id: user.id,
+        p_order_id: dbOrderId,
+        p_applied_amount: order.coupon_discount || 0,
       })
-      // 사용 횟수 +1 (동시성: rpc 없이 단순 증가 — 중복 결제 차단은 위 race check로 처리)
-      const { data: couponRow } = await supabase
-        .from('coupons')
-        .select('usage_count')
-        .eq('id', order.coupon_id)
-        .single()
-      await supabase
-        .from('coupons')
-        .update({ usage_count: (couponRow?.usage_count || 0) + 1 })
-        .eq('id', order.coupon_id)
-
-      // 회원 보유 쿠폰(있다면) used_at 마킹
-      await supabase
-        .from('user_coupons')
-        .update({ used_at: new Date().toISOString(), used_order_id: dbOrderId })
-        .eq('user_id', user.id)
-        .eq('coupon_id', order.coupon_id)
-        .is('used_at', null)
+      if (rpcErr) {
+        // 결제 자체는 이미 성공. 쿠폰 소진만 실패해도 주문은 완료 처리.
+        logger.error('쿠폰 사용 RPC 실패', 'payment/confirm', {
+          couponId: order.coupon_id,
+          orderId: dbOrderId,
+          error: rpcErr.message,
+        })
+      } else if (rpcResult && (rpcResult as { ok?: boolean }).ok === false) {
+        logger.error('쿠폰 사용 거부 (max_usage_exceeded 등)', 'payment/confirm', {
+          couponId: order.coupon_id,
+          orderId: dbOrderId,
+          result: rpcResult,
+        })
+      }
     }
 
     // 5. 채팅 결제요청 상태 업데이트 (chat_payment_id가 있을 때)

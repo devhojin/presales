@@ -630,6 +630,7 @@ function MemberDetailModal({
         )
         .eq('user_id', member.id)
         .order('created_at', { ascending: false })
+        .limit(200)
         .then(({ data }) => {
           setOrders((data as unknown as Order[]) || [])
           setLoadingOrders(false)
@@ -647,6 +648,7 @@ function MemberDetailModal({
         .select('id, user_id, product_id, downloaded_at, products ( title )')
         .eq('user_id', member.id)
         .order('downloaded_at', { ascending: false })
+        .limit(500)
         .then(({ data }) => {
           setDownloads((data as unknown as DownloadLog[]) || [])
           setLoadingDownloads(false)

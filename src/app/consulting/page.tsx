@@ -94,7 +94,8 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
       const supabase = createClient()
 
       // Upload file if exists — uploadFile() 은 6MB 초과 시 자동 TUS resumable (최대 50GB)
-      let fileUrl = ''
+      // 저장 형식: "[첨부파일:{storage_path}]" — 표시 시점 관리자가 서명 URL 재발급.
+      let attachmentMarker = ''
       if (file) {
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
         const fileName = `inquiry-${Date.now()}-${safeName}`
@@ -105,13 +106,12 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
           contentType: file.type,
         })
         if (result.ok) {
-          const { data: urlData } = supabase.storage.from('consulting-files').getPublicUrl(fileName)
-          fileUrl = urlData.publicUrl
+          attachmentMarker = `[첨부파일:${fileName}]`
         }
       }
 
-      const messageWithFile = fileUrl
-        ? `${form.message}\n\n[첨부파일] ${fileUrl}`
+      const messageWithFile = attachmentMarker
+        ? `${form.message}\n\n${attachmentMarker}`
         : form.message
 
       const { data: insertedRows, error: insertErr } = await supabase

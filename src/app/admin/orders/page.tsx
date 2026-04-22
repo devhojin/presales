@@ -330,6 +330,7 @@ function MemberDetailModal({
         )
         .eq('user_id', member.id)
         .order('created_at', { ascending: false })
+        .limit(200)
         .then(({ data }) => {
           setOrders((data as unknown as Order[]) || [])
           setLoadingOrders(false)
@@ -1109,6 +1110,7 @@ function DownloadHistoryModal({
         .eq('user_id', order.user_id)
         .in('product_id', productIds)
         .order('downloaded_at', { ascending: false })
+        .limit(500)
 
       if (!logs || logs.length === 0) {
         setRows([])

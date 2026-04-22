@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { getServiceClient, getAuthUser, isAdmin } from '@/lib/chat'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
+import { SITE_URL } from '@/lib/constants'
 
 /** GET: 특정 방의 메시지 목록 */
 export async function GET(request: NextRequest) {
@@ -196,7 +197,7 @@ export async function POST(request: NextRequest) {
         senderInfo = `회원 · ${profile?.name || '이름없음'}${profile?.email ? ` (${profile.email})` : ''}`
       }
 
-      const adminUrl = `https://presales.co.kr/admin/chat?room=${room_id}`
+      const adminUrl = `${SITE_URL}/admin/chat?room=${room_id}`
       const html = buildEmailHtml(
         '새 채팅 문의 도착',
         `<h2 style="margin:0 0 16px;font-size:20px;color:#0f172a;">새 채팅 문의가 도착했습니다</h2>
