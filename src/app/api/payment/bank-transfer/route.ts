@@ -5,6 +5,8 @@ import { cookies } from 'next/headers'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { logger } from '@/lib/logger'
 import { SITE_URL } from '@/lib/constants'
+import { escapeHtml } from '@/lib/html-escape'
+import { recomputeExpectedAmount } from '@/lib/payment-recompute'
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@amarans.co.kr'
 
@@ -84,6 +86,7 @@ export async function POST(request: NextRequest) {
         user_id,
         status,
         total_amount,
+        coupon_id,
         deposit_memo,
         profiles ( name, email ),
         order_items (
@@ -103,6 +106,33 @@ export async function POST(request: NextRequest) {
     }
     if (order.status !== 'pending') {
       return NextResponse.json({ error: '이미 처리된 주문입니다' }, { status: 409 })
+    }
+
+    // 3-1. 서버 사이드 금액 재검증 (Round 5 동일 클래스).
+    //   orders.total_amount / order_items.price 는 클라 INSERT 값이라 신뢰 못 함.
+    //   products.price + 번들/쿠폰 규칙 재실행해서 일치 여부 검증.
+    //   불일치 시 입금 안내 자체를 거부 — 상품보다 적게 입금 → 관리자가 실수로 승인하는 시나리오 차단.
+    const expectedAmount = await recomputeExpectedAmount(
+      supabase,
+      orderId,
+      user.id,
+      order.coupon_id as string | null,
+    )
+    if (expectedAmount === null) {
+      logger.error('무통장 주문 재계산 실패', 'payment/bank-transfer', { orderId })
+      return NextResponse.json({ error: '주문 금액 재검증에 실패했습니다' }, { status: 500 })
+    }
+    if (expectedAmount !== Number(order.total_amount)) {
+      logger.error('무통장 서버 재계산 금액 불일치 (가격 조작 의심)', 'payment/bank-transfer', {
+        orderId,
+        userId: user.id,
+        storedTotal: order.total_amount,
+        serverExpected: expectedAmount,
+      })
+      return NextResponse.json(
+        { error: '주문 금액이 서버 검증 금액과 일치하지 않습니다. 장바구니에서 다시 진행해주세요.' },
+        { status: 400 },
+      )
     }
 
     // 4. 주문 상태를 pending_transfer로 변경
@@ -132,7 +162,7 @@ export async function POST(request: NextRequest) {
             (item) => `
             <tr>
               <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#334155;">
-                ${item.products?.title || '(상품명 없음)'}
+                ${escapeHtml(item.products?.title || '(상품명 없음)')}
               </td>
               <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#334155;text-align:right;white-space:nowrap;">
                 ${formatKRW(item.price)}
@@ -142,11 +172,15 @@ export async function POST(request: NextRequest) {
           .join('')
 
         const depositMemo = order.deposit_memo || order.order_number
+        const safeDepositMemo = escapeHtml(depositMemo)
+        const safeOrderNumber = escapeHtml(order.order_number)
+        const safeCustomerName = escapeHtml(profile.name || '고객')
+        const safeCustomerEmail = escapeHtml(profile.email)
 
         // 고객 이메일
         const customerBody = `
           <h2 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">무통장 입금 안내</h2>
-          <p style="margin:0 0 32px;font-size:14px;color:#64748b;">${profile.name || '고객'}님, 아래 계좌로 입금해 주시면 주문이 완료됩니다.</p>
+          <p style="margin:0 0 32px;font-size:14px;color:#64748b;">${safeCustomerName}님, 아래 계좌로 입금해 주시면 주문이 완료됩니다.</p>
 
           <div style="background:#eff6ff;border:2px solid #bfdbfe;border-radius:8px;padding:24px;margin-bottom:24px;">
             <h3 style="margin:0 0 16px;font-size:16px;font-weight:700;color:#1e40af;">입금 계좌 정보</h3>
@@ -173,7 +207,7 @@ export async function POST(request: NextRequest) {
           <div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:16px;margin-bottom:24px;">
             <p style="margin:0 0 6px;font-size:13px;font-weight:600;color:#92400e;">입금자명 안내</p>
             <p style="margin:0;font-size:13px;color:#78350f;">
-              입금 시 입금자명에 <strong>${depositMemo}</strong>를 기재해 주시면 빠른 확인이 가능합니다.
+              입금 시 입금자명에 <strong>${safeDepositMemo}</strong>를 기재해 주시면 빠른 확인이 가능합니다.
             </p>
           </div>
 
@@ -182,7 +216,7 @@ export async function POST(request: NextRequest) {
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td style="font-size:13px;color:#64748b;padding-bottom:6px;">주문번호</td>
-                <td style="font-size:13px;font-weight:600;color:#1e40af;text-align:right;padding-bottom:6px;">${order.order_number}</td>
+                <td style="font-size:13px;font-weight:600;color:#1e40af;text-align:right;padding-bottom:6px;">${safeOrderNumber}</td>
               </tr>
               <tr>
                 <td style="font-size:13px;color:#64748b;">주문일시</td>
@@ -238,15 +272,15 @@ export async function POST(request: NextRequest) {
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td style="font-size:13px;color:#64748b;padding-bottom:8px;">주문번호</td>
-                <td style="font-size:13px;font-weight:600;color:#1e40af;text-align:right;padding-bottom:8px;">${order.order_number}</td>
+                <td style="font-size:13px;font-weight:600;color:#1e40af;text-align:right;padding-bottom:8px;">${safeOrderNumber}</td>
               </tr>
               <tr>
                 <td style="font-size:13px;color:#64748b;padding-bottom:8px;">주문자</td>
-                <td style="font-size:13px;color:#334155;text-align:right;padding-bottom:8px;">${profile.name || '-'} (${profile.email})</td>
+                <td style="font-size:13px;color:#334155;text-align:right;padding-bottom:8px;">${escapeHtml(profile.name || '-')} (${safeCustomerEmail})</td>
               </tr>
               <tr>
                 <td style="font-size:13px;color:#64748b;padding-bottom:8px;">입금자명</td>
-                <td style="font-size:13px;color:#334155;text-align:right;padding-bottom:8px;">${depositMemo}</td>
+                <td style="font-size:13px;color:#334155;text-align:right;padding-bottom:8px;">${safeDepositMemo}</td>
               </tr>
               <tr>
                 <td style="font-size:13px;color:#64748b;">결제금액</td>
