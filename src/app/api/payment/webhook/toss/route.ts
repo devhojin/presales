@@ -96,21 +96,32 @@ export async function POST(request: NextRequest) {
     }
 
     // 상태 전환 매핑
-    //   토스 DONE        → paid
+    //   토스 DONE        → paid (pending/pending_transfer 에서만 전환. paid → paid 중복 webhook 은 무시)
     //   WAITING_FOR_DEPOSIT → pending_transfer (이미 confirm 에서 처리)
-    //   CANCELED/PARTIAL_CANCELED → cancelled
-    //   EXPIRED          → cancelled (가상계좌 만료)
+    //   CANCELED/EXPIRED  → cancelled (paid/completed 에서도 전환 허용 — 입금 취소 + 환불)
+    //   PARTIAL_CANCELED  → 부분 환불: 주문 status 는 유지 (cancelled 로 바꾸면 다운로드 차단 오동작)
     let nextStatus: string | null = null
     const patch: Record<string, unknown> = {}
 
     if (tossStatus === 'DONE') {
+      // 멱등성: 이미 paid/completed 인 주문에 DONE webhook 재도달 시 이메일 재발송 방지
+      if (order.status === 'paid' || order.status === 'completed') {
+        return NextResponse.json({ ok: true, ignored: 'already_paid' })
+      }
       nextStatus = 'paid'
       patch.paid_at = new Date().toISOString()
       if (method) patch.payment_method = method
       if (cashReceipt?.receiptUrl) patch.cash_receipt_url = cashReceipt.receiptUrl
-    } else if (tossStatus === 'CANCELED' || tossStatus === 'PARTIAL_CANCELED' || tossStatus === 'EXPIRED') {
+    } else if (tossStatus === 'CANCELED' || tossStatus === 'EXPIRED') {
+      if (order.status === 'cancelled') {
+        return NextResponse.json({ ok: true, ignored: 'already_cancelled' })
+      }
       nextStatus = 'cancelled'
       patch.cancelled_at = new Date().toISOString()
+    } else if (tossStatus === 'PARTIAL_CANCELED') {
+      // 부분 환불: 주문 상태는 그대로 두고 메타만 기록 (다운로드 차단 오동작 방지)
+      logger.error('토스 webhook: 부분 환불 수신 (상태 유지)', 'payment/webhook/toss', { dbOrderId })
+      return NextResponse.json({ ok: true, ignored: 'partial_canceled_logged' })
     } else if (tossStatus === 'WAITING_FOR_DEPOSIT') {
       // 별도 액션 없음 (confirm 에서 이미 pending_transfer 세팅)
       return NextResponse.json({ ok: true, ignored: 'waiting_for_deposit' })
