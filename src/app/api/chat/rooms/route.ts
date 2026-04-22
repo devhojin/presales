@@ -198,15 +198,28 @@ const GUEST_ALLOWED_FIELDS = new Set([
   'guest_email',
 ])
 
+// 필드별 문자열 길이 제한 — DB 과다 저장 및 후속 렌더링 장애 방지
+const FIELD_MAX_LENGTH: Record<string, number> = {
+  guest_name: 50,
+  guest_email: 254,
+  last_message: 500,
+}
+
 function pickAllowed(
   updates: Record<string, unknown>,
   allowed: Set<string>,
-): Record<string, unknown> {
+): { picked: Record<string, unknown>; error?: string } {
   const picked: Record<string, unknown> = {}
   for (const k of Object.keys(updates)) {
-    if (allowed.has(k)) picked[k] = updates[k]
+    if (!allowed.has(k)) continue
+    const v = updates[k]
+    const max = FIELD_MAX_LENGTH[k]
+    if (max !== undefined && typeof v === 'string' && v.length > max) {
+      return { picked, error: `${k} 은 ${max}자 이하여야 합니다` }
+    }
+    picked[k] = v
   }
-  return picked
+  return { picked }
 }
 
 export async function PATCH(request: NextRequest) {
@@ -221,7 +234,8 @@ export async function PATCH(request: NextRequest) {
   if (user) {
     const admin = await isAdmin(user.id)
     if (admin) {
-      const safe = pickAllowed(updates, ADMIN_ALLOWED_FIELDS)
+      const { picked: safe, error: lenErr } = pickAllowed(updates, ADMIN_ALLOWED_FIELDS)
+      if (lenErr) return NextResponse.json({ error: lenErr }, { status: 400 })
       const { error } = await supabase
         .from('chat_rooms')
         .update({ ...safe, updated_at: new Date().toISOString() })
@@ -231,7 +245,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     // 회원: 자기 방만 수정 가능
-    const safe = pickAllowed(updates, MEMBER_ALLOWED_FIELDS)
+    const { picked: safe, error: lenErr } = pickAllowed(updates, MEMBER_ALLOWED_FIELDS)
+    if (lenErr) return NextResponse.json({ error: lenErr }, { status: 400 })
     const { error } = await supabase
       .from('chat_rooms')
       .update({ ...safe, updated_at: new Date().toISOString() })
@@ -244,7 +259,8 @@ export async function PATCH(request: NextRequest) {
   // 비회원: guest_id로
   const guestId = body.guest_id
   if (guestId) {
-    const safe = pickAllowed(updates, GUEST_ALLOWED_FIELDS)
+    const { picked: safe, error: lenErr } = pickAllowed(updates, GUEST_ALLOWED_FIELDS)
+    if (lenErr) return NextResponse.json({ error: lenErr }, { status: 400 })
     const { error } = await supabase
       .from('chat_rooms')
       .update({ ...safe, updated_at: new Date().toISOString() })

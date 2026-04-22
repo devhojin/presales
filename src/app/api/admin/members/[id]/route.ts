@@ -53,6 +53,16 @@ export async function PATCH(
         return NextResponse.json({ error: '올바르지 않은 이메일 형식입니다' }, { status: 400 })
       }
     }
+    // 길이 bounds — DB 과다 저장 및 후속 렌더링 장애 방지
+    if (name !== undefined && (typeof name !== 'string' || name.length > 100)) {
+      return NextResponse.json({ error: '이름은 100자 이하여야 합니다' }, { status: 400 })
+    }
+    if (phone !== undefined && (typeof phone !== 'string' || phone.length > 50)) {
+      return NextResponse.json({ error: '전화번호는 50자 이하여야 합니다' }, { status: 400 })
+    }
+    if (company !== undefined && (typeof company !== 'string' || company.length > 200)) {
+      return NextResponse.json({ error: '회사명은 200자 이하여야 합니다' }, { status: 400 })
+    }
 
     // 2. 이메일 변경 시 auth.users 를 먼저 업데이트 — profiles 와 divergence 방지.
     //    auth.users 가 unique/포맷 제약 때문에 실패하면 profiles 는 건드리지 않는다.

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { logger } from '@/lib/logger'
+import { checkRateLimitAsync } from '@/lib/rate-limit'
 
 // 토스페이먼츠 webhook: 가상계좌 입금 완료 등 결제 상태 변경 이벤트
 // 대시보드(https://dashboard.tosspayments.com/my/webhook) 에서
@@ -42,6 +43,16 @@ async function fetchTossPayment(paymentKey: string) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Webhook 은 서명 검증이 없어 어떤 발신자든 호출 가능.
+    // 오남용 시 토스 API 역조회 쿼터가 소진되므로 IP 기반 sliding window 로 완충.
+    // 정상 webhook 은 건당 1회 이하이므로 분당 30회는 충분히 여유롭다.
+    const ip = request.headers.get('x-forwarded-for') ?? 'unknown'
+    const rl = await checkRateLimitAsync(`toss-webhook:${ip}`, 30, 60_000)
+    if (!rl.allowed) {
+      logger.error('토스 webhook: rate limit 초과', 'payment/webhook/toss', { ip })
+      return NextResponse.json({ ok: false }, { status: 429 })
+    }
+
     const body = (await request.json()) as TossWebhookBody
     const paymentKey = body.data?.paymentKey ?? body.paymentKey
     const orderId = body.data?.orderId ?? body.orderId

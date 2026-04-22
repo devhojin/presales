@@ -5,6 +5,7 @@ import { cookies, headers } from 'next/headers'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
+import { escapeHtml } from '@/lib/html-escape'
 import { SITE_URL } from '@/lib/constants'
 
 const ADMIN_EMAIL = 'admin@amarans.co.kr'
@@ -143,7 +144,7 @@ export async function POST(request: NextRequest) {
         (item) => `
         <tr>
           <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#334155;">
-            ${item.products?.title || '(상품명 없음)'}
+            ${escapeHtml(item.products?.title) || '(상품명 없음)'}
           </td>
           <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#334155;text-align:right;white-space:nowrap;">
             ${formatKRW(item.price)}
@@ -152,15 +153,19 @@ export async function POST(request: NextRequest) {
       )
       .join('')
 
+    const safeOrderNumber = escapeHtml(order.order_number)
+    const safeCustomerName = escapeHtml(profile.name) || '고객'
+    const safeCustomerEmail = escapeHtml(profile.email)
+
     const customerBody = `
       <h2 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">주문이 확인되었습니다</h2>
-      <p style="margin:0 0 32px;font-size:14px;color:#64748b;">${profile.name || '고객'}님, 주문해 주셔서 감사합니다.</p>
+      <p style="margin:0 0 32px;font-size:14px;color:#64748b;">${safeCustomerName}님, 주문해 주셔서 감사합니다.</p>
 
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;margin-bottom:24px;">
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td style="font-size:13px;color:#64748b;padding-bottom:8px;">주문번호</td>
-            <td style="font-size:13px;font-weight:600;color:#1e40af;text-align:right;padding-bottom:8px;">${order.order_number}</td>
+            <td style="font-size:13px;font-weight:600;color:#1e40af;text-align:right;padding-bottom:8px;">${safeOrderNumber}</td>
           </tr>
           <tr>
             <td style="font-size:13px;color:#64748b;padding-bottom:8px;">주문일시</td>
@@ -211,6 +216,8 @@ export async function POST(request: NextRequest) {
       buildEmailHtml('주문 확인', customerBody),
     )
 
+    // 관리자 메일에도 동일 escape 적용
+
     // ===========================
     // 관리자에게 새 주문 알림
     // ===========================
@@ -222,11 +229,11 @@ export async function POST(request: NextRequest) {
         <table width="100%" cellpadding="0" cellspacing="0">
           <tr>
             <td style="font-size:13px;color:#64748b;padding-bottom:8px;">주문번호</td>
-            <td style="font-size:13px;font-weight:600;color:#1e40af;text-align:right;padding-bottom:8px;">${order.order_number}</td>
+            <td style="font-size:13px;font-weight:600;color:#1e40af;text-align:right;padding-bottom:8px;">${safeOrderNumber}</td>
           </tr>
           <tr>
             <td style="font-size:13px;color:#64748b;padding-bottom:8px;">주문자</td>
-            <td style="font-size:13px;color:#334155;text-align:right;padding-bottom:8px;">${profile.name || '-'} (${profile.email})</td>
+            <td style="font-size:13px;color:#334155;text-align:right;padding-bottom:8px;">${safeCustomerName || '-'} (${safeCustomerEmail})</td>
           </tr>
           <tr>
             <td style="font-size:13px;color:#64748b;padding-bottom:8px;">주문일시</td>

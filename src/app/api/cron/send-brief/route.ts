@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendEmail } from '@/lib/email'
 import { SITE_URL } from '@/lib/constants'
+import { escapeHtml } from '@/lib/html-escape'
 
 /**
  * Cron handler: 최신 모닝 브리프를 모든 구독자에게 이메일 발송
@@ -226,7 +227,9 @@ function buildBriefEmailHtml(opts: BriefEmailOptions): string {
     timeZone: 'Asia/Seoul',
   })
 
-  const greeting = recipientName ? `안녕하세요, ${recipientName}님!` : '안녕하세요!'
+  const greeting = recipientName
+    ? `안녕하세요, ${escapeHtml(recipientName)}님!`
+    : '안녕하세요!'
 
   const statsBadges = [
     `<span style="display:inline-block;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:9999px;padding:3px 12px;font-size:12px;font-weight:600;margin-right:6px;">뉴스 ${totalNews}건</span>`,

@@ -5,6 +5,7 @@ import { cookies, headers } from 'next/headers'
 import { sendEmail, buildEmailHtml } from '@/lib/email'
 import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
+import { escapeHtml } from '@/lib/html-escape'
 
 import { CONSULTING_PACKAGES, SITE_URL } from '@/lib/constants'
 
@@ -25,17 +26,6 @@ function formatDateKR(isoString: string) {
     hour: '2-digit',
     minute: '2-digit',
   })
-}
-
-/** HTML 특수문자 이스케이프 (이메일 본문 XSS 차단) */
-function escapeHtml(s: string | null | undefined): string {
-  if (s == null) return ''
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#x27;')
 }
 
 export async function POST(request: NextRequest) {
