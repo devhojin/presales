@@ -80,14 +80,17 @@ cd ~/presales && git pull
 
 ## 에이전트 팀 운영 모드
 
-이 프로젝트는 **10인 자율 에이전트 팀 (v2.1)**으로 운영됩니다.
+이 프로젝트는 **10인 본진 + 5인 감사실 = 15인 자율 에이전트 팀 (v2.2, 2026-04-24)**으로 운영됩니다.
 
-- 에이전트 정의: `agents/` 디렉토리 참조
+- 에이전트 정의: `agents/` 디렉토리 참조 (감사실은 `agents/auditors/`)
 - 작업 요청 → Orchestrator가 분석 → 적절한 에이전트에 분배 → QA 검증 → 배포
+- 감사 요청 → Audit Chief 가 4인 병렬 발화 → 취합 → 호진 보고 → 수정 → Followup
 - 병렬 처리 가능한 작업은 동시 실행 (Agent tool 병렬 호출)
-- 모든 작업 완료 후: `npm run build` → `git push` → `npx vercel --yes --prod`
+- 모든 작업 완료 후: `npm run build` → `git push` → Vercel webhook 자동배포 (CLI 금지)
 
 ## 에이전트 팀 구성
+
+### 본진 (10인)
 
 | 에이전트 | 역할 | 모델 | 정의 |
 |----------|------|------|------|
@@ -101,6 +104,16 @@ cd ~/presales && git pull
 | Content Writer | 상품설명/법적문서/FAQ/블로그 | sonnet | `agents/docs-writer.md` |
 | Marketer | 마케팅전략/캠페인/프로모션 | sonnet | `agents/marketer.md` |
 | Junior | 신입사원 시선: 혼란 포인트/온보딩 병목/초심자 UX 발견 | haiku | `agents/junior.md` |
+
+### 감사실 (5인, 2026-04-24 신설 — R15+ 정식 라운드)
+
+| 에이전트 | 역할 | 모델 | 정의 | 단독 호출 |
+|----------|------|------|------|-----------|
+| Audit Chief | 라운드 기획/취합/우선순위/보고 | opus | `agents/auditors/chief.md` | `/audit` |
+| Bug Hunter | 결제·인증·다운로드·RLS·race CRITICAL/HIGH | opus | `agents/auditors/bug-hunter.md` | `/audit-bug` |
+| Security Auditor | KISA + OWASP + Supabase Advisor + RLS + CSP | sonnet | `agents/auditors/security.md` | `/audit-security` |
+| Quality Auditor | 빌드·dead code·복잡도·테스트·dependency | sonnet | `agents/auditors/quality.md` | `/audit-quality` |
+| UX Auditor | preview/playwright 실측·접근성 AA·모바일·CWV | sonnet | `agents/auditors/ux.md` | `/audit-ux` |
 
 ## 개발 환경 정책
 
