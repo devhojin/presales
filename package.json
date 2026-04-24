@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "predev": "node scripts/generate-work-history.js",
+    "codex:doctor": "node scripts/codex-doctor.mjs",
     "dev": "next dev",
     "prebuild": "node scripts/generate-work-history.js",
     "build": "next build",

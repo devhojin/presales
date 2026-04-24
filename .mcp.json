@@ -14,7 +14,12 @@
     },
     "playwright": {
       "command": "npx",
-      "args": ["-y", "@playwright/mcp@latest"]
+      "args": [
+        "-y",
+        "@playwright/mcp@latest",
+        "--allowed-hosts",
+        "localhost,127.0.0.1,presales-zeta.vercel.app,presales.co.kr"
+      ]
     },
     "context7": {
       "command": "npx",
