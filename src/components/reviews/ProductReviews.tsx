@@ -55,7 +55,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
       .select('id, orders!inner(user_id, status)')
       .eq('product_id', productId)
       .eq('orders.user_id', user.id)
-      .eq('orders.status', 'paid')
+      .in('orders.status', ['paid', 'completed'])
       .limit(1)
       .then(({ data }) => {
         setHasPurchased((data?.length ?? 0) > 0)

@@ -623,6 +623,15 @@ export default function AdminProducts() {
 
   const supabase = useMemo(() => createClient(), [])
   const dragBulkPrice = useDraggableModal()
+  const getPublishableProductIds = useCallback(async (ids: number[]) => {
+    if (ids.length === 0) return new Set<number>()
+    const { data, error } = await supabase
+      .from('product_files')
+      .select('product_id')
+      .in('product_id', ids)
+    if (error) throw error
+    return new Set((data || []).map((row) => row.product_id))
+  }, [supabase])
 
   const loadProducts = useCallback(async () => {
     const { data } = await supabase
@@ -708,6 +717,19 @@ export default function AdminProducts() {
 
   // Toggle publish
   const handleTogglePublish = async (id: number, current: boolean) => {
+    if (!current) {
+      try {
+        const publishable = await getPublishableProductIds([id])
+        if (!publishable.has(id)) {
+          setToast('파일이 없는 상품은 공개할 수 없습니다')
+          return
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '파일 확인 중 오류가 발생했습니다'
+        setToast(`변경 실패: ${message}`)
+        return
+      }
+    }
     const { error } = await supabase.from('products').update({ is_published: !current }).eq('id', id)
     if (error) {
       setToast(`변경 실패: ${error.message}`)
@@ -790,8 +812,32 @@ export default function AdminProducts() {
   const handleBulkPublish = async (publish: boolean) => {
     if (selectedIds.size === 0) return
     const ids = Array.from(selectedIds)
+    let targetIds = ids
+
+    if (publish) {
+      try {
+        const publishable = await getPublishableProductIds(ids)
+        const blocked = ids.filter((id) => !publishable.has(id))
+        targetIds = ids.filter((id) => publishable.has(id))
+
+        if (blocked.length > 0 && targetIds.length === 0) {
+          setToast('선택한 상품 모두 파일이 없어 공개할 수 없습니다')
+          return
+        }
+
+        if (blocked.length > 0) {
+          setToast(`파일 없는 ${blocked.length}개 상품을 제외하고 공개합니다`)
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '파일 확인 중 오류가 발생했습니다'
+        setToast(`변경 실패: ${message}`)
+        return
+      }
+    }
+
+    if (targetIds.length === 0) return
     const results = await Promise.all(
-      ids.map((id) => supabase.from('products').update({ is_published: publish }).eq('id', id))
+      targetIds.map((id) => supabase.from('products').update({ is_published: publish }).eq('id', id))
     )
     const failed = results.filter((r) => r.error).length
     const succeeded = results.length - failed

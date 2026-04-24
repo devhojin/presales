@@ -148,7 +148,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
               .from('orders')
               .select('id, order_items!inner(product_id)')
               .eq('user_id', user.id)
-              .eq('status', 'paid')
+              .in('status', ['paid', 'completed'])
               .eq('order_items.product_id', data.id)
             hasPurchasedThisProduct = (paidOrders && paidOrders.length > 0) || false
             setHasPurchased(hasPurchasedThisProduct)

@@ -498,6 +498,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       showToast('상품명을 입력해주세요.')
       return
     }
+    if (form.is_published && productFiles.length === 0) {
+      showToast('파일이 없는 상품은 공개할 수 없습니다. 먼저 상품 파일을 등록해주세요.')
+      return
+    }
     setSaving(true)
     try {
       const supabase = createClient()
