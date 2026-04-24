@@ -2,7 +2,7 @@
 
 **Site URL:** https://presales-zeta.vercel.app
 **Test Date:** 2026-03-30
-**Tester:** Automated (Claude Code)
+**Tester:** Automated agent
 
 ---
 

@@ -73,16 +73,19 @@ npm install @tosspayments/payment-sdk
 
 ---
 
-## 📂 관련 메모리
+## 📂 관련 기록
 
-- `~/.claude/projects/-Users-hojin-project-presales/memory/task9_toss_virtual_account_blocked.md` — 상세 기록
-- `~/.claude/projects/-Users-hojin-project-presales/memory/MEMORY.md` — 전체 메모리 인덱스
+- `sql/2026-04-19-toss-virtual-account.sql` — DB 변경
+- `src/app/api/payment/webhook/toss/route.ts` — webhook 처리
+- `src/app/api/payment/confirm/route.ts` — 승인 처리
+- `src/app/checkout/page.tsx` — 체크아웃 플로우
+- `src/app/checkout/success/page.tsx` — 성공 페이지 UI
 
 ## 🚫 하지 말 것
 
 - Task #9 이미 끝났다고 커밋하지 말 것 (아직 E2E 미완료)
 - 위젯 키 발급 전에 Vercel 환경변수 건드리지 말 것 (지금 설정도 Redeploy 용으로 기록된 상태)
-- 이 PC에서 `vercel deploy`/`vercel link` 절대 실행 금지 (CLAUDE.md ⚠️ 섹션 1 참조)
+- 이 PC에서 `vercel deploy`/`vercel link` 절대 실행 금지 (`AGENTS.md` 배포 규칙 참조)
 
 ## 🗒 참고 — 다른 호진님 action (내일 이후)
 
@@ -91,4 +94,4 @@ npm install @tosspayments/payment-sdk
 - 🟡 토스 **라이브 키** 교체 (Task #9 위젯 키 테스트 성공 후)
 - 🟢 GitHub PAT / Supabase PAT MCP 재활성화
 
-자세한 내용: `~/.claude/projects/-Users-hojin-project-presales/memory/HOJIN_ACTION_2026-04-19.md`
+자세한 내용은 후속 세션에서 별도 작업 기록 문서로 남긴다.
