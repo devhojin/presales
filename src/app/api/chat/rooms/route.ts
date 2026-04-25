@@ -6,6 +6,7 @@ import { getClientIp } from '@/lib/client-ip'
 
 // UUID v4 형식 검증 (비회원 guest_id — 클라이언트 uuid 생성)
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /** DELETE: 채팅방 삭제 (hide | full) */
 export async function DELETE(request: NextRequest) {
@@ -50,6 +51,7 @@ export async function GET() {
         .from('chat_rooms')
         .select('*')
         .eq('hidden_by_admin', false)
+        .not('last_message', 'is', null)
         .order('last_message_at', { ascending: false })
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -125,7 +127,7 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         room_type: 'member',
         status: 'open',
-        admin_unread_count: 1,
+        admin_unread_count: 0,
       })
       .select()
       .single()
@@ -164,7 +166,7 @@ export async function POST(request: NextRequest) {
       guest_name: guestName,
       room_type: 'guest',
       status: 'open',
-      admin_unread_count: 1,
+      admin_unread_count: 0,
     })
     .select()
     .single()
@@ -218,6 +220,9 @@ function pickAllowed(
     if (max !== undefined && typeof v === 'string' && v.length > max) {
       return { picked, error: `${k} 은 ${max}자 이하여야 합니다` }
     }
+    if (k === 'guest_email' && typeof v === 'string' && v.length > 0 && !EMAIL_REGEX.test(v)) {
+      return { picked, error: 'guest_email 형식이 올바르지 않습니다' }
+    }
     picked[k] = v
   }
   return { picked }
@@ -225,7 +230,7 @@ function pickAllowed(
 
 export async function PATCH(request: NextRequest) {
   const body = await request.json()
-  const { room_id, guest_id: _guestId, ...updates } = body as Record<string, unknown> & { room_id?: string; guest_id?: string }
+  const { room_id, ...updates } = body as Record<string, unknown> & { room_id?: string; guest_id?: string }
   if (!room_id) return NextResponse.json({ error: 'room_id 필요' }, { status: 400 })
 
   const user = await getAuthUser()

@@ -6,6 +6,15 @@ import { checkRateLimitAsync } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/client-ip'
 import { SITE_URL } from '@/lib/constants'
 
+const CHAT_EMAIL_TIMEOUT_MS = 1500
+
+async function waitForBackgroundEmail(task: Promise<unknown>, timeoutMs = CHAT_EMAIL_TIMEOUT_MS) {
+  await Promise.race([
+    task,
+    new Promise((resolve) => setTimeout(resolve, timeoutMs)),
+  ])
+}
+
 /** GET: 특정 방의 메시지 목록 */
 export async function GET(request: NextRequest) {
   const headersList = await headers()
@@ -231,9 +240,11 @@ export async function POST(request: NextRequest) {
       )
 
       // 실패해도 메시지 전송은 이미 성공했으므로 swallow
-      await sendEmail('hojin@amarans.co.kr', '[프리세일즈] 새 채팅 문의', html).catch(err => {
-        console.error('[chat-email] send failed:', err)
-      })
+      await waitForBackgroundEmail(
+        sendEmail('hojin@amarans.co.kr', '[프리세일즈] 새 채팅 문의', html).catch(err => {
+          console.error('[chat-email] send failed:', err)
+        })
+      )
     } catch (err) {
       console.error('[chat-email] build failed:', err)
     }
@@ -294,9 +305,11 @@ export async function POST(request: NextRequest) {
                <p style="margin:24px 0 0;font-size:12px;color:#94a3b8;">기록용 대화 ID: ${shortId}</p>
                <p style="margin:8px 0 0;font-size:12px;color:#94a3b8;">1시간 내에 추가 답변이 도착해도 별도 알림은 보내지 않습니다. 채팅창에서 전체 대화를 확인하세요.</p>`
             )
-            await sendEmail(recipientEmail, '[프리세일즈] 상담원 답변 도착', html).catch(err => {
-              console.error('[chat-reply-email] send failed:', err)
-            })
+            await waitForBackgroundEmail(
+              sendEmail(recipientEmail, '[프리세일즈] 상담원 답변 도착', html).catch(err => {
+                console.error('[chat-reply-email] send failed:', err)
+              })
+            )
             await supabase
               .from('chat_rooms')
               .update({ last_user_notified_at: new Date().toISOString() })

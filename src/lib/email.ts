@@ -17,6 +17,9 @@ export function createTransporter() {
     host: process.env.SMTP_HOST || 'mail.mailplug.co.kr',
     port: Number(process.env.SMTP_PORT) || 465,
     secure: true,
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 10000,
     auth: {
       user: process.env.SMTP_USER!,
       pass: process.env.SMTP_PASS!,
