@@ -124,6 +124,17 @@ interface DateFilteredQuery<T> {
   lt(column: string, value: string): T
 }
 
+interface AdminMemberSummary {
+  id: string
+  name: string | null
+  email: string
+  created_at: string
+}
+
+interface AdminMembersResponse {
+  members: AdminMemberSummary[]
+}
+
 // ===========================
 // Constants
 // ===========================
@@ -660,10 +671,23 @@ export default function AdminDashboard() {
     }
 
     // 회원 전체 데이터 (RLS 우회 API)
-    const adminMembersRes = await fetch('/api/admin/members', { cache: 'no-store' })
-    const adminMembers = adminMembersRes.ok
-      ? (await adminMembersRes.json() as { members: Array<{ id: string; name: string | null; email: string; created_at: string }> })
-      : { members: [] }
+    let adminMembers: AdminMembersResponse = { members: [] }
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      const adminMembersRes = await fetch('/api/admin/members', {
+        cache: 'no-store',
+        credentials: 'same-origin',
+      })
+
+      if (adminMembersRes.ok) {
+        adminMembers = await adminMembersRes.json() as AdminMembersResponse
+        break
+      }
+
+      if (attempt === 0) {
+        await new Promise((resolve) => window.setTimeout(resolve, 400))
+      }
+    }
+
     const allMembers = adminMembers.members || []
 
     // Current period queries
