@@ -20,13 +20,26 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    const { email, name } = await request.json() as { email: string; name?: string }
+    const { email, name, source: rawSource } = await request.json() as {
+      email: string
+      name?: string
+      source?: string
+    }
     if (!email || typeof email !== 'string' || email.length > 254 || !EMAIL_REGEX.test(email)) {
       return NextResponse.json({ ok: false, error: '올바른 이메일 주소가 아닙니다' }, { status: 400 })
     }
     // 이름 길이 제한 (DB 오염 방지)
     if (name && (typeof name !== 'string' || name.length > 100)) {
       return NextResponse.json({ ok: false, error: '이름이 너무 깁니다' }, { status: 400 })
+    }
+    // 가입 경로 소스 — 외부 사이트 릴레이가 'maru_ai_homepage' 등을 보낼 수 있도록 허용
+    // 형식: 영문 소문자 / 숫자 / _ / - 만, 길이 ≤ 50
+    let source = 'web'
+    if (typeof rawSource === 'string' && rawSource.length > 0) {
+      if (rawSource.length > 50 || !/^[a-z0-9_-]+$/.test(rawSource)) {
+        return NextResponse.json({ ok: false, error: 'source 형식이 올바르지 않습니다' }, { status: 400 })
+      }
+      source = rawSource
     }
 
     const service = createClient(
@@ -71,7 +84,7 @@ export async function POST(request: NextRequest) {
         name: name || null,
         token,
         status: 'active',
-        source: 'web',
+        source,
       })
 
     if (insErr) {
