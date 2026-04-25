@@ -1,5 +1,6 @@
 'use client'
 
+import './admin-theme.css'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -40,7 +41,10 @@ const adminNav: NavItem[] = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('admin-sidebar-collapsed') === 'true'
+  })
   const [mobileOpen, setMobileOpen] = useState(false)
   const [badges, setBadges] = useState<Record<string, number>>({})
 
@@ -98,15 +102,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const interval = setInterval(loadBadges, 30000)
     return () => clearInterval(interval)
   }, [ready])
-
-  useEffect(() => {
-    const saved = localStorage.getItem('admin-sidebar-collapsed')
-    if (saved === 'true') setCollapsed(true)
-  }, [])
-
-  useEffect(() => {
-    setMobileOpen(false)
-  }, [pathname])
 
   const toggle = () => {
     const next = !collapsed
@@ -166,6 +161,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link
               key={item.href}
               href={item.href}
+              onClick={isMobile ? () => setMobileOpen(false) : undefined}
               title={!isMobile && collapsed ? item.label : undefined}
               className={`flex items-center ${!isMobile && collapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
                 isActive
@@ -203,7 +199,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   )
 
   return (
-    <div className="min-h-[100dvh] flex bg-background">
+    <div className="admin-tone min-h-[100dvh] flex bg-background">
       {/* Mobile top bar */}
       <div className="fixed top-0 left-0 right-0 h-14 bg-card border-b border-border/50 flex items-center px-4 z-40 md:hidden">
         <button type="button" title="메뉴 열기" onClick={() => setMobileOpen(true)} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
@@ -250,7 +246,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main */}
       <main className="flex-1 min-w-0">
         <div className="pt-14 md:pt-0">
-          <div className="p-4 md:p-8 max-w-[1400px]">
+          <div className="admin-content p-4 md:p-8">
             {children}
           </div>
         </div>
