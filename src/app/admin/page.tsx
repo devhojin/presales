@@ -1393,34 +1393,6 @@ export default function AdminDashboard() {
                   </div>
                 )}
               </DashboardPanel>
-
-              <DashboardPanel eyebrow="activity" title="실시간 활동" sub="주문·컨설팅·리뷰·다운로드 최근 기록">
-                {loading ? (
-                  <ListSkeleton rows={5} />
-                ) : activityFeed.length === 0 ? (
-                  <p className="py-4 text-center text-sm text-[#8b8578]">활동 기록이 없습니다</p>
-                ) : (
-                  <div className="space-y-3">
-                    {activityFeed.map((item) => (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => router.push(item.href)}
-                        className="flex w-full items-start gap-3 rounded-[16px] border border-transparent px-1 py-1 text-left transition-colors hover:border-[#e6e0d6] hover:bg-[#fcfbf8]"
-                      >
-                        <NotificationIcon type={item.type} />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-[#1a1814]">{item.title}</p>
-                          <p className="mt-1 text-xs text-[#6b665c]">{item.subtitle}</p>
-                        </div>
-                        <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.12em] text-[#8b8578]">
-                          {formatRelativeTime(item.timestamp)}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </DashboardPanel>
             </div>
           </div>
 
@@ -1594,6 +1566,34 @@ export default function AdminDashboard() {
               )}
             </DashboardPanel>
           </div>
+
+          <DashboardPanel eyebrow="activity" title="실시간 활동" sub="주문·컨설팅·리뷰·다운로드 최근 기록">
+            {loading ? (
+              <ListSkeleton rows={5} />
+            ) : activityFeed.length === 0 ? (
+              <p className="py-4 text-center text-sm text-[#8b8578]">활동 기록이 없습니다</p>
+            ) : (
+              <div className="space-y-3">
+                {activityFeed.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => router.push(item.href)}
+                    className="flex w-full items-start gap-3 rounded-[16px] border border-transparent px-1 py-1 text-left transition-colors hover:border-[#e6e0d6] hover:bg-[#fcfbf8]"
+                  >
+                    <NotificationIcon type={item.type} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-[#1a1814]">{item.title}</p>
+                      <p className="mt-1 text-xs text-[#6b665c]">{item.subtitle}</p>
+                    </div>
+                    <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.12em] text-[#8b8578]">
+                      {formatRelativeTime(item.timestamp)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </DashboardPanel>
         </div>
       </div>
 
