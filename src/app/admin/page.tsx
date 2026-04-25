@@ -119,6 +119,11 @@ interface Notification {
   timestamp: Date
 }
 
+interface DateFilteredQuery<T> {
+  gte(column: string, value: string): T
+  lt(column: string, value: string): T
+}
+
 // ===========================
 // Constants
 // ===========================
@@ -194,16 +199,6 @@ function calcChange(current: number, previous: number): number | null {
   return Math.round(((current - previous) / previous) * 100)
 }
 
-function ChangeLabel({ pct, label }: { pct: number | null; label: string }) {
-  if (pct === null) return <p className="text-xs text-muted-foreground mt-1">이전 기간 없음</p>
-  const positive = pct >= 0
-  return (
-    <p className={`text-xs mt-1 font-medium ${positive ? 'text-primary' : 'text-red-500'}`}>
-      {positive ? '+' : ''}{pct}% vs {label}
-    </p>
-  )
-}
-
 // ===========================
 // Skeleton components
 // ===========================
@@ -258,7 +253,7 @@ function ListSkeleton({ rows = 5 }: { rows?: number }) {
 // Revenue Bar Chart (Recharts)
 // ===========================
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 function RevenueChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string }>; label?: string }) {
   if (!active || !payload || !payload.length) return null
@@ -364,35 +359,176 @@ function RevenueChart({ data, period }: { data: DailyRevenue[]; period: Period }
 // Sub-components
 // ===========================
 
-function SectionHeader({ title, href }: { title: string; href: string }) {
-  return (
-    <div className="flex items-center justify-between mb-4">
-      <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">{title}</h2>
-      <Link href={href} className="text-xs text-primary hover:text-primary/80 flex items-center gap-0.5 font-medium">
-        전체보기 <ArrowUpRight className="w-3 h-3" />
-      </Link>
-    </div>
-  )
-}
-
-function StarRating({ rating }: { rating: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          className={`w-3.5 h-3.5 ${i <= rating ? 'text-primary fill-primary' : 'text-border'}`}
-        />
-      ))}
-    </div>
-  )
-}
-
 function AvatarInitial({ name }: { name: string }) {
   const initial = (name || '?')[0].toUpperCase()
   return (
     <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold shrink-0">
       {initial}
+    </div>
+  )
+}
+
+interface ActivityFeedItem {
+  id: string
+  type: 'order' | 'consulting' | 'review' | 'download'
+  title: string
+  subtitle: string
+  timestamp: string
+  href: string
+}
+
+function formatRelativeTime(date: string) {
+  const diffMs = Date.now() - new Date(date).getTime()
+  const diffMin = Math.max(0, Math.floor(diffMs / 60000))
+  if (diffMin < 1) return '방금 전'
+  if (diffMin < 60) return `${diffMin}분 전`
+  const diffHour = Math.floor(diffMin / 60)
+  if (diffHour < 24) return `${diffHour}시간 전`
+  const diffDay = Math.floor(diffHour / 24)
+  return `${diffDay}일 전`
+}
+
+function DashboardPanel({
+  eyebrow,
+  title,
+  sub,
+  href,
+  children,
+  action,
+  className = '',
+}: {
+  eyebrow: string
+  title: string
+  sub?: string
+  href?: string
+  children: React.ReactNode
+  action?: React.ReactNode
+  className?: string
+}) {
+  return (
+    <section
+      className={`relative overflow-hidden rounded-[24px] border border-[#ddd6ca] bg-white/90 p-5 shadow-[0_20px_60px_-42px_rgba(37,99,235,0.35)] backdrop-blur ${className}`}
+    >
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#2563eb]/35 to-transparent" />
+      <div className="mb-5 flex items-end justify-between gap-4">
+        <div>
+          <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-[#7b7468]">
+            {eyebrow}
+          </p>
+          <h2 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-[#1a1814]">
+            {title}
+          </h2>
+          {sub && <p className="mt-1 text-sm text-[#6b665c]">{sub}</p>}
+        </div>
+        {action ?? (href ? (
+          <Link
+            href={href}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-[#2563eb] transition-colors hover:text-[#1d4ed8]"
+          >
+            전체보기 <ArrowUpRight className="h-3.5 w-3.5" />
+          </Link>
+        ) : null)}
+      </div>
+      {children}
+    </section>
+  )
+}
+
+function DashboardKpiCard({
+  label,
+  value,
+  href,
+  icon: IconComponent,
+  accent,
+  change,
+  subtext,
+}: {
+  label: string
+  value: string
+  href: string
+  icon: typeof Package
+  accent: string
+  change: number | null
+  subtext?: string | null
+}) {
+  const isPositive = change !== null ? change >= 0 : null
+  return (
+    <Link
+      href={href}
+      className="group relative overflow-hidden rounded-[20px] border border-[#ddd6ca] bg-white/95 p-4 shadow-[0_16px_40px_-36px_rgba(37,99,235,0.45)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#cfc6b9] hover:shadow-[0_24px_56px_-34px_rgba(37,99,235,0.30)]"
+    >
+      <div
+        className="absolute inset-x-0 top-0 h-1 opacity-80"
+        style={{ background: `linear-gradient(90deg, ${accent} 0%, transparent 100%)` }}
+      />
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-[12px] border"
+          style={{
+            borderColor: `${accent}44`,
+            background: `${accent}16`,
+            color: accent,
+          }}
+        >
+          <IconComponent className="h-[18px] w-[18px]" />
+        </div>
+        <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9c968a]">
+          {label}
+        </span>
+      </div>
+      <p className="font-mono text-[26px] font-bold tracking-[-0.04em] text-[#1a1814]">
+        {value}
+      </p>
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <div className="min-h-5">
+          {change !== null ? (
+            <span
+              className="inline-flex items-center rounded-full border px-2 py-1 font-mono text-[10px] font-semibold"
+              style={{
+                color: isPositive ? '#047857' : '#b45309',
+                background: isPositive ? 'rgba(16,185,129,0.10)' : 'rgba(245,158,11,0.12)',
+                borderColor: isPositive ? 'rgba(16,185,129,0.22)' : 'rgba(245,158,11,0.24)',
+              }}
+            >
+              {isPositive ? '+' : ''}{change}%
+            </span>
+          ) : (
+            <span className="text-[11px] text-[#8b8578]">{subtext || '집계 기준 확인'}</span>
+          )}
+        </div>
+        <span className="text-[11px] font-medium text-[#6b665c] transition-colors group-hover:text-[#2563eb]">
+          이동
+        </span>
+      </div>
+    </Link>
+  )
+}
+
+function NotificationIcon({ type }: { type: Notification['type'] | ActivityFeedItem['type'] }) {
+  if (type === 'order') {
+    return (
+      <div className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-emerald-200 bg-emerald-50 text-emerald-700">
+        <ShoppingCart className="h-4 w-4" />
+      </div>
+    )
+  }
+  if (type === 'consulting') {
+    return (
+      <div className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-sky-200 bg-sky-50 text-sky-700">
+        <MessageSquare className="h-4 w-4" />
+      </div>
+    )
+  }
+  if (type === 'review') {
+    return (
+      <div className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-amber-200 bg-amber-50 text-amber-700">
+        <Star className="h-4 w-4" />
+      </div>
+    )
+  }
+  return (
+    <div className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-blue-200 bg-blue-50 text-blue-700">
+      <Download className="h-4 w-4" />
     </div>
   )
 }
@@ -472,6 +608,7 @@ export default function AdminDashboard() {
   // Subscribe to realtime events (orders, consulting, reviews, profiles)
   useEffect(() => {
     const supabase = createClient()
+    const timers = notificationTimers.current
     const channel = supabase
       .channel('admin-notifications')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
@@ -501,15 +638,11 @@ export default function AdminDashboard() {
 
     return () => {
       supabase.removeChannel(channel)
-      notificationTimers.current.forEach((timer) => clearTimeout(timer))
+      timers.forEach((timer) => clearTimeout(timer))
     }
   }, [addNotification])
 
-  useEffect(() => {
-    loadDashboard()
-  }, [period])
-
-  async function loadDashboard() {
+  const loadDashboard = useCallback(async () => {
     setLoading(true)
     const supabase = createClient()
 
@@ -518,12 +651,10 @@ export default function AdminDashboard() {
     const days = period === '7일' ? 7 : period === '30일' ? 30 : 90
 
     // Build queries with optional date filter
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    function applyPeriod(q: any, col: string = 'created_at') {
+    function applyPeriod<T extends DateFilteredQuery<T>>(q: T, col: string = 'created_at'): T {
       return periodStart ? q.gte(col, periodStart) : q
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    function applyPrevPeriod(q: any, col: string = 'created_at') {
+    function applyPrevPeriod<T extends DateFilteredQuery<T>>(q: T, col: string = 'created_at'): T {
       if (!prevPeriodStart || !periodStart) return q
       return q.gte(col, prevPeriodStart).lt(col, periodStart)
     }
@@ -675,7 +806,6 @@ export default function AdminDashboard() {
         paidOrders: prevPaidOrdersCount.count || 0,
         members: prevMembersCount,
         revenue:
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           prevPaidAmountData.data?.reduce((s: number, o: { total_amount?: number }) => s + (o.total_amount || 0), 0) || 0,
         downloads: prevDownloadsCount.count || 0,
         consulting: prevConsultingCount.count || 0,
@@ -684,9 +814,7 @@ export default function AdminDashboard() {
     }
 
     // KPIs
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const revenue =
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       paidOrdersData.data?.reduce((sum: number, o: { total_amount?: number }) => sum + (o.total_amount || 0), 0) || 0
     const currentKpi = {
       products: productsCount.count || 0,
@@ -842,14 +970,18 @@ export default function AdminDashboard() {
     }
 
     setLoading(false)
-  }
+  }, [period])
+
+  useEffect(() => {
+    const runId = window.setTimeout(() => {
+      void loadDashboard()
+    }, 0)
+    return () => window.clearTimeout(runId)
+  }, [loadDashboard])
 
   // ===========================
   // KPI card definitions
   // ===========================
-
-  const prevLabel =
-    period === '전체' ? '' : `이전 ${period}`
 
   const todayAnnCount = fetchStatus.annLogs.reduce((s, l) => s + l.count, 0)
   const todayFeedCount = fetchStatus.feedLogs.reduce((s, l) => s + l.count, 0)
@@ -962,513 +1094,519 @@ export default function AdminDashboard() {
     },
   ]
 
-  // ===========================
-  // Notification icon helper
-  // ===========================
+  const activityFeed = useMemo<ActivityFeedItem[]>(() => {
+    const orderItems = recentOrders.map((order) => {
+      const profile = orderProfiles[order.user_id]
+      const status = statusLabels[order.status]?.label || order.status
+      return {
+        id: `order-${order.id}`,
+        type: 'order' as const,
+        title: `${order.order_number} ${status}`,
+        subtitle: `${profile?.name || '이름 없음'} · ${formatAmount(order.total_amount)}원`,
+        timestamp: order.created_at,
+        href: `/admin/orders?search=${encodeURIComponent(order.order_number)}`,
+      }
+    })
 
-  function NotificationIcon({ type }: { type: Notification['type'] }) {
-    const configs = {
-      order: { bg: 'bg-primary/10', icon: <ShoppingCart className="w-4 h-4 text-primary" /> },
-      consulting: { bg: 'bg-amber-50', icon: <MessageSquare className="w-4 h-4 text-amber-600" /> },
-      review: { bg: 'bg-primary/10', icon: <Star className="w-4 h-4 text-primary" /> },
-      member: { bg: 'bg-primary/10', icon: <Users className="w-4 h-4 text-primary" /> },
-    }
-    const { bg, icon } = configs[type]
-    return (
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${bg}`}>
-        {icon}
-      </div>
-    )
-  }
+    const consultingItems = recentConsulting.map((item) => ({
+      id: `consulting-${item.id}`,
+      type: 'consulting' as const,
+      title: `${item.name} 컨설팅 신청`,
+      subtitle: `${packageLabels[item.package_type] || item.package_type} · ${consultingStatusLabels[item.status]?.label || item.status}`,
+      timestamp: item.created_at,
+      href: '/admin/consulting',
+    }))
 
-  // ===========================
-  // Render
-  // ===========================
+    const reviewItems = recentReviews.map((review) => {
+      const profile = reviewProfiles[review.user_id]
+      const prod = review.products
+      const productTitle = Array.isArray(prod) ? prod[0]?.title || '-' : prod?.title || '-'
+      return {
+        id: `review-${review.id}`,
+        type: 'review' as const,
+        title: `${review.rating}점 리뷰 등록`,
+        subtitle: `${profile?.name || '이름 없음'} · ${productTitle}`,
+        timestamp: review.created_at,
+        href: '/admin/reviews',
+      }
+    })
+
+    const downloadItems = recentDownloads.map((download) => {
+      const profile = downloadProfiles[download.user_id]
+      return {
+        id: `download-${download.id}`,
+        type: 'download' as const,
+        title: downloadProducts[download.product_id] || '다운로드',
+        subtitle: `${profile?.name || '이름 없음'} · 문서 다운로드`,
+        timestamp: download.downloaded_at,
+        href: '/admin/downloads',
+      }
+    })
+
+    return [...orderItems, ...consultingItems, ...reviewItems, ...downloadItems]
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 8)
+  }, [
+    recentOrders,
+    orderProfiles,
+    recentConsulting,
+    recentReviews,
+    reviewProfiles,
+    recentDownloads,
+    downloadProfiles,
+    downloadProducts,
+  ])
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">관리자 대시보드</h1>
+    <>
+      <div className="relative overflow-hidden rounded-[28px] border border-[#ddd6ca] bg-[#faf9f7] shadow-[0_30px_80px_-54px_rgba(37,99,235,0.45)]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.08),transparent_38%)]" />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.04] [background-image:linear-gradient(rgba(37,99,235,0.35)_1px,transparent_1px),linear-gradient(90deg,rgba(37,99,235,0.35)_1px,transparent_1px)] [background-size:46px_46px]" />
 
-        <div className="flex items-center gap-2">
-          {/* Quick actions */}
-          <Link
-            href="/admin/products/new"
-            className="flex items-center gap-1.5 px-4 py-2 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 transition-colors cursor-pointer"
-          >
-            <PlusCircle className="w-4 h-4" />
-            새 상품 등록
-          </Link>
-          <Link
-            href="/admin/orders"
-            className="flex items-center gap-1.5 px-4 py-2 bg-card border border-border/50 text-foreground text-sm font-medium rounded-xl hover:bg-muted transition-colors cursor-pointer"
-          >
-            <AlertCircle className="w-4 h-4 text-amber-600" />
-            미처리 주문
-          </Link>
-
-          {/* Notification Bell */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 rounded-xl hover:bg-muted transition-colors cursor-pointer"
-              aria-label="알림"
-            >
-              <Bell className="w-5 h-5 text-foreground" />
-              {notifications.length > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                  {notifications.length}
+        <div className="relative space-y-6 p-4 md:p-8">
+          <header className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+            <div>
+              <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.28em] text-[#7b7468]">
+                operations / dashboard
+              </p>
+              <h1 className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-[#1a1814] md:text-[36px]">
+                프리세일즈 관리자 대시보드
+              </h1>
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-[#6b665c]">
+                <span>
+                  {new Date().toLocaleDateString('ko-KR', {
+                    month: 'long',
+                    day: 'numeric',
+                    weekday: 'long',
+                  })}
                 </span>
-              )}
-            </button>
+                <span className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[#7b7468]">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.12)]" />
+                  system online
+                </span>
+              </div>
+            </div>
 
-            {/* Notification dropdown */}
-            {showNotifications && (
-              <div className="absolute right-0 top-full mt-2 w-80 bg-card rounded-2xl border border-border/50 shadow-sm z-50">
-                <div className="p-4 border-b border-border/50">
-                  <p className="text-sm font-semibold text-foreground">실시간 알림</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href="/admin/products/new"
+                className="inline-flex items-center gap-2 rounded-[12px] bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_12px_30px_-16px_rgba(37,99,235,0.7)] transition-all hover:-translate-y-0.5 hover:bg-[#1d4ed8]"
+              >
+                <PlusCircle className="h-4 w-4" />
+                새 상품 등록
+              </Link>
+              <Link
+                href="/admin/orders"
+                className="inline-flex items-center gap-2 rounded-[12px] border border-[#d7d0c4] bg-white px-4 py-2.5 text-sm font-medium text-[#3d3a35] transition-colors hover:border-[#c8beb0] hover:bg-[#f3efe8]"
+              >
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                주문 관리
+              </Link>
+              <button
+                type="button"
+                onClick={() => setShowNotifications(true)}
+                className="relative inline-flex h-11 w-11 items-center justify-center rounded-[12px] border border-[#d7d0c4] bg-white text-[#3d3a35] transition-colors hover:border-[#c8beb0] hover:bg-[#f3efe8]"
+                aria-label="실시간 알림 열기"
+              >
+                <Bell className="h-4.5 w-4.5" />
+                {notifications.length > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#1e40af] px-1 text-[10px] font-bold text-white">
+                    {notifications.length}
+                  </span>
+                )}
+              </button>
+            </div>
+          </header>
+
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7b7468]">
+                기간
+              </span>
+              <div className="inline-flex flex-wrap items-center gap-1 rounded-[14px] border border-[#ddd6ca] bg-white/90 p-1">
+                {PERIODS.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPeriod(p)}
+                    className={`rounded-[10px] px-3 py-1.5 text-sm font-medium transition-colors ${
+                      period === p
+                        ? 'bg-[#2563eb] text-white shadow-[0_8px_18px_-12px_rgba(37,99,235,0.75)]'
+                        : 'text-[#6b665c] hover:text-[#1a1814]'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[#7b7468]">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.12)]" />
+              실시간 동기화
+            </div>
+          </div>
+
+          {loading ? (
+            <KPISkeleton />
+          ) : (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              {[...kpiRow1, ...kpiRow2].map((card) => (
+                <DashboardKpiCard
+                  key={card.label}
+                  label={card.label}
+                  value={card.value}
+                  href={card.href}
+                  icon={card.icon}
+                  accent={
+                    card.label.includes('매출') ? '#1e40af'
+                      : card.label.includes('공고') ? '#0891b2'
+                      : card.label.includes('피드') ? '#60a5fa'
+                      : card.label.includes('다운로드') ? '#10b981'
+                      : '#2563eb'
+                  }
+                  change={card.change}
+                  subtext={card.subtext || (period === '전체' ? '전체 기간' : `최근 ${period}`)}
+                />
+              ))}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.95fr)]">
+            <DashboardPanel
+              eyebrow="revenue stream"
+              title="매출 추이"
+              sub={period === '전체' ? '전체 기간 월별 · 결제 완료 기준' : `최근 ${period} · 결제 완료 기준`}
+              href="/admin/orders"
+            >
+              {loading ? (
+                <div className="h-[340px] animate-pulse rounded-[18px] bg-[#f1ede6]" />
+              ) : dailyRevenue.length === 0 ? (
+                <div className="flex h-[340px] items-center justify-center text-sm text-[#8b8578]">
+                  매출 데이터가 없습니다
                 </div>
-                {notifications.length === 0 ? (
-                  <div className="p-6 text-center text-sm text-muted-foreground">새 알림이 없습니다</div>
+              ) : (
+                <RevenueChart data={dailyRevenue} period={period} />
+              )}
+            </DashboardPanel>
+
+            <div className="space-y-4">
+              <DashboardPanel eyebrow="collection" title="오늘 자동 수집 현황" sub="공고·IT피드 자동 수집 로그" className="h-full">
+                {loading ? (
+                  <ListSkeleton rows={4} />
                 ) : (
-                  <div className="max-h-80 overflow-y-auto divide-y divide-border/50">
-                    {notifications.map((n) => (
-                      <div key={n.id} className="p-3 hover:bg-muted/50 flex items-start gap-3">
-                        <NotificationIcon type={n.type} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground">{n.title}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
-                          <p className="text-[10px] text-muted-foreground/60 mt-1">
-                            {n.timestamp.toLocaleTimeString('ko-KR', {
+                  <div className="space-y-3">
+                    {fetchStatus.annLogs.slice(0, 3).map((log, i) => (
+                      <div key={`ann-${i}`} className="flex items-center gap-3 rounded-[16px] border border-[#e6e0d6] bg-[#fcfbf8] px-4 py-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-[12px] border border-sky-200 bg-sky-50 text-sky-700">
+                          <Megaphone className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-[#1a1814]">{log.source}</p>
+                          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[#8b8578]">
+                            {new Date(log.time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 수집
+                          </p>
+                        </div>
+                        <Badge className="border-sky-200 bg-sky-50 text-[11px] text-sky-700">{log.count}건</Badge>
+                      </div>
+                    ))}
+                    {fetchStatus.feedLogs.slice(0, 3).map((log, i) => (
+                      <div key={`feed-${i}`} className="flex items-center gap-3 rounded-[16px] border border-[#e6e0d6] bg-[#fcfbf8] px-4 py-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-[12px] border border-blue-200 bg-blue-50 text-blue-700">
+                          <Rss className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-[#1a1814]">{log.source}</p>
+                          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[#8b8578]">
+                            {new Date(log.time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 수집
+                          </p>
+                        </div>
+                        <Badge className="border-blue-200 bg-blue-50 text-[11px] text-blue-700">{log.count}건</Badge>
+                      </div>
+                    ))}
+                    {fetchStatus.annLogs.length === 0 && fetchStatus.feedLogs.length === 0 && (
+                      <p className="py-4 text-center text-sm text-[#8b8578]">오늘 수집 내역이 없습니다</p>
+                    )}
+                  </div>
+                )}
+              </DashboardPanel>
+
+              <DashboardPanel eyebrow="activity" title="실시간 활동" sub="주문·컨설팅·리뷰·다운로드 최근 기록">
+                {loading ? (
+                  <ListSkeleton rows={5} />
+                ) : activityFeed.length === 0 ? (
+                  <p className="py-4 text-center text-sm text-[#8b8578]">활동 기록이 없습니다</p>
+                ) : (
+                  <div className="space-y-3">
+                    {activityFeed.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => router.push(item.href)}
+                        className="flex w-full items-start gap-3 rounded-[16px] border border-transparent px-1 py-1 text-left transition-colors hover:border-[#e6e0d6] hover:bg-[#fcfbf8]"
+                      >
+                        <NotificationIcon type={item.type} />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-[#1a1814]">{item.title}</p>
+                          <p className="mt-1 text-xs text-[#6b665c]">{item.subtitle}</p>
+                        </div>
+                        <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.12em] text-[#8b8578]">
+                          {formatRelativeTime(item.timestamp)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </DashboardPanel>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,1fr)]">
+            <DashboardPanel eyebrow="recent orders" title="최근 주문" sub="최신 결제 트랜잭션" href="/admin/orders">
+              {loading ? (
+                <TableSkeleton />
+              ) : recentOrders.length === 0 ? (
+                <p className="py-4 text-center text-sm text-[#8b8578]">주문이 없습니다</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[640px] text-sm">
+                    <thead>
+                      <tr className="border-b border-[#ece6dc] text-left text-[11px] uppercase tracking-[0.16em] text-[#8b8578]">
+                        <th className="px-2 py-3 font-mono font-semibold">주문번호</th>
+                        <th className="px-2 py-3 font-mono font-semibold">주문자</th>
+                        <th className="px-2 py-3 text-right font-mono font-semibold">금액</th>
+                        <th className="px-2 py-3 text-center font-mono font-semibold">상태</th>
+                        <th className="px-2 py-3 text-right font-mono font-semibold">일시</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentOrders.map((order) => {
+                        const profile = orderProfiles[order.user_id]
+                        const status = statusLabels[order.status] || { label: order.status, variant: 'outline' as const }
+                        return (
+                          <tr
+                            key={order.id}
+                            onClick={() => router.push(`/admin/orders?search=${encodeURIComponent(order.order_number)}`)}
+                            className="cursor-pointer border-b border-[#f1ece4] text-[#3d3a35] transition-colors hover:bg-[#fbf8f3]"
+                          >
+                            <td className="px-2 py-4 font-mono text-[12px] font-semibold text-[#1e40af]">{order.order_number}</td>
+                            <td className="px-2 py-4">{profile?.name || '-'}</td>
+                            <td className="px-2 py-4 text-right font-mono font-semibold text-[#1a1814]">{formatAmount(order.total_amount)}원</td>
+                            <td className="px-2 py-4 text-center">
+                              <Badge variant={status.variant} className="text-[11px]">{status.label}</Badge>
+                            </td>
+                            <td className="px-2 py-4 text-right font-mono text-[11px] text-[#8b8578]">{formatDateTime(order.created_at)}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </DashboardPanel>
+
+            <DashboardPanel eyebrow="top 5" title="인기 상품" sub="다운로드 수 기준" href="/admin/products">
+              {loading ? (
+                <ListSkeleton rows={5} />
+              ) : topProducts.length === 0 ? (
+                <p className="py-4 text-center text-sm text-[#8b8578]">상품이 없습니다</p>
+              ) : (
+                <div className="space-y-2">
+                  {topProducts.map((product, index) => (
+                    <button
+                      key={product.id}
+                      type="button"
+                      onClick={() => router.push(`/admin/products/${product.id}`)}
+                      className="flex w-full items-center gap-3 rounded-[16px] border border-transparent px-1 py-2 text-left transition-colors hover:border-[#e6e0d6] hover:bg-[#fcfbf8]"
+                    >
+                      <div className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-blue-200 bg-blue-50 font-mono text-sm font-bold text-[#1e40af]">
+                        {index + 1}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-[#1a1814]">{product.title}</p>
+                        <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[#8b8578]">
+                          {formatPrice(product.price)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-mono text-sm font-semibold text-[#1a1814]">{formatAmount(product.download_count)}</p>
+                        <p className="text-[11px] text-[#6b665c]">downloads</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </DashboardPanel>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+            <DashboardPanel eyebrow="new members" title="최근 가입 회원" href="/admin/members">
+              {loading ? (
+                <ListSkeleton rows={5} />
+              ) : recentMembers.length === 0 ? (
+                <p className="py-4 text-center text-sm text-[#8b8578]">회원이 없습니다</p>
+              ) : (
+                <div className="space-y-2">
+                  {recentMembers.map((member) => (
+                    <button
+                      key={member.id}
+                      type="button"
+                      onClick={() => router.push(`/admin/members?search=${encodeURIComponent(member.email)}`)}
+                      className="flex w-full items-center gap-3 rounded-[16px] border border-transparent px-1 py-2 text-left transition-colors hover:border-[#e6e0d6] hover:bg-[#fcfbf8]"
+                    >
+                      <AvatarInitial name={member.name || member.email} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-[#1a1814]">{member.name || '-'}</p>
+                        <p className="truncate text-xs text-[#6b665c]">{member.email}</p>
+                      </div>
+                      <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.12em] text-[#8b8578]">
+                        {formatDate(member.created_at)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </DashboardPanel>
+
+            <DashboardPanel eyebrow="consulting" title="최근 컨설팅 신청" href="/admin/consulting">
+              {loading ? (
+                <ListSkeleton rows={5} />
+              ) : recentConsulting.length === 0 ? (
+                <p className="py-4 text-center text-sm text-[#8b8578]">신청이 없습니다</p>
+              ) : (
+                <div className="space-y-2">
+                  {recentConsulting.map((item) => {
+                    const status = consultingStatusLabels[item.status] || { label: item.status, variant: 'outline' as const }
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => router.push('/admin/consulting')}
+                        className="flex w-full items-center gap-3 rounded-[16px] border border-transparent px-1 py-2 text-left transition-colors hover:border-[#e6e0d6] hover:bg-[#fcfbf8]"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-[#1a1814]">{item.name}</p>
+                          <p className="mt-1 text-xs text-[#6b665c]">{packageLabels[item.package_type] || item.package_type}</p>
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-1">
+                          <Badge variant={status.variant} className="text-[10px]">{status.label}</Badge>
+                          <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[#8b8578]">{formatDate(item.created_at)}</span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </DashboardPanel>
+
+            <DashboardPanel eyebrow="downloads" title="최근 다운로드" href="/admin/downloads">
+              {loading ? (
+                <ListSkeleton rows={5} />
+              ) : recentDownloads.length === 0 ? (
+                <p className="py-4 text-center text-sm text-[#8b8578]">다운로드 기록이 없습니다</p>
+              ) : (
+                <div className="space-y-2">
+                  {recentDownloads.map((download) => {
+                    const profile = downloadProfiles[download.user_id]
+                    const productTitle = downloadProducts[download.product_id] || '-'
+                    return (
+                      <button
+                        key={download.id}
+                        type="button"
+                        onClick={() => router.push('/admin/downloads')}
+                        className="flex w-full items-center gap-3 rounded-[16px] border border-transparent px-1 py-2 text-left transition-colors hover:border-[#e6e0d6] hover:bg-[#fcfbf8]"
+                      >
+                        <NotificationIcon type="download" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-[#1a1814]">{productTitle}</p>
+                          <p className="truncate text-xs text-[#6b665c]">{profile?.name || '-'}</p>
+                        </div>
+                        <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.12em] text-[#8b8578]">
+                          {formatDate(download.downloaded_at)}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </DashboardPanel>
+          </div>
+        </div>
+      </div>
+
+      {showNotifications && (
+        <>
+          <button
+            type="button"
+            aria-label="알림 패널 닫기"
+            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]"
+            onClick={() => setShowNotifications(false)}
+          />
+          <aside className="fixed right-0 top-0 z-50 flex h-[100dvh] w-full max-w-[420px] flex-col border-l border-[#ddd6ca] bg-[#f7f4ee] shadow-[-20px_0_60px_-36px_rgba(20,15,10,0.35)]">
+            <div className="flex items-start justify-between border-b border-[#e7e0d4] px-5 py-5">
+              <div>
+                <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7b7468]">
+                  real-time alerts
+                </p>
+                <h2 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-[#1a1814]">
+                  실시간 알림
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowNotifications(false)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-[12px] border border-[#d7d0c4] bg-white text-[#3d3a35] transition-colors hover:bg-[#f3efe8]"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              {notifications.length === 0 ? (
+                <div className="flex h-full items-center justify-center text-sm text-[#8b8578]">
+                  새 알림이 없습니다
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {notifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className="rounded-[18px] border border-[#ddd6ca] bg-white/95 p-4 shadow-[0_18px_34px_-30px_rgba(37,99,235,0.35)]"
+                    >
+                      <div className="flex items-start gap-3">
+                        <NotificationIcon type={notification.type} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-semibold text-[#1a1814]">{notification.title}</p>
+                              <p className="mt-1 text-xs text-[#6b665c]">{notification.message}</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => dismissNotification(notification.id)}
+                              className="rounded-md p-1 text-[#8b8578] transition-colors hover:bg-[#f3efe8] hover:text-[#1a1814]"
+                              title="알림 닫기"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                          <p className="mt-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[#8b8578]">
+                            {notification.timestamp.toLocaleTimeString('ko-KR', {
                               hour: '2-digit',
                               minute: '2-digit',
                               second: '2-digit',
                             })}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            dismissNotification(n.id)
-                          }}
-                          className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
-                          title="알림 닫기"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Period selector */}
-      <div className="flex items-center gap-3">
-        <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">기간</span>
-        <div className="flex items-center gap-1 bg-muted rounded-xl p-1">
-          {PERIODS.map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setPeriod(p)}
-              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                period === p
-                  ? 'bg-card text-foreground border border-border/50'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* KPI Cards — 5 columns x 2 rows */}
-      {loading ? (
-        <KPISkeleton />
-      ) : (
-        <div className="space-y-4">
-          {[kpiRow1, kpiRow2].map((row, rowIdx) => (
-            <div key={rowIdx} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-              {row.map((card) => (
-                <Link
-                  key={card.label}
-                  href={card.href}
-                  className="rounded-2xl p-5 border border-border/50 bg-card transition-all group cursor-pointer hover:border-primary hover:ring-2 hover:ring-primary/30 hover:shadow-md hover:-translate-y-0.5"
-                >
-                  <div className="flex items-center gap-2.5 mb-3">
-                    <div className={`w-9 h-9 rounded-xl ${card.color} flex items-center justify-center`}>
-                      <card.icon className="w-4.5 h-4.5 text-white" />
                     </div>
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground leading-tight">{card.label}</span>
-                  </div>
-                  <p className="text-xl font-bold font-mono text-foreground">{card.value}</p>
-                  {card.subtext ? (
-                    <p className="text-[10px] text-muted-foreground mt-1.5">{card.subtext}</p>
-                  ) : card.change !== undefined && card.change !== null ? (
-                    <ChangeLabel pct={card.change} label={prevLabel} />
-                  ) : (
-                    <p className="text-[10px] text-muted-foreground mt-1.5">{period === '전체' ? '전체 기간' : `최근 ${period}`}</p>
-                  )}
-                </Link>
-              ))}
+                  ))}
+                </div>
+              )}
             </div>
-          ))}
-        </div>
+          </aside>
+        </>
       )}
-
-      {/* Revenue chart */}
-      {!loading && dailyRevenue.length > 0 && (
-        <div className="bg-card rounded-2xl border border-border/50 p-6 md:p-8">
-          <div className="mb-2">
-            <h2 className="text-base font-bold text-foreground">
-              매출 추이
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {period === '전체' ? '전체 기간 월별' : `최근 ${period}`} · 결제완료 기준
-            </p>
-          </div>
-          <RevenueChart data={dailyRevenue} period={period} />
-        </div>
-      )}
-
-      {/* 오늘 수집 현황 */}
-      {!loading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* 공고 수집 */}
-          <div className="bg-card rounded-2xl border border-border/50 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-                  <Megaphone className="w-4 h-4 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold">오늘 공고 수집</h3>
-                  <p className="text-[10px] text-muted-foreground">자동 수집 현황</p>
-                </div>
-              </div>
-              <Link href="/admin/announcements" className="text-xs text-primary hover:underline">관리</Link>
-            </div>
-            {fetchStatus.annLogs.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-3 text-center">오늘 수집 내역이 없습니다</p>
-            ) : (
-              <div className="space-y-2">
-                {fetchStatus.annLogs.map((log, i) => (
-                  <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/50">
-                    <div>
-                      <span className="text-sm font-medium">{log.source}</span>
-                      <span className="text-xs text-muted-foreground ml-2">
-                        {new Date(log.time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                    <Badge className="text-xs bg-blue-50 text-blue-800 border-blue-200">{log.count}건 공개</Badge>
-                  </div>
-                ))}
-                <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                  <span className="text-xs text-muted-foreground">합계</span>
-                  <span className="text-sm font-bold text-primary">{fetchStatus.annLogs.reduce((s, l) => s + l.count, 0)}건</span>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* IT피드 수집 */}
-          <div className="bg-card rounded-2xl border border-border/50 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
-                  <Rss className="w-4 h-4 text-orange-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold">오늘 IT피드 수집</h3>
-                  <p className="text-[10px] text-muted-foreground">자동 수집 현황</p>
-                </div>
-              </div>
-              <Link href="/admin/feeds" className="text-xs text-primary hover:underline">관리</Link>
-            </div>
-            {fetchStatus.feedLogs.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-3 text-center">오늘 수집 내역이 없습니다</p>
-            ) : (
-              <div className="space-y-2">
-                {fetchStatus.feedLogs.map((log, i) => (
-                  <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/50">
-                    <div>
-                      <span className="text-sm font-medium">{log.source}</span>
-                      <span className="text-xs text-muted-foreground ml-2">
-                        {new Date(log.time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                    <Badge className="text-xs bg-blue-50 text-blue-800 border-blue-200">{log.count}건 공개</Badge>
-                  </div>
-                ))}
-                <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                  <span className="text-xs text-muted-foreground">합계</span>
-                  <span className="text-sm font-bold text-primary">{fetchStatus.feedLogs.reduce((s, l) => s + l.count, 0)}건</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Two-column layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Left column (60%) */}
-        <div className="lg:col-span-3 space-y-6">
-          {/* 최근 주문 */}
-          <div className="bg-card rounded-2xl border border-border/50 p-6">
-            <SectionHeader title="최근 주문" href="/admin/orders" />
-            {loading ? (
-              <TableSkeleton />
-            ) : recentOrders.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">주문이 없습니다</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border/50 text-muted-foreground">
-                      <th className="text-left py-3 font-medium">주문번호</th>
-                      <th className="text-left py-3 font-medium">주문자</th>
-                      <th className="text-right py-3 font-medium">금액</th>
-                      <th className="text-center py-3 font-medium">상태</th>
-                      <th className="text-right py-3 font-medium">일시</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentOrders.map((order) => {
-                      const profile = orderProfiles[order.user_id]
-                      const status =
-                        statusLabels[order.status] || { label: order.status, variant: 'outline' as const }
-                      return (
-                        <tr
-                          key={order.id}
-                          onClick={() => router.push(`/admin/orders?search=${encodeURIComponent(order.order_number)}`)}
-                          className="border-b border-border/50 last:border-0 hover:bg-muted/50 cursor-pointer transition-colors"
-                        >
-                          <td className="py-3 text-foreground font-mono text-xs">{order.order_number}</td>
-                          <td className="py-3 text-foreground">{profile?.name || '-'}</td>
-                          <td className="py-3 text-right text-foreground font-medium">
-                            {formatAmount(order.total_amount)}원
-                          </td>
-                          <td className="py-3 text-center">
-                            <Badge variant={status.variant} className="text-xs">
-                              {status.label}
-                            </Badge>
-                          </td>
-                          <td className="py-3 text-right text-muted-foreground text-xs">
-                            {formatDateTime(order.created_at)}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-
-          {/* 인기 상품 TOP 5 */}
-          <div className="bg-card rounded-2xl border border-border/50 p-6">
-            <SectionHeader title="인기 상품 TOP 5" href="/admin/products" />
-            {loading ? (
-              <TableSkeleton />
-            ) : topProducts.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">상품이 없습니다</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border/50 text-muted-foreground">
-                      <th className="text-center py-3 font-medium w-12">순위</th>
-                      <th className="text-left py-3 font-medium">상품명</th>
-                      <th className="text-right py-3 font-medium">다운로드수</th>
-                      <th className="text-right py-3 font-medium">가격</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topProducts.map((product, index) => (
-                      <tr
-                        key={product.id}
-                        onClick={() => router.push(`/admin/products/${product.id}`)}
-                        className="border-b border-border/50 last:border-0 hover:bg-muted/50 cursor-pointer transition-colors"
-                      >
-                        <td className="py-3 text-center">
-                          <span
-                            className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
-                              index === 0
-                                ? 'bg-yellow-100 text-yellow-700'
-                                : index === 1
-                                ? 'bg-stone-100 text-stone-600'
-                                : index === 2
-                                ? 'bg-orange-100 text-orange-700'
-                                : 'bg-muted text-muted-foreground'
-                            }`}
-                          >
-                            {index + 1}
-                          </span>
-                        </td>
-                        <td className="py-3 text-foreground truncate max-w-[200px]">{product.title}</td>
-                        <td className="py-3 text-right text-foreground font-medium">
-                          {formatAmount(product.download_count)}
-                        </td>
-                        <td className="py-3 text-right text-muted-foreground">{formatPrice(product.price)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right column (40%) */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* 최근 가입 회원 */}
-          <div className="bg-card rounded-2xl border border-border/50 p-6">
-            <SectionHeader title="최근 가입 회원" href="/admin/members" />
-            {loading ? (
-              <ListSkeleton />
-            ) : recentMembers.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">회원이 없습니다</p>
-            ) : (
-              <div className="space-y-1">
-                {recentMembers.map((member) => (
-                  <button
-                    key={member.id}
-                    type="button"
-                    onClick={() => router.push(`/admin/members?search=${encodeURIComponent(member.email)}`)}
-                    className="w-full flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors text-left"
-                  >
-                    <AvatarInitial name={member.name || member.email} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{member.name || '-'}</p>
-                      <p className="text-xs text-muted-foreground truncate">{member.email}</p>
-                    </div>
-                    <span className="text-xs text-muted-foreground shrink-0">{formatDate(member.created_at)}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 최근 컨설팅 신청 */}
-          <div className="bg-card rounded-2xl border border-border/50 p-6">
-            <SectionHeader title="최근 컨설팅 신청" href="/admin/consulting" />
-            {loading ? (
-              <ListSkeleton />
-            ) : recentConsulting.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">신청이 없습니다</p>
-            ) : (
-              <div className="space-y-1">
-                {recentConsulting.map((item) => {
-                  const status =
-                    consultingStatusLabels[item.status] || {
-                      label: item.status,
-                      variant: 'outline' as const,
-                    }
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => router.push('/admin/consulting')}
-                      className="w-full flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors text-left"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-foreground truncate">{item.name}</p>
-                          <Badge variant="secondary" className="text-[10px] shrink-0">
-                            {packageLabels[item.package_type] || item.package_type}
-                          </Badge>
-                        </div>
-                      </div>
-                      <Badge variant={status.variant} className="text-[10px] shrink-0">
-                        {status.label}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground shrink-0">{formatDate(item.created_at)}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* 최근 리뷰 */}
-          <div className="bg-card rounded-2xl border border-border/50 p-6">
-            <SectionHeader title="최근 리뷰" href="/admin/reviews" />
-            {loading ? (
-              <ListSkeleton />
-            ) : recentReviews.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">리뷰가 없습니다</p>
-            ) : (
-              <div className="space-y-1">
-                {recentReviews.map((review) => {
-                  const profile = reviewProfiles[review.user_id]
-                  const prod = review.products
-                  const productTitle = Array.isArray(prod)
-                    ? prod[0]?.title || '-'
-                    : prod?.title || '-'
-                  return (
-                    <button
-                      key={review.id}
-                      type="button"
-                      onClick={() => router.push('/admin/reviews')}
-                      className="w-full flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors text-left"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <StarRating rating={review.rating} />
-                          <span className="text-xs text-muted-foreground">{profile?.name || '-'}</span>
-                        </div>
-                        <p className="text-sm text-foreground truncate">{productTitle}</p>
-                      </div>
-                      <span className="text-xs text-muted-foreground shrink-0">{formatDate(review.created_at)}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* 최근 다운로드 */}
-          <div className="bg-card rounded-2xl border border-border/50 p-6">
-            <SectionHeader title="최근 다운로드" href="/admin/downloads" />
-            {loading ? (
-              <ListSkeleton />
-            ) : recentDownloads.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-4 text-center">다운로드 기록이 없습니다</p>
-            ) : (
-              <div className="space-y-1">
-                {recentDownloads.map((dl) => {
-                  const profile = downloadProfiles[dl.user_id]
-                  const productTitle = downloadProducts[dl.product_id] || '-'
-                  return (
-                    <button
-                      key={dl.id}
-                      type="button"
-                      onClick={() => router.push('/admin/downloads')}
-                      className="w-full flex items-center gap-3 p-2 -mx-2 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors text-left"
-                    >
-                      <Download className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground truncate">{productTitle}</p>
-                        <p className="text-xs text-muted-foreground truncate">{profile?.name || '-'}</p>
-                      </div>
-                      <span className="text-xs text-muted-foreground shrink-0">{formatDate(dl.downloaded_at)}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+    </>
   )
 }
