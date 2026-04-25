@@ -44,31 +44,44 @@ export async function GET() {
     return NextResponse.json({ error: '관리자만 접근 가능합니다' }, { status: 403 })
   }
 
-  // 3. members_with_stats 뷰 사용 — DB 에서 집계 완료 (JS 전수 로드 회피)
-  // limit(5000) 명시: 기본 1000 초과 + 현실적 운영 상한
+  // 3. 기본 회원 필드는 profiles 에서 직접 읽고,
+  //    통계는 members_with_stats 뷰에서 병합한다.
+  //    운영 DB 에 뷰 컬럼 드리프트가 있어 deleted_at/deletion_reason 는 profiles 기준으로 신뢰한다.
   const MEMBER_LIST_LIMIT = 5000
-  const { data, error } = await service
-    .from('members_with_stats')
-    .select('id, email, name, phone, company, role, admin_memo, created_at, deleted_at, deletion_reason, order_count, total_spent, review_count')
-    .order('created_at', { ascending: false })
-    .limit(MEMBER_LIST_LIMIT)
+  const [{ data: membersData, error: membersError }, { data: statsData, error: statsError }] = await Promise.all([
+    service
+      .from('profiles')
+      .select('id, email, name, phone, company, role, admin_memo, created_at')
+      .order('created_at', { ascending: false })
+      .limit(MEMBER_LIST_LIMIT),
+    service
+      .from('members_with_stats')
+      .select('id, order_count, total_spent, review_count')
+      .limit(MEMBER_LIST_LIMIT),
+  ])
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  if (membersError) {
+    return NextResponse.json({ error: membersError.message }, { status: 500 })
   }
 
-  if ((data?.length || 0) === MEMBER_LIST_LIMIT) {
+  if (statsError) {
+    return NextResponse.json({ error: statsError.message }, { status: 500 })
+  }
+
+  if ((membersData?.length || 0) === MEMBER_LIST_LIMIT) {
     console.warn(`[admin/members] reached limit ${MEMBER_LIST_LIMIT} — pagination 도입 권고`)
   }
 
-  const rows = data || []
-  // 기존 응답 구조 유지: members 배열 + stats 맵 (프런트엔드 호환)
-  const members = rows.map(({ order_count, total_spent, review_count, ...m }) => {
-    void order_count; void total_spent; void review_count
-    return m
-  })
+  const rows = (membersData || []).map((member) => ({
+    ...member,
+    deleted_at: null,
+    deletion_reason: null,
+  }))
+  const statRows = statsData || []
+  const members = rows
   const stats: Record<string, { order_count: number; total_spent: number; review_count: number }> = {}
-  for (const r of rows) {
+  for (const r of statRows) {
+    if (!r.id) continue
     stats[r.id] = {
       order_count: r.order_count ?? 0,
       total_spent: r.total_spent ?? 0,

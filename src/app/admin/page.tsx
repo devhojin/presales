@@ -140,6 +140,8 @@ interface AdminMembersResponse {
 // ===========================
 
 const PERIODS: Period[] = ['7일', '30일', '90일', '전체']
+const inflightDashboardLoads = new Map<Period, Promise<void>>()
+let inflightMemberRequest: Promise<AdminMemberSummary[]> | null = null
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   pending: { label: '대기', variant: 'outline' },
@@ -590,6 +592,7 @@ export default function AdminDashboard() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
   const notificationTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+  const membersCacheRef = useRef<AdminMemberSummary[] | null>(null)
 
   const addNotification = useCallback(
     (title: string, message: string, type: Notification['type']) => {
@@ -613,6 +616,37 @@ export default function AdminDashboard() {
     if (timer) {
       clearTimeout(timer)
       notificationTimers.current.delete(id)
+    }
+  }, [])
+
+  const fetchAdminMembers = useCallback(async (): Promise<AdminMemberSummary[]> => {
+    if (membersCacheRef.current) {
+      return membersCacheRef.current
+    }
+
+    if (inflightMemberRequest) {
+      return inflightMemberRequest
+    }
+
+    inflightMemberRequest = (async () => {
+      const adminMembersRes = await fetch('/api/admin/members', {
+        cache: 'no-store',
+        credentials: 'same-origin',
+      })
+
+      if (adminMembersRes.ok) {
+        const adminMembers = await adminMembersRes.json() as AdminMembersResponse
+        membersCacheRef.current = adminMembers.members || []
+        return membersCacheRef.current
+      }
+
+      return membersCacheRef.current || []
+    })()
+
+    try {
+      return await inflightMemberRequest
+    } finally {
+      inflightMemberRequest = null
     }
   }, [])
 
@@ -654,12 +688,22 @@ export default function AdminDashboard() {
   }, [addNotification])
 
   const loadDashboard = useCallback(async () => {
+    const existingLoad = inflightDashboardLoads.get(period)
+    if (existingLoad) {
+      return existingLoad
+    }
+
+    const request = (async () => {
     setLoading(true)
     const supabase = createClient()
 
     const periodStart = getPeriodStart(period)
     const prevPeriodStart = getPrevPeriodStart(period)
     const days = period === '7일' ? 7 : period === '30일' ? 30 : 90
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+    const todayISO = todayStart.toISOString()
+    const membersPromise = fetchAdminMembers()
 
     // Build queries with optional date filter
     function applyPeriod<T extends DateFilteredQuery<T>>(q: T, col: string = 'created_at'): T {
@@ -669,26 +713,6 @@ export default function AdminDashboard() {
       if (!prevPeriodStart || !periodStart) return q
       return q.gte(col, prevPeriodStart).lt(col, periodStart)
     }
-
-    // 회원 전체 데이터 (RLS 우회 API)
-    let adminMembers: AdminMembersResponse = { members: [] }
-    for (let attempt = 0; attempt < 2; attempt += 1) {
-      const adminMembersRes = await fetch('/api/admin/members', {
-        cache: 'no-store',
-        credentials: 'same-origin',
-      })
-
-      if (adminMembersRes.ok) {
-        adminMembers = await adminMembersRes.json() as AdminMembersResponse
-        break
-      }
-
-      if (attempt === 0) {
-        await new Promise((resolve) => window.setTimeout(resolve, 400))
-      }
-    }
-
-    const allMembers = adminMembers.members || []
 
     // Current period queries
     const ordersQ = supabase.from('orders').select('id', { count: 'exact', head: true })
@@ -706,13 +730,8 @@ export default function AdminDashboard() {
       .in('status', ['paid', 'completed'])
       .range(0, 99999)
 
-    // 기간별 회원 카운트 계산 (API 결과에서)
-    const periodStartMs = periodStart ? new Date(periodStart).getTime() : null
-    const membersInPeriod = periodStartMs !== null
-      ? allMembers.filter(m => new Date(m.created_at).getTime() >= periodStartMs).length
-      : allMembers.length
-
     const [
+      allMembers,
       productsCount,
       ordersCount,
       paidOrdersCount,
@@ -725,7 +744,10 @@ export default function AdminDashboard() {
       recentConsultingData,
       recentReviewsData,
       recentDownloadsData,
+      annLogResult,
+      feedLogResult,
     ] = await Promise.all([
+      membersPromise,
       supabase.from('products').select('id', { count: 'exact', head: true }),
       applyPeriod(ordersQ),
       applyPeriod(paidOrdersQ),
@@ -758,7 +780,25 @@ export default function AdminDashboard() {
         .select('id, user_id, product_id, downloaded_at')
         .order('downloaded_at', { ascending: false })
         .limit(5),
+      supabase
+        .from('announcement_logs')
+        .select('source, created_at')
+        .eq('action', 'collected')
+        .gte('created_at', todayISO)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('feed_logs')
+        .select('source_name, created_at')
+        .eq('action', 'collected')
+        .gte('created_at', todayISO)
+        .order('created_at', { ascending: false }),
     ])
+
+    // 기간별 회원 카운트 계산 (API 결과에서)
+    const periodStartMs = periodStart ? new Date(periodStart).getTime() : null
+    const membersInPeriod = periodStartMs !== null
+      ? allMembers.filter(m => new Date(m.created_at).getTime() >= periodStartMs).length
+      : allMembers.length
 
     // Recent 5 members from API result
     const recentMembersData = {
@@ -963,15 +1003,8 @@ export default function AdminDashboard() {
       setDownloadProducts(map)
     }
 
-    // 오늘 수집 현황 (announcement_logs + feed_logs)
-    const todayStart = new Date()
-    todayStart.setHours(0, 0, 0, 0)
-    const todayISO = todayStart.toISOString()
-
-    const [{ data: annLogData }, { data: feedLogData }] = await Promise.all([
-      supabase.from('announcement_logs').select('source, created_at').eq('action', 'collected').gte('created_at', todayISO).order('created_at', { ascending: false }),
-      supabase.from('feed_logs').select('source_name, created_at').eq('action', 'collected').gte('created_at', todayISO).order('created_at', { ascending: false }),
-    ])
+    const annLogData = annLogResult.data
+    const feedLogData = feedLogResult.data
 
     if (annLogData) {
       const sourceMap: Record<string, { count: number; time: string }> = {}
@@ -994,7 +1027,13 @@ export default function AdminDashboard() {
     }
 
     setLoading(false)
-  }, [period])
+    })().finally(() => {
+      inflightDashboardLoads.delete(period)
+    })
+
+    inflightDashboardLoads.set(period, request)
+    return request
+  }, [fetchAdminMembers, period])
 
   useEffect(() => {
     const runId = window.setTimeout(() => {
@@ -1296,7 +1335,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.95fr)]">
+          <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.95fr)]">
             <DashboardPanel
               eyebrow="revenue stream"
               title="매출 추이"
@@ -1315,7 +1354,7 @@ export default function AdminDashboard() {
             </DashboardPanel>
 
             <div className="space-y-4">
-              <DashboardPanel eyebrow="collection" title="오늘 자동 수집 현황" sub="공고·IT피드 자동 수집 로그" className="h-full">
+              <DashboardPanel eyebrow="collection" title="오늘 자동 수집 현황" sub="공고·IT피드 자동 수집 로그">
                 {loading ? (
                   <ListSkeleton rows={4} />
                 ) : (
