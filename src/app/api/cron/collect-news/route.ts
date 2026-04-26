@@ -19,7 +19,8 @@ export const maxDuration = 300 // 5분 (수집 + AI dedup 시간 여유)
 export const runtime = 'nodejs'
 
 function authorized(req: NextRequest): boolean {
-  const expected = process.env.CRON_SECRET
+  // MB_CRON_SECRET — 모닝브리프 전용. 기존 presales의 CRON_SECRET 과 분리.
+  const expected = process.env.MB_CRON_SECRET
   if (!expected) return false
   const got = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
   return got === expected
