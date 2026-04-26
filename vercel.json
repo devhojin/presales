@@ -9,11 +9,11 @@
       "schedule": "30 23 * * *"
     },
     {
-      "path": "/api/cron/collect-news",
+      "path": "/api/cron/morning-brief/collect",
       "schedule": "50 21 * * *"
     },
     {
-      "path": "/api/cron/send-brief",
+      "path": "/api/cron/morning-brief/send",
       "schedule": "0 22 * * *"
     }
   ]

@@ -10,10 +10,10 @@
  * 인증: Authorization: Bearer ${CRON_SECRET} (Vercel Cron 자동 부여)
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { collectByCategory } from '../../../../../morning-brief/lib/collect-news'
-import { aiSemanticDedup } from '../../../../../morning-brief/lib/dedup-claude'
-import { saveNewsBatch } from '../../../../../morning-brief/lib/archive'
-import { morningBriefService } from '../../../../../morning-brief/lib/supabase'
+import { collectByCategory } from '../../../../../../morning-brief/lib/collect-news'
+import { aiSemanticDedup } from '../../../../../../morning-brief/lib/dedup-claude'
+import { saveNewsBatch } from '../../../../../../morning-brief/lib/archive'
+import { morningBriefService } from '../../../../../../morning-brief/lib/supabase'
 
 export const maxDuration = 300 // 5분 (수집 + AI dedup 시간 여유)
 export const runtime = 'nodejs'

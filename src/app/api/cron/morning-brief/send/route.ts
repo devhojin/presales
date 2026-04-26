@@ -9,11 +9,11 @@
  * vercel.json 의 schedule: "0 22 * * *"
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { renderHtml, renderText } from '../../../../../morning-brief/lib/render-brief'
-import { sendBriefMail } from '../../../../../morning-brief/lib/send-mail'
-import { morningBriefService } from '../../../../../morning-brief/lib/supabase'
-import { CATEGORIES } from '../../../../../morning-brief/lib/categories'
-import type { NewsItem } from '../../../../../morning-brief/lib/dedup'
+import { renderHtml, renderText } from '../../../../../../morning-brief/lib/render-brief'
+import { sendBriefMail } from '../../../../../../morning-brief/lib/send-mail'
+import { morningBriefService } from '../../../../../../morning-brief/lib/supabase'
+import { CATEGORIES } from '../../../../../../morning-brief/lib/categories'
+import type { NewsItem } from '../../../../../../morning-brief/lib/dedup'
 
 export const maxDuration = 300
 export const runtime = 'nodejs'
