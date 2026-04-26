@@ -35,6 +35,30 @@ export async function proxy(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // 2026-04-22 R13-B: soft-delete 된 계정은 즉시 강제 로그아웃
+  // admin.auth.admin.signOut 이 실패했거나, 로컬 쿠키가 잔존한 경우의 방어선.
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('deleted_at')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (profile?.deleted_at) {
+      await supabase.auth.signOut()
+      const url = req.nextUrl.clone()
+      url.pathname = '/auth/login'
+      url.search = ''
+      url.searchParams.set('error', 'deleted')
+      const response = NextResponse.redirect(url)
+      for (const cookie of req.cookies.getAll()) {
+        if (cookie.name.startsWith('sb-')) response.cookies.delete(cookie.name)
+      }
+      response.cookies.delete(ACTIVITY_COOKIE)
+      return response
+    }
+  }
+
   const hasSession = !!user
 
   // ── KISA: 세션 타임아웃 (30분 미사용 시 자동 로그아웃) ──
@@ -86,15 +110,22 @@ export async function proxy(req: NextRequest) {
   }
 
   // /admin 경로: role='admin' 체크
-  if (path.startsWith('/admin') && hasSession) {
+  // hasSession 과 user 객체가 동기화 안 될 수 있는 윈도우 대응 (세션 만료 직후 등)
+  if (path.startsWith('/admin') && hasSession && user) {
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
-      .eq('id', user!.id)
+      .eq('id', user.id)
       .single()
     if (profile?.role !== 'admin') {
       return NextResponse.redirect(new URL('/mypage', req.url))
     }
+  } else if (path.startsWith('/admin') && !user) {
+    // user 없으면 로그인으로
+    const url = req.nextUrl.clone()
+    url.pathname = '/auth/login'
+    url.searchParams.set('redirect', path)
+    return NextResponse.redirect(url)
   }
 
   // 로그인 상태에서 로그인/회원가입 접근 시 리다이렉트

@@ -25,6 +25,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { Tag, Plus, Loader2, Trash2, ToggleLeft, ToggleRight, X, Info, History } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
@@ -68,6 +69,9 @@ interface CouponUse {
 }
 
 export default function CouponsPage() {
+  const dragCreate = useDraggableModal()
+  const dragDetail = useDraggableModal()
+  const dragDelete = useDraggableModal()
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -180,7 +184,8 @@ export default function CouponsPage() {
 
   async function toggleActive(id: string, current: boolean) {
     const supabase = createClient()
-    await supabase.from('coupons').update({ is_active: !current }).eq('id', id)
+    const { error } = await supabase.from('coupons').update({ is_active: !current }).eq('id', id)
+    if (error) { alert(`쿠폰 활성 변경 실패: ${error.message}`); return }
     setCoupons((prev) =>
       prev.map((c) => (c.id === id ? { ...c, is_active: !current } : c))
     )
@@ -342,9 +347,10 @@ export default function CouponsPage() {
         >
           <div
             className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 shadow-xl"
+            style={dragCreate.modalStyle}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center justify-between mb-5 cursor-move" onMouseDown={dragCreate.handleMouseDown}>
               <h2 className="text-lg font-semibold">쿠폰 생성</h2>
               <button onClick={() => setShowModal(false)} className="text-muted-foreground hover:text-muted-foreground cursor-pointer">
                 <X className="w-5 h-5" />
@@ -481,10 +487,11 @@ export default function CouponsPage() {
         >
           <div
             className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] shadow-xl flex flex-col"
+            style={dragDetail.modalStyle}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-border shrink-0">
+            <div className="flex items-center justify-between p-6 border-b border-border shrink-0 cursor-move" onMouseDown={dragDetail.handleMouseDown}>
               <div className="flex items-center gap-3">
                 <Tag className="w-5 h-5 text-primary" />
                 <div>
@@ -611,9 +618,10 @@ export default function CouponsPage() {
         >
           <div
             className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl"
+            style={dragDelete.modalStyle}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-semibold mb-2">쿠폰 삭제</h3>
+            <h3 className="text-lg font-semibold mb-2 cursor-move" onMouseDown={dragDelete.handleMouseDown}>쿠폰 삭제</h3>
             <p className="text-sm text-muted-foreground mb-6">이 쿠폰을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.</p>
             <div className="flex gap-3">
               <button

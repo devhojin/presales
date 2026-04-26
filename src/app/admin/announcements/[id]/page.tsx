@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import {
   ArrowLeft, Save, Eye, EyeOff, Trash2, X, Loader2,
   Building2, Calendar, DollarSign, FileText, Phone, Link as LinkIcon,
@@ -93,6 +94,7 @@ function DeleteModal({
   onCancel: () => void
   isDeleting: boolean
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel()
@@ -110,9 +112,10 @@ function DeleteModal({
     >
       <div
         className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6"
+        style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4 cursor-move select-none" onMouseDown={handleMouseDown}>
           <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
             <AlertTriangle className="w-5 h-5 text-red-600" />
           </div>

@@ -113,25 +113,22 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
     const isVerifiedPurchase =
       (orderData && orderData.length > 0) || (productData?.is_free === true)
 
-    const reviewData = {
-      user_id: userId,
-      product_id: productId,
+    // INSERT/UPDATE 페이로드 분리 — RLS가 본인 수정 시 product_id/is_verified_purchase/
+    // is_published/admin_reply/reviewer_name/reviewer_email 위조를 차단한다.
+    // UPDATE 에서는 사용자 편집 가능한 컬럼만 보낸다.
+    const userEditableFields = {
       rating,
       title: title.trim(),
       content: content.trim(),
       pros: null,
       cons: null,
       image_urls: imageUrls,
-      is_verified_purchase: isVerifiedPurchase,
-      is_published: true,
-      reviewer_name: profileData?.name || null,
-      reviewer_email: profileData?.email || null,
     }
 
     if (existingReview) {
       const { error: updateError } = await supabase
         .from('reviews')
-        .update(reviewData)
+        .update(userEditableFields)
         .eq('id', existingReview.id)
         .eq('user_id', userId)
 
@@ -141,6 +138,15 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
         return
       }
     } else {
+      const reviewData = {
+        ...userEditableFields,
+        user_id: userId,
+        product_id: productId,
+        is_verified_purchase: isVerifiedPurchase,
+        is_published: true,
+        reviewer_name: profileData?.name || null,
+        reviewer_email: profileData?.email || null,
+      }
       const { error: insertError } = await supabase
         .from('reviews')
         .insert(reviewData)
@@ -162,10 +168,11 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
     if (allReviews) {
       const count = allReviews.length
       const avg = count > 0 ? allReviews.reduce((s, r) => s + r.rating, 0) / count : 0
-      await supabase
+      const { error: statsErr } = await supabase
         .from('products')
         .update({ review_count: count, review_avg: Math.round(avg * 10) / 10 })
         .eq('id', productId)
+      if (statsErr) console.warn('[ReviewForm] 상품 통계 업데이트 실패:', statsErr.message)
     }
 
     setSubmitting(false)
@@ -202,7 +209,7 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="상품에 대한 솔직한 리뷰를 작성해주세요."
+          placeholder="이 제안서가 입찰 준비에 어떻게 도움이 되었나요? 솔직한 경험을 공유해주세요."
           rows={4}
           className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
         />

@@ -9,6 +9,55 @@ import {
 import { createClient } from '@/lib/supabase'
 import { useChatWidgetStore, getOrCreateGuestId } from '@/stores/chat-store'
 import type { ChatMessage } from '@/lib/chat'
+import { MAX_FILE_SIZE, MAX_FILE_SIZE_LABEL } from '@/lib/chat-constants'
+import { uploadFile } from '@/lib/storage-upload'
+import { fetchSignedUrl } from '@/lib/storage-signed-url'
+
+// DB 에는 storage path 만 저장 → 렌더 시점에 서명 URL 재발급해서 표시
+function useChatSignedUrl(storedValue: string | null | undefined, guestId: string | null) {
+  const [url, setUrl] = useState<string | null>(null)
+  useEffect(() => {
+    if (!storedValue) { setUrl(null); return }
+    let aborted = false
+    fetchSignedUrl({ bucket: 'chat-files', storedValue, guestId }).then((signed) => {
+      if (!aborted) setUrl(signed)
+    })
+    return () => { aborted = true }
+  }, [storedValue, guestId])
+  return url
+}
+
+function ChatImageMessage({ msg, guestId }: { msg: ChatMessage; guestId: string | null }) {
+  const url = useChatSignedUrl(msg.file_url, guestId)
+  if (!url) {
+    return <span className="text-xs opacity-70">이미지 불러오는 중...</span>
+  }
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer">
+      <img src={url} alt={msg.file_name || '이미지'} className="max-w-full max-h-48 rounded-lg" />
+    </a>
+  )
+}
+
+function ChatFileMessage({ msg, isMe, guestId }: { msg: ChatMessage; isMe: boolean; guestId: string | null }) {
+  const url = useChatSignedUrl(msg.file_url, guestId)
+  const colorClass = isMe ? 'text-white/90 hover:text-white' : 'text-foreground hover:text-primary'
+  if (!url) {
+    return (
+      <span className={`flex items-center gap-2 opacity-70 ${colorClass}`}>
+        <FileText className="w-4 h-4 shrink-0" />
+        <span className="truncate text-xs">{msg.file_name || '파일'}</span>
+      </span>
+    )
+  }
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 ${colorClass}`}>
+      <FileText className="w-4 h-4 shrink-0" />
+      <span className="truncate text-xs">{msg.file_name}</span>
+      <Download className="w-3.5 h-3.5 shrink-0" />
+    </a>
+  )
+}
 
 const BLOCKED_EXTENSIONS = [
   '.exe', '.bat', '.cmd', '.com', '.msi', '.scr', '.pif',
@@ -20,6 +69,62 @@ const BLOCKED_EXTENSIONS = [
 function isBlocked(name: string) {
   const ext = name.toLowerCase().slice(name.lastIndexOf('.'))
   return BLOCKED_EXTENSIONS.includes(ext)
+}
+
+type ChatUploadResult = {
+  url: string
+  name: string
+  size: number
+  type: string
+  fileType: 'image' | 'file'
+}
+
+// 인증 사용자는 TUS 직접 업로드(≤1GB), 게스트는 서버 라우트로 fallback(~4MB)
+async function uploadChatFile(
+  file: File,
+  roomId: string,
+  guestId: string | null,
+): Promise<ChatUploadResult | null> {
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  const fileType: 'image' | 'file' = file.type.startsWith('image/') ? 'image' : 'file'
+
+  if (session) {
+    const lastDot = file.name.lastIndexOf('.')
+    const ext = lastDot > 0 ? file.name.slice(lastDot) : ''
+    const safeName = `${roomId}/${Date.now()}_${Math.random().toString(36).slice(2, 10)}${ext}`
+    const result = await uploadFile({
+      bucket: 'chat-files',
+      path: safeName,
+      file,
+      contentType: file.type,
+    })
+    if (!result.ok) return null
+    // DB 에는 storage 상대 path 만 저장. 표시 시점에 서명 URL 재발급.
+    return {
+      url: safeName,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      fileType,
+    }
+  }
+
+  // 게스트 fallback — Vercel body size 한계로 사실상 ~4MB
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('room_id', roomId)
+  if (guestId) formData.append('guest_id', guestId)
+  const res = await fetch('/api/chat/files', { method: 'POST', body: formData })
+  const data = await res.json()
+  if (data.error) return null
+  return {
+    url: data.url,
+    name: data.name,
+    size: data.size,
+    type: data.type,
+    fileType: data.fileType,
+  }
 }
 
 function formatTime(dateStr: string) {
@@ -35,8 +140,6 @@ export function ChatWidget() {
   const pathname = usePathname()
   const { isOpen, toggle, close, roomId, setRoomId } = useChatWidgetStore()
 
-  // 관리자 페이지에서는 채팅 위젯 숨김
-  if (pathname?.startsWith('/admin')) return null
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [guestId, setGuestId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -47,6 +150,9 @@ export function ChatWidget() {
   const [error, setError] = useState<string | null>(null)
   const [roomStatus, setRoomStatus] = useState<string>('open')
   const [showScrollBtn, setShowScrollBtn] = useState(false)
+  const [guestEmail, setGuestEmail] = useState('')
+  const [guestEmailSaved, setGuestEmailSaved] = useState(false)
+  const [emailPromptDismissed, setEmailPromptDismissed] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -120,7 +226,47 @@ export function ChatWidget() {
     return () => window.removeEventListener('open-chat-widget', handler)
   }, [])
 
-  // 메시지 로드
+  // 방 로드 시 게스트 이메일 복원 (서버에 저장돼 있으면 guestEmailSaved 로 표시)
+  useEffect(() => {
+    if (!roomId || user) return
+    let aborted = false
+    fetch(`/api/chat/guest?guest_id=${guestId}`)
+      .then(r => r.json())
+      .then(data => {
+        if (aborted) return
+        const existing = data?.room?.guest_email
+        if (existing) {
+          setGuestEmail(existing)
+          setGuestEmailSaved(true)
+        }
+      })
+      .catch(() => { /* 무시 */ })
+    return () => { aborted = true }
+  }, [roomId, user, guestId])
+
+  async function saveGuestEmail() {
+    if (!roomId || !guestId || !guestEmail.trim()) return
+    const trimmed = guestEmail.trim()
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setError('올바른 이메일 형식이 아닙니다')
+      return
+    }
+    try {
+      const res = await fetch('/api/chat/rooms', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ room_id: roomId, guest_id: guestId, guest_email: trimmed }),
+      })
+      if (!res.ok) throw new Error('저장 실패')
+      setGuestEmail(trimmed)
+      setGuestEmailSaved(true)
+      setError(null)
+    } catch {
+      setError('이메일 저장에 실패했습니다. 잠시 후 다시 시도해주세요.')
+    }
+  }
+
+  // 초기 메시지 로드
   useEffect(() => {
     if (!roomId || !isOpen) return
     const loadMessages = async () => {
@@ -147,47 +293,41 @@ export function ChatWidget() {
     loadMessages()
   }, [roomId, isOpen, user, guestId])
 
-  // 폴링 방식으로 새 메시지 감지 (3초 주기)
+  // Realtime 구독: 새 메시지 실시간 수신
   useEffect(() => {
     if (!roomId || !isOpen) return
 
-    const pollMessages = async () => {
-      try {
-        if (user) {
-          const res = await fetch(`/api/chat/messages?room_id=${roomId}`)
-          const data = await res.json()
-          if (data.messages) {
-            setMessages((prev) => {
-              if (prev.length === data.messages.length) return prev
-              return data.messages
-            })
-          }
-        } else if (guestId) {
-          const res = await fetch('/api/chat/guest', {
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`chat-messages-${roomId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newMsg = payload.new as ChatMessage
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === newMsg.id)) return prev
+            return [...prev, newMsg]
+          })
+          // 읽음 처리
+          fetch('/api/chat/read', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ room_id: roomId, guest_id: guestId }),
           })
-          const data = await res.json()
-          if (data.messages) {
-            setMessages((prev) => {
-              if (prev.length === data.messages.length) return prev
-              return data.messages
-            })
-          }
         }
-        // 읽음 처리
-        fetch('/api/chat/read', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ room_id: roomId, guest_id: guestId }),
-        })
-      } catch { /* ignore */ }
-    }
+      )
+      .subscribe()
 
-    const interval = setInterval(pollMessages, 3000)
-    return () => clearInterval(interval)
-  }, [roomId, isOpen, user, guestId])
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [roomId, isOpen, guestId])
 
   // 스크롤 관리
   useEffect(() => {
@@ -195,6 +335,9 @@ export function ChatWidget() {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
   }, [messages, showScrollBtn])
+
+  // 관리자 페이지에서는 채팅 위젯 숨김 (훅 호출 순서 보존 위해 렌더 직전에 처리)
+  if (pathname?.startsWith('/admin')) return null
 
   const handleScroll = () => {
     const el = scrollContainerRef.current
@@ -244,23 +387,17 @@ export function ChatWidget() {
       return
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      setError('파일 크기는 10MB 이하만 가능합니다')
+    if (file.size > MAX_FILE_SIZE) {
+      setError(`파일 크기는 ${MAX_FILE_SIZE_LABEL} 이하만 가능합니다`)
       e.target.value = ''
       return
     }
 
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('room_id', roomId)
-
-      const uploadRes = await fetch('/api/chat/files', { method: 'POST', body: formData })
-      const uploadData = await uploadRes.json()
-
-      if (uploadData.error) {
-        setError(uploadData.error)
+      const uploadData = await uploadChatFile(file, roomId, guestId)
+      if (!uploadData) {
+        setError('파일 업로드에 실패했습니다')
         return
       }
 
@@ -302,15 +439,9 @@ export function ChatWidget() {
         const ext = blob.type.split('/')[1] || 'png'
         const file = new File([blob], `clipboard_${Date.now()}.${ext}`, { type: blob.type })
 
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('room_id', roomId)
-
         try {
-          const uploadRes = await fetch('/api/chat/files', { method: 'POST', body: formData })
-          const uploadData = await uploadRes.json()
-
-          if (!uploadData.error) {
+          const uploadData = await uploadChatFile(file, roomId, guestId)
+          if (uploadData) {
             await fetch('/api/chat/messages', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -371,9 +502,9 @@ export function ChatWidget() {
             </div>
             <p className="font-medium text-sm text-foreground">{meta.title}</p>
             <p className="text-lg font-bold text-blue-800 mt-1">{formatAmount(meta.amount)}</p>
-            {meta.status === 'pending' && user && !isMe && (
+            {meta.status === 'pending' && !isMe && (
               <button
-                onClick={() => handlePayment(meta.payment_request_id)}
+                onClick={() => handlePayment(meta.payment_request_id, meta.amount, meta.title)}
                 className="mt-3 w-full py-2 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors cursor-pointer"
               >
                 결제하기
@@ -407,24 +538,9 @@ export function ChatWidget() {
             }`}
           >
             {(msg.message_type === 'image' && msg.file_url) ? (
-              <a href={msg.file_url} target="_blank" rel="noopener noreferrer">
-                <img
-                  src={msg.file_url}
-                  alt={msg.file_name || '이미지'}
-                  className="max-w-full max-h-48 rounded-lg"
-                />
-              </a>
+              <ChatImageMessage msg={msg} guestId={guestId} />
             ) : (msg.message_type === 'file' && msg.file_url) ? (
-              <a
-                href={msg.file_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`flex items-center gap-2 ${isMe ? 'text-white/90 hover:text-white' : 'text-foreground hover:text-primary'}`}
-              >
-                <FileText className="w-4 h-4 shrink-0" />
-                <span className="truncate text-xs">{msg.file_name}</span>
-                <Download className="w-3.5 h-3.5 shrink-0" />
-              </a>
+              <ChatFileMessage msg={msg} isMe={isMe} guestId={guestId} />
             ) : (
               <p className="whitespace-pre-wrap">{msg.content}</p>
             )}
@@ -437,15 +553,13 @@ export function ChatWidget() {
     )
   }
 
-  const handlePayment = async (paymentRequestId: string) => {
-    // 결제 완료 처리 (간단 버전 - 추후 토스페이먼츠 연동)
-    try {
-      await fetch('/api/chat/payment-request', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: paymentRequestId, status: 'paid' }),
-      })
-    } catch { /* ignore */ }
+  const handlePayment = (paymentRequestId: string, amount: number, title: string) => {
+    const params = new URLSearchParams({
+      chat_payment_id: paymentRequestId,
+      amount: String(amount),
+      description: title,
+    })
+    window.location.href = `/checkout?${params.toString()}`
   }
 
   // 플로팅 버튼 (닫혀있을 때)
@@ -462,20 +576,62 @@ export function ChatWidget() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-[380px] h-[540px] bg-background border border-border/60 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+    <div className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[380px] h-[100dvh] sm:h-[540px] sm:max-h-[calc(100dvh-6rem)] bg-background border border-border/60 sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
       {/* Header */}
       <div className="bg-blue-700 text-white px-4 py-3 flex items-center justify-between shrink-0">
-        <div>
+        <div className="min-w-0">
           <h3 className="font-semibold text-sm">프리세일즈 상담</h3>
-          <p className="text-[11px] text-blue-100">
+          <p className="text-[11px] text-blue-100 truncate">
             {user ? '회원 상담' : '비회원 문의'}
-            {roomStatus === 'closed' && ' (종료됨)'}
+            {roomStatus === 'closed' && ' · 종료됨'}
+            {roomId && ` · ID ${roomId.slice(0, 8)}`}
           </p>
         </div>
-        <button onClick={close} className="text-white/80 hover:text-white transition-colors cursor-pointer">
+        <button onClick={close} className="text-white/80 hover:text-white transition-colors cursor-pointer ml-2 shrink-0">
           <X className="w-5 h-5" />
         </button>
       </div>
+
+      {/* 비회원 이메일 수집 배너: 답변 알림용, 선택 사항 */}
+      {!user && roomId && !guestEmailSaved && !emailPromptDismissed && (
+        <div className="border-b border-border/60 bg-blue-50/60 px-3 py-2">
+          <div className="flex items-start justify-between gap-2 mb-1.5">
+            <p className="text-[11px] text-blue-900 leading-snug">
+              답변이 도착하면 이메일로 알려드려요. 창을 닫아두셔도 됩니다.
+            </p>
+            <button
+              onClick={() => setEmailPromptDismissed(true)}
+              className="text-blue-900/60 hover:text-blue-900 cursor-pointer shrink-0"
+              title="나중에"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="flex gap-1.5">
+            <input
+              type="email"
+              value={guestEmail}
+              onChange={(e) => setGuestEmail(e.target.value)}
+              placeholder="이메일 주소"
+              className="flex-1 min-w-0 px-2 py-1.5 border border-border/60 rounded-md text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-500/40"
+            />
+            <button
+              onClick={saveGuestEmail}
+              disabled={!guestEmail.trim()}
+              className="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs rounded-md cursor-pointer shrink-0"
+            >
+              알림받기
+            </button>
+          </div>
+        </div>
+      )}
+      {!user && guestEmailSaved && (
+        <div className="border-b border-border/60 bg-green-50/60 px-3 py-1.5">
+          <p className="text-[11px] text-green-800 leading-snug">
+            답변 알림을 <strong>{guestEmail}</strong>로 보내드립니다.
+          </p>
+        </div>
+      )}
 
       {/* Messages */}
       <div
@@ -488,10 +644,16 @@ export function ChatWidget() {
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center">
+          <div className="flex flex-col items-center justify-center h-full text-center px-6">
             <MessageCircle className="w-10 h-10 text-muted-foreground/30 mb-3" />
             <p className="text-sm text-muted-foreground">안녕하세요!</p>
             <p className="text-xs text-muted-foreground/70 mt-1">궁금한 점을 편하게 물어보세요.</p>
+            <p className="text-[11px] text-muted-foreground/60 mt-3 leading-relaxed">
+              많은 문의로 답변이 지연될 수 있습니다.<br />
+              창을 닫아두셔도 답변이 오면{' '}
+              {user ? '이메일과' : guestEmailSaved ? '이메일과' : '(이메일 등록 시)'}{' '}
+              다시 열었을 때 확인하실 수 있습니다.
+            </p>
           </div>
         ) : (
           messages.map(renderMessage)

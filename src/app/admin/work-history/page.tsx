@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { History, GitCommit, Plus, Minus, FileText, Clock, User, X, Calendar, Hash, ChevronRight, Loader2 } from 'lucide-react'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 
 interface CommitStats {
   files: number
@@ -257,6 +258,7 @@ export default function WorkHistoryPage() {
 }
 
 function DayDetailModal({ day, onClose }: { day: DayEntry; onClose: () => void }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -273,9 +275,9 @@ function DayDetailModal({ day, onClose }: { day: DayEntry; onClose: () => void }
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[5vh] pb-[5vh]">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col overflow-hidden" style={modalStyle}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 cursor-move select-none" onMouseDown={handleMouseDown}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
               <Calendar className="w-5 h-5" />

@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { uploadFile } from '@/lib/storage-upload'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import {
   ArrowLeft, Save, Eye, EyeOff, Trash2, Play, Plus, X,
   ImageIcon, FileText, Tag, Upload, Loader2, Code, Monitor,
@@ -65,12 +67,13 @@ interface ProductForm {
   features: string[]
   specs: SpecItem[]
   file_types: string[]
-  document_orientation: '가로형' | '세로형'
+  document_orientation: string[]
   badge_new: boolean
   badge_best: boolean
   badge_sale: boolean
   seller: string
   related_product_ids: number[]
+  preview_images: string[]
 }
 
 // ===========================
@@ -104,12 +107,13 @@ const EMPTY_FORM: ProductForm = {
   features: [''],
   specs: [{ label: '', value: '' }],
   file_types: [],
-  document_orientation: '가로형',
+  document_orientation: ['가로형'],
   badge_new: false,
   badge_best: false,
   badge_sale: false,
   seller: '프리세일즈',
   related_product_ids: [],
+  preview_images: [],
 }
 
 // ===========================
@@ -248,11 +252,30 @@ function extractYoutubeId(input: string): string {
   return input
 }
 
+// Supabase PostgrestError / StorageError 는 Error 인스턴스가 아니므로
+// instanceof Error 검사에서 누락됨 → message 필드를 직접 파내어 노출
+function formatErr(e: unknown): string {
+  if (e instanceof Error) return e.message
+  if (e && typeof e === 'object') {
+    const obj = e as { message?: unknown; error?: unknown; details?: unknown; hint?: unknown; code?: unknown }
+    const parts: string[] = []
+    if (typeof obj.message === 'string') parts.push(obj.message)
+    else if (typeof obj.error === 'string') parts.push(obj.error)
+    if (typeof obj.code === 'string') parts.push(`[${obj.code}]`)
+    if (typeof obj.details === 'string') parts.push(obj.details)
+    if (typeof obj.hint === 'string') parts.push(`(${obj.hint})`)
+    if (parts.length > 0) return parts.join(' ')
+    try { return JSON.stringify(e) } catch { return String(e) }
+  }
+  return String(e ?? '알 수 없는 오류')
+}
+
 // ===========================
 // Main Page
 // ===========================
 
 export default function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
+  const { handleMouseDown: handleDeleteFileModalMouseDown, modalStyle: deleteFileModalStyle } = useDraggableModal()
   const { id } = use(params)
   const router = useRouter()
   const isNew = id === 'new'
@@ -307,7 +330,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     setProductFiles(data || [])
   }
 
-  // Upload download file
+  // Upload download file — TUS resumable (50GB 까지)
   const handleDownloadFileUpload = async (file: File) => {
     if (isNew) {
       showToast('상품을 먼저 저장한 후 파일을 업로드해주세요.')
@@ -316,15 +339,22 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     setFileUploading(true)
     setFileUploadProgress(0)
     try {
+      // Supabase Storage key 는 ASCII 만 허용 (TUS 는 특히 엄격)
+      // 사용자가 보는 파일명(file_name) 은 DB 에 원본 한글로 보존, storage key 만 sanitize
+      const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')) : ''
+      const safeKey = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}${ext}`
+      const filePath = `products/${id}/${safeKey}`
+      // 실제 업로드 진행률은 95% 까지만 반영, 나머지 5% 는 DB insert 단계
+      const result = await uploadFile({
+        bucket: 'product-files',
+        path: filePath,
+        file,
+        upsert: true,
+        onProgress: (pct) => setFileUploadProgress(Math.min(95, Math.round(pct * 0.95))),
+      })
+      if (!result.ok) throw new Error(result.error)
+
       const supabase = createClient()
-      const filePath = `products/${id}/${file.name}`
-      const { error: uploadError } = await supabase.storage
-        .from('product-files')
-        .upload(filePath, file, { upsert: true })
-      if (uploadError) throw uploadError
-
-      setFileUploadProgress(70)
-
       const { data: urlData } = supabase.storage
         .from('product-files')
         .getPublicUrl(filePath)
@@ -333,7 +363,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         .from('product_files')
         .insert({
           product_id: Number(id),
-          file_name: file.name,
+          file_name: file.name, // 원본 한글 이름 그대로 보존 (다운로드 시 이 이름으로 저장됨)
           file_url: urlData.publicUrl,
           file_size: file.size,
         })
@@ -343,7 +373,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       await loadProductFiles()
       showToast('파일이 업로드되었습니다.')
     } catch (err) {
-      showToast(`업로드 오류: ${err instanceof Error ? err.message : '알 수 없는 오류'}`)
+      showToast(`업로드 오류: ${formatErr(err)}`)
     } finally {
       setFileUploading(false)
       setFileUploadProgress(0)
@@ -356,7 +386,11 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     setDeletingFile(true)
     try {
       const supabase = createClient()
-      const filePath = `products/${id}/${file.file_name}`
+      // file_url 에서 실제 storage key 추출
+      // 예: https://xxx.supabase.co/storage/v1/object/public/product-files/products/58/1776-abc.pdf
+      //     → products/58/1776-abc.pdf
+      const match = file.file_url?.match(/\/product-files\/(.+)$/)
+      const filePath = match ? decodeURIComponent(match[1]) : `products/${id}/${file.file_name}`
       await supabase.storage.from('product-files').remove([filePath])
       const { error } = await supabase
         .from('product_files')
@@ -367,7 +401,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       await loadProductFiles()
       showToast('파일이 삭제되었습니다.')
     } catch (err) {
-      showToast(`삭제 오류: ${err instanceof Error ? err.message : '알 수 없는 오류'}`)
+      showToast(`삭제 오류: ${formatErr(err)}`)
     } finally {
       setDeletingFile(false)
     }
@@ -422,12 +456,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           features: features.length > 0 ? features : [''],
           specs: specs.length > 0 ? specs : [{ label: '', value: '' }],
           file_types: Array.isArray(p.file_types) ? p.file_types : [],
-          document_orientation: p.document_orientation || '가로형',
+          document_orientation: Array.isArray(p.document_orientation)
+            ? p.document_orientation
+            : p.document_orientation ? [p.document_orientation] : ['가로형'],
           badge_new: p.badge_new ?? false,
           badge_best: p.badge_best ?? false,
           badge_sale: p.badge_sale ?? false,
           seller: p.seller || '프리세일즈',
           related_product_ids: Array.isArray(p.related_product_ids) ? p.related_product_ids : [],
+          preview_images: Array.isArray(p.preview_images) ? p.preview_images : [],
         })
         setDownloadCount(p.download_count || 0)
         setCreatedAt(p.created_at || '')
@@ -461,6 +498,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       showToast('상품명을 입력해주세요.')
       return
     }
+    if (form.is_published && productFiles.length === 0) {
+      showToast('파일이 없는 상품은 공개할 수 없습니다. 먼저 상품 파일을 등록해주세요.')
+      return
+    }
     setSaving(true)
     try {
       const supabase = createClient()
@@ -470,8 +511,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         description_html: form.description_html || null,
         youtube_id: form.youtube_id || null,
         preview_pdf_url: form.preview_pdf_url || null,
-        preview_clear_pages: parseInt(form.preview_clear_pages) || 0,
-        preview_blur_pages: parseInt(form.preview_blur_pages) || 2,
+        preview_clear_pages: Math.min(20, parseInt(form.preview_clear_pages) || 0),
+        preview_blur_pages: 0, // 시스템 자동 계산 (70% 선명 / 30% 블러)
         preview_note: form.preview_note || null,
         price: form.is_free ? 0 : form.price,
         original_price: form.is_free ? 0 : form.original_price,
@@ -495,6 +536,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         badge_sale: form.badge_sale,
         seller: form.seller || null,
         related_product_ids: form.related_product_ids,
+        preview_images: form.preview_images,
         updated_at: new Date().toISOString(),
       }
 
@@ -509,7 +551,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       showToast(isNew ? '상품이 등록되었습니다.' : '상품이 수정되었습니다.')
       setTimeout(() => router.push('/admin/products'), 1000)
     } catch (e) {
-      showToast(`저장 오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}`)
+      console.error('[handleSave] error:', e)
+      showToast(`저장 오류: ${formatErr(e)}`)
     } finally {
       setSaving(false)
     }
@@ -525,7 +568,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       showToast('상품이 삭제되었습니다.')
       setTimeout(() => router.push('/admin/products'), 1000)
     } catch (e) {
-      showToast(`삭제 오류: ${e instanceof Error ? e.message : '알 수 없는 오류'}`)
+      showToast(`삭제 오류: ${formatErr(e)}`)
     }
   }
 
@@ -541,20 +584,15 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     }
     setUploading(true)
     try {
-      const supabase = createClient()
       const ext = file.name.split('.').pop() || 'jpg'
       const filePath = `${isNew ? 'temp' : id}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`
-      const { error: uploadError } = await supabase.storage
-        .from('product-thumbnails')
-        .upload(filePath, file, { upsert: true })
-      if (uploadError) throw uploadError
-      const { data: urlData } = supabase.storage
-        .from('product-thumbnails')
-        .getPublicUrl(filePath)
+      const result = await uploadFile({ bucket: 'product-thumbnails', path: filePath, file, upsert: true })
+      if (!result.ok) throw new Error(result.error)
+      const { data: urlData } = createClient().storage.from('product-thumbnails').getPublicUrl(filePath)
       updateField('thumbnail_url', urlData.publicUrl)
       showToast('이미지가 업로드되었습니다.')
     } catch (err) {
-      showToast(`업로드 오류: ${err instanceof Error ? err.message : '알 수 없는 오류'}`)
+      showToast(`업로드 오류: ${formatErr(err)}`)
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -659,6 +697,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         >
           <div
             className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4"
+            style={deleteFileModalStyle}
             onClick={e => e.stopPropagation()}
           >
             <button
@@ -668,7 +707,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             >
               <X className="w-4 h-4" />
             </button>
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-4 cursor-move select-none" onMouseDown={handleDeleteFileModalMouseDown}>
               <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center">
                 <AlertCircle className="w-5 h-5 text-red-500" />
               </div>
@@ -1036,6 +1075,158 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             )}
           </section>
 
+          {/* ─── 다운로드 파일 관리 ─── */}
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
+              <Download className="w-4 h-4 text-muted-foreground" />
+              다운로드 파일 관리
+            </h2>
+            <p className="text-xs text-muted-foreground mb-4">구매자가 다운로드할 실제 파일입니다. product-files 버킷에 저장됩니다.</p>
+
+            {isNew ? (
+              <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                상품을 먼저 저장한 후 파일을 업로드할 수 있습니다.
+              </div>
+            ) : (
+              <>
+                {/* Upload area */}
+                <input
+                  ref={downloadFileInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0]
+                    if (file) handleDownloadFileUpload(file)
+                  }}
+                />
+                <div
+                  className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
+                    dragOver
+                      ? 'border-blue-400 bg-primary/8/50'
+                      : 'border-border bg-muted hover:border-blue-300 hover:bg-primary/8/20'
+                  }`}
+                  onClick={() => !fileUploading && downloadFileInputRef.current?.click()}
+                  onDragOver={e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setDragOver(true)
+                  }}
+                  onDragLeave={e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setDragOver(false)
+                  }}
+                  onDrop={e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setDragOver(false)
+                    const file = e.dataTransfer.files?.[0]
+                    if (file) handleDownloadFileUpload(file)
+                  }}
+                >
+                  {fileUploading ? (
+                    <div className="flex flex-col items-center gap-2">
+                      <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                      <p className="text-xs text-primary font-medium">업로드 중...</p>
+                      {fileUploadProgress > 0 && (
+                        <div className="w-full max-w-[200px] bg-muted rounded-full h-1.5 mt-1">
+                          <div
+                            className="bg-primary h-1.5 rounded-full transition-all duration-300"
+                            style={{ width: `${fileUploadProgress}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-2">
+                      <Upload className="w-8 h-8 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground font-medium">파일을 드래그하거나 클릭하여 업로드</p>
+                      <p className="text-xs text-muted-foreground">PPT, PDF, HWP, XLS, ZIP 등 모든 파일 형식</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* File list */}
+                {productFiles.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">{productFiles.length}개 파일 등록됨</p>
+                    <div className="divide-y divide-gray-100 border border-border rounded-xl overflow-hidden">
+                      {productFiles.map(file => (
+                        <div key={file.id} className="flex items-center gap-3 px-4 py-3 bg-white hover:bg-muted transition-colors group">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                const res = await fetch('/api/download', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ productId: Number(id), fileId: file.id }),
+                                })
+                                const body = await res.json()
+                                if (!res.ok || !body.url) throw new Error(body.error || '다운로드 실패')
+                                window.location.href = body.url
+                              } catch (e) {
+                                alert(e instanceof Error ? e.message : '다운로드에 실패했습니다')
+                              }
+                            }}
+                            className="flex items-center gap-3 flex-1 min-w-0 text-left cursor-pointer"
+                            title="다운로드"
+                          >
+                            <div className="w-8 h-8 bg-primary/8 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
+                              <Download className="w-4 h-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">{file.file_name}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {formatFileSize(file.file_size)} · {new Date(file.created_at).toLocaleDateString('ko-KR')}
+                              </p>
+                            </div>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteConfirmFile(file)}
+                            className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
+                            title="삭제"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {productFiles.length === 0 && !fileUploading && (
+                  <p className="text-center text-xs text-muted-foreground mt-3">등록된 파일이 없습니다</p>
+                )}
+
+                {/* 미리보기 PDF 미등록 경고 */}
+                {productFiles.length > 0 && !form.preview_pdf_url && (() => {
+                  const hasPdfFile = productFiles.some((f: { file_name: string }) => f.file_name?.toLowerCase().endsWith('.pdf'))
+                  const fileExts = productFiles.map((f: { file_name: string }) => f.file_name?.split('.').pop()?.toUpperCase()).join(', ')
+                  return (
+                    <div className="mt-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-semibold text-amber-800">미리보기 PDF가 등록되지 않았습니다</p>
+                          <p className="text-xs text-amber-700 mt-1">
+                            등록된 파일: {fileExts}
+                            {!hasPdfFile && ' — PDF가 아닌 파일은 미리보기가 지원되지 않습니다.'}
+                          </p>
+                          <p className="text-xs text-amber-600 mt-1">
+                            아래의 📖 PDF 미리보기 섹션에서 미리보기용 PDF를 업로드하거나, 안내 문구를 입력해주세요.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </>
+            )}
+          </section>
+
           {/* ─── PDF 미리보기 ─── */}
           <section className="bg-white rounded-xl border border-border p-5">
             <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
@@ -1052,11 +1243,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     e.currentTarget.classList.remove('border-primary', 'bg-primary/8/50')
                     const file = e.dataTransfer.files[0]
                     if (!file || !file.name.endsWith('.pdf')) { setToast('PDF 파일만 업로드 가능합니다'); return }
-                    const supabase = createClient()
-                    const fileName = `preview-${form.title.replace(/[^a-zA-Z0-9가-힣]/g, '_')}-${Date.now()}.pdf`
-                    const { error } = await supabase.storage.from('product-previews').upload(fileName, file)
-                    if (error) { setToast('업로드 실패: ' + error.message); return }
-                    const { data: urlData } = supabase.storage.from('product-previews').getPublicUrl(fileName)
+                    const fileName = `preview-${Number(id)}-${Date.now()}.pdf`
+                    const result = await uploadFile({ bucket: 'product-previews', path: fileName, file })
+                    if (!result.ok) { setToast('업로드 실패: ' + result.error); return }
+                    const { data: urlData } = createClient().storage.from('product-previews').getPublicUrl(fileName)
                     updateField('preview_pdf_url', urlData.publicUrl)
                     setToast('PDF 업로드 완료')
                   }}
@@ -1071,11 +1261,10 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                     onChange={async (e) => {
                       const file = e.target.files?.[0]
                       if (!file) return
-                      const supabase = createClient()
-                      const fileName = `preview-${form.title.replace(/[^a-zA-Z0-9가-힣]/g, '_')}-${Date.now()}.pdf`
-                      const { error } = await supabase.storage.from('product-previews').upload(fileName, file)
-                      if (error) { setToast('업로드 실패: ' + error.message); return }
-                      const { data: urlData } = supabase.storage.from('product-previews').getPublicUrl(fileName)
+                      const fileName = `preview-${Number(id)}-${Date.now()}.pdf`
+                      const result = await uploadFile({ bucket: 'product-previews', path: fileName, file })
+                      if (!result.ok) { setToast('업로드 실패: ' + result.error); return }
+                      const { data: urlData } = createClient().storage.from('product-previews').getPublicUrl(fileName)
                       updateField('preview_pdf_url', urlData.publicUrl)
                       setToast('PDF 업로드 완료')
                     }}
@@ -1097,28 +1286,17 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">선명 페이지 수 (0=자동)</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">미리보기 페이지 수 (0=자동)</label>
                   <input
                     type="number"
                     min="0"
+                    max="20"
                     value={form.preview_clear_pages}
-                    onChange={e => updateField('preview_clear_pages', e.target.value)}
-                    placeholder="0 (자동: 전체의 5%)"
+                    onChange={e => updateField('preview_clear_pages', String(Math.min(20, Math.max(0, parseInt(e.target.value) || 0))))}
+                    placeholder="0 (자동)"
                     className={inputClass}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">0이면 자동 (전체의 5%, 최소3, 최대15)</p>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">블러 페이지 수</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={form.preview_blur_pages}
-                    onChange={e => updateField('preview_blur_pages', e.target.value)}
-                    placeholder="2"
-                    className={inputClass}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">흐리게 보여줄 페이지 수</p>
+                  <p className="text-xs text-muted-foreground mt-1">0이면 자동 계산. <span className="font-medium text-amber-600">최대 20장</span>. 70% 선명 / 30% 블러 자동 적용</p>
                 </div>
               </div>
               <div>
@@ -1132,6 +1310,106 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 />
                 <p className="text-xs text-muted-foreground mt-1">PDF 미리보기가 없을 때 상품 상세에 표시될 안내 문구</p>
               </div>
+            </div>
+          </section>
+
+          {/* ─── 이미지 미리보기 ─── */}
+          <section className="bg-white rounded-xl border border-border p-5">
+            <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+              🖼️ 이미지 미리보기
+            </h2>
+            <div className="space-y-4">
+              {/* 업로드 드래그 영역 */}
+              <div
+                onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('border-primary', 'bg-primary/5') }}
+                onDragLeave={(e) => { e.currentTarget.classList.remove('border-primary', 'bg-primary/5') }}
+                onDrop={async (e) => {
+                  e.preventDefault()
+                  e.currentTarget.classList.remove('border-primary', 'bg-primary/5')
+                  const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))
+                  if (!files.length) return
+                  const supabase = createClient()
+                  const newUrls: string[] = []
+                  const failed: string[] = []
+                  for (const file of files) {
+                    const ext = file.name.split('.').pop() ?? 'jpg'
+                    const fileName = `preview-images/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+                    const result = await uploadFile({ bucket: 'product-previews', path: fileName, file })
+                    if (result.ok) {
+                      const { data } = supabase.storage.from('product-previews').getPublicUrl(fileName)
+                      newUrls.push(data.publicUrl)
+                    } else {
+                      failed.push(`${file.name}: ${result.error}`)
+                    }
+                  }
+                  if (newUrls.length) {
+                    updateField('preview_images', [...form.preview_images, ...newUrls])
+                  }
+                  if (failed.length) {
+                    showToast(`${newUrls.length}개 성공, ${failed.length}개 실패: ${failed[0]}`)
+                  } else if (newUrls.length) {
+                    showToast(`${newUrls.length}개 이미지 업로드 완료`)
+                  }
+                }}
+                className="border-2 border-dashed border-border rounded-xl p-6 text-center transition-colors cursor-pointer hover:border-gray-400"
+                onClick={() => document.getElementById('preview-images-input')?.click()}
+              >
+                <input
+                  id="preview-images-input"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={async (e) => {
+                    const files = Array.from(e.target.files ?? []).filter(f => f.type.startsWith('image/'))
+                    if (!files.length) return
+                    const supabase = createClient()
+                    const newUrls: string[] = []
+                    const failed: string[] = []
+                    for (const file of files) {
+                      const ext = file.name.split('.').pop() ?? 'jpg'
+                      const fileName = `preview-images/${id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+                      const result = await uploadFile({ bucket: 'product-previews', path: fileName, file })
+                      if (result.ok) {
+                        const { data } = supabase.storage.from('product-previews').getPublicUrl(fileName)
+                        newUrls.push(data.publicUrl)
+                      } else {
+                        failed.push(`${file.name}: ${result.error}`)
+                      }
+                    }
+                    if (newUrls.length) {
+                      updateField('preview_images', [...form.preview_images, ...newUrls])
+                    }
+                    if (failed.length) {
+                      showToast(`${newUrls.length}개 성공, ${failed.length}개 실패: ${failed[0]}`)
+                    } else if (newUrls.length) {
+                      showToast(`${newUrls.length}개 이미지 업로드 완료`)
+                    }
+                    e.target.value = ''
+                  }}
+                />
+                <p className="text-2xl mb-2">🖼️</p>
+                <p className="text-sm text-muted-foreground">이미지를 드래그하거나 클릭해서 업로드 (여러 장 가능)</p>
+              </div>
+
+              {/* 등록된 이미지 목록 - 그리드 */}
+              {form.preview_images.length > 0 && (
+                <div className="grid grid-cols-3 gap-3">
+                  {form.preview_images.map((url, idx) => (
+                    <div key={idx} className="relative group rounded-xl overflow-hidden border border-border">
+                      <img src={url} alt={`미리보기 ${idx + 1}`} className="w-full aspect-[4/3] object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => updateField('preview_images', form.preview_images.filter((_, i) => i !== idx))}
+                        className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                      <span className="absolute bottom-2 left-2 text-[10px] bg-black/50 text-white px-1.5 py-0.5 rounded">{idx + 1}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
 
@@ -1209,32 +1487,39 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 </div>
               </div>
 
-              {/* 문서 형태 (라디오) */}
+              {/* 문서 형태 (체크박스 — 중복선택 가능) */}
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
                   <Monitor className="w-3 h-3" />
                   문서 형태
                 </label>
                 <div className="flex gap-3">
-                  {(['가로형', '세로형'] as const).map(orient => (
-                    <label
-                      key={orient}
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border cursor-pointer transition-colors ${
-                        form.document_orientation === orient
-                          ? 'bg-primary/8 border-blue-300 text-primary'
-                          : 'bg-white border-border text-muted-foreground hover:bg-muted'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="documentOrientation"
-                        checked={form.document_orientation === orient}
-                        onChange={() => updateField('document_orientation', orient)}
-                        className="w-4 h-4 border-border text-primary focus:ring-primary"
-                      />
-                      <span className="text-sm font-medium">{orient}</span>
-                    </label>
-                  ))}
+                  {(['가로형', '세로형'] as const).map(orient => {
+                    const checked = form.document_orientation.includes(orient)
+                    return (
+                      <label
+                        key={orient}
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border cursor-pointer transition-colors ${
+                          checked
+                            ? 'bg-primary/8 border-blue-300 text-primary'
+                            : 'bg-white border-border text-muted-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            const next = checked
+                              ? form.document_orientation.filter(v => v !== orient)
+                              : [...form.document_orientation, orient]
+                            updateField('document_orientation', next.length > 0 ? next : [orient])
+                          }}
+                          className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                        />
+                        <span className="text-sm font-medium">{orient}</span>
+                      </label>
+                    )
+                  })}
                 </div>
               </div>
             </div>
@@ -1401,138 +1686,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
 
             {form.related_product_ids.length > 0 && (
               <p className="text-xs text-muted-foreground mt-2">{form.related_product_ids.length}개 상품이 연결되었습니다</p>
-            )}
-          </section>
-
-          {/* ─── 다운로드 파일 관리 ─── */}
-          <section className="bg-white rounded-xl border border-border p-5">
-            <h2 className="text-sm font-bold text-foreground mb-1 flex items-center gap-2">
-              <Download className="w-4 h-4 text-muted-foreground" />
-              다운로드 파일 관리
-            </h2>
-            <p className="text-xs text-muted-foreground mb-4">구매자가 다운로드할 실제 파일입니다. product-files 버킷에 저장됩니다.</p>
-
-            {isNew ? (
-              <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                상품을 먼저 저장한 후 파일을 업로드할 수 있습니다.
-              </div>
-            ) : (
-              <>
-                {/* Upload area */}
-                <input
-                  ref={downloadFileInputRef}
-                  type="file"
-                  className="hidden"
-                  onChange={e => {
-                    const file = e.target.files?.[0]
-                    if (file) handleDownloadFileUpload(file)
-                  }}
-                />
-                <div
-                  className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
-                    dragOver
-                      ? 'border-blue-400 bg-primary/8/50'
-                      : 'border-border bg-muted hover:border-blue-300 hover:bg-primary/8/20'
-                  }`}
-                  onClick={() => !fileUploading && downloadFileInputRef.current?.click()}
-                  onDragOver={e => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setDragOver(true)
-                  }}
-                  onDragLeave={e => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setDragOver(false)
-                  }}
-                  onDrop={e => {
-                    e.preventDefault()
-                    e.stopPropagation()
-                    setDragOver(false)
-                    const file = e.dataTransfer.files?.[0]
-                    if (file) handleDownloadFileUpload(file)
-                  }}
-                >
-                  {fileUploading ? (
-                    <div className="flex flex-col items-center gap-2">
-                      <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-                      <p className="text-xs text-primary font-medium">업로드 중...</p>
-                      {fileUploadProgress > 0 && (
-                        <div className="w-full max-w-[200px] bg-muted rounded-full h-1.5 mt-1">
-                          <div
-                            className="bg-primary h-1.5 rounded-full transition-all duration-300"
-                            style={{ width: `${fileUploadProgress}%` }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-2">
-                      <Upload className="w-8 h-8 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground font-medium">파일을 드래그하거나 클릭하여 업로드</p>
-                      <p className="text-xs text-muted-foreground">PPT, PDF, HWP, XLS, ZIP 등 모든 파일 형식</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* File list */}
-                {productFiles.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">{productFiles.length}개 파일 등록됨</p>
-                    <div className="divide-y divide-gray-100 border border-border rounded-xl overflow-hidden">
-                      {productFiles.map(file => (
-                        <div key={file.id} className="flex items-center gap-3 px-4 py-3 bg-white hover:bg-muted transition-colors group">
-                          <div className="w-8 h-8 bg-primary/8 rounded-xl flex items-center justify-center shrink-0">
-                            <FileText className="w-4 h-4 text-primary" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{file.file_name}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {formatFileSize(file.file_size)} · {new Date(file.created_at).toLocaleDateString('ko-KR')}
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteConfirmFile(file)}
-                            className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors opacity-0 group-hover:opacity-100 cursor-pointer shrink-0"
-                            title="삭제"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {productFiles.length === 0 && !fileUploading && (
-                  <p className="text-center text-xs text-muted-foreground mt-3">등록된 파일이 없습니다</p>
-                )}
-
-                {/* 미리보기 PDF 미등록 경고 */}
-                {productFiles.length > 0 && !form.preview_pdf_url && (() => {
-                  const hasPdfFile = productFiles.some((f: { file_name: string }) => f.file_name?.toLowerCase().endsWith('.pdf'))
-                  const fileExts = productFiles.map((f: { file_name: string }) => f.file_name?.split('.').pop()?.toUpperCase()).join(', ')
-                  return (
-                    <div className="mt-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="text-xs font-semibold text-amber-800">미리보기 PDF가 등록되지 않았습니다</p>
-                          <p className="text-xs text-amber-700 mt-1">
-                            등록된 파일: {fileExts}
-                            {!hasPdfFile && ' — PDF가 아닌 파일은 미리보기가 지원되지 않습니다.'}
-                          </p>
-                          <p className="text-xs text-amber-600 mt-1">
-                            위의 📖 PDF 미리보기 섹션에서 미리보기용 PDF를 업로드하거나, 안내 문구를 입력해주세요.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })()}
-              </>
             )}
           </section>
 

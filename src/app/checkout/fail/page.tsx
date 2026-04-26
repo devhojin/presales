@@ -18,11 +18,14 @@ export default function CheckoutFailPage() {
       const dbOrderId = orderId.split('_')[1]
       if (!dbOrderId) return
       const supabase = createClient()
-      await supabase
+      const { error } = await supabase
         .from('orders')
         .update({ status: 'cancelled' })
         .eq('id', parseInt(dbOrderId, 10))
         .eq('status', 'pending')
+      if (error) {
+        console.error('[checkout/fail] pending 주문 취소 실패:', error)
+      }
     }
     cleanupOrder()
   }, [searchParams])
@@ -34,10 +37,16 @@ export default function CheckoutFailPage() {
       <p className="text-muted-foreground mb-2">
         {message || '결제 처리 중 문제가 발생했습니다.'}
       </p>
+      <p className="text-sm text-muted-foreground mb-1">
+        장바구니에 상품이 그대로 있으니 다시 시도해주세요.
+      </p>
+      <p className="text-xs text-muted-foreground mb-2">
+        다른 결제 수단을 이용하거나, 무통장 입금을 선택해보세요.
+      </p>
       {code && (
-        <p className="text-xs text-muted-foreground mb-8">오류 코드: {code}</p>
+        <p className="text-xs text-muted-foreground mb-2">오류 코드: {code}</p>
       )}
-      <div className="flex gap-3 justify-center">
+      <div className="flex gap-3 justify-center mt-8">
         <Link
           href="/cart"
           className="h-11 px-6 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors inline-flex items-center"

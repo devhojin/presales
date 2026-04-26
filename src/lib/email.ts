@@ -1,4 +1,12 @@
 import nodemailer from 'nodemailer'
+import { SITE_URL } from './constants'
+
+// 사용자에게 표시할 "화이트라벨" 도메인 (presales.co.kr 고정)
+// 링크 href 는 SITE_URL 을 사용하되, 보이는 텍스트는 presales.co.kr 유지.
+// 도메인 연결 전 상태(Vercel preview 도메인) 에서도 동작하도록.
+function siteLinkHref(): string {
+  return SITE_URL
+}
 
 // ===========================
 // SMTP Transporter (메일플러그)
@@ -9,6 +17,9 @@ export function createTransporter() {
     host: process.env.SMTP_HOST || 'mail.mailplug.co.kr',
     port: Number(process.env.SMTP_PORT) || 465,
     secure: true,
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 10000,
     auth: {
       user: process.env.SMTP_USER!,
       pass: process.env.SMTP_PASS!,
@@ -62,7 +73,7 @@ export function buildEmailHtml(title: string, bodyHtml: string): string {
               <p style="margin:0;font-size:12px;color:#64748b;">
                 <a href="mailto:hojin@amarans.co.kr" style="color:#3b82f6;text-decoration:none;">hojin@amarans.co.kr</a>
                 &nbsp;|&nbsp;
-                <a href="https://presales.co.kr" style="color:#3b82f6;text-decoration:none;">presales.co.kr</a>
+                <a href="${siteLinkHref()}" style="color:#3b82f6;text-decoration:none;">presales.co.kr</a>
               </p>
               <p style="margin:8px 0 0;font-size:11px;color:#cbd5e1;">&copy; ${new Date().getFullYear()} Amarans. All rights reserved.</p>
             </td>

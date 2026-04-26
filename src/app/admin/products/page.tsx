@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
@@ -16,7 +17,6 @@ import {
   ChevronLeft,
   ChevronRight,
   CheckCircle,
-  Copy,
   Download,
   DollarSign,
   Loader2,
@@ -119,6 +119,8 @@ function DeleteModal({
   onConfirm: () => void
   onCancel: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel()
@@ -136,9 +138,10 @@ function DeleteModal({
     >
       <div
         className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6"
+        style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4 cursor-move" onMouseDown={handleMouseDown}>
           <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
             <Trash2 className="w-5 h-5 text-red-600" />
           </div>
@@ -177,6 +180,8 @@ function BulkDeleteModal({
   onConfirm: () => void
   onCancel: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel()
@@ -194,9 +199,10 @@ function BulkDeleteModal({
     >
       <div
         className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6"
+        style={modalStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-4 cursor-move" onMouseDown={handleMouseDown}>
           <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
             <Trash2 className="w-5 h-5 text-red-600" />
           </div>
@@ -223,6 +229,146 @@ function BulkDeleteModal({
 }
 
 // ===========================
+// Download Detail Modal
+// ===========================
+
+interface DownloadLog {
+  id: number
+  product_id: number
+  user_id: string
+  file_name: string | null
+  downloaded_at: string
+  profiles: { name: string | null; email: string | null } | null
+}
+
+function DownloadDetailModal({
+  product,
+  onClose,
+}: {
+  product: Product
+  onClose: () => void
+}) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
+  const [logs, setLogs] = useState<DownloadLog[]>([])
+  const [loadingLogs, setLoadingLogs] = useState(true)
+  const supabase = useMemo(() => createClient(), [])
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleEsc)
+    return () => window.removeEventListener('keydown', handleEsc)
+  }, [onClose])
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      setLoadingLogs(true)
+      // download_logs 조회
+      const { data: dlData } = await supabase
+        .from('download_logs')
+        .select('id, product_id, user_id, file_name, downloaded_at')
+        .eq('product_id', product.id)
+        .order('downloaded_at', { ascending: false })
+        .limit(500)
+
+      if (dlData && dlData.length > 0) {
+        // user_id들로 profiles 별도 조회
+        const userIds = [...new Set(dlData.map(d => d.user_id).filter(Boolean))]
+        const { data: profilesData } = userIds.length > 0
+          ? await supabase.from('profiles').select('id, name, email').in('id', userIds)
+          : { data: [] }
+
+        const profileMap = new Map<string, { name: string | null; email: string | null }>()
+        profilesData?.forEach((p: { id: string; name: string | null; email: string | null }) => profileMap.set(p.id, p))
+
+        setLogs(dlData.map(d => ({
+          ...d,
+          profiles: d.user_id ? profileMap.get(d.user_id) || null : null,
+        })) as DownloadLog[])
+      } else {
+        setLogs([])
+      }
+      setLoadingLogs(false)
+    }
+    fetchLogs()
+  }, [product.id, supabase])
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col"
+        style={modalStyle}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border cursor-move" onMouseDown={handleMouseDown}>
+          <div>
+            <h3 className="text-base font-bold text-foreground">다운로드 내역</h3>
+            <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-[400px]">{product.title}</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-xl hover:bg-muted flex items-center justify-center"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto">
+          {loadingLogs ? (
+            <div className="flex items-center justify-center py-16 text-muted-foreground text-sm">
+              로딩 중...
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="flex items-center justify-center py-16 text-muted-foreground text-sm">
+              다운로드 내역이 없습니다
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="bg-muted sticky top-0">
+                <tr className="border-b border-border">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">회원명</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">이메일</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground">파일명</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-muted-foreground">다운로드 일시</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.map((log) => (
+                  <tr key={log.id} className="border-b border-border/50 hover:bg-muted/30">
+                    <td className="px-4 py-3 text-sm">{log.profiles?.name || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground">{log.profiles?.email || '-'}</td>
+                    <td className="px-4 py-3 text-sm text-muted-foreground max-w-[200px] truncate">{log.file_name || '-'}</td>
+                    <td className="px-4 py-3 text-center text-xs text-muted-foreground">
+                      {log.downloaded_at ? log.downloaded_at.replace('T', ' ').slice(0, 16) : '-'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+        {/* Footer */}
+        <div className="px-6 py-3 border-t border-border flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-foreground bg-muted rounded-xl hover:bg-muted transition-colors"
+          >
+            닫기
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ===========================
 // Sortable Row
 // ===========================
 
@@ -230,16 +376,22 @@ function SortableProductRow({
   product,
   onTogglePublish,
   onDelete,
-  onClone,
   selected,
   onSelect,
+  globalRank,
+  categoryRank,
+  categoryName,
+  onDownloadDetail,
 }: {
   product: Product
   onTogglePublish: (id: number, current: boolean) => void
   onDelete: (id: number) => void
-  onClone: (id: number) => void
   selected: boolean
   onSelect: (id: number) => void
+  globalRank: number | null
+  categoryRank: number | null
+  categoryName: string
+  onDownloadDetail: (product: Product) => void
 }) {
   const {
     attributes,
@@ -290,7 +442,10 @@ function SortableProductRow({
         product={product}
         onTogglePublish={onTogglePublish}
         onDelete={onDelete}
-        onClone={onClone}
+        globalRank={globalRank}
+        categoryRank={categoryRank}
+        categoryName={categoryName}
+        onDownloadDetail={onDownloadDetail}
       />
     </tr>
   )
@@ -304,18 +459,34 @@ function ProductRowCells({
   product,
   onTogglePublish,
   onDelete,
-  onClone,
+  globalRank,
+  categoryRank,
+  categoryName,
+  onDownloadDetail,
 }: {
   product: Product
   onTogglePublish: (id: number, current: boolean) => void
   onDelete: (id: number) => void
-  onClone: (id: number) => void
+  globalRank: number | null
+  categoryRank: number | null
+  categoryName: string
+  onDownloadDetail: (product: Product) => void
 }) {
   return (
     <>
       {/* Title + external link */}
       <td className="px-3 py-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <div className="text-[10px] text-muted-foreground leading-tight text-center w-[72px] shrink-0 whitespace-nowrap">
+            {globalRank !== null ? (
+              <>
+                <div className="font-bold text-foreground">#{globalRank}</div>
+                <div title={`${categoryName} ${categoryRank}위`} className="truncate">{categoryName}{categoryRank}</div>
+              </>
+            ) : (
+              <div className="text-muted-foreground">-</div>
+            )}
+          </div>
           <Link
             href={`/admin/products/${product.id}`}
             className="text-sm font-medium text-foreground hover:text-primary truncate max-w-[300px] block"
@@ -377,8 +548,13 @@ function ProductRowCells({
         </Badge>
       </td>
       {/* Download count */}
-      <td className="px-3 py-3 text-center text-sm text-muted-foreground">
-        {product.download_count}
+      <td className="px-3 py-3 text-center">
+        <button
+          onClick={() => onDownloadDetail(product)}
+          className="text-sm text-primary hover:underline cursor-pointer"
+        >
+          {product.download_count}
+        </button>
       </td>
       {/* Created date */}
       <td className="px-3 py-3 text-center text-xs text-muted-foreground">
@@ -394,13 +570,6 @@ function ProductRowCells({
           >
             <Pencil className="w-4 h-4" />
           </Link>
-          <button
-            onClick={() => onClone(product.id)}
-            className="p-1.5 rounded-md hover:bg-purple-50 text-muted-foreground hover:text-purple-600 transition-colors"
-            title="상품 복제"
-          >
-            <Copy className="w-4 h-4" />
-          </button>
           <button
             onClick={() => onTogglePublish(product.id, product.is_published)}
             className={`p-1.5 rounded-md transition-colors ${product.is_published ? 'text-primary hover:bg-primary/8' : 'text-muted-foreground hover:bg-muted'}`}
@@ -437,7 +606,7 @@ export default function AdminProducts() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [priceFilter, setPriceFilter] = useState<'all' | 'paid' | 'free'>('all')
   const [categoryFilter, setCategoryFilter] = useState<number | null>(null)
-  const [pageSize, setPageSize] = useState<number>(20)
+  const [pageSize, setPageSize] = useState<number>(100)
   const [page, setPage] = useState(1)
   const [toast, setToast] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -450,8 +619,19 @@ export default function AdminProducts() {
   const [bulkPriceData, setBulkPriceData] = useState<{ id: number; title: string; price: number; original_price: number; is_free: boolean; newPrice: number }[]>([])
   const [bulkPriceLoading, setBulkPriceLoading] = useState(false)
   const [bulkPriceSaving, setBulkPriceSaving] = useState(false)
+  const [downloadDetailProduct, setDownloadDetailProduct] = useState<Product | null>(null)
 
   const supabase = useMemo(() => createClient(), [])
+  const dragBulkPrice = useDraggableModal()
+  const getPublishableProductIds = useCallback(async (ids: number[]) => {
+    if (ids.length === 0) return new Set<number>()
+    const { data, error } = await supabase
+      .from('product_files')
+      .select('product_id')
+      .in('product_id', ids)
+    if (error) throw error
+    return new Set((data || []).map((row) => row.product_id))
+  }, [supabase])
 
   const loadProducts = useCallback(async () => {
     const { data } = await supabase
@@ -511,15 +691,23 @@ export default function AdminProducts() {
 
       setSaving(true)
       try {
-        const promises = changedUpdates.map((u) =>
-          supabase.from('products').update({ sort_order: u.sort_order }).eq('id', u.id)
+        // Supabase 는 error 를 reject 안 하고 { error } 로 반환 → try/catch 로만은 부족
+        const results = await Promise.all(
+          changedUpdates.map((u) =>
+            supabase.from('products').update({ sort_order: u.sort_order }).eq('id', u.id)
+          )
         )
-        await Promise.all(promises)
-        setProducts(reordered.map((p, i) => ({ ...p, sort_order: i + 1 })))
-        setToast('순서가 변경되었습니다')
-      } catch {
+        const firstError = results.find((r) => r.error)?.error
+        if (firstError) {
+          setProducts(products)
+          setToast(`순서 변경 실패: ${firstError.message}`)
+        } else {
+          setProducts(reordered.map((p, i) => ({ ...p, sort_order: i + 1 })))
+          setToast('순서가 변경되었습니다')
+        }
+      } catch (e) {
         setProducts(products)
-        setToast('순서 변경 실패')
+        setToast(`순서 변경 실패: ${e instanceof Error ? e.message : '알 수 없는 오류'}`)
       } finally {
         setSaving(false)
       }
@@ -529,7 +717,24 @@ export default function AdminProducts() {
 
   // Toggle publish
   const handleTogglePublish = async (id: number, current: boolean) => {
-    await supabase.from('products').update({ is_published: !current }).eq('id', id)
+    if (!current) {
+      try {
+        const publishable = await getPublishableProductIds([id])
+        if (!publishable.has(id)) {
+          setToast('파일이 없는 상품은 공개할 수 없습니다')
+          return
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '파일 확인 중 오류가 발생했습니다'
+        setToast(`변경 실패: ${message}`)
+        return
+      }
+    }
+    const { error } = await supabase.from('products').update({ is_published: !current }).eq('id', id)
+    if (error) {
+      setToast(`변경 실패: ${error.message}`)
+      return
+    }
     setToast(current ? '비공개로 변경되었습니다' : '공개로 변경되었습니다')
     loadProducts()
   }
@@ -543,28 +748,36 @@ export default function AdminProducts() {
     if (deleteConfirmId === null) return
     const id = deleteConfirmId
     setDeleteConfirmId(null)
-    await supabase.from('products').delete().eq('id', id)
+    const { error } = await supabase.from('products').delete().eq('id', id)
+
+    if (error) {
+      // FK 제약 위반: 주문/다운로드/리뷰 이력이 있으면 물리 삭제 불가
+      const isFkViolation = error.code === '23503' || /foreign key|violates/i.test(error.message || '')
+      if (isFkViolation) {
+        const confirmUnpublish = window.confirm(
+          '이 상품은 주문·다운로드·리뷰 이력이 있어 완전 삭제할 수 없습니다.\n대신 비공개 처리하시겠습니까? (스토어에서 숨김, 이력은 보존)'
+        )
+        if (confirmUnpublish) {
+          const { error: unpubErr } = await supabase
+            .from('products')
+            .update({ is_published: false })
+            .eq('id', id)
+          if (unpubErr) {
+            setToast(`비공개 처리 실패: ${unpubErr.message}`)
+          } else {
+            setToast('상품이 비공개 처리되었습니다')
+            setSelectedIds((prev) => { const next = new Set(prev); next.delete(id); return next })
+            loadProducts()
+          }
+        }
+      } else {
+        setToast(`삭제 실패: ${error.message}`)
+      }
+      return
+    }
+
     setToast('상품이 삭제되었습니다')
     setSelectedIds((prev) => { const next = new Set(prev); next.delete(id); return next })
-    loadProducts()
-  }
-
-  // Clone product
-  const handleClone = async (id: number) => {
-    const product = products.find((p) => p.id === id)
-    if (!product) return
-    const { data: full } = await supabase.from('products').select('*').eq('id', id).single()
-    if (!full) return
-    const { id: _id, created_at: _ca, updated_at: _ua, ...rest } = full as Record<string, unknown>
-    const clone = {
-      ...rest,
-      title: `${full.title} (복제)`,
-      download_count: 0,
-      is_published: false,
-      sort_order: null,
-    }
-    await supabase.from('products').insert(clone)
-    setToast('상품이 복제되었습니다')
     loadProducts()
   }
 
@@ -595,25 +808,110 @@ export default function AdminProducts() {
     })
   }
 
-  // Bulk publish/unpublish
+  // Bulk publish/unpublish — 성공/실패 분리 집계
   const handleBulkPublish = async (publish: boolean) => {
     if (selectedIds.size === 0) return
     const ids = Array.from(selectedIds)
-    await Promise.all(ids.map((id) => supabase.from('products').update({ is_published: publish }).eq('id', id)))
-    setToast(publish ? `${ids.length}개 상품이 공개되었습니다` : `${ids.length}개 상품이 비공개되었습니다`)
+    let targetIds = ids
+
+    if (publish) {
+      try {
+        const publishable = await getPublishableProductIds(ids)
+        const blocked = ids.filter((id) => !publishable.has(id))
+        targetIds = ids.filter((id) => publishable.has(id))
+
+        if (blocked.length > 0 && targetIds.length === 0) {
+          setToast('선택한 상품 모두 파일이 없어 공개할 수 없습니다')
+          return
+        }
+
+        if (blocked.length > 0) {
+          setToast(`파일 없는 ${blocked.length}개 상품을 제외하고 공개합니다`)
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '파일 확인 중 오류가 발생했습니다'
+        setToast(`변경 실패: ${message}`)
+        return
+      }
+    }
+
+    if (targetIds.length === 0) return
+    const results = await Promise.all(
+      targetIds.map((id) => supabase.from('products').update({ is_published: publish }).eq('id', id))
+    )
+    const failed = results.filter((r) => r.error).length
+    const succeeded = results.length - failed
+    if (failed === 0) {
+      setToast(publish ? `${succeeded}개 상품이 공개되었습니다` : `${succeeded}개 상품이 비공개되었습니다`)
+    } else if (succeeded === 0) {
+      setToast(`변경 실패: ${results.find((r) => r.error)?.error?.message}`)
+    } else {
+      setToast(`${succeeded}개 성공, ${failed}개 실패`)
+    }
     setSelectedIds(new Set())
     loadProducts()
   }
 
-  // Bulk delete
+  // Bulk delete — 성공/실패 분리 집계
   const handleBulkDelete = async () => {
     const ids = Array.from(selectedIds)
-    await Promise.all(ids.map((id) => supabase.from('products').delete().eq('id', id)))
-    setToast(`${ids.length}개 상품이 삭제되었습니다`)
+    const results = await Promise.all(
+      ids.map(async (id) => {
+        const { error } = await supabase.from('products').delete().eq('id', id)
+        return { id, error }
+      })
+    )
+    const succeeded = results.filter((r) => !r.error)
+    const failed = results.filter((r) => r.error)
+
+    if (failed.length === 0) {
+      setToast(`${succeeded.length}개 상품이 삭제되었습니다`)
+    } else if (succeeded.length === 0) {
+      const confirmUnpublish = window.confirm(
+        `선택한 ${failed.length}개 상품 모두 주문·다운로드·리뷰 이력이 있어 완전 삭제할 수 없습니다.\n대신 모두 비공개 처리하시겠습니까?`
+      )
+      if (confirmUnpublish) {
+        await Promise.all(
+          failed.map((r) => supabase.from('products').update({ is_published: false }).eq('id', r.id))
+        )
+        setToast(`${failed.length}개 상품이 비공개 처리되었습니다`)
+      } else {
+        setToast(`${failed.length}개 상품 삭제 실패 (이력 존재)`)
+      }
+    } else {
+      const confirmUnpublish = window.confirm(
+        `${succeeded.length}개는 삭제되었고, ${failed.length}개는 이력이 있어 완전 삭제 불가합니다.\n남은 ${failed.length}개를 비공개 처리하시겠습니까?`
+      )
+      if (confirmUnpublish) {
+        await Promise.all(
+          failed.map((r) => supabase.from('products').update({ is_published: false }).eq('id', r.id))
+        )
+        setToast(`삭제 ${succeeded.length}건 · 비공개 전환 ${failed.length}건`)
+      } else {
+        setToast(`삭제 ${succeeded.length}건 · 실패 ${failed.length}건`)
+      }
+    }
+
     setSelectedIds(new Set())
     setBulkDeleteConfirm(false)
     loadProducts()
   }
+
+  // Rank map (published only, sort_order 기준)
+  const rankMap = useMemo(() => {
+    const map = new Map<number, { global: number; category: number; categoryName: string }>()
+    const catNameMap = new Map<number, string>()
+    categories.forEach(c => catNameMap.set(c.id, c.name))
+    const published = products.filter((p) => p.is_published)
+    const catCounters = new Map<number, number>()
+    published.forEach((p, idx) => {
+      const catId = p.category_id || 0
+      const catRank = (catCounters.get(catId) || 0) + 1
+      catCounters.set(catId, catRank)
+      map.set(p.id, { global: idx + 1, category: catRank, categoryName: catNameMap.get(catId) || '' })
+    })
+    return map
+  }, [products, categories])
 
   // Status counts
   const statusCounts = useMemo(
@@ -949,6 +1247,11 @@ export default function AdminProducts() {
 
         {/* Table Card */}
         <div className="bg-white rounded-xl border border-border overflow-hidden">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-muted border-b border-border">
@@ -1007,28 +1310,28 @@ export default function AdminProducts() {
                     </td>
                   </tr>
                 ) : isDragEnabled ? (
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
+                  <SortableContext
+                    items={paginated.map((p) => p.id)}
+                    strategy={verticalListSortingStrategy}
                   >
-                    <SortableContext
-                      items={paginated.map((p) => p.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      {paginated.map((product) => (
+                    {paginated.map((product) => {
+                      const rank = rankMap.get(product.id)
+                      return (
                         <SortableProductRow
                           key={product.id}
                           product={product}
                           onTogglePublish={handleTogglePublish}
                           onDelete={handleDelete}
-                          onClone={handleClone}
                           selected={selectedIds.has(product.id)}
                           onSelect={toggleSelect}
+                          globalRank={rank?.global ?? null}
+                          categoryRank={rank?.category ?? null}
+                          categoryName={rank?.categoryName ?? ''}
+                          onDownloadDetail={setDownloadDetailProduct}
                         />
-                      ))}
-                    </SortableContext>
-                  </DndContext>
+                      )
+                    })}
+                  </SortableContext>
                 ) : (
                   paginated.map((product) => (
                     <tr
@@ -1052,7 +1355,10 @@ export default function AdminProducts() {
                         product={product}
                         onTogglePublish={handleTogglePublish}
                         onDelete={handleDelete}
-                        onClone={handleClone}
+                        globalRank={rankMap.get(product.id)?.global ?? null}
+                        categoryRank={rankMap.get(product.id)?.category ?? null}
+                        categoryName={rankMap.get(product.id)?.categoryName ?? ''}
+                        onDownloadDetail={setDownloadDetailProduct}
                       />
                     </tr>
                   ))
@@ -1060,6 +1366,7 @@ export default function AdminProducts() {
               </tbody>
             </table>
           </div>
+          </DndContext>
 
           {/* Pagination */}
           <div className="px-5 py-3 border-t border-border/50 flex items-center justify-between">
@@ -1122,6 +1429,14 @@ export default function AdminProducts() {
           />
         )}
 
+        {/* Download Detail Modal */}
+        {downloadDetailProduct !== null && (
+          <DownloadDetailModal
+            product={downloadDetailProduct}
+            onClose={() => setDownloadDetailProduct(null)}
+          />
+        )}
+
         {/* Toast */}
         {toast && <Toast message={toast} onClose={() => setToast(null)} />}
 
@@ -1129,9 +1444,9 @@ export default function AdminProducts() {
         {showBulkPrice && (
           <div className="fixed inset-0 z-50 flex items-start justify-center pt-[5vh]" onClick={() => setShowBulkPrice(false)}>
             <div className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" />
-            <div className="relative bg-card rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="relative bg-card rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] w-full max-w-4xl mx-4 max-h-[90vh] overflow-hidden flex flex-col" style={dragBulkPrice.modalStyle} onClick={e => e.stopPropagation()}>
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 cursor-move" onMouseDown={dragBulkPrice.handleMouseDown}>
                 <div>
                   <h2 className="text-lg font-bold tracking-tight">가격 일괄 수정</h2>
                   <p className="text-xs text-muted-foreground mt-0.5">

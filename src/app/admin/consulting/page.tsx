@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { Badge } from '@/components/ui/badge'
+import { fetchSignedUrl } from '@/lib/storage-signed-url'
 import {
   Search,
   X,
@@ -17,7 +19,48 @@ import {
   Clock,
   CheckCircle,
   XCircle,
+  Paperclip,
 } from 'lucide-react'
+
+// "[첨부파일:{path}]" 마커를 서명 URL 로 해석해서 다운로드 버튼 렌더링
+function ConsultingMessageBody({ message }: { message: string | null }) {
+  if (!message) return <span>(메시지 없음)</span>
+  const markerRe = /\[첨부파일:([^\]]+)\]/g
+  const parts: Array<{ type: 'text' | 'file'; value: string }> = []
+  let cursor = 0
+  let match: RegExpExecArray | null
+  while ((match = markerRe.exec(message)) !== null) {
+    if (match.index > cursor) parts.push({ type: 'text', value: message.slice(cursor, match.index) })
+    parts.push({ type: 'file', value: match[1] })
+    cursor = match.index + match[0].length
+  }
+  if (cursor < message.length) parts.push({ type: 'text', value: message.slice(cursor) })
+
+  async function openAttachment(path: string) {
+    const url = await fetchSignedUrl({ bucket: 'consulting-files', storedValue: path })
+    if (url) window.open(url, '_blank', 'noopener,noreferrer')
+    else alert('첨부파일 접근에 실패했습니다.')
+  }
+
+  return (
+    <>
+      {parts.map((p, i) => p.type === 'text'
+        ? <span key={i} className="whitespace-pre-wrap">{p.value}</span>
+        : (
+          <button
+            key={i}
+            type="button"
+            onClick={() => openAttachment(p.value)}
+            className="inline-flex items-center gap-1 text-primary underline underline-offset-2 cursor-pointer hover:opacity-80"
+          >
+            <Paperclip className="w-3.5 h-3.5" />
+            첨부파일 열기
+          </button>
+        )
+      )}
+    </>
+  )
+}
 
 // ===========================
 // Types
@@ -129,6 +172,7 @@ function StatusConfirmModal({
   onCancel: () => void
   loading: boolean
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const targetLabel = statusConfig[targetStatus]?.label || targetStatus
 
   useEffect(() => {
@@ -142,8 +186,8 @@ function StatusConfirmModal({
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
-        <div className="flex items-center gap-3 mb-4">
+      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4" style={modalStyle}>
+        <div className="flex items-center gap-3 mb-4 cursor-move" onMouseDown={handleMouseDown}>
           <div className="w-10 h-10 rounded-full bg-primary/8 flex items-center justify-center">
             <CheckCircle className="w-5 h-5 text-primary" />
           </div>
@@ -198,6 +242,7 @@ function ConsultingDetailModal({
   onClose: () => void
   onStatusChange: (id: number, status: string) => Promise<void>
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const [showConfirm, setShowConfirm] = useState(false)
   const [targetStatus, setTargetStatus] = useState('')
   const [confirmLoading, setConfirmLoading] = useState(false)
@@ -273,9 +318,9 @@ function ConsultingDetailModal({
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col overflow-hidden" style={modalStyle}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 cursor-move" onMouseDown={handleMouseDown}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
               {(request.name || '?')[0]}
@@ -368,9 +413,9 @@ function ConsultingDetailModal({
             <div className="bg-muted rounded-xl p-4">
               <div className="flex items-start gap-2">
                 <MessageSquare className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-                  {request.message || '(메시지 없음)'}
-                </p>
+                <div className="text-sm text-foreground leading-relaxed">
+                  <ConsultingMessageBody message={request.message} />
+                </div>
               </div>
             </div>
           </div>
@@ -504,10 +549,11 @@ export default function AdminConsulting() {
   const handleStatusChange = useCallback(async (id: number, status: string) => {
     const supabase = createClient()
     const now = new Date().toISOString()
-    await supabase
+    const { error } = await supabase
       .from('consulting_requests')
       .update({ status, updated_at: now })
       .eq('id', id)
+    if (error) { alert(`상태 변경 실패: ${error.message}`); return }
     setRequests((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status, updated_at: now } : r))
     )

@@ -61,20 +61,30 @@ export async function POST(request: NextRequest) {
     { auth: { persistSession: false } }
   )
 
+  // 관리자 여부 (관리자는 미게시/미구매 상품 파일도 바로 다운로드 가능)
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  const isAdmin = profile?.role === 'admin'
+
   // 3. product 조회 → is_free 확인
-  const { data: product, error: productError } = await supabase
+  let productQuery = supabase
     .from('products')
     .select('id, is_free, title, download_count')
     .eq('id', productId)
-    .eq('is_published', true)
-    .single()
+  if (!isAdmin) {
+    productQuery = productQuery.eq('is_published', true)
+  }
+  const { data: product, error: productError } = await productQuery.single()
 
   if (productError || !product) {
     return NextResponse.json({ error: '상품을 찾을 수 없습니다' }, { status: 404 })
   }
 
-  // 4. 유료 상품: 구매 내역 확인
-  if (!product.is_free) {
+  // 4. 유료 상품: 구매 내역 확인 (관리자는 스킵)
+  if (!product.is_free && !isAdmin) {
     const { data: orders } = await supabase
       .from('orders')
       .select('id, order_items!inner(product_id)')
@@ -167,24 +177,25 @@ export async function POST(request: NextRequest) {
   }
   // 외부 URL(CDN 등)은 그대로 사용
 
-  // 7. download_logs INSERT
-  await supabase.from('download_logs').insert({
-    user_id: user.id,
-    product_id: productId,
-    file_name: file.file_name || product.title,
-    downloaded_at: new Date().toISOString(),
-  })
+  // 7. download_logs INSERT + download_count 동기화 (관리자 다운로드는 통계에 반영하지 않음)
+  if (!isAdmin) {
+    await supabase.from('download_logs').insert({
+      user_id: user.id,
+      product_id: productId,
+      file_name: file.file_name || product.title,
+      downloaded_at: new Date().toISOString(),
+    })
 
-  // 8. products의 download_count를 download_logs 기반으로 동기화 (race condition 방지)
-  const { count: logCount } = await supabase
-    .from('download_logs')
-    .select('*', { count: 'exact', head: true })
-    .eq('product_id', productId)
+    const { count: logCount } = await supabase
+      .from('download_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('product_id', productId)
 
-  await supabase
-    .from('products')
-    .update({ download_count: logCount ?? (product.download_count || 0) + 1 })
-    .eq('id', productId)
+    await supabase
+      .from('products')
+      .update({ download_count: logCount ?? (product.download_count || 0) + 1 })
+      .eq('id', productId)
+  }
 
   // 9. 서명 URL 반환
   return NextResponse.json({ url: downloadUrl })

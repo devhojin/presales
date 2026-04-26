@@ -123,8 +123,12 @@ export function Footer() {
             <div className="text-xs text-muted-foreground space-y-1.5 leading-relaxed">
               <p>
                 <span className="font-medium text-foreground/80">{s.company_name}</span>
-                <span className="mx-1.5 text-border">|</span>
-                대표: {s.ceo_name}
+                {s.ceo_name && (
+                  <>
+                    <span className="mx-1.5 text-border">|</span>
+                    대표: {s.ceo_name}
+                  </>
+                )}
                 {s.business_number && (
                   <>
                     <span className="mx-1.5 text-border">|</span>
@@ -142,7 +146,7 @@ export function Footer() {
                 {s.address && (
                   <>
                     {s.address}
-                    <span className="mx-1.5 text-border">|</span>
+                    {s.email && <span className="mx-1.5 text-border">|</span>}
                   </>
                 )}
                 {s.email}

@@ -9,6 +9,10 @@
       "schedule": "30 23 * * *"
     },
     {
+      "path": "/api/cron/send-brief",
+      "schedule": "0 23 * * *"
+    },
+    {
       "path": "/api/cron/morning-brief/collect",
       "schedule": "50 21 * * *"
     },

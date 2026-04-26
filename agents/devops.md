@@ -22,13 +22,12 @@ cd ~/presales && npm run build
 
 # 2. Git 커밋 & 푸시
 git add -A && git commit -m "메시지" && git push
-
-# 3. Vercel 프로덕션 배포
-npx vercel --yes --prod
 ```
 
 ## 필수 규칙
-- 커밋 후 반드시 `git push` + `npx vercel --yes --prod`
+- Vercel CLI 배포 금지 (`vercel deploy`, `vercel link`, `vercel --prod` 금지)
+- 배포는 Git push 로만 트리거
+- 작업 종료 전 자체 검수 필수
 - 빌드 실패 시 즉시 원인 분석 → 수정 → 재배포
 - `.env.local`은 절대 커밋하지 않음
 - `node_modules/`는 `.gitignore`에 포함
@@ -51,6 +50,7 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=... (GA4 설정 시)
 - SUPABASE_SERVICE_ROLE_KEY (Vercel 환경변수 등록 완료)
 - GA4 컴포넌트/gtag 유틸리티 (측정 ID 등록 시 자동 활성화)
 - SEO (sitemap.ts, robots.ts)
+- 프로젝트 `.mcp.json` 기반 Codex MCP 준비
 
 ## 미완료 작업
 | 우선순위 | 작업 | 상태 |
@@ -61,5 +61,5 @@ NEXT_PUBLIC_GA_MEASUREMENT_ID=... (GA4 설정 시)
 | 🟢 | 모니터링 | 에러 추적, 가동시간 체크 |
 
 ## Git 브랜치 전략
-- `main` — 프로덕션 (직접 푸시)
-- 대규모 기능은 feature 브랜치 권장하나 현재는 main 직접 사용
+- `master` — 현재 프로덕션 기준 브랜치
+- 대규모 기능은 별도 브랜치 권장하나 현재는 `master` 직접 사용

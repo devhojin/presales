@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { SITE_URL } from "@/lib/constants";
+import { safeJsonLd } from "@/lib/json-ld";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -119,7 +120,7 @@ export default async function ProductLayout({
       {jsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(jsonLd) }}
         />
       )}
       {children}

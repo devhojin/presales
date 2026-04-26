@@ -20,14 +20,15 @@ export async function GET(request: NextRequest) {
   const tab = searchParams.get('tab') || '' // '', unread, read, bookmarks
 
   try {
-    const anon = createClient(
+    const service = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false } }
     )
 
-    // 로그인 사용자 식별 (tab 필터용)
+    // 로그인 사용자 식별 (tab 필터 + 카운트 계산용)
     let userId: string | null = null
-    if (tab === 'unread' || tab === 'read' || tab === 'bookmarks') {
+    {
       const cookieStore = await cookies()
       const auth = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,6 +38,9 @@ export async function GET(request: NextRequest) {
       const { data: { user } } = await auth.auth.getUser()
       userId = user?.id ?? null
     }
+
+    // 사용자당 북마크/읽음은 수천 건이 현실적 상한 (PostgREST IN 절 URL 길이 제한)
+    const USER_LIST_LIMIT = 5000
 
     // tab 필터용 post_id 집합 계산
     let idFilter: { op: 'in' | 'not_in'; ids: string[] } | null = null
@@ -52,36 +56,38 @@ export async function GET(request: NextRequest) {
     }
     let bookmarkSnaps: BookmarkSnap[] = []
     if (userId && (tab === 'unread' || tab === 'read' || tab === 'bookmarks')) {
-      const service = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!,
-        { auth: { persistSession: false } }
-      )
       if (tab === 'bookmarks') {
         const { data } = await service
           .from('feed_bookmarks')
           .select('post_id, title, excerpt, url, source, source_name, snapshot_at, created_at')
           .eq('user_id', userId)
-          .limit(100000)
+          .order('created_at', { ascending: false })
+          .limit(USER_LIST_LIMIT)
         bookmarkSnaps = (data as BookmarkSnap[]) || []
+        if (bookmarkSnaps.length === USER_LIST_LIMIT) {
+          console.warn(`[feeds] user ${userId} bookmark list reached limit ${USER_LIST_LIMIT}`)
+        }
         idFilter = { op: 'in', ids: bookmarkSnaps.map(r => r.post_id) }
       } else {
         const { data } = await service
           .from('feed_reads')
           .select('post_id')
           .eq('user_id', userId)
-          .limit(100000)
+          .limit(USER_LIST_LIMIT)
         const readIds = (data || []).map(r => r.post_id)
+        if (readIds.length === USER_LIST_LIMIT) {
+          console.warn(`[feeds] user ${userId} read list reached limit ${USER_LIST_LIMIT}`)
+        }
         idFilter = { op: tab === 'read' ? 'in' : 'not_in', ids: readIds }
       }
     }
 
     // 빈 in-리스트면 결과 없음
     if (idFilter?.op === 'in' && idFilter.ids.length === 0) {
-      return NextResponse.json({ posts: [], total: 0, page, pageSize })
+      return NextResponse.json({ posts: [], total: 0, page, pageSize, counts: { unread: 0, read: 0, bookmarks: 0 } })
     }
 
-    let query = anon
+    let query = service
       .from('community_posts')
       .select('*', { count: 'exact' })
       .eq('is_published', true)
@@ -128,11 +134,25 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    // 탭별 카운트 (로그인 시) — head:true 로 메모리 로드 없이 count 만
+    let unreadCount = 0, readCount = 0, bookmarkCount = 0
+    if (userId) {
+      const [readRes, bmRes, totalRes] = await Promise.all([
+        service.from('feed_reads').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+        service.from('feed_bookmarks').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+        service.from('community_posts').select('*', { count: 'exact', head: true }).eq('is_published', true).eq('status', 'published'),
+      ])
+      readCount = readRes.count || 0
+      bookmarkCount = bmRes.count || 0
+      unreadCount = (totalRes.count || 0) - readCount
+    }
+
     return NextResponse.json({
       posts: finalPosts,
       total: tab === 'bookmarks' ? bookmarkSnaps.length : total || 0,
       page,
       pageSize,
+      counts: { unread: unreadCount, read: readCount, bookmarks: bookmarkCount },
     })
   } catch (err) {
     return NextResponse.json(

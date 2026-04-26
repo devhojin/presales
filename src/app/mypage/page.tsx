@@ -14,6 +14,7 @@ import {
 import { createClient } from '@/lib/supabase'
 import { validatePassword } from '@/lib/password-policy'
 import { useToastStore } from '@/stores/toast-store'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 
 // ===========================
 // Types
@@ -86,6 +87,14 @@ interface DbCoupon {
   is_active: boolean
 }
 
+interface ConsultingRequest {
+  id: string
+  package_type: string
+  status: string
+  created_at: string
+  message: string | null
+}
+
 interface BookmarkAnn { id: string; title: string; organization: string | null; status: string; end_date: string | null; source_url: string | null; description?: string | null; start_date?: string | null }
 interface BookmarkFeed { id: string; title: string; category: string; external_url: string | null; content?: string | null; source_name?: string | null; created_at?: string | null }
 type BookmarkModalItem =
@@ -99,6 +108,13 @@ const statusMap: Record<string, { label: string; class: string }> = {
   cancelled: { label: '취소', class: 'bg-red-50 text-red-700 border-red-200' },
   refunded: { label: '환불', class: 'bg-muted text-muted-foreground border-border' },
   pending_refund: { label: '환불문의', class: 'bg-orange-50 text-orange-700 border-orange-200' },
+}
+
+const consultingStatusMap: Record<string, { label: string; class: string }> = {
+  pending: { label: '접수', class: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+  in_progress: { label: '진행중', class: 'bg-blue-50 text-blue-800 border-blue-200' },
+  completed: { label: '완료', class: 'bg-green-50 text-green-700 border-green-200' },
+  cancelled: { label: '취소', class: 'bg-red-50 text-red-700 border-red-200' },
 }
 
 const formatPrice = (price: number) => new Intl.NumberFormat('ko-KR').format(price) + '원'
@@ -124,6 +140,13 @@ export default function MyConsolePage() {
   const router = useRouter()
   const { addToast } = useToastStore()
 
+  // Draggable modal hooks
+  const { handleMouseDown: deleteAccountMouseDown, modalStyle: deleteAccountStyle } = useDraggableModal()
+  const { handleMouseDown: couponMouseDown, modalStyle: couponStyle } = useDraggableModal()
+  const { handleMouseDown: receiptMouseDown, modalStyle: receiptStyle } = useDraggableModal()
+  const { handleMouseDown: bookmarkDragMouseDown, modalStyle: bookmarkDragStyle } = useDraggableModal()
+  const { handleMouseDown: refundMouseDown, modalStyle: refundStyle } = useDraggableModal()
+
   // Data state
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -137,6 +160,7 @@ export default function MyConsolePage() {
   const [receiptOrder, setReceiptOrder] = useState<Order | null>(null)
   const [coupons, setCoupons] = useState<DbCoupon[]>([])
   const [showCouponModal, setShowCouponModal] = useState(false)
+  const [consultingRequests, setConsultingRequests] = useState<ConsultingRequest[]>([])
 
   // KPI counts
   const [kpi, setKpi] = useState({ orders: 0, bookmarks: 0, downloads: 0, chats: 0 })
@@ -168,6 +192,9 @@ export default function MyConsolePage() {
   const [deletingAccount, setDeletingAccount] = useState(false)
   const [deleteAccountPassword, setDeleteAccountPassword] = useState('')
   const [showDeleteAccountPw, setShowDeleteAccountPw] = useState(false)
+  const [deleteConfirmPhrase, setDeleteConfirmPhrase] = useState('')
+  const [deleteReason, setDeleteReason] = useState('')
+  const [hasPasswordIdentity, setHasPasswordIdentity] = useState(true)
 
   // Refund
   const [refundOrderId, setRefundOrderId] = useState<number | null>(null)
@@ -184,6 +211,10 @@ export default function MyConsolePage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.replace('/auth/login'); return }
 
+      // 탈퇴 재인증 방식 판별: email identity 가 있으면 password, 없으면 confirm phrase
+      const identities = (user.identities ?? []) as Array<{ provider?: string }>
+      setHasPasswordIdentity(identities.some((i) => i.provider === 'email'))
+
       const [
         { data: profileData },
         { data: ordersData },
@@ -197,8 +228,6 @@ export default function MyConsolePage() {
         supabase.from('announcement_bookmarks').select('announcement_id').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('feed_bookmarks').select('post_id').eq('user_id', user.id).order('created_at', { ascending: false }),
       ])
-
-      if (ordersData === null) console.error('orders query failed')
 
       // Purchased products
       const { data: paidOrders } = await supabase
@@ -271,6 +300,14 @@ export default function MyConsolePage() {
           return true
         })
       setCoupons(available as DbCoupon[])
+
+      // 컨설팅 문의 내역
+      const { data: consultingData } = await supabase
+        .from('consulting_requests')
+        .select('id, package_type, status, created_at, message')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      setConsultingRequests((consultingData || []) as ConsultingRequest[])
     }
     load()
   }, [router])
@@ -359,7 +396,7 @@ export default function MyConsolePage() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
         <button onClick={() => { setOverlay(null); setEditingProfile(false); setShowPasswordSection(false) }} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 cursor-pointer">
-          <ArrowLeft className="w-4 h-4" /> 나의콘솔로 돌아가기
+          <ArrowLeft className="w-4 h-4" /> 마이페이지로 돌아가기
         </button>
 
         <h1 className="text-2xl font-bold mb-8">내 정보</h1>
@@ -431,20 +468,109 @@ export default function MyConsolePage() {
         <div className="border border-red-200 rounded-2xl p-6">
           <h2 className="font-semibold text-red-600 flex items-center gap-2 mb-4"><AlertTriangle className="w-4 h-4" /> 회원 탈퇴</h2>
           <Separator className="mb-4" />
-          <p className="text-sm text-muted-foreground mb-4">탈퇴하시면 주문 내역과 다운로드 이력이 삭제되며 복구할 수 없습니다.</p>
+          <p className="text-sm text-muted-foreground mb-4">
+            탈퇴 시 개인정보(이름·연락처·이메일 등)는 즉시 익명화됩니다. 다만 주문/결제·다운로드 이력은
+            전자상거래법·소비자분쟁 기준에 따라 일정 기간(최대 5년) 익명 상태로 보존됩니다.
+          </p>
           <button type="button" onClick={() => setShowDeleteAccount(true)} className="h-10 px-5 rounded-lg border border-red-300 text-red-600 text-sm font-medium hover:bg-red-50 cursor-pointer">회원 탈퇴</button>
         </div>
 
         {/* Delete Account Modal */}
         {showDeleteAccount && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowDeleteAccount(false)}>
-            <div className="bg-background rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl" onClick={e => e.stopPropagation()}>
-              <div className="flex items-center gap-2 mb-3"><AlertTriangle className="w-5 h-5 text-red-500" /><h3 className="text-lg font-semibold">회원 탈퇴</h3></div>
-              <p className="text-sm text-muted-foreground mb-4">탈퇴하면 모든 데이터가 삭제됩니다. 정말 탈퇴하시겠습니까?</p>
-              <div className="mb-4"><label className="text-sm font-medium mb-2 block">비밀번호 확인</label><div className="relative"><input type={showDeleteAccountPw ? 'text' : 'password'} placeholder="비밀번호 입력" value={deleteAccountPassword} onChange={e => setDeleteAccountPassword(e.target.value)} className="w-full h-10 px-3 rounded-lg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary" /><button type="button" onClick={() => setShowDeleteAccountPw(!showDeleteAccountPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer">{showDeleteAccountPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button></div></div>
+            <div className="bg-background rounded-xl p-6 max-w-md w-full mx-4 shadow-xl" style={deleteAccountStyle} onClick={e => e.stopPropagation()}>
+              <div className="flex items-center gap-2 mb-3 cursor-move" onMouseDown={deleteAccountMouseDown}><AlertTriangle className="w-5 h-5 text-red-500" /><h3 className="text-lg font-semibold">회원 탈퇴</h3></div>
+              <p className="text-sm text-muted-foreground mb-4">
+                개인정보는 즉시 익명화되며 재가입이 가능합니다. 주문/결제 이력은 법령에 따라 익명 상태로 보존됩니다.
+              </p>
+
+              {hasPasswordIdentity ? (
+                <div className="mb-3">
+                  <label className="text-sm font-medium mb-2 block">비밀번호 확인 *</label>
+                  <div className="relative">
+                    <input
+                      type={showDeleteAccountPw ? 'text' : 'password'}
+                      placeholder="비밀번호 입력"
+                      value={deleteAccountPassword}
+                      onChange={e => setDeleteAccountPassword(e.target.value)}
+                      className="w-full h-10 px-3 rounded-lg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    />
+                    <button type="button" onClick={() => setShowDeleteAccountPw(!showDeleteAccountPw)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer">
+                      {showDeleteAccountPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mb-3">
+                  <label className="text-sm font-medium mb-2 block">확인 문구 입력 *</label>
+                  <input
+                    type="text"
+                    placeholder="탈퇴합니다"
+                    value={deleteConfirmPhrase}
+                    onChange={e => setDeleteConfirmPhrase(e.target.value)}
+                    className="w-full h-10 px-3 rounded-lg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    SNS 로그인 계정입니다. 본인 확인을 위해 <span className="font-semibold text-foreground">탈퇴합니다</span> 를 그대로 입력해주세요.
+                  </p>
+                </div>
+              )}
+
+              <div className="mb-4">
+                <label className="text-sm font-medium mb-2 block">탈퇴 사유 (선택)</label>
+                <textarea
+                  value={deleteReason}
+                  onChange={e => setDeleteReason(e.target.value.slice(0, 300))}
+                  placeholder="개선할 점이 있다면 알려주세요"
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-lg border border-border text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                />
+              </div>
+
               <div className="flex gap-3">
-                <button type="button" onClick={() => { setShowDeleteAccount(false); setDeleteAccountPassword(''); setShowDeleteAccountPw(false) }} className="flex-1 h-10 rounded-lg border border-border text-sm font-medium hover:bg-muted cursor-pointer">취소</button>
-                <button type="button" disabled={deletingAccount || !deleteAccountPassword.trim()} onClick={async () => { setDeletingAccount(true); try { const res = await fetch('/api/auth/delete-account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: deleteAccountPassword }) }); if (!res.ok) { const d = await res.json(); addToast(d.error || '탈퇴 오류', 'error'); return } const supabase = createClient(); await supabase.auth.signOut(); addToast('회원 탈퇴 완료', 'info'); router.push('/'); router.refresh() } catch { addToast('탈퇴 오류', 'error') } finally { setDeletingAccount(false); setShowDeleteAccount(false); setDeleteAccountPassword(''); setShowDeleteAccountPw(false) } }} className="flex-1 h-10 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 cursor-pointer disabled:opacity-50">{deletingAccount ? '처리 중...' : '탈퇴하기'}</button>
+                <button type="button" onClick={() => { setShowDeleteAccount(false); setDeleteAccountPassword(''); setShowDeleteAccountPw(false); setDeleteConfirmPhrase(''); setDeleteReason('') }} className="flex-1 h-10 rounded-lg border border-border text-sm font-medium hover:bg-muted cursor-pointer">취소</button>
+                <button
+                  type="button"
+                  disabled={
+                    deletingAccount ||
+                    (hasPasswordIdentity ? !deleteAccountPassword.trim() : deleteConfirmPhrase.trim() !== '탈퇴합니다')
+                  }
+                  onClick={async () => {
+                    setDeletingAccount(true)
+                    try {
+                      const payload: Record<string, string> = { reason: deleteReason }
+                      if (hasPasswordIdentity) payload.password = deleteAccountPassword
+                      else payload.confirmPhrase = deleteConfirmPhrase
+                      const res = await fetch('/api/auth/delete-account', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                      })
+                      if (!res.ok) {
+                        const d = await res.json().catch(() => ({}))
+                        addToast(d.error || '탈퇴 오류', 'error')
+                        return
+                      }
+                      const supabase = createClient()
+                      await supabase.auth.signOut()
+                      addToast('회원 탈퇴가 완료되었습니다', 'info')
+                      router.push('/')
+                      router.refresh()
+                    } catch {
+                      addToast('탈퇴 오류', 'error')
+                    } finally {
+                      setDeletingAccount(false)
+                      setShowDeleteAccount(false)
+                      setDeleteAccountPassword('')
+                      setShowDeleteAccountPw(false)
+                      setDeleteConfirmPhrase('')
+                      setDeleteReason('')
+                    }
+                  }}
+                  className="flex-1 h-10 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 cursor-pointer disabled:opacity-50"
+                >
+                  {deletingAccount ? '처리 중...' : '탈퇴하기'}
+                </button>
               </div>
             </div>
           </div>
@@ -463,7 +589,7 @@ export default function MyConsolePage() {
       <div className="rounded-2xl bg-gradient-to-r from-zinc-900 to-blue-950 text-white p-6 md:p-8 mt-6 mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-blue-300 text-sm font-medium mb-1">나의콘솔</p>
+            <p className="text-blue-300 text-sm font-medium mb-1">마이페이지</p>
             <h1 className="text-2xl md:text-3xl font-bold mb-2">
               안녕하세요, {profile?.name || '회원'}님
             </h1>
@@ -515,6 +641,46 @@ export default function MyConsolePage() {
           <User className="w-4 h-4" /> 내 정보 관리
         </button>
       </div>
+
+      {/* 내 상품 (다운로드) */}
+      {purchasedProducts.length > 0 && (
+        <div className="mb-6">
+          <div className="bg-card border border-border/50 rounded-2xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Download className="w-4 h-4 text-primary" />
+              <h2 className="font-semibold">내 상품</h2>
+              <span className="text-xs text-muted-foreground">{purchasedProducts.length}개</span>
+            </div>
+            <div className="grid gap-3">
+              {purchasedProducts.map(item => (
+                <div key={item.id} className="flex items-center justify-between p-4 border border-border/50 rounded-xl hover:shadow-sm transition-shadow">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {item.thumbnail_url ? (
+                      <img src={item.thumbnail_url} alt={item.title} className="w-12 h-12 rounded-lg object-cover bg-muted shrink-0" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                        <FileText className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{item.title}</p>
+                      <p className="text-xs text-muted-foreground">{item.format || '문서'}{item.file_size ? ` · ${item.file_size}` : ''}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleProductDownload(item.id, item.title)}
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors cursor-pointer shrink-0 ml-3 flex items-center gap-1.5"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    다운로드
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Row 3: Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -605,6 +771,32 @@ export default function MyConsolePage() {
               </div>
             )}
           </div>
+
+          {/* Consulting Inquiry History */}
+          {consultingRequests.length > 0 && (
+            <div className="bg-card border border-border/50 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <HelpCircle className="w-4 h-4 text-primary" />
+                <h2 className="font-semibold">컨설팅 문의 내역</h2>
+                <span className="text-xs text-muted-foreground">{consultingRequests.length}건</span>
+              </div>
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {consultingRequests.map(req => {
+                  const statusInfo = consultingStatusMap[req.status] || { label: req.status, class: 'bg-muted text-muted-foreground border-border' }
+                  return (
+                    <div key={req.id} className="flex items-center justify-between p-3 rounded-xl border border-border/50 hover:bg-muted/30 transition-colors">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{req.package_type || '컨설팅 문의'}</p>
+                        {req.message && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{req.message}</p>}
+                        <p className="text-[11px] text-muted-foreground mt-1">{formatDate(req.created_at)}</p>
+                      </div>
+                      <Badge className={`text-xs border shrink-0 ml-3 ${statusInfo.class}`}>{statusInfo.label}</Badge>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Recent Activity */}
           <div className="bg-card border border-border/50 rounded-2xl p-6">
@@ -751,8 +943,8 @@ export default function MyConsolePage() {
       {/* Coupon Modal */}
       {showCouponModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setShowCouponModal(false)}>
-          <div className="bg-background rounded-2xl max-w-md w-full max-h-[85vh] shadow-xl flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-6 border-b border-border/50 shrink-0">
+          <div className="bg-background rounded-2xl max-w-md w-full max-h-[85vh] shadow-xl flex flex-col" style={couponStyle} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-border/50 shrink-0 cursor-move" onMouseDown={couponMouseDown}>
               <div className="flex items-center gap-2">
                 <Tag className="w-5 h-5 text-pink-600" />
                 <h3 className="text-lg font-semibold">내 쿠폰</h3>
@@ -831,9 +1023,9 @@ export default function MyConsolePage() {
         const statusInfo = statusMap[receiptOrder.status] || { label: receiptOrder.status, class: 'bg-muted text-muted-foreground border-border' }
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setReceiptOrder(null)}>
-            <div className="bg-background rounded-2xl max-w-lg w-full max-h-[85vh] shadow-xl flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="bg-background rounded-2xl max-w-lg w-full max-h-[85vh] shadow-xl flex flex-col" style={receiptStyle} onClick={e => e.stopPropagation()}>
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-border/50 shrink-0">
+              <div className="flex items-center justify-between p-6 border-b border-border/50 shrink-0 cursor-move" onMouseDown={receiptMouseDown}>
                 <div>
                   <h3 className="text-lg font-semibold">주문서</h3>
                   <p className="text-xs font-mono text-muted-foreground mt-1">{receiptOrder.order_number}</p>
@@ -939,9 +1131,9 @@ export default function MyConsolePage() {
       {/* Bookmark Detail Modal */}
       {bookmarkModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setBookmarkModal(null)}>
-          <div className="bg-background rounded-2xl max-w-2xl w-full max-h-[85vh] shadow-xl flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="bg-background rounded-2xl max-w-2xl w-full max-h-[85vh] shadow-xl flex flex-col" style={bookmarkDragStyle} onClick={e => e.stopPropagation()}>
             {/* Header */}
-            <div className="flex items-start justify-between p-6 border-b border-border/50 shrink-0">
+            <div className="flex items-start justify-between p-6 border-b border-border/50 shrink-0 cursor-move" onMouseDown={bookmarkDragMouseDown}>
               <div className="flex-1 min-w-0">
                 {bookmarkModal.type === 'announcement' ? (
                   <>
@@ -1019,8 +1211,8 @@ export default function MyConsolePage() {
       {/* Refund Modal */}
       {refundOrderId !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => { setRefundOrderId(null); setRefundReason('') }}>
-          <div className="bg-background rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4"><h3 className="text-lg font-semibold">환불 문의</h3><button type="button" onClick={() => { setRefundOrderId(null); setRefundReason('') }} className="text-muted-foreground hover:text-foreground cursor-pointer"><X className="w-5 h-5" /></button></div>
+          <div className="bg-background rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl" style={refundStyle} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4 cursor-move" onMouseDown={refundMouseDown}><h3 className="text-lg font-semibold">환불 문의</h3><button type="button" onClick={() => { setRefundOrderId(null); setRefundReason('') }} className="text-muted-foreground hover:text-foreground cursor-pointer"><X className="w-5 h-5" /></button></div>
             <p className="text-sm text-muted-foreground mb-4">환불 사유를 입력해주세요.</p>
             <textarea value={refundReason} onChange={e => setRefundReason(e.target.value)} rows={4} placeholder="환불 사유를 상세히 입력해주세요..." className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none mb-4" />
             <div className="flex gap-3">

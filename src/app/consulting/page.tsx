@@ -2,8 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
-import { Check, X, Clock, Video, FileText, Star, Upload, Loader2, MessageSquare } from 'lucide-react'
+import { Check, X, Clock, Video, FileText, Star, Upload, Loader2, MessageSquare, Trophy, Sparkles, Factory, Quote, ShieldCheck, Target, Mic } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
+import { CONSULTING_PACKAGES, INDUSTRY_CONSULTING_PRICE_FLOOR_WON, formatWonShort } from '@/lib/constants'
+import { uploadFile } from '@/lib/storage-upload'
+
+const CONSULTING_MAX_FILE_SIZE = 1024 * 1024 * 1024 // 1GB
 
 // ===========================
 // Consulting Inquiry Modal
@@ -18,10 +23,32 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
     package_type: initialPackage || 'spot',
     message: '',
   })
+  const [userId, setUserId] = useState<string | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
+  const { handleMouseDown, modalStyle } = useDraggableModal()
+
+  // 로그인 회원이면 이름/이메일 자동 채우기
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        setUserId(user.id)
+        supabase.from('profiles').select('name, email').eq('id', user.id).single()
+          .then(({ data }) => {
+            if (data) {
+              setForm(f => ({
+                ...f,
+                name: f.name || data.name || '',
+                email: f.email || data.email || '',
+              }))
+            }
+          })
+      }
+    })
+  }, [])
 
   useEffect(() => {
     if (isOpen) {
@@ -42,8 +69,8 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
     if (!f) return
-    if (f.size > 10 * 1024 * 1024) {
-      setError('파일 크기는 10MB 이하여야 합니다.')
+    if (f.size > CONSULTING_MAX_FILE_SIZE) {
+      setError('파일 크기는 1GB 이하여야 합니다.')
       return
     }
     setError('')
@@ -60,30 +87,46 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
       setError('문의 내용을 입력해주세요.')
       return
     }
+    // 길이 방어 (DB CHECK 제약과 동일한 상한). 서버 제약에 걸리기 전에 명확한 메시지.
+    if (form.name.length > 100) { setError('이름이 너무 깁니다 (최대 100자).'); return }
+    if (form.email.length > 254) { setError('이메일이 너무 깁니다.'); return }
+    if (form.phone.length > 50) { setError('연락처가 올바르지 않습니다.'); return }
+    if (form.company.length > 200) { setError('회사명이 너무 깁니다 (최대 200자).'); return }
+    if (form.message.length > 20000) { setError('문의 내용이 너무 깁니다 (최대 20,000자).'); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setError('올바른 이메일 형식이 아닙니다.'); return
+    }
     setSubmitting(true)
     setError('')
 
     try {
       const supabase = createClient()
 
-      // Upload file if exists
-      let fileUrl = ''
+      // Upload file if exists — uploadFile() 은 6MB 초과 시 자동 TUS resumable (최대 50GB)
+      // 저장 형식: "[첨부파일:{storage_path}]" — 표시 시점 관리자가 서명 URL 재발급.
+      let attachmentMarker = ''
       if (file) {
-        const fileName = `inquiry-${Date.now()}-${file.name}`
-        const { error: uploadErr } = await supabase.storage.from('consulting-files').upload(fileName, file)
-        if (!uploadErr) {
-          const { data: urlData } = supabase.storage.from('consulting-files').getPublicUrl(fileName)
-          fileUrl = urlData.publicUrl
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+        const fileName = `inquiry-${Date.now()}-${safeName}`
+        const result = await uploadFile({
+          bucket: 'consulting-files',
+          path: fileName,
+          file,
+          contentType: file.type,
+        })
+        if (result.ok) {
+          attachmentMarker = `[첨부파일:${fileName}]`
         }
       }
 
-      const messageWithFile = fileUrl
-        ? `${form.message}\n\n[첨부파일] ${fileUrl}`
+      const messageWithFile = attachmentMarker
+        ? `${form.message}\n\n${attachmentMarker}`
         : form.message
 
       const { data: insertedRows, error: insertErr } = await supabase
         .from('consulting_requests')
         .insert({
+          user_id: userId,
           name: form.name,
           phone: form.phone,
           email: form.email,
@@ -117,11 +160,10 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
 
   if (!isOpen) return null
 
-  const pkgOptions = [
-    { value: 'spot', label: '스팟 상담 (150,000원 / 30분)' },
-    { value: 'review', label: '제안서 리뷰 패키지 (500,000원 / 건)' },
-    { value: 'project', label: '프로젝트 컨설팅 (3,000,000원~ / 프로젝트)' },
-  ]
+  const pkgOptions = Object.values(CONSULTING_PACKAGES).map((pkg) => ({
+    value: pkg.value,
+    label: `${pkg.name} (${pkg.priceLabel})`,
+  }))
 
   const inputClass = "w-full px-3 py-2.5 border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
   const labelClass = "block text-xs font-medium text-muted-foreground mb-1.5"
@@ -129,9 +171,9 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[5vh]" role="dialog" aria-modal="true" aria-labelledby="consulting-modal-title">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-card rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" style={modalStyle}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 sticky top-0 bg-card rounded-t-2xl z-10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 sticky top-0 bg-card rounded-t-2xl z-10 cursor-move" onMouseDown={handleMouseDown}>
           <h2 id="consulting-modal-title" className="text-lg font-bold text-foreground">컨설팅 문의</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-muted-foreground">
             <X className="w-5 h-5" />
@@ -306,12 +348,79 @@ export default function ConsultingPage() {
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+      {/* Page Header */}
       <div className="py-8 md:py-12">
         <div className="flex items-center gap-3 mb-3">
           <MessageSquare className="w-7 h-7 text-primary" />
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">컨설팅</h1>
         </div>
-        <p className="text-muted-foreground">나라장터·조달청 입찰 전문가가 제안서 작성부터 발표까지 함께합니다</p>
+        <p className="text-muted-foreground">이번 입찰, 혼자 준비하지 마세요 — 낙찰 전략을 함께 짜는 전문가 컨설팅</p>
+      </div>
+
+      {/* ===========================
+          1. Roy.Chae 전문가 프로필 섹션
+          =========================== */}
+      <div className="max-w-4xl mx-auto mb-12">
+        <div className="rounded-2xl border border-border bg-card p-8 md:p-10">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
+            {/* 이니셜 아바타 */}
+            <div className="shrink-0 w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <span className="text-2xl font-bold text-white tracking-wide">RC</span>
+            </div>
+
+            {/* 프로필 텍스트 */}
+            <div className="flex-1 text-center md:text-left">
+              <h2 className="text-xl font-bold text-foreground mb-1">Roy. Chae</h2>
+              <p className="text-sm text-primary font-medium mb-3">공공조달 전략 컨설턴트 | Pre-sales 총괄</p>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-5">
+                ITS·스마트시티·AI 분야에서 수십 건의 낙찰을 이끈 공공조달 전문가.
+                공고 분석부터 제안서 발표까지, 수주의 전 과정을 함께합니다.
+              </p>
+
+              {/* 핵심 실적 뱃지 */}
+              <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  <Trophy className="w-3.5 h-3.5" />
+                  ITS/스마트시티 수주 10건+
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  <Factory className="w-3.5 h-3.5" />
+                  스마트팩토리 PM 경력
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  AI 기반 신사업 기획
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ===========================
+          2. 전략적 메시지 섹션
+          =========================== */}
+      <div className="max-w-3xl mx-auto mb-20">
+        <div className="relative rounded-2xl bg-[#0C1220] p-8 md:p-10">
+          <Quote className="absolute top-6 left-6 w-8 h-8 text-primary/20" />
+          <div className="relative z-10 text-center space-y-4">
+            <p className="text-sm md:text-base text-blue-100/90 leading-relaxed">
+              대부분의 제안서는 &lsquo;기술을 설명&rsquo;합니다.
+            </p>
+            <p className="text-sm md:text-base text-white font-semibold leading-relaxed">
+              하지만 낙찰되는 제안서는 &lsquo;평가위원을 설득&rsquo;합니다.
+            </p>
+            <div className="w-12 h-px bg-primary/40 mx-auto" />
+            <p className="text-sm md:text-base text-blue-100/80 leading-relaxed">
+              저는 평가위원이 어떤 구조에서 높은 점수를 주는지,<br className="hidden md:block" />
+              어떤 표현이 감점을 유발하는지 알고 있습니다.
+            </p>
+            <p className="text-sm md:text-base text-white font-semibold leading-relaxed">
+              그 차이를 만드는 것이 제 일입니다.
+            </p>
+            <p className="text-xs text-blue-300/60 mt-4 font-medium">— Roy. Chae</p>
+          </div>
+        </div>
       </div>
 
       {/* Package Cards - equal height */}
@@ -368,7 +477,7 @@ export default function ConsultingPage() {
                       : 'border border-border hover:bg-muted'
                   }`}
                 >
-                  상담 신청하기
+                  Roy.Chae에게 문의하기
                 </button>
               </div>
             ))}
@@ -429,7 +538,7 @@ export default function ConsultingPage() {
                     onClick={() => pkg?.slug && openInquiry(pkg.slug)}
                     className="w-full h-9 rounded-lg font-medium text-xs transition-all cursor-pointer border border-primary/30 bg-card text-primary hover:bg-primary hover:text-primary-foreground hover:border-primary hover:shadow-md"
                   >
-                    선택하기
+                    이 플랜으로 시작하기
                   </button>
                 </div>
               ))}
@@ -478,7 +587,7 @@ export default function ConsultingPage() {
                         : 'border border-border hover:bg-muted'
                     }`}
                   >
-                    선택하기
+                    이 플랜으로 시작하기
                   </button>
                 </div>
               )
@@ -487,8 +596,63 @@ export default function ConsultingPage() {
         </div>
       )}
 
+      {/* ===========================
+          3. 성공 사례 / 소셜 프루프 섹션
+          =========================== */}
+      <div className="max-w-5xl mx-auto mb-20">
+        <h2 className="text-xl font-bold text-center mb-2">함께한 기업들의 이야기</h2>
+        <p className="text-sm text-muted-foreground text-center mb-8">실제 프로젝트 기반의 컨설팅 성과</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Case 1: ITS */}
+          <div className="rounded-2xl bg-[#0C1220] p-6 border border-blue-900/30 hover:border-blue-700/50 transition-colors">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center mb-5">
+              <Trophy className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-sm font-bold text-white mb-2">수도권 광역시 ITS 유지관리 용역</h3>
+            <p className="text-xs text-blue-200/70 leading-relaxed mb-4">
+              3주 만에 제안서 완성. 공고 분석부터 발표 리허설까지 전 과정을 코칭하여 기술점수 1위로 낙찰.
+            </p>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-300 text-[11px] font-medium">
+              <Trophy className="w-3 h-3" />
+              기술점수 1위 낙찰
+            </span>
+          </div>
+
+          {/* Case 2: AI 스마트빌리지 */}
+          <div className="rounded-2xl bg-[#0C1220] p-6 border border-blue-900/30 hover:border-blue-700/50 transition-colors">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center mb-5">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-sm font-bold text-white mb-2">경기도 스마트빌리지 AI 서비스</h3>
+            <p className="text-xs text-blue-200/70 leading-relaxed mb-4">
+              AI 기반 서비스 기획부터 제안서까지 원스톱 코칭. 기술 난이도가 높은 사업에서도 평가위원이 이해할 수 있는 구조를 설계.
+            </p>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/15 text-violet-300 text-[11px] font-medium">
+              <Sparkles className="w-3 h-3" />
+              원스톱 코칭 완료
+            </span>
+          </div>
+
+          {/* Case 3: 스마트공장 */}
+          <div className="rounded-2xl bg-[#0C1220] p-6 border border-blue-900/30 hover:border-blue-700/50 transition-colors">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center mb-5">
+              <Factory className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="text-sm font-bold text-white mb-2">반도체 기업 스마트공장 구축</h3>
+            <p className="text-xs text-blue-200/70 leading-relaxed mb-4">
+              300페이지 기술제안서를 2주 만에 구조화. PM 경험을 바탕으로 실행 가능성 중심의 제안 전략을 수립.
+            </p>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-300 text-[11px] font-medium">
+              <Factory className="w-3 h-3" />
+              2주 만에 구조화 완료
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Process - Timeline style */}
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto mb-20">
         <h2 className="text-xl font-bold text-center mb-3">진행 프로세스</h2>
         <p className="text-sm text-muted-foreground text-center mb-12">신청부터 완료까지 4단계로 진행됩니다</p>
 
@@ -517,6 +681,52 @@ export default function ConsultingPage() {
                 <p className="text-xs text-muted-foreground leading-relaxed max-w-[200px]">{item.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ===========================
+          6. "왜 전문가 컨설팅인가?" 섹션
+          =========================== */}
+      <div className="max-w-5xl mx-auto mb-20">
+        <h2 className="text-xl font-bold text-center mb-2">왜 전문가 컨설팅인가?</h2>
+        <p className="text-sm text-muted-foreground text-center mb-8">직접 준비하는 것과 전문가와 함께하는 것의 차이</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* 가격 앵커링 */}
+          <div className="rounded-2xl border border-border bg-card p-7 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-500 hover:-translate-y-1">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center mb-5">
+              <Target className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="font-bold text-sm text-foreground mb-2">합리적 비용</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              컨설팅 외주 {formatWonShort(INDUSTRY_CONSULTING_PRICE_FLOOR_WON)}+ 대비, 스팟 상담은 <span className="text-primary font-semibold">{formatWonShort(CONSULTING_PACKAGES.spot.priceWon)}</span>부터.
+              핵심만 짚어주는 집중 상담으로 최소 비용, 최대 효과를 만듭니다.
+            </p>
+          </div>
+
+          {/* 전문성 */}
+          <div className="rounded-2xl border border-border bg-card p-7 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-500 hover:-translate-y-1">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center mb-5">
+              <ShieldCheck className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="font-bold text-sm text-foreground mb-2">감점 포인트 사전 차단</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              평가표 항목별로 감점이 발생하는 패턴을 미리 파악하고 차단합니다.
+              내용이 좋아도 구성 실수로 탈락하는 일을 막습니다.
+            </p>
+          </div>
+
+          {/* 차별화 */}
+          <div className="rounded-2xl border border-border bg-card p-7 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-500 hover:-translate-y-1">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center mb-5">
+              <Mic className="w-6 h-6 text-white" />
+            </div>
+            <h3 className="font-bold text-sm text-foreground mb-2">발표 리허설까지</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              제안서 작성에서 끝나지 않습니다. 발표 PT 리허설까지 함께하여
+              수주의 <span className="text-primary font-semibold">마지막 1%</span>를 챙깁니다.
+            </p>
           </div>
         </div>
       </div>

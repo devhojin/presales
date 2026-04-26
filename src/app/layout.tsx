@@ -7,6 +7,7 @@ import { PageViewTracker } from "@/components/PageViewTracker";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { ToastContainer } from "@/components/Toast";
 import { ChatWidget } from "@/components/chat/ChatWidget";
+import { ExitIntentPopup } from "@/components/ExitIntentPopup";
 import { SITE_URL } from "@/lib/constants";
 
 const geistSans = Geist({
@@ -41,11 +42,13 @@ export const metadata: Metadata = {
     url: SITE_URL,
     siteName: "PRESALES by AMARANS Partners",
     locale: "ko_KR",
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "PRESALES - 공공조달 제안서 마켓플레이스" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "PRESALES - 공공조달 제안서 마켓플레이스",
     description: "공공조달 기술제안서, 입찰가이드, 구축자료 등 전문 문서 다운로드 플랫폼.",
+    images: ["/og-image.svg"],
   },
 };
 
@@ -57,6 +60,21 @@ const organizationJsonLd = {
   description:
     "공공조달 기술제안서, 입찰가이드, 구축자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",
   sameAs: [],
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "PRESALES",
+  url: SITE_URL,
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: `${SITE_URL}/store?q={search_term_string}`,
+    },
+    "query-input": "required name=search_term_string",
+  },
 };
 
 export default function RootLayout({
@@ -75,6 +93,10 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
         />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+        />
       </head>
       <body className="min-h-full flex flex-col">
         <Header />
@@ -83,6 +105,7 @@ export default function RootLayout({
         <Footer />
         <ToastContainer />
         <ChatWidget />
+        <ExitIntentPopup />
       </body>
     </html>
   );

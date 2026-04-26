@@ -44,46 +44,49 @@ export async function GET() {
     return NextResponse.json({ error: '관리자만 접근 가능합니다' }, { status: 403 })
   }
 
-  // 3. 모든 프로필 + 집계 조회 (Supabase 기본 1000건 제한 회피 위해 명시적 limit)
-  const [profilesRes, ordersRes, reviewsRes] = await Promise.all([
+  // 3. 기본 회원 필드는 profiles 에서 직접 읽고,
+  //    통계는 members_with_stats 뷰에서 병합한다.
+  //    운영 DB 에 뷰 컬럼 드리프트가 있어 deleted_at/deletion_reason 는 profiles 기준으로 신뢰한다.
+  const MEMBER_LIST_LIMIT = 5000
+  const [{ data: membersData, error: membersError }, { data: statsData, error: statsError }] = await Promise.all([
     service
       .from('profiles')
       .select('id, email, name, phone, company, role, admin_memo, created_at')
       .order('created_at', { ascending: false })
-      .limit(50000),
+      .limit(MEMBER_LIST_LIMIT),
     service
-      .from('orders')
-      .select('user_id, total_amount, status')
-      .limit(100000),
-    service
-      .from('reviews')
-      .select('user_id')
-      .limit(100000),
+      .from('members_with_stats')
+      .select('id, order_count, total_spent, review_count')
+      .limit(MEMBER_LIST_LIMIT),
   ])
 
-  if (profilesRes.error) {
-    return NextResponse.json({ error: profilesRes.error.message }, { status: 500 })
+  if (membersError) {
+    return NextResponse.json({ error: membersError.message }, { status: 500 })
   }
 
-  const members = profilesRes.data || []
-  const orders = ordersRes.data || []
-  const reviews = reviewsRes.data || []
+  if (statsError) {
+    return NextResponse.json({ error: statsError.message }, { status: 500 })
+  }
 
-  // 집계 계산
+  if ((membersData?.length || 0) === MEMBER_LIST_LIMIT) {
+    console.warn(`[admin/members] reached limit ${MEMBER_LIST_LIMIT} — pagination 도입 권고`)
+  }
+
+  const rows = (membersData || []).map((member) => ({
+    ...member,
+    deleted_at: null,
+    deletion_reason: null,
+  }))
+  const statRows = statsData || []
+  const members = rows
   const stats: Record<string, { order_count: number; total_spent: number; review_count: number }> = {}
-  for (const m of members) {
-    stats[m.id] = { order_count: 0, total_spent: 0, review_count: 0 }
-  }
-  for (const o of orders) {
-    const s = stats[o.user_id]
-    if (s && (o.status === 'paid' || o.status === 'completed')) {
-      s.order_count += 1
-      s.total_spent += o.total_amount || 0
+  for (const r of statRows) {
+    if (!r.id) continue
+    stats[r.id] = {
+      order_count: r.order_count ?? 0,
+      total_spent: r.total_spent ?? 0,
+      review_count: r.review_count ?? 0,
     }
-  }
-  for (const r of reviews) {
-    const s = stats[r.user_id]
-    if (s) s.review_count += 1
   }
 
   return NextResponse.json({ members, stats })

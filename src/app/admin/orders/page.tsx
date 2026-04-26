@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { Badge } from '@/components/ui/badge'
 import {
   Search,
@@ -124,11 +125,12 @@ interface ConsultingRequest {
 // Constants
 // ===========================
 
-type StatusFilter = 'all' | 'pending' | 'paid' | 'cancelled' | 'refunded'
+type StatusFilter = 'all' | 'pending' | 'pending_transfer' | 'paid' | 'cancelled' | 'refunded'
 
 const STATUS_TABS: { key: StatusFilter; label: string }[] = [
   { key: 'all', label: '전체' },
   { key: 'pending', label: '결제대기' },
+  { key: 'pending_transfer', label: '입금대기' },
   { key: 'paid', label: '결제완료' },
   { key: 'cancelled', label: '취소' },
   { key: 'refunded', label: '환불' },
@@ -136,6 +138,7 @@ const STATUS_TABS: { key: StatusFilter; label: string }[] = [
 
 const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; border: string }> = {
   pending: { label: '결제대기', bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' },
+  pending_transfer: { label: '입금대기', bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
   paid: { label: '결제완료', bg: 'bg-green-50', text: 'text-green-700', border: 'border-green-200' },
   cancelled: { label: '취소', bg: 'bg-muted', text: 'text-muted-foreground', border: 'border-border' },
   refunded: { label: '환불', bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200' },
@@ -210,6 +213,8 @@ function ConfirmModal({
   onCancel: () => void
   loading: boolean
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel()
@@ -221,8 +226,8 @@ function ConfirmModal({
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
-        <h3 className="text-sm font-semibold text-foreground mb-2">{title}</h3>
+      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4" style={modalStyle}>
+        <h3 className="text-sm font-semibold text-foreground mb-2 cursor-move" onMouseDown={handleMouseDown}>{title}</h3>
         <p className="text-sm text-muted-foreground mb-6">{message}</p>
         <div className="flex gap-3 justify-end">
           <button
@@ -294,6 +299,7 @@ function MemberDetailModal({
   member: Profile
   onClose: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const [activeTab, setActiveTab] = useState<MemberModalTab>('info')
   const [orders, setOrders] = useState<Order[]>([])
   const [consulting, setConsulting] = useState<ConsultingRequest[]>([])
@@ -324,6 +330,7 @@ function MemberDetailModal({
         )
         .eq('user_id', member.id)
         .order('created_at', { ascending: false })
+        .limit(200)
         .then(({ data }) => {
           setOrders((data as unknown as Order[]) || [])
           setLoadingOrders(false)
@@ -357,9 +364,9 @@ function MemberDetailModal({
     <div className="fixed inset-0 z-[60] flex items-start justify-center pt-[5vh] pb-[5vh]">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col overflow-hidden" style={modalStyle}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 cursor-move" onMouseDown={handleMouseDown}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
               {(member.name || '?')[0]}
@@ -530,6 +537,7 @@ function OrderDetailModal({
   onStatusChange: (orderId: number, status: string) => Promise<void>
   onMemoSave: (orderId: number, memo: string) => Promise<void>
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const [memos, setMemos] = useState<MemoEntry[]>(parseMemos(order.admin_memo))
   const [newMemo, setNewMemo] = useState('')
   const [memoSaving, setMemoSaving] = useState(false)
@@ -596,9 +604,9 @@ function OrderDetailModal({
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[3vh] pb-[3vh]">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[94vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-3xl mx-4 max-h-[94vh] flex flex-col overflow-hidden" style={modalStyle}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0 cursor-move" onMouseDown={handleMouseDown}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center">
               <FileText className="w-5 h-5 text-primary" />
@@ -855,7 +863,7 @@ function OrderDetailModal({
           <div>
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">상태 변경</h3>
             <div className="bg-muted rounded-xl p-4 flex flex-wrap gap-2">
-              {order.status === 'pending' && (
+              {(order.status === 'pending' || order.status === 'pending_transfer') && (
                 <>
                   <button
                     onClick={() => setConfirmAction({ status: 'paid', label: '결제확인', color: 'bg-green-600 hover:bg-green-700' })}
@@ -927,6 +935,7 @@ function ProductPurchaseHistoryModal({
   productTitle: string
   onClose: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const [entries, setEntries] = useState<PurchaseHistoryEntry[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -998,9 +1007,9 @@ function ProductPurchaseHistoryModal({
   return (
     <div className="fixed inset-0 z-[65] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col overflow-hidden" style={modalStyle}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0 cursor-move" onMouseDown={handleMouseDown}>
           <div>
             <h2 className="text-base font-semibold text-foreground">구매내역</h2>
             <p className="text-xs text-muted-foreground break-words mt-0.5">{productTitle}</p>
@@ -1069,6 +1078,7 @@ function DownloadHistoryModal({
   order: Order
   onClose: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const [rows, setRows] = useState<DownloadHistoryRow[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -1100,6 +1110,7 @@ function DownloadHistoryModal({
         .eq('user_id', order.user_id)
         .in('product_id', productIds)
         .order('downloaded_at', { ascending: false })
+        .limit(500)
 
       if (!logs || logs.length === 0) {
         setRows([])
@@ -1141,9 +1152,9 @@ function DownloadHistoryModal({
   return (
     <div className="fixed inset-0 z-[65] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col overflow-hidden" style={modalStyle}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0 cursor-move" onMouseDown={handleMouseDown}>
           <div>
             <h2 className="text-base font-semibold text-foreground">다운로드 이력</h2>
             <p className="text-xs text-muted-foreground font-mono mt-0.5">{order.order_number}</p>
@@ -1206,7 +1217,7 @@ export default function AdminOrders() {
   const [search, setSearch] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
-  const [pageSize, setPageSize] = useState(20)
+  const [pageSize, setPageSize] = useState(100)
   const [currentPage, setCurrentPage] = useState(1)
 
   // Selection
@@ -1290,7 +1301,11 @@ export default function AdminOrders() {
     if (status === 'paid') updates.paid_at = new Date().toISOString()
     if (status === 'cancelled') updates.cancelled_at = new Date().toISOString()
 
-    await supabase.from('orders').update(updates).eq('id', orderId)
+    const { error } = await supabase.from('orders').update(updates).eq('id', orderId)
+    if (error) {
+      setToast(`주문 상태 변경 실패: ${error.message}`)
+      return
+    }
 
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, ...updates } as Order : o))
@@ -1303,10 +1318,12 @@ export default function AdminOrders() {
   // Memo save handler
   const handleMemoSave = useCallback(async (orderId: number, memo: string) => {
     const supabase = createClient()
-    await supabase.from('orders').update({ admin_memo: memo, updated_at: new Date().toISOString() }).eq('id', orderId)
+    const { error } = await supabase.from('orders').update({ admin_memo: memo, updated_at: new Date().toISOString() }).eq('id', orderId)
+    if (error) { setToast(`메모 저장 실패: ${error.message}`); return }
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, admin_memo: memo } : o))
     )
+    setToast('메모가 저장되었습니다')
   }, [])
 
   // Bulk status change
@@ -1318,7 +1335,11 @@ export default function AdminOrders() {
     if (status === 'cancelled') updates.cancelled_at = new Date().toISOString()
 
     const ids = Array.from(selectedIds)
-    await supabase.from('orders').update(updates).in('id', ids)
+    const { error } = await supabase.from('orders').update(updates).in('id', ids)
+    if (error) {
+      setToast(`일괄 상태 변경 실패: ${error.message}`)
+      return
+    }
 
     setOrders((prev) =>
       prev.map((o) => (selectedIds.has(o.id) ? { ...o, ...updates } as Order : o))
@@ -1422,7 +1443,7 @@ export default function AdminOrders() {
 
   // Status counts
   const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: orders.length, pending: 0, paid: 0, cancelled: 0, refunded: 0 }
+    const counts: Record<string, number> = { all: orders.length, pending: 0, pending_transfer: 0, paid: 0, cancelled: 0, refunded: 0 }
     for (const o of orders) {
       if (counts[o.status] !== undefined) counts[o.status]++
     }

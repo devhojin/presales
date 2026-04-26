@@ -69,21 +69,39 @@ export async function POST(request: NextRequest) {
   if (!Array.isArray(updates) || updates.length === 0) {
     return NextResponse.json({ error: '수정할 항목이 없습니다' }, { status: 400 })
   }
+  // R14: 일괄 처리 상한 — 1000건 초과 시 거부 (DoS·운영 실수 방지)
+  if (updates.length > 1000) {
+    return NextResponse.json({ error: '한 번에 최대 1000개까지 수정 가능합니다' }, { status: 400 })
+  }
 
   const results: { id: number; success: boolean; error?: string }[] = []
 
+  // R14: NaN/Infinity/음수/비정수/10억 초과 모두 차단 (chat/payment-request 와 동일 기준)
+  const PRICE_MAX = 1_000_000_000
+  const isValidPrice = (n: unknown) =>
+    typeof n === 'number'
+    && Number.isFinite(n)
+    && Number.isInteger(n)
+    && n >= 0
+    && n <= PRICE_MAX
+
   for (const item of updates) {
-    if (!item.id || item.price < 0 || item.original_price < 0) {
-      results.push({ id: item.id, success: false, error: '잘못된 값' })
+    const idNum = Number(item.id)
+    if (!Number.isInteger(idNum) || idNum <= 0) {
+      results.push({ id: item.id, success: false, error: '잘못된 id' })
+      continue
+    }
+    if (!isValidPrice(item.price) || !isValidPrice(item.original_price)) {
+      results.push({ id: idNum, success: false, error: '가격은 0 이상 10억 이하의 정수여야 합니다' })
       continue
     }
 
     const { error } = await supabase
       .from('products')
       .update({ price: item.price, original_price: item.original_price })
-      .eq('id', item.id)
+      .eq('id', idNum)
 
-    results.push({ id: item.id, success: !error, error: error?.message })
+    results.push({ id: idNum, success: !error, error: error?.message })
   }
 
   const successCount = results.filter(r => r.success).length

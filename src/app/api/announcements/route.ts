@@ -41,6 +41,10 @@ export async function GET(request: NextRequest) {
       userId = user?.id ?? null
     }
 
+    // 사용자당 북마크/읽음 목록은 수천 건 정도가 현실적 상한
+    // PostgREST IN 절 URL 길이 제한 있어 실제로도 5000 이상 쓰기 어려움
+    const USER_LIST_LIMIT = 5000
+
     let idFilter: { op: 'in' | 'not_in'; ids: string[] } | null = null
     type AnnBookmarkSnap = {
       announcement_id: string
@@ -60,16 +64,23 @@ export async function GET(request: NextRequest) {
           .from('announcement_bookmarks')
           .select('announcement_id, title, excerpt, url, source, source_name, end_date, snapshot_at, created_at')
           .eq('user_id', userId)
-          .limit(100000)
+          .order('created_at', { ascending: false })
+          .limit(USER_LIST_LIMIT)
         bookmarkSnaps = (data as AnnBookmarkSnap[]) || []
+        if (bookmarkSnaps.length === USER_LIST_LIMIT) {
+          console.warn(`[announcements] user ${userId} bookmark list reached limit ${USER_LIST_LIMIT}`)
+        }
         idFilter = { op: 'in', ids: bookmarkSnaps.map(r => r.announcement_id) }
       } else {
         const { data } = await supabase
           .from('announcement_reads')
           .select('announcement_id')
           .eq('user_id', userId)
-          .limit(100000)
+          .limit(USER_LIST_LIMIT)
         const readIds = (data || []).map(r => r.announcement_id)
+        if (readIds.length === USER_LIST_LIMIT) {
+          console.warn(`[announcements] user ${userId} read list reached limit ${USER_LIST_LIMIT}`)
+        }
         idFilter = { op: tab === 'read' ? 'in' : 'not_in', ids: readIds }
       }
     }
@@ -134,11 +145,44 @@ export async function GET(request: NextRequest) {
       finalAnns = [...finalAnns, ...restored]
     }
 
+    // 상태별 카운트 (모집중/마감)
+    let activeCount = 0, closedCount = 0
+    {
+      let cq = supabase.from('announcements').select('*', { count: 'exact', head: true }).eq('is_published', true)
+      if (search) cq = cq.or(`title.ilike.%${search}%,organization.ilike.%${search}%,description.ilike.%${search}%`)
+      if (idFilter) {
+        if (idFilter.op === 'in') cq = cq.in('id', idFilter.ids)
+        else if (idFilter.ids.length > 0) cq = cq.not('id', 'in', `(${idFilter.ids.join(',')})`)
+      }
+      const [ac, cc] = await Promise.all([
+        cq.eq('status', 'active').or(`end_date.gte.${today},end_date.is.null`),
+        supabase.from('announcements').select('*', { count: 'exact', head: true }).eq('is_published', true)
+          .or(`status.eq.closed,end_date.lt.${today}`)
+          .then(r => r),
+      ])
+      activeCount = ac.count || 0
+      closedCount = cc.count || 0
+    }
+
+    // 탭별 카운트 (로그인 시) — data 대신 count: 'exact', head: true 사용 (메모리 로드 0)
+    let unreadCount = 0, readCount = 0, bookmarkCount = 0
+    if (userId) {
+      const [readRes, bmRes, totalRes] = await Promise.all([
+        supabase.from('announcement_reads').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+        supabase.from('announcement_bookmarks').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+        supabase.from('announcements').select('*', { count: 'exact', head: true }).eq('is_published', true),
+      ])
+      readCount = readRes.count || 0
+      bookmarkCount = bmRes.count || 0
+      unreadCount = (totalRes.count || 0) - readCount
+    }
+
     return NextResponse.json({
       announcements: finalAnns,
       total: tab === 'bookmarks' ? bookmarkSnaps.length : total || 0,
       page,
       pageSize,
+      counts: { active: activeCount, closed: closedCount, unread: unreadCount, read: readCount, bookmarks: bookmarkCount },
     })
   } catch (err) {
     return NextResponse.json(

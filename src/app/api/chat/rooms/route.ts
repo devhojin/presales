@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 import { getServiceClient, getAuthUser, isAdmin } from '@/lib/chat'
+import { checkRateLimitAsync } from '@/lib/rate-limit'
+import { getClientIp } from '@/lib/client-ip'
+
+// UUID v4 형식 검증 (비회원 guest_id — 클라이언트 uuid 생성)
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /** DELETE: 채팅방 삭제 (hide | full) */
 export async function DELETE(request: NextRequest) {
@@ -44,6 +51,7 @@ export async function GET() {
         .from('chat_rooms')
         .select('*')
         .eq('hidden_by_admin', false)
+        .not('last_message', 'is', null)
         .order('last_message_at', { ascending: false })
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -83,6 +91,17 @@ export async function GET() {
 
 /** POST: 채팅방 생성/조회 */
 export async function POST(request: NextRequest) {
+  // Rate limit: IP 당 분당 10회 (방 무한 생성 DoS 방지)
+  const headersList = await headers()
+  const ip = getClientIp(headersList)
+  const rl = await checkRateLimitAsync(`chat-room-create:${ip}`, 10, 60000)
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'Too many requests' }, {
+      status: 429,
+      headers: { 'Retry-After': '60', 'X-RateLimit-Remaining': String(rl.remaining) },
+    })
+  }
+
   const body = await request.json()
   const supabase = getServiceClient()
   const user = await getAuthUser()
@@ -108,7 +127,7 @@ export async function POST(request: NextRequest) {
         user_id: user.id,
         room_type: 'member',
         status: 'open',
-        admin_unread_count: 1,
+        admin_unread_count: 0,
       })
       .select()
       .single()
@@ -119,7 +138,9 @@ export async function POST(request: NextRequest) {
 
   // 비회원 채팅방
   const guestId = body.guest_id
-  if (!guestId) return NextResponse.json({ error: 'guest_id 필요' }, { status: 400 })
+  if (!guestId || typeof guestId !== 'string' || !UUID_REGEX.test(guestId)) {
+    return NextResponse.json({ error: 'guest_id 가 유효하지 않습니다 (UUID v4)' }, { status: 400 })
+  }
 
   // 기존 open 방 찾기
   const { data: existing } = await supabase
@@ -145,7 +166,7 @@ export async function POST(request: NextRequest) {
       guest_name: guestName,
       room_type: 'guest',
       status: 'open',
-      admin_unread_count: 1,
+      admin_unread_count: 0,
     })
     .select()
     .single()
@@ -154,33 +175,87 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ room: newRoom, created: true })
 }
 
-/** PATCH: 채팅방 상태 업데이트 (닫기, 읽음 처리 등) */
+/**
+ * PATCH: 채팅방 상태 업데이트 (닫기, 읽음 처리 등)
+ * 보안: allowedFields 만 허용 — user_id/guest_id/id/created_at 등 민감 컬럼 임의 수정 차단
+ */
+// 역할별 허용 필드 화이트리스트
+const ADMIN_ALLOWED_FIELDS = new Set([
+  'status',
+  'last_message',
+  'last_message_at',
+  'user_unread_count',
+  'admin_unread_count',
+  'hidden_by_admin',
+  'guest_name',
+  'guest_email',
+])
+const MEMBER_ALLOWED_FIELDS = new Set([
+  'status',
+  'user_unread_count', // 본인 읽음 처리
+])
+const GUEST_ALLOWED_FIELDS = new Set([
+  'status',
+  'user_unread_count',
+  'guest_name',
+  'guest_email',
+])
+
+// 필드별 문자열 길이 제한 — DB 과다 저장 및 후속 렌더링 장애 방지
+const FIELD_MAX_LENGTH: Record<string, number> = {
+  guest_name: 50,
+  guest_email: 254,
+  last_message: 500,
+}
+
+function pickAllowed(
+  updates: Record<string, unknown>,
+  allowed: Set<string>,
+): { picked: Record<string, unknown>; error?: string } {
+  const picked: Record<string, unknown> = {}
+  for (const k of Object.keys(updates)) {
+    if (!allowed.has(k)) continue
+    const v = updates[k]
+    const max = FIELD_MAX_LENGTH[k]
+    if (max !== undefined && typeof v === 'string' && v.length > max) {
+      return { picked, error: `${k} 은 ${max}자 이하여야 합니다` }
+    }
+    if (k === 'guest_email' && typeof v === 'string' && v.length > 0 && !EMAIL_REGEX.test(v)) {
+      return { picked, error: 'guest_email 형식이 올바르지 않습니다' }
+    }
+    picked[k] = v
+  }
+  return { picked }
+}
+
 export async function PATCH(request: NextRequest) {
   const body = await request.json()
-  const { room_id, ...updates } = body
+  const { room_id, ...updates } = body as Record<string, unknown> & { room_id?: string; guest_id?: string }
   if (!room_id) return NextResponse.json({ error: 'room_id 필요' }, { status: 400 })
 
   const user = await getAuthUser()
   const supabase = getServiceClient()
 
-  // 관리자 확인
+  // 관리자
   if (user) {
     const admin = await isAdmin(user.id)
     if (admin) {
+      const { picked: safe, error: lenErr } = pickAllowed(updates, ADMIN_ALLOWED_FIELDS)
+      if (lenErr) return NextResponse.json({ error: lenErr }, { status: 400 })
       const { error } = await supabase
         .from('chat_rooms')
-        .update({ ...updates, updated_at: new Date().toISOString() })
+        .update({ ...safe, updated_at: new Date().toISOString() })
         .eq('id', room_id)
       if (error) return NextResponse.json({ error: error.message }, { status: 500 })
       return NextResponse.json({ ok: true })
     }
-  }
 
-  // 회원: 자기 방만 수정 가능
-  if (user) {
+    // 회원: 자기 방만 수정 가능
+    const { picked: safe, error: lenErr } = pickAllowed(updates, MEMBER_ALLOWED_FIELDS)
+    if (lenErr) return NextResponse.json({ error: lenErr }, { status: 400 })
     const { error } = await supabase
       .from('chat_rooms')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...safe, updated_at: new Date().toISOString() })
       .eq('id', room_id)
       .eq('user_id', user.id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -190,9 +265,11 @@ export async function PATCH(request: NextRequest) {
   // 비회원: guest_id로
   const guestId = body.guest_id
   if (guestId) {
+    const { picked: safe, error: lenErr } = pickAllowed(updates, GUEST_ALLOWED_FIELDS)
+    if (lenErr) return NextResponse.json({ error: lenErr }, { status: 400 })
     const { error } = await supabase
       .from('chat_rooms')
-      .update({ ...updates, updated_at: new Date().toISOString() })
+      .update({ ...safe, updated_at: new Date().toISOString() })
       .eq('id', room_id)
       .eq('guest_id', guestId)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { type DbProduct, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
-import { FileText, Download, Globe, Handshake, ArrowRight, ShoppingCart, Check, Star, Quote, ChevronRight } from 'lucide-react'
+import { FileText, Download, Globe, Handshake, ArrowRight, ShoppingCart, Check, Star, Quote, ChevronRight, Search, BookOpen, Presentation, Briefcase, TrendingUp, Wrench } from 'lucide-react'
 
 interface StatsData {
   productCount: number
@@ -31,22 +31,19 @@ interface CategoryCount {
   icon: typeof FileText
 }
 
-const CATEGORY_ICONS: Record<number, typeof FileText> = {
-  1: FileText,
-  2: FileText,
-  3: FileText,
-  4: FileText,
-  5: FileText,
-  6: FileText,
-}
-
-const CATEGORY_SLUGS: Record<number, string> = {
-  1: 'technical-proposal',
-  2: 'bidding-guide',
-  3: 'presentation',
-  4: 'price-proposal',
-  5: 'full-package',
-  6: 'business-plan',
+/**
+ * 카테고리 아이콘 매핑 — DB slug 기반 (id 고정 의존 제거)
+ * 새 카테고리 추가 시 여기에 slug 만 추가하면 되고, 미등록 slug 는 FileText fallback
+ */
+const CATEGORY_ICON_BY_SLUG: Record<string, typeof FileText> = {
+  'technical-proposal': FileText,
+  'proposal': FileText,
+  'bidding-guide': BookOpen,
+  'guide': BookOpen,
+  'presentation': Presentation,
+  'price-proposal': TrendingUp,
+  'full-package': Briefcase,
+  'business-plan': Wrench,
 }
 
 function FeaturedCardSkeleton() {
@@ -80,34 +77,34 @@ function FeaturedCard({ product, categoryNames }: { product: DbProduct; category
             </div>
           )}
           <Badge className={`absolute top-3 left-3 text-[10px] font-semibold tracking-wide ${product.is_free ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-zinc-100 text-zinc-700 border-zinc-200'}`}>
-            {product.is_free ? 'FREE' : 'PREMIUM'}
+            {product.is_free ? '무료' : '유료'}
           </Badge>
           {!product.is_free && discount > 0 && <Badge className="absolute top-3 right-3 bg-red-500 text-white border-0 text-[10px]">-{discount}%</Badge>}
           <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); const wasInCart = inCart; toggleItem({ productId: product.id, title: product.title, price: product.price, originalPrice: product.original_price, thumbnail: product.thumbnail_url || '', format: product.format || '' }); addToast(wasInCart ? '장바구니에서 제거되었습니다' : '장바구니에 추가되었습니다', wasInCart ? 'info' : 'success') }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); const wasInCart = inCart; toggleItem({ productId: product.id, title: product.title, price: product.price, originalPrice: product.original_price, thumbnail: product.thumbnail_url || '', format: product.format || '' }); addToast(wasInCart ? '장바구니에서 제거되었습니다' : '장바구니에 추가되었습니다', wasInCart ? 'info' : 'success', wasInCart ? undefined : { label: '장바구니 보기', href: '/cart' }) }}
             className={`absolute bottom-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 active:scale-[0.92] ${inCart ? 'bg-primary text-primary-foreground shadow-md' : 'bg-white/95 text-zinc-500 hover:text-primary shadow-md'}`}
           >
             {inCart ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
           </button>
         </div>
-        <div className="p-5 space-y-2.5">
+        <div className="p-3.5 space-y-1.5">
           <div className="flex gap-1.5 flex-wrap">
             {categoryNames.map((name) => (
-              <span key={name} className="text-[11px] text-muted-foreground font-medium">{name}</span>
+              <span key={name} className="text-[10px] text-muted-foreground font-medium">{name}</span>
             ))}
           </div>
-          <h3 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors duration-300">{product.title}</h3>
-          <div className="flex items-center gap-2">
-            {product.is_free ? <span className="text-base font-bold text-primary">무료</span> : (
+          <h3 className="font-semibold text-xs leading-snug line-clamp-2 group-hover:text-primary transition-colors duration-300">{product.title}</h3>
+          <div className="flex items-center gap-1.5">
+            {product.is_free ? <span className="text-sm font-bold text-primary">무료</span> : (
               <>
-                <span className="text-base font-bold text-foreground">{formatPrice(product.price)}</span>
-                {product.original_price > product.price && <span className="text-xs text-muted-foreground line-through">{formatPrice(product.original_price)}</span>}
+                <span className="text-sm font-bold text-foreground">{formatPrice(product.price)}</span>
+                {product.original_price > product.price && <span className="text-[10px] text-muted-foreground line-through">{formatPrice(product.original_price)}</span>}
               </>
             )}
           </div>
           {product.review_count > 0 && (
-            <div className="flex items-center gap-1 text-xs">
-              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+            <div className="flex items-center gap-1 text-[10px]">
+              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
               <span className="font-medium text-foreground">{product.review_avg.toFixed(1)}</span>
               <span className="text-muted-foreground">({product.review_count})</span>
             </div>
@@ -124,6 +121,7 @@ export default function Home() {
   const [stats, setStats] = useState<StatsData | null>(null)
   const [categoryCounts, setCategoryCounts] = useState<CategoryCount[]>([])
   const [reviews, setReviews] = useState<ReviewData[]>([])
+  const [newProducts, setNewProducts] = useState<DbProduct[]>([])
   const [loadingProducts, setLoadingProducts] = useState(true)
 
   useEffect(() => {
@@ -140,7 +138,7 @@ export default function Home() {
           .from('products')
           .select('*, categories(id, name, slug)')
           .eq('is_published', true),
-        supabase.from('categories').select('id, name').order('sort_order'),
+        supabase.from('categories').select('id, name, slug').order('sort_order'),
         supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_published', true),
         supabase
           .from('reviews')
@@ -177,11 +175,11 @@ export default function Home() {
           : p.category_id ? [p.category_id] : []
         catIds.forEach((cid: number) => catCountMap.set(cid, (catCountMap.get(cid) || 0) + 1))
       })
-      const dynamicCats: CategoryCount[] = (catData || []).map((c: { id: number; name: string }) => ({
+      const dynamicCats: CategoryCount[] = (catData || []).map((c: { id: number; name: string; slug: string | null }) => ({
         id: c.id,
         name: c.name,
-        icon: CATEGORY_ICONS[c.id] || FileText,
-        slug: CATEGORY_SLUGS[c.id] || '',
+        icon: (c.slug && CATEGORY_ICON_BY_SLUG[c.slug]) || FileText,
+        slug: c.slug || '',
         count: catCountMap.get(c.id) || 0,
       }))
       setCategoryCounts(dynamicCats)
@@ -199,16 +197,21 @@ export default function Home() {
         setReviews(mapped)
       }
 
+      const newArrivals = [...allProducts]
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 4)
+      setNewProducts(newArrivals)
+
       const featured = [...allProducts]
         .filter(p => !p.is_free && p.price > 0)
         .sort((a, b) => (b.download_count || 0) - (a.download_count || 0))
-        .slice(0, 6)
+        .slice(0, 15)
 
-      if (featured.length < 6) {
+      if (featured.length < 15) {
         const freeOnes = allProducts
           .filter(p => p.is_free && !featured.some(f => f.id === p.id))
           .sort((a, b) => (b.download_count || 0) - (a.download_count || 0))
-        featured.push(...freeOnes.slice(0, 6 - featured.length))
+        featured.push(...freeOnes.slice(0, 15 - featured.length))
       }
 
       setProducts(featured)
@@ -230,29 +233,25 @@ export default function Home() {
 
   return (
     <div>
-      {/* Hero — Clean White + Blue Accent + Person */}
-      <section className="relative min-h-[90dvh] flex items-center bg-white overflow-hidden">
-        {/* Blue accent block — right side */}
-        <div className="absolute top-0 right-0 w-[45%] h-full bg-blue-600 hidden md:block" />
-        <div className="absolute top-0 right-0 w-[42%] h-full bg-blue-700 hidden md:block" style={{ clipPath: 'polygon(8% 0, 100% 0, 100% 100%, 0% 100%)' }} />
-
-        <div className="max-w-[1400px] mx-auto px-4 md:px-8 w-full py-20 md:py-0 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center">
-            {/* Left: Content */}
+      {/* Hero — Editorial Bento (portraits + blue accent stat card) */}
+      <section className="relative bg-gray-50 overflow-hidden">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 w-full py-16 md:py-24 lg:py-28">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-16 items-center">
+            {/* Left: Copy */}
             <div className="space-y-7">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-xs font-semibold tracking-wide text-blue-700 uppercase">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-gray-200 text-[11px] font-semibold tracking-wide text-blue-700 uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
                 공공조달 제안서 전문
               </div>
 
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.1] text-gray-900">
+              <h1 className="text-4xl md:text-5xl lg:text-[56px] font-extrabold tracking-tight leading-[1.08] text-gray-900">
                 낙찰받은 기업의<br />
-                제안서로<br />
+                제안서로{' '}
                 <span className="text-blue-600">당신의 성공</span>을<br />
                 설계합니다.
               </h1>
 
-              <p className="text-base md:text-lg text-gray-500 leading-relaxed max-w-[480px]">
+              <p className="text-base md:text-lg text-gray-500 leading-relaxed max-w-[520px]">
                 나라장터·조달청 실제 낙찰 기업이 사용한 제안서를 그대로 받아보세요.
                 처음부터 다시 쓰지 않아도 됩니다.
               </p>
@@ -260,105 +259,211 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link
                   href="/store"
-                  className="inline-flex items-center justify-center h-13 px-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-all duration-300 active:scale-[0.98] shadow-lg shadow-blue-600/25"
+                  className="inline-flex items-center justify-center h-12 px-7 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-all duration-300 active:scale-[0.98] shadow-lg shadow-blue-600/25"
                 >
                   제안서 템플릿 보기
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Link>
                 <Link
                   href="/consulting"
-                  className="inline-flex items-center justify-center h-13 px-8 rounded-full border-2 border-gray-200 text-gray-700 hover:border-blue-300 hover:text-blue-700 font-semibold text-sm transition-all duration-300"
+                  className="inline-flex items-center justify-center h-12 px-7 rounded-full bg-white border border-gray-200 text-gray-800 hover:border-blue-300 hover:text-blue-700 font-semibold text-sm transition-all duration-300"
                 >
                   무료 상담 받기
                 </Link>
               </div>
 
-              {/* Trust badges */}
-              <div className="flex items-center gap-6 pt-4">
-                {[
-                  { value: `${stats?.productCount || 71}+`, label: '검증 템플릿' },
-                  { value: '6개', label: '전문 분야' },
-                  { value: '100%', label: '원본 제공' },
-                ].map((s) => (
-                  <div key={s.label} className="text-center">
-                    <p className="text-2xl font-bold text-gray-900">{s.value}</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">{s.label}</p>
-                  </div>
-                ))}
+              {/* Hero Search */}
+              <div className="mt-6 max-w-[480px]">
+                <form onSubmit={(e) => { e.preventDefault(); const q = (e.currentTarget.elements.namedItem('q') as HTMLInputElement).value; if (q.trim()) window.location.href = `/store?q=${encodeURIComponent(q.trim())}` }} className="relative">
+                  <input name="q" type="text" placeholder="어떤 제안서를 찾고 계세요? (예: IoT, 스마트시티)" className="w-full h-12 pl-5 pr-12 rounded-full bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all" />
+                  <button type="submit" className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center transition-colors">
+                    <Search className="w-4 h-4 text-white" />
+                  </button>
+                </form>
               </div>
             </div>
 
-            {/* Right: Person Image */}
-            <div className="relative hidden md:flex items-end justify-center">
-              <Image
-                src="/images/hero-person.webp"
-                alt="공공조달 전문가"
-                width={500}
-                height={600}
-                className="relative z-10 object-cover"
-                priority
-              />
+            {/* Right: Bento — [Portrait 1] [Blue stat / White stat] [Portrait 2] */}
+            <div className="hidden lg:grid grid-cols-3 gap-3 h-[520px]">
+              {/* Portrait 1 — left, full height */}
+              <div className="relative row-span-2 rounded-2xl overflow-hidden bg-gradient-to-br from-gray-200 to-gray-100">
+                <Image
+                  src="/images/hero-consultant-1.webp"
+                  alt="공공조달 컨설턴트"
+                  fill
+                  sizes="(min-width: 1024px) 20vw, 33vw"
+                  className="object-cover"
+                  priority
+                />
+              </div>
+
+              {/* Blue primary stat */}
+              <div className="rounded-2xl bg-blue-600 text-white p-5 flex flex-col justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wider text-blue-100">검증 템플릿</p>
+                <div>
+                  <p className="text-4xl font-extrabold tracking-tight leading-none">{stats?.productCount || 0}<span className="text-2xl">+</span></p>
+                  <p className="text-[11px] text-blue-100 mt-2 leading-snug">실제 낙찰 기록이 있는<br />제안서만 엄선</p>
+                </div>
+              </div>
+
+              {/* Portrait 2 — right, full height */}
+              <div className="relative row-span-2 rounded-2xl overflow-hidden bg-gradient-to-br from-gray-200 to-gray-100">
+                <Image
+                  src="/images/hero-consultant-2.webp"
+                  alt="공공조달 컨설턴트"
+                  fill
+                  sizes="(min-width: 1024px) 20vw, 33vw"
+                  className="object-cover"
+                  priority
+                />
+              </div>
+
+              {/* White secondary stat */}
+              <div className="rounded-2xl bg-white border border-gray-200 p-5 flex flex-col justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">전문 분야</p>
+                <div>
+                  <p className="text-4xl font-extrabold tracking-tight leading-none text-gray-900">6</p>
+                  <p className="text-[11px] text-gray-500 mt-2 leading-snug">기술제안·입찰가이드·<br />발표자료 등 6개 카테고리</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile: 2 portraits side by side */}
+            <div className="grid grid-cols-2 gap-3 lg:hidden">
+              <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-200 to-gray-100">
+                <Image src="/images/hero-consultant-1.webp" alt="공공조달 컨설턴트" fill sizes="50vw" className="object-cover" priority />
+              </div>
+              <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-200 to-gray-100">
+                <Image src="/images/hero-consultant-2.webp" alt="공공조달 컨설턴트" fill sizes="50vw" className="object-cover" priority />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Mobile blue accent */}
-        <div className="absolute bottom-0 left-0 right-0 h-2 bg-blue-600 md:hidden" />
-      </section>
-
-      {/* Value Props — Horizontal scroll on mobile, grid on desktop */}
-      <section className="py-24 md:py-32">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+          {/* Stats strip — below bento, full width */}
+          <div className="grid grid-cols-3 md:grid-cols-4 gap-6 md:gap-10 mt-14 md:mt-20 pt-10 border-t border-gray-200">
             {[
-              { icon: FileText, title: '실전 제안서', desc: '실제 수주에 성공한 제안서 그대로. 어떤 구조로, 어떤 말로 평가위원을 설득했는지 확인하세요.' },
-              { icon: Download, title: '즉시 다운로드', desc: '결제 후 5초 안에 PPT/HWP 원본 파일을 받습니다. 폰트·구조 전부 수정 가능.' },
-              { icon: Globe, title: '나라장터 최적화', desc: '나라장터 평가표 항목별로 점수를 챙기는 구조. 감점 포인트를 미리 막습니다.' },
-              { icon: Handshake, title: '전문가 컨설팅', desc: '공고 분석부터 발표 리허설까지. 공공조달 전문가가 낙찰 전략을 함께 짭니다.' },
-            ].map((item) => (
-              <div key={item.title} className="group p-6 md:p-8 rounded-2xl border border-border/50 bg-card hover:border-primary/20 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-500">
-                <div className="w-11 h-11 rounded-xl bg-primary/8 flex items-center justify-center mb-5 group-hover:bg-primary/12 transition-colors duration-500">
-                  <item.icon className="w-5 h-5 text-primary" />
-                </div>
-                <h3 className="font-semibold text-base mb-2 tracking-tight">{item.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+              { value: `${stats?.productCount || 0}+`, label: '검증 템플릿' },
+              { value: '6', label: '전문 분야' },
+              { value: '100%', label: '원본 파일 제공' },
+              { value: '5분', label: '결제 후 즉시 다운로드', hideOnMobile: true },
+            ].map((s) => (
+              <div key={s.label} className={s.hideOnMobile ? 'hidden md:block' : ''}>
+                <p className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">{s.value}</p>
+                <p className="text-xs md:text-sm text-gray-500 mt-1.5">{s.label}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* Category Showcase */}
-      <section className="py-24 md:py-32 bg-card border-y border-border/50">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-8">
-          <div className="flex items-end justify-between mb-12">
-            <div>
-              <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">CATEGORIES</p>
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">카테고리별 탐색</h2>
-            </div>
-            <Link href="/store" className="hidden md:inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors group">
-              전체보기
-              <ChevronRight className="w-4 h-4 ml-0.5 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {/* Category boxes */}
+          <div className="grid grid-cols-3 gap-4 mt-10">
             {categoryCounts.map((cat) => (
               <Link
                 key={cat.id}
                 href={`/store?category=${cat.id}`}
                 aria-label={`${cat.name} 카테고리 보기`}
-                className="group flex flex-col items-center justify-center p-6 rounded-2xl border border-border/50 bg-background hover:border-primary/30 hover:shadow-[0_4px_20px_rgba(0,0,0,0.04)] transition-all duration-500 text-center"
+                className="group flex flex-col items-center justify-center p-6 rounded-2xl border border-gray-100 bg-white hover:border-blue-200 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-500 text-center"
               >
-                <div className="w-10 h-10 rounded-xl bg-primary/8 flex items-center justify-center mb-3 group-hover:bg-primary/12 transition-colors duration-500">
-                  <FileText className="w-5 h-5 text-primary" />
+                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mb-3 group-hover:bg-blue-100 transition-colors duration-500">
+                  <FileText className="w-5 h-5 text-blue-600" />
                 </div>
-                <span className="font-semibold text-sm tracking-tight group-hover:text-primary transition-colors duration-300">{cat.name}</span>
-                <span className="text-xs text-muted-foreground mt-1">{cat.count}개</span>
+                <span className="font-semibold text-sm tracking-tight text-gray-900 group-hover:text-blue-600 transition-colors duration-300">{cat.name}</span>
+                <span className="text-xs text-gray-400 mt-1">{cat.count}개</span>
               </Link>
             ))}
           </div>
         </div>
       </section>
+
+      {/* Value Props — Editorial bento: 1 blue primary + 3 white */}
+      <section className="py-20 md:py-28 bg-white">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+          <div className="mb-12 md:mb-16 max-w-2xl">
+            <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-3">왜 프리세일즈</p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 leading-tight">
+              낙찰 기록이 있는 제안서,<br />
+              한 페이지에서 전부.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
+            {[
+              {
+                icon: FileText,
+                title: '실전 제안서',
+                desc: '실제 수주에 성공한 제안서 그대로. 어떤 구조로, 어떤 말로 평가위원을 설득했는지 확인하세요.',
+                primary: true,
+              },
+              {
+                icon: Download,
+                title: '즉시 다운로드',
+                desc: '결제 후 5초 안에 PPT/HWP 원본 파일을 받습니다. 폰트·구조 전부 수정 가능.',
+              },
+              {
+                icon: Globe,
+                title: '나라장터 최적화',
+                desc: '나라장터 평가표 항목별로 점수를 챙기는 구조. 감점 포인트를 미리 막습니다.',
+              },
+              {
+                icon: Handshake,
+                title: '전문가 컨설팅',
+                desc: '공고 분석부터 발표 리허설까지. 공공조달 전문가가 낙찰 전략을 함께 짭니다.',
+              },
+            ].map((item) =>
+              item.primary ? (
+                <div
+                  key={item.title}
+                  className="rounded-2xl bg-blue-600 text-white p-8 md:p-10 flex flex-col justify-between min-h-[280px]"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center">
+                    <item.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-xl md:text-2xl mb-3 tracking-tight">{item.title}</h3>
+                    <p className="text-sm md:text-[15px] text-blue-50 leading-relaxed">
+                      {item.desc}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div
+                  key={item.title}
+                  className="group rounded-2xl bg-gray-50 border border-gray-100 p-8 md:p-10 flex flex-col justify-between min-h-[280px] hover:border-blue-200 hover:bg-white hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-500"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors duration-500">
+                    <item.icon className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-xl md:text-2xl mb-3 tracking-tight text-gray-900">{item.title}</h3>
+                    <p className="text-sm md:text-[15px] text-gray-500 leading-relaxed">{item.desc}</p>
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* New Arrivals */}
+      {!loadingProducts && newProducts.length > 0 && (
+        <section className="py-16 md:py-20 bg-gray-50">
+          <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+            <div className="flex items-end justify-between mb-10">
+              <div>
+                <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-2">신규 등록</p>
+                <h2 className="text-2xl md:text-3xl font-bold tracking-tight">새로 등록된 템플릿</h2>
+              </div>
+              <Link href="/store?sort=latest" className="hidden md:inline-flex items-center h-10 px-5 rounded-full border border-border bg-card hover:bg-muted text-sm font-medium transition-all duration-300 group">
+                전체보기 <ArrowRight className="ml-1.5 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
+              {newProducts.map((product) => (
+                <FeaturedCard key={product.id} product={product} categoryNames={getCategoryNames(product)} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Featured Products */}
       <section className="py-24 md:py-32">
@@ -366,7 +471,7 @@ export default function Home() {
           <div className="flex items-end justify-between mb-12">
             <div>
               <div className="flex items-center gap-3 mb-3">
-                <p className="text-xs font-semibold text-primary uppercase tracking-widest">BEST SELLERS</p>
+                <p className="text-xs font-semibold text-primary uppercase tracking-widest">인기 제안서</p>
                 <Badge className="bg-amber-50 text-amber-700 border-amber-200/50 text-[10px] font-semibold">TOP</Badge>
               </div>
               <h2 className="text-2xl md:text-3xl font-bold tracking-tight">인기 상품</h2>
@@ -376,14 +481,14 @@ export default function Home() {
               href="/store"
               className="hidden md:inline-flex items-center h-10 px-5 rounded-full border border-border bg-card hover:bg-muted text-sm font-medium transition-all duration-300 group"
             >
-              전체보기
+              {stats?.productCount || 0}개+ 전체 템플릿 보기
               <ArrowRight className="ml-1.5 w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
             {loadingProducts
-              ? Array.from({ length: 6 }).map((_, i) => <FeaturedCardSkeleton key={i} />)
-              : products.slice(0, 6).map((product) => (
+              ? Array.from({ length: 15 }).map((_, i) => <FeaturedCardSkeleton key={i} />)
+              : products.slice(0, 15).map((product) => (
                   <FeaturedCard key={product.id} product={product} categoryNames={getCategoryNames(product)} />
                 ))
             }
@@ -412,7 +517,7 @@ export default function Home() {
         <section className="py-24 md:py-32 bg-card border-y border-border/50">
           <div className="max-w-[1400px] mx-auto px-4 md:px-8">
             <div className="text-center mb-14">
-              <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">TESTIMONIALS</p>
+              <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">낙찰 후기</p>
               <h2 className="text-2xl md:text-3xl font-bold tracking-tight">낙찰 후기</h2>
               <p className="text-muted-foreground mt-2">"이 제안서로 실제 수주했습니다"</p>
             </div>
@@ -441,6 +546,22 @@ export default function Home() {
           </div>
         </section>
       )}
+
+      {/* Post-Review CTA */}
+      <section className="py-16 md:py-20 bg-white">
+        <div className="max-w-[1400px] mx-auto px-4 md:px-8 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-4">검증된 제안서로 다음 입찰을 준비하세요</h2>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">실제 낙찰 기록이 있는 제안서 {stats?.productCount || 0}개+를 지금 확인하세요.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/store" className="inline-flex items-center justify-center h-12 px-8 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-all duration-300 active:scale-[0.98] shadow-lg shadow-blue-600/25">
+              제안서 템플릿 보기 <ArrowRight className="ml-2 w-4 h-4" />
+            </Link>
+            <Link href="/store?price=free" className="inline-flex items-center justify-center h-12 px-8 rounded-full bg-white border border-gray-200 text-gray-800 hover:border-blue-300 hover:text-blue-700 font-semibold text-sm transition-all duration-300">
+              무료 샘플 먼저 받기
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* CTA */}
       <section className="py-24 md:py-32 bg-[#0C1220] text-white relative overflow-hidden">

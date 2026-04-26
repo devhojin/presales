@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import {
   RefreshCw, Search, Eye, EyeOff, ExternalLink, Trash2, Loader2, X,
   AlertCircle, Rss, ArrowLeft, Clock,
@@ -28,6 +29,7 @@ type ModalType = 'delete' | 'permanentDelete' | null
 function ConfirmModal({ type, count, onConfirm, onCancel }: {
   type: ModalType; count: number; onConfirm: () => void; onCancel: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   useEffect(() => {
     if (!type) return
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
@@ -38,8 +40,8 @@ function ConfirmModal({ type, count, onConfirm, onCancel }: {
   const isPerma = type === 'permanentDelete'
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onCancel}>
-      <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" onClick={e => e.stopPropagation()}>
-        <h3 className="text-lg font-bold mb-3">{isPerma ? '완전삭제 확인' : '삭제 확인'}</h3>
+      <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" style={modalStyle} onClick={e => e.stopPropagation()}>
+        <h3 className="text-lg font-bold mb-3 cursor-move select-none" onMouseDown={handleMouseDown}>{isPerma ? '완전삭제 확인' : '삭제 확인'}</h3>
         <p className="text-sm text-muted-foreground mb-4">
           선택한 <strong>{count}건</strong>을 {isPerma ? '완전삭제' : '삭제'}하시겠습니까?
           {isPerma && <span className="block text-red-600 mt-1">완전삭제된 피드는 다시 수집되지 않습니다.</span>}
@@ -54,6 +56,7 @@ function ConfirmModal({ type, count, onConfirm, onCancel }: {
 }
 
 export default function AdminFeedsPage() {
+  const { handleMouseDown: handleFetchModalMouseDown, modalStyle: fetchModalStyle } = useDraggableModal()
   const supabase = useMemo(() => createClient(), [])
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -163,34 +166,38 @@ export default function AdminFeedsPage() {
           setFetchingNow(false)
           evtSource.close()
         }
-      } catch {}
+      } catch (err) {
+        console.warn('[admin/feeds] SSE 파싱 오류:', err)
+      }
     }
     evtSource.onerror = () => { setFetchDone(true); setFetchingNow(false); evtSource.close() }
   }
 
   const handleTogglePublish = async (id: string, publish: boolean) => {
     const { error } = await supabase.from('community_posts').update({ is_published: publish }).eq('id', id)
-    if (!error) {
-      setFeeds(prev => prev.map(f => f.id === id ? { ...f, is_published: publish } : f))
-      showToast(publish ? '공개 전환' : '비공개 전환')
-    }
+    if (error) { showToast(`변경 실패: ${error.message}`); return }
+    setFeeds(prev => prev.map(f => f.id === id ? { ...f, is_published: publish } : f))
+    showToast(publish ? '공개 전환' : '비공개 전환')
   }
 
   const handleBulkPublish = async () => {
     const ids = Array.from(selectedIds)
     const { error } = await supabase.from('community_posts').update({ is_published: true }).in('id', ids)
-    if (!error) { showToast(`${ids.length}건 공개`); setSelectedIds(new Set()); fetchFeeds() }
+    if (error) { showToast(`일괄 공개 실패: ${error.message}`); return }
+    showToast(`${ids.length}건 공개`); setSelectedIds(new Set()); fetchFeeds()
   }
 
   const handleBulkUnpublish = async () => {
     const ids = Array.from(selectedIds)
     const { error } = await supabase.from('community_posts').update({ is_published: false }).in('id', ids)
-    if (!error) { showToast(`${ids.length}건 비공개`); setSelectedIds(new Set()); fetchFeeds() }
+    if (error) { showToast(`일괄 비공개 실패: ${error.message}`); return }
+    showToast(`${ids.length}건 비공개`); setSelectedIds(new Set()); fetchFeeds()
   }
 
   const handlePublishAll = async () => {
     const { error } = await supabase.from('community_posts').update({ is_published: true }).eq('is_published', false)
-    if (!error) { showToast('전체 공개 완료'); setSelectedIds(new Set()); fetchFeeds() }
+    if (error) { showToast(`전체 공개 실패: ${error.message}`); return }
+    showToast('전체 공개 완료'); setSelectedIds(new Set()); fetchFeeds()
   }
 
   const handleDelete = async () => {
@@ -210,10 +217,14 @@ export default function AdminFeedsPage() {
       const ids = Array.from(selectedIds)
       const selected = feeds.filter(f => ids.includes(f.id))
       const toBlock = selected.filter(f => f.source !== 'manual').map(f => ({ source: f.source, external_id: f.id, title: f.title, reason: '관리자 완전삭제' }))
-      if (toBlock.length > 0) await supabase.from('blocked_community_posts').upsert(toBlock, { onConflict: 'source,external_id' })
-      await supabase.from('community_posts').delete().in('id', ids)
+      if (toBlock.length > 0) {
+        const { error: blockErr } = await supabase.from('blocked_community_posts').upsert(toBlock, { onConflict: 'source,external_id' })
+        if (blockErr) { showToast(`차단 목록 업데이트 실패: ${blockErr.message}`); return }
+      }
+      const { error: delErr } = await supabase.from('community_posts').delete().in('id', ids)
+      if (delErr) { showToast(`완전삭제 실패: ${delErr.message}`); return }
       showToast(`${ids.length}건 완전삭제`); setSelectedIds(new Set()); await fetchFeeds()
-    } catch { showToast('완전삭제 실패') }
+    } catch (e) { showToast(`완전삭제 실패: ${e instanceof Error ? e.message : '알 수 없는 오류'}`) }
     finally { setDeleting(false); setModalType(null) }
   }
 
@@ -230,9 +241,9 @@ export default function AdminFeedsPage() {
   ]
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between shrink-0">
         <div>
           <h1 className="text-xl font-bold flex items-center gap-2"><Rss className="w-5 h-5 text-primary" />IT피드 관리</h1>
           <p className="text-sm text-muted-foreground mt-0.5">스타트업 뉴스, 정책소식 등을 관리합니다</p>
@@ -297,15 +308,15 @@ export default function AdminFeedsPage() {
       ) : error ? (
         <div className="text-center py-12"><AlertCircle className="w-8 h-8 text-destructive mx-auto mb-2" /><p className="text-sm text-destructive">{error}</p></div>
       ) : (
-        <div className="flex gap-0 border border-border/50 rounded-2xl bg-card items-start">
-          {/* LEFT (페이지와 함께 스크롤) */}
-          <div className={`${showDetail ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-[38%] border-r border-border/50 rounded-l-2xl overflow-hidden`}>
-            <div className="px-4 py-2.5 border-b border-border/50 bg-muted/30 flex items-center gap-3">
+        <div className="flex gap-4 items-start">
+          {/* LEFT: List (페이지 스크롤과 함께 움직임) */}
+          <div className={`${showDetail ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-[38%] border border-border/50 rounded-2xl bg-card overflow-hidden`}>
+            <div className="px-4 py-2.5 border-b border-border/50 bg-muted/30 flex items-center gap-3 shrink-0">
               <input type="checkbox" checked={pagedFeeds.length > 0 && pagedFeeds.every(f => selectedIds.has(f.id))}
                 onChange={toggleSelectAll} className="w-4 h-4 rounded cursor-pointer" />
               <span className="text-xs text-muted-foreground">{totalItems}건</span>
             </div>
-            <div className="flex-1 divide-y divide-border/50">
+            <div className="divide-y divide-border/50">
               {pagedFeeds.map(feed => {
                 const isActive = feed.id === selectedId
                 return (
@@ -330,7 +341,7 @@ export default function AdminFeedsPage() {
               {pagedFeeds.length === 0 && <div className="p-8 text-center text-muted-foreground text-sm">피드가 없습니다</div>}
             </div>
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/50 bg-muted/20">
+              <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/50 bg-muted/20 shrink-0">
                 <span className="text-xs text-muted-foreground">{safePage}/{totalPages}</span>
                 <div className="flex gap-1">
                   <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePage <= 1} className="px-2 py-1 text-xs rounded bg-muted disabled:opacity-40 cursor-pointer">이전</button>
@@ -340,10 +351,10 @@ export default function AdminFeedsPage() {
             )}
           </div>
 
-          {/* RIGHT (sticky) */}
+          {/* RIGHT: Detail (sticky — 뷰포트 고정) */}
           <div
-            className={`${showDetail ? 'flex' : 'hidden lg:flex'} flex-col flex-1 overflow-hidden sticky self-start rounded-r-2xl`}
-            style={{ top: '16px', height: 'calc(100vh - 40px)' }}
+            className={`${showDetail ? 'flex' : 'hidden lg:flex'} flex-col flex-1 border border-border/50 rounded-2xl bg-card overflow-hidden sticky self-start`}
+            style={{ top: '80px', height: 'calc(100vh - 100px)' }}
           >
             {selectedFeed ? (
               <AdminFeedDetail feed={selectedFeed}
@@ -365,9 +376,9 @@ export default function AdminFeedsPage() {
       {/* Fetch Progress Modal */}
       {fetchModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => { if (fetchDone) setFetchModal(false) }}>
-          <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" style={fetchModalStyle} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold flex items-center gap-2">
+              <h3 className="text-lg font-bold flex items-center gap-2 cursor-move select-none" onMouseDown={handleFetchModalMouseDown}>
                 {fetchDone ? <Rss className="w-5 h-5 text-primary" /> : <Loader2 className="w-5 h-5 animate-spin text-primary" />}
                 IT피드 수집 {fetchDone ? '완료' : '진행 중'}
               </h3>
@@ -422,7 +433,7 @@ function AdminFeedDetail({ feed, onTogglePublish, onBack }: {
 }) {
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="lg:hidden px-4 py-3 border-b border-border/50">
+      <div className="lg:hidden px-4 py-3 border-b border-border/50 sticky top-0 bg-card z-10">
         <button onClick={onBack} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer">
           <ArrowLeft className="w-4 h-4" /> 목록으로
         </button>

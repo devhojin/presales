@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { Badge } from '@/components/ui/badge'
 import {
   Mail, Users, Calendar, Trash2, Plus, X, Loader2, Send,
@@ -45,6 +46,8 @@ function formatDateTime(d: string) {
 }
 
 export default function AdminBriefPage() {
+  const { handleMouseDown: handleAddModalMouseDown, modalStyle: addModalStyle } = useDraggableModal()
+  const { handleMouseDown: handleDeleteModalMouseDown, modalStyle: deleteModalStyle } = useDraggableModal()
   const [tab, setTab] = useState<'subscribers' | 'briefs'>('subscribers')
   const [subscribers, setSubscribers] = useState<Subscriber[]>([])
   const [briefs, setBriefs] = useState<Brief[]>([])
@@ -359,8 +362,8 @@ export default function AdminBriefPage() {
       {/* Add Subscriber Modal */}
       {showAddForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowAddForm(false)}>
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl" style={addModalStyle} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5 cursor-move select-none" onMouseDown={handleAddModalMouseDown}>
               <h2 className="text-lg font-semibold">구독자 추가</h2>
               <button onClick={() => setShowAddForm(false)} className="text-muted-foreground hover:text-foreground cursor-pointer">
                 <X className="w-5 h-5" />
@@ -402,8 +405,8 @@ export default function AdminBriefPage() {
       {/* Delete Confirm Modal */}
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setDeleteTarget(null)}>
-          <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-lg font-semibold mb-2">구독자 삭제</h3>
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full mx-4 shadow-xl" style={deleteModalStyle} onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold mb-2 cursor-move select-none" onMouseDown={handleDeleteModalMouseDown}>구독자 삭제</h3>
             <p className="text-sm text-muted-foreground mb-1">
               <strong>{deleteTarget.email}</strong>
             </p>

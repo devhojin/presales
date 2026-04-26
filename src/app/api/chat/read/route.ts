@@ -12,6 +12,18 @@ export async function POST(request: NextRequest) {
   if (user) {
     const admin = await isAdmin(user.id)
 
+    // 회원 — 자기 방만 읽음 처리 가능 (관리자는 전체)
+    if (!admin) {
+      const { data: room } = await supabase
+        .from('chat_rooms')
+        .select('user_id')
+        .eq('id', room_id)
+        .single()
+      if (!room || room.user_id !== user.id) {
+        return NextResponse.json({ error: '방 접근 권한이 없습니다' }, { status: 403 })
+      }
+    }
+
     // 메시지 읽음 처리 (상대방이 보낸 것만) + unread 카운트 동기화
     if (admin) {
       await supabase
@@ -42,8 +54,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
-  // 비회원
+  // 비회원 — guest_id 가 해당 room 의 소유자인지 DB 조회로 검증
   if (guest_id) {
+    const { data: room } = await supabase
+      .from('chat_rooms')
+      .select('guest_id')
+      .eq('id', room_id)
+      .single()
+    if (!room || room.guest_id !== guest_id) {
+      return NextResponse.json({ error: '방 접근 권한이 없습니다' }, { status: 403 })
+    }
+
     await supabase
       .from('chat_messages')
       .update({ is_read: true })

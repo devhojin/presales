@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.codex.example
 
 # vercel
 .vercel
@@ -44,3 +45,11 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+documents_presales/작업/
+
+# 빌드 산출물 로그
+build-output.log
+.playwright-mcp/
+
+# thumbnail regeneration backup snapshots
+public/thumbnails_backup_*/

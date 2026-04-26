@@ -1,5 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -10,8 +10,13 @@ import { NextRequest, NextResponse } from 'next/server'
  * - DELETE: Delete announcement(s)
  */
 
+// 판별 유니온 — 성공 시 supabase 가 non-null 로 좁혀짐 (! 어설션 불필요)
+type AdminAuthResult =
+  | { error: 'unauthorized' | 'forbidden'; user: null; supabase: null }
+  | { error: null; user: User; supabase: SupabaseClient }
+
 // Helper: Auth check
-async function getAdminAuth() {
+async function getAdminAuth(): Promise<AdminAuthResult> {
   const cookieStore = await cookies()
   const supabaseAuth = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -67,7 +72,7 @@ export async function GET(request: NextRequest) {
   const source = searchParams.get('source') || '' // K-Startup, etc.
 
   try {
-    let query = supabase!.from('announcements').select('*', { count: 'exact' })
+    let query = supabase.from('announcements').select('*', { count: 'exact' })
 
     // Status filter
     if (status === 'active') {
@@ -90,7 +95,9 @@ export async function GET(request: NextRequest) {
 
     // Search filter (title, organization, description)
     if (search) {
-      query = query.or(`title.ilike.%${search}%,organization.ilike.%${search}%,description.ilike.%${search}%`)
+      // ilike 패턴 문자(%, _) 이스케이프 → DoS 유발 패턴 남용 방지
+      const safe = search.replace(/[%_\\]/g, (m) => '\\' + m)
+      query = query.or(`title.ilike.%${safe}%,organization.ilike.%${safe}%,description.ilike.%${safe}%`)
     }
 
     // Pagination
@@ -176,7 +183,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Bulk update
-    const { error: updateError } = await supabase!
+    const { error: updateError } = await supabase
       .from('announcements')
       .update({ ...filteredUpdates, updated_at: new Date().toISOString() })
       .in('id', updateIds)
@@ -186,7 +193,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Log changes for each updated announcement
-    const { data: announcements } = await supabase!
+    const { data: announcements } = await supabase
       .from('announcements')
       .select('id, title')
       .in('id', updateIds)
@@ -198,7 +205,7 @@ export async function PATCH(request: NextRequest) {
         announcement_title: ann.title || '',
         detail: `수정됨: ${Object.keys(filteredUpdates).join(', ')}`,
       }))
-      await supabase!.from('announcement_logs').insert(logs)
+      await supabase.from('announcement_logs').insert(logs)
     }
 
     return NextResponse.json({ success: true, updated: updateIds.length })
@@ -234,13 +241,13 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get announcements for logging
-    const { data: announcements } = await supabase!
+    const { data: announcements } = await supabase
       .from('announcements')
       .select('id, title, external_id')
       .in('id', numIds)
 
     // Delete from announcements table
-    const { error: deleteError } = await supabase!
+    const { error: deleteError } = await supabase
       .from('announcements')
       .delete()
       .in('id', numIds)
@@ -259,13 +266,13 @@ export async function DELETE(request: NextRequest) {
         }))
 
       if (blockedRows.length > 0) {
-        await supabase!.from('blocked_announcements').insert(blockedRows)
+        await supabase.from('blocked_announcements').insert(blockedRows)
       }
     }
 
     // Log deletions
     for (const announcement of announcements || []) {
-      await supabase!.from('announcement_logs').insert({
+      await supabase.from('announcement_logs').insert({
         action: 'deleted',
         announcement_id: announcement.id,
         announcement_title: announcement.title || '',

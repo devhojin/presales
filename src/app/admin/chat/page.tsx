@@ -6,7 +6,55 @@ import {
   User, Mail, Phone, Building, CreditCard, AlertTriangle, Clock,
   ChevronDown, Image as ImageIcon, XCircle, Trash2,
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase'
 import type { ChatRoom, ChatMessage } from '@/lib/chat'
+import { MAX_FILE_SIZE, MAX_FILE_SIZE_LABEL } from '@/lib/chat-constants'
+import { uploadFile } from '@/lib/storage-upload'
+import { fetchSignedUrl } from '@/lib/storage-signed-url'
+
+// DB 에는 storage path 만 저장 → 렌더 시점에 서명 URL 재발급 (admin 은 모든 방 접근 가능)
+function useAdminChatSignedUrl(storedValue: string | null | undefined) {
+  const [url, setUrl] = useState<string | null>(null)
+  useEffect(() => {
+    if (!storedValue) { setUrl(null); return }
+    let aborted = false
+    fetchSignedUrl({ bucket: 'chat-files', storedValue }).then((signed) => {
+      if (!aborted) setUrl(signed)
+    })
+    return () => { aborted = true }
+  }, [storedValue])
+  return url
+}
+
+function AdminChatImage({ msg }: { msg: ChatMessage }) {
+  const url = useAdminChatSignedUrl(msg.file_url)
+  if (!url) return <span className="text-xs opacity-70">이미지 불러오는 중...</span>
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer">
+      <img src={url} alt={msg.file_name || '이미지'} className="max-w-full max-h-60 rounded-lg" />
+    </a>
+  )
+}
+
+function AdminChatFile({ msg, isAdmin }: { msg: ChatMessage; isAdmin: boolean }) {
+  const url = useAdminChatSignedUrl(msg.file_url)
+  const colorClass = isAdmin ? 'text-white/90 hover:text-white' : 'text-foreground hover:text-primary'
+  if (!url) {
+    return (
+      <span className={`flex items-center gap-2 opacity-70 ${colorClass}`}>
+        <FileText className="w-4 h-4 shrink-0" />
+        <span className="truncate text-xs">{msg.file_name || '파일'}</span>
+      </span>
+    )
+  }
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-2 ${colorClass}`}>
+      <FileText className="w-4 h-4 shrink-0" />
+      <span className="truncate text-xs">{msg.file_name}</span>
+      <Download className="w-3.5 h-3.5 shrink-0" />
+    </a>
+  )
+}
 
 const BLOCKED_EXTENSIONS = [
   '.exe', '.bat', '.cmd', '.com', '.msi', '.scr', '.pif',
@@ -14,6 +62,35 @@ const BLOCKED_EXTENSIONS = [
   '.ps1', '.ps2', '.psc1', '.psc2', '.reg', '.inf', '.lnk',
   '.dll', '.sys', '.drv', '.cpl',
 ]
+
+type ChatUploadResult = {
+  url: string
+  name: string
+  size: number
+  type: string
+  fileType: 'image' | 'file'
+}
+
+async function uploadAdminChatFile(file: File, roomId: string): Promise<ChatUploadResult | null> {
+  const lastDot = file.name.lastIndexOf('.')
+  const ext = lastDot > 0 ? file.name.slice(lastDot) : ''
+  const safeName = `${roomId}/${Date.now()}_${Math.random().toString(36).slice(2, 10)}${ext}`
+  const result = await uploadFile({
+    bucket: 'chat-files',
+    path: safeName,
+    file,
+    contentType: file.type,
+  })
+  if (!result.ok) return null
+  // DB 에는 storage path 만 저장. 표시 시점에 서명 URL 재발급.
+  return {
+    url: safeName,
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    fileType: file.type.startsWith('image/') ? 'image' : 'file',
+  }
+}
 
 function isBlocked(name: string) {
   const ext = name.toLowerCase().slice(name.lastIndexOf('.'))
@@ -296,10 +373,26 @@ export default function AdminChatPage() {
 
   useEffect(() => { loadRooms() }, [loadRooms])
 
-  // 폴링: 방 목록 5초마다 갱신
+  // Realtime 구독: 채팅방 목록 실시간 갱신 (INSERT / UPDATE)
   useEffect(() => {
-    const interval = setInterval(loadRooms, 5000)
-    return () => clearInterval(interval)
+    const supabase = createClient()
+    const channel = supabase
+      .channel('admin-chat-rooms')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_rooms' },
+        () => { loadRooms() }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'chat_rooms' },
+        () => { loadRooms() }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [loadRooms])
 
   // 메시지 로드
@@ -337,17 +430,26 @@ export default function AdminChatPage() {
     loadMessages(room.id)
   }
 
-  // 폴링: 선택한 방의 메시지 3초마다 갱신
+  // Realtime 구독: 선택한 방의 새 메시지 실시간 수신
   useEffect(() => {
     if (!selectedRoom) return
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/chat/messages?room_id=${selectedRoom.id}`)
-        const data = await res.json()
-        if (data.messages) {
+
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`admin-chat-messages-${selectedRoom.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `room_id=eq.${selectedRoom.id}`,
+        },
+        (payload) => {
+          const newMsg = payload.new as ChatMessage
           setMessages((prev) => {
-            if (prev.length === data.messages.length) return prev
-            return data.messages
+            if (prev.some((m) => m.id === newMsg.id)) return prev
+            return [...prev, newMsg]
           })
           // 읽음 처리
           fetch('/api/chat/read', {
@@ -356,9 +458,12 @@ export default function AdminChatPage() {
             body: JSON.stringify({ room_id: selectedRoom.id }),
           })
         }
-      } catch { /* ignore */ }
-    }, 3000)
-    return () => clearInterval(interval)
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [selectedRoom])
 
   useEffect(() => {
@@ -399,21 +504,16 @@ export default function AdminChatPage() {
       e.target.value = ''
       return
     }
-    if (file.size > 10 * 1024 * 1024) {
-      setError('파일 10MB 이하만 가능')
+    if (file.size > MAX_FILE_SIZE) {
+      setError(`파일 ${MAX_FILE_SIZE_LABEL} 이하만 가능`)
       e.target.value = ''
       return
     }
 
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('room_id', selectedRoom.id)
-      const uploadRes = await fetch('/api/chat/files', { method: 'POST', body: formData })
-      const uploadData = await uploadRes.json()
-
-      if (uploadData.error) { setError(uploadData.error); return }
+      const uploadData = await uploadAdminChatFile(file, selectedRoom.id)
+      if (!uploadData) { setError('파일 업로드 실패'); return }
 
       await fetch('/api/chat/messages', {
         method: 'POST',
@@ -444,13 +544,9 @@ export default function AdminChatPage() {
         setUploading(true)
         const ext = blob.type.split('/')[1] || 'png'
         const file = new File([blob], `clipboard_${Date.now()}.${ext}`, { type: blob.type })
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('room_id', selectedRoom.id)
         try {
-          const uploadRes = await fetch('/api/chat/files', { method: 'POST', body: formData })
-          const uploadData = await uploadRes.json()
-          if (!uploadData.error) {
+          const uploadData = await uploadAdminChatFile(file, selectedRoom.id)
+          if (uploadData) {
             await fetch('/api/chat/messages', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -575,16 +671,9 @@ export default function AdminChatPage() {
             isAdmin ? 'bg-blue-700 text-white rounded-br-md' : 'bg-muted/70 text-foreground rounded-bl-md'
           }`}>
             {(msg.message_type === 'image' && msg.file_url) ? (
-              <a href={msg.file_url} target="_blank" rel="noopener noreferrer">
-                <img src={msg.file_url} alt={msg.file_name || '이미지'} className="max-w-full max-h-60 rounded-lg" />
-              </a>
+              <AdminChatImage msg={msg} />
             ) : (msg.message_type === 'file' && msg.file_url) ? (
-              <a href={msg.file_url} target="_blank" rel="noopener noreferrer"
-                className={`flex items-center gap-2 ${isAdmin ? 'text-white/90 hover:text-white' : 'text-foreground hover:text-primary'}`}>
-                <FileText className="w-4 h-4 shrink-0" />
-                <span className="truncate text-xs">{msg.file_name}</span>
-                <Download className="w-3.5 h-3.5 shrink-0" />
-              </a>
+              <AdminChatFile msg={msg} isAdmin={isAdmin} />
             ) : (
               <p className="whitespace-pre-wrap">{msg.content}</p>
             )}

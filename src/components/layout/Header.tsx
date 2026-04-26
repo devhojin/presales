@@ -12,7 +12,7 @@ const navLinks = [
   { href: '/us', label: '우리는' },
   { href: '/store', label: '문서 스토어' },
   { href: '/consulting', label: '컨설팅' },
-  { href: '/announcements', label: '공고 사업' },
+  { href: '/announcements', label: '입찰 공고' },
   { href: '/feeds', label: 'IT피드' },
   { href: '/brief', label: '모닝 브리프' },
   { href: '/faq', label: '고객지원' },
@@ -165,12 +165,12 @@ export function Header() {
                       className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-muted/80 transition-colors mx-1.5 rounded-lg"
                     >
                       <span className="flex items-center gap-2.5">
-                        <User className="w-4 h-4 text-muted-foreground" /> 나의콘솔
+                        <User className="w-4 h-4 text-muted-foreground" /> 마이페이지
                       </span>
                       <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                     </Link>
                     {profile?.role === 'admin' && (
-                      <Link
+                      <a
                         href="/admin"
                         onClick={() => setProfileMenu(false)}
                         className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-muted/80 transition-colors mx-1.5 rounded-lg"
@@ -179,7 +179,7 @@ export function Header() {
                           <Settings className="w-4 h-4 text-muted-foreground" /> 관리자
                         </span>
                         <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-                      </Link>
+                      </a>
                     )}
                     <div className="my-1 mx-3 border-t border-border" />
                     <button
@@ -203,7 +203,7 @@ export function Header() {
                   href="/auth/signup"
                   className="inline-flex items-center h-9 px-4 rounded-full text-sm font-medium bg-foreground text-background hover:bg-foreground/90 transition-all duration-300 active:scale-[0.98]"
                 >
-                  시작하기
+                  무료로 시작하기
                 </Link>
               </div>
             )}
@@ -215,6 +215,8 @@ export function Header() {
             <button
               className="min-w-[44px] min-h-[44px] flex items-center justify-center text-foreground"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="메뉴 열기"
+              aria-expanded={isMobileMenuOpen}
             >
               {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -224,9 +226,10 @@ export function Header() {
 
       {/* Mobile Menu — Full overlay (불투명 배경 + 스크롤 차단) */}
       <div
-        className={`md:hidden fixed inset-0 top-16 bg-background z-50 transition-all duration-500 overflow-y-auto ${
+        className={`md:hidden absolute left-0 right-0 top-16 bg-background z-[60] transition-all duration-500 overflow-y-auto ${
           isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
+        style={{ height: isMobileMenuOpen ? 'calc(100dvh - 4rem)' : 0 }}
       >
         <div className="flex flex-col px-6 pt-8 pb-6 min-h-full">
           <nav className="space-y-1 flex-1">
@@ -256,16 +259,16 @@ export function Header() {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full flex items-center justify-center h-12 rounded-xl border border-border hover:bg-muted text-sm font-medium transition-colors"
                 >
-                  나의콘솔
+                  마이페이지
                 </Link>
                 {profile?.role === 'admin' && (
-                  <Link
+                  <a
                     href="/admin"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="w-full flex items-center justify-center h-12 rounded-xl border border-border hover:bg-muted text-sm font-medium transition-colors"
                   >
                     관리자
-                  </Link>
+                  </a>
                 )}
                 <button
                   onClick={() => { handleLogout(); setIsMobileMenuOpen(false) }}
@@ -288,7 +291,7 @@ export function Header() {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full flex items-center justify-center h-12 rounded-xl bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition-colors"
                 >
-                  시작하기
+                  무료로 시작하기
                 </Link>
               </>
             )}

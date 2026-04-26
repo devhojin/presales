@@ -2,12 +2,12 @@
 
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
 import TextAlign from '@tiptap/extension-text-align'
 import Placeholder from '@tiptap/extension-placeholder'
 import Image from '@tiptap/extension-image'
-import { useRef } from 'react'
+// StarterKit 이 Link, Underline 을 이미 포함하므로 별도 import 제거 (중복 extension 경고 방지)
+import { useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase'
 import {
   Bold, Italic, Underline as UnderlineIcon, Strikethrough,
@@ -42,11 +42,39 @@ function ToolbarButton({ onClick, active, children, title }: {
 
 export function RichTextEditor({ content, onChange, placeholder }: RichTextEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const uploadingRef = useRef(false)
+  const editorRef = useRef<ReturnType<typeof useEditor>>(null)
+
+  const uploadImage = useCallback(async (file: File) => {
+    const ed = editorRef.current
+    if (!ed || uploadingRef.current) return
+    uploadingRef.current = true
+    try {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('이미지 크기는 5MB 이하여야 합니다.')
+        return
+      }
+      const supabase = createClient()
+      const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
+      const fileName = `blog/inline/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+      const { error } = await supabase.storage.from('product-thumbnails').upload(fileName, file)
+      if (error) {
+        alert('이미지 업로드 실패: ' + error.message)
+        return
+      }
+      const { data: urlData } = supabase.storage.from('product-thumbnails').getPublicUrl(fileName)
+      ed.chain().focus().setImage({ src: urlData.publicUrl }).run()
+    } finally {
+      uploadingRef.current = false
+    }
+  }, [])
 
   const editor = useEditor({
+    // Tiptap v3 + Next.js SSR 필수: immediatelyRender=false 없으면 hydration mismatch 로 전체 페이지 에러 바운더리 폴백
+    immediatelyRender: false,
     extensions: [
-      StarterKit,
-      Underline,
+      // StarterKit 의 기본 Link 설정을 override 하기 위해 StarterKit 의 link 비활성화 + 별도 configure
+      StarterKit.configure({ link: false }),
       Link.configure({ openOnClick: false }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Placeholder.configure({ placeholder: placeholder || '내용을 입력하세요...' }),
@@ -56,7 +84,37 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML())
     },
+    editorProps: {
+      handlePaste(_view, event) {
+        const items = event.clipboardData?.items
+        if (!items) return false
+        for (const item of items) {
+          if (item.type.startsWith('image/')) {
+            event.preventDefault()
+            const file = item.getAsFile()
+            if (file) uploadImage(file)
+            return true
+          }
+        }
+        return false
+      },
+      handleDrop(_view, event) {
+        const files = event.dataTransfer?.files
+        if (!files?.length) return false
+        for (const file of files) {
+          if (file.type.startsWith('image/')) {
+            event.preventDefault()
+            uploadImage(file)
+            return true
+          }
+        }
+        return false
+      },
+    },
   })
+
+  // editorRef를 항상 최신 editor 인스턴스로 유지
+  editorRef.current = editor
 
   if (!editor) return null
 
@@ -65,26 +123,6 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
     if (url) {
       editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
     }
-  }
-
-  const handleImageUpload = async (file: File) => {
-    if (file.size > 5 * 1024 * 1024) {
-      alert('이미지 크기는 5MB 이하여야 합니다.')
-      return
-    }
-
-    const supabase = createClient()
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'png'
-    const fileName = `blog/inline/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-
-    const { error } = await supabase.storage.from('product-thumbnails').upload(fileName, file)
-    if (error) {
-      alert('이미지 업로드 실패: ' + error.message)
-      return
-    }
-
-    const { data: urlData } = supabase.storage.from('product-thumbnails').getPublicUrl(fileName)
-    editor.chain().focus().setImage({ src: urlData.publicUrl }).run()
   }
 
   return (
@@ -167,7 +205,7 @@ export function RichTextEditor({ content, onChange, placeholder }: RichTextEdito
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0]
-          if (file) handleImageUpload(file)
+          if (file) uploadImage(file)
           e.target.value = ''
         }}
       />

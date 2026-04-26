@@ -55,7 +55,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
       .select('id, orders!inner(user_id, status)')
       .eq('product_id', productId)
       .eq('orders.user_id', user.id)
-      .eq('orders.status', 'paid')
+      .in('orders.status', ['paid', 'completed'])
       .limit(1)
       .then(({ data }) => {
         setHasPurchased((data?.length ?? 0) > 0)
@@ -145,8 +145,8 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
 
   function maskName(name: string | null | undefined): string {
     if (!name || name.length === 0) return '익명'
-    if (name.length === 1) return name + '**'
-    return name[0] + '**'
+    if (name.length === 1) return name + 'OO'
+    return name[0] + 'OO'
   }
 
   function formatDate(dateStr: string): string {
@@ -163,25 +163,27 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
     const isHelpful = helpfulSet.has(reviewId)
 
     if (isHelpful) {
-      await supabase
+      const { error } = await supabase
         .from('review_helpful')
         .delete()
         .eq('user_id', user.id)
         .eq('review_id', reviewId)
+      if (error) { alert(`도움됨 취소 실패: ${error.message}`); return }
       setHelpfulSet((prev) => {
         const next = new Set(prev)
         next.delete(reviewId)
         return next
       })
-      // Decrement
-      await supabase.rpc('decrement_helpful', { rid: reviewId })
+      const { error: rpcErr } = await supabase.rpc('decrement_helpful', { rid: reviewId })
+      if (rpcErr) console.warn('[reviews] helpful_count 감소 실패:', rpcErr.message)
     } else {
-      await supabase
+      const { error } = await supabase
         .from('review_helpful')
         .insert({ user_id: user.id, review_id: reviewId })
+      if (error) { alert(`도움됨 등록 실패: ${error.message}`); return }
       setHelpfulSet((prev) => new Set(prev).add(reviewId))
-      // Increment
-      await supabase.rpc('increment_helpful', { rid: reviewId })
+      const { error: rpcErr } = await supabase.rpc('increment_helpful', { rid: reviewId })
+      if (rpcErr) console.warn('[reviews] helpful_count 증가 실패:', rpcErr.message)
     }
 
     // Update local state
@@ -197,7 +199,15 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
   async function handleDelete() {
     if (!deleteTarget || !user) return
     const supabase = createClient()
-    await supabase.from('reviews').delete().eq('id', deleteTarget.id).eq('user_id', user.id)
+    const { error: delError } = await supabase
+      .from('reviews')
+      .delete()
+      .eq('id', deleteTarget.id)
+      .eq('user_id', user.id)
+    if (delError) {
+      alert(`리뷰 삭제에 실패했습니다: ${delError.message}`)
+      return
+    }
 
     // Update product stats
     const { data: remaining } = await supabase
@@ -207,12 +217,13 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
       .eq('is_published', true)
 
     const count = remaining?.length ?? 0
-    const avg = count > 0 ? remaining!.reduce((s, r) => s + r.rating, 0) / count : 0
+    const avg = count > 0 ? (remaining ?? []).reduce((s, r) => s + r.rating, 0) / count : 0
 
-    await supabase
+    const { error: statsErr } = await supabase
       .from('products')
       .update({ review_count: count, review_avg: Math.round(avg * 10) / 10 })
       .eq('id', productId)
+    if (statsErr) console.warn('[reviews] 상품 통계 업데이트 실패:', statsErr.message)
 
     setDeleteTarget(null)
     setUserReview(null)
@@ -338,7 +349,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
         <div className="py-12 text-center text-muted-foreground">불러오는 중...</div>
       ) : reviews.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">아직 리뷰가 없습니다.</p>
+          <p className="text-muted-foreground">아직 리뷰가 없습니다. 이 제안서로 입찰에 성공하셨다면 경험을 공유해주세요!</p>
         </div>
       ) : (
         <div className="space-y-4">

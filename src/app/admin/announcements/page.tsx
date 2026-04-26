@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import {
   Plus, Search, Megaphone, Calendar, Building2, ExternalLink, Eye, EyeOff,
   Trash2, X, Loader2, RefreshCw, Clock, AlertCircle, ArrowLeft,
@@ -25,6 +26,7 @@ const TYPE_COLORS: Record<string, string> = { government: 'bg-primary/10 text-pr
 function ConfirmModal({ type, count, onConfirm, onCancel }: {
   type: 'delete' | 'permanent-delete' | 'publish' | 'unpublish' | null; count: number; onConfirm: () => void; onCancel: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   useEffect(() => {
     if (!type) return
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
@@ -39,8 +41,8 @@ function ConfirmModal({ type, count, onConfirm, onCancel }: {
   const btnColor = isPermanent ? 'bg-red-600' : isPublish ? 'bg-primary' : isUnpublish ? 'bg-zinc-600' : 'bg-orange-500'
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onCancel}>
-      <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" onClick={e => e.stopPropagation()}>
-        <h3 className="text-lg font-bold mb-3">{label} 확인</h3>
+      <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" style={modalStyle} onClick={e => e.stopPropagation()}>
+        <h3 className="text-lg font-bold mb-3 cursor-move select-none" onMouseDown={handleMouseDown}>{label} 확인</h3>
         <p className="text-sm text-muted-foreground mb-4">
           선택한 <strong>{count}건</strong>을 {label} 처리하시겠습니까?
           {isPermanent && <span className="block text-red-600 mt-1">완전삭제된 공고는 복구할 수 없습니다.</span>}
@@ -57,6 +59,7 @@ function ConfirmModal({ type, count, onConfirm, onCancel }: {
 }
 
 export default function AdminAnnouncementsPage() {
+  const { handleMouseDown: handleFetchModalMouseDown, modalStyle: fetchModalStyle } = useDraggableModal()
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [tab, setTab] = useState<Tab>('all')
@@ -143,7 +146,10 @@ export default function AdminAnnouncementsPage() {
           setFetchingNow(false)
           evtSource.close()
         }
-      } catch {}
+      } catch (err) {
+        // SSE 메시지 파싱 실패 — 디버깅 용도로만 로그
+        console.warn('[admin/announcements] SSE 파싱 오류:', err)
+      }
     }
     evtSource.onerror = () => {
       setFetchDone(true)
@@ -154,7 +160,13 @@ export default function AdminAnnouncementsPage() {
 
   const handleTogglePublish = async (id: string, publish: boolean) => {
     const res = await fetch('/api/admin/announcements', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, is_published: publish }) })
-    if (res.ok) { showToast(publish ? '공개 전환' : '비공개 전환'); await fetchAnnouncements() }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({} as { error?: string }))
+      showToast(`변경 실패: ${body.error || res.statusText}`)
+      return
+    }
+    showToast(publish ? '공개 전환' : '비공개 전환')
+    await fetchAnnouncements()
   }
 
   const handleBulkAction = async (action: 'publish' | 'unpublish' | 'delete' | 'permanent-delete') => {
@@ -162,15 +174,21 @@ export default function AdminAnnouncementsPage() {
     setDeleting(true)
     try {
       const ids = Array.from(selectedIds)
+      let res: Response
       if (action === 'publish' || action === 'unpublish') {
-        await fetch('/api/admin/announcements', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, is_published: action === 'publish' }) })
-        showToast(`${ids.length}건 ${action === 'publish' ? '공개' : '비공개'}`)
+        res = await fetch('/api/admin/announcements', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, is_published: action === 'publish' }) })
       } else {
-        await fetch('/api/admin/announcements', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, permanent: action === 'permanent-delete' }) })
-        showToast(`${ids.length}건 ${action === 'permanent-delete' ? '완전삭제' : '삭제'}`)
+        res = await fetch('/api/admin/announcements', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids, permanent: action === 'permanent-delete' }) })
       }
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({} as { error?: string }))
+        showToast(`작업 실패: ${body.error || res.statusText}`)
+        return
+      }
+      const label = action === 'publish' ? '공개' : action === 'unpublish' ? '비공개' : action === 'permanent-delete' ? '완전삭제' : '삭제'
+      showToast(`${ids.length}건 ${label}`)
       setSelectedIds(new Set()); await fetchAnnouncements()
-    } catch (e) { showToast('작업 실패') }
+    } catch (e) { showToast(`작업 실패: ${e instanceof Error ? e.message : '알 수 없는 오류'}`) }
     finally { setDeleting(false); setModalType(null) }
   }
 
@@ -193,9 +211,9 @@ export default function AdminAnnouncementsPage() {
   ]
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
             <Megaphone className="w-5 h-5 text-primary" />
@@ -218,7 +236,7 @@ export default function AdminAnnouncementsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-border/50">
+      <div className="border-b border-border/50 shrink-0">
         <div className="flex gap-1 -mb-px">
           {TABS.map(t => (
             <button key={t.key} onClick={() => { setTab(t.key); setCurrentPage(1); setSelectedIds(new Set()) }}
@@ -230,7 +248,7 @@ export default function AdminAnnouncementsPage() {
       </div>
 
       {/* Search + Actions */}
-      <div className="flex gap-3 items-center">
+      <div className="flex gap-3 items-center shrink-0">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input type="text" placeholder="공고명 또는 기관명..." value={search} onChange={e => setSearch(e.target.value)}
@@ -264,16 +282,16 @@ export default function AdminAnnouncementsPage() {
       ) : error ? (
         <div className="text-center py-16"><AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-2" /><p className="text-sm text-red-500">{error}</p></div>
       ) : (
-        <div className="flex gap-0 border border-border/50 rounded-2xl bg-card items-start">
-          {/* LEFT: List (페이지와 함께 스크롤) */}
-          <div className={`${showDetail ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-[38%] border-r border-border/50 rounded-l-2xl overflow-hidden`}>
+        <div className="flex gap-4 items-start">
+          {/* LEFT: List (페이지와 함께 스크롤 — 자연 길이) */}
+          <div className={`${showDetail ? 'hidden lg:flex' : 'flex'} flex-col w-full lg:w-[38%] border border-border/50 rounded-2xl bg-card overflow-hidden`}>
             {/* Select all header */}
-            <div className="px-4 py-2.5 border-b border-border/50 bg-muted/30 flex items-center gap-3">
+            <div className="px-4 py-2.5 border-b border-border/50 bg-muted/30 flex items-center gap-3 shrink-0">
               <input type="checkbox" checked={announcements.length > 0 && announcements.every(a => selectedIds.has(a.id))}
                 onChange={togglePageSelectAll} className="w-4 h-4 rounded cursor-pointer" />
               <span className="text-xs text-muted-foreground">{totalCount}건</span>
             </div>
-            <div className="flex-1 divide-y divide-border/50">
+            <div className="divide-y divide-border/50">
               {announcements.map(item => {
                 const expired = isAnnExpired(item)
                 const isActive = item.id === selectedId
@@ -304,7 +322,7 @@ export default function AdminAnnouncementsPage() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/50 bg-muted/20">
+              <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/50 bg-muted/20 shrink-0">
                 <span className="text-xs text-muted-foreground">{currentPage}/{totalPages}</span>
                 <div className="flex gap-1">
                   <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}
@@ -316,10 +334,10 @@ export default function AdminAnnouncementsPage() {
             )}
           </div>
 
-          {/* RIGHT: Detail (sticky) */}
+          {/* RIGHT: Detail (sticky — 페이지 스크롤되어도 뷰포트 고정) */}
           <div
-            className={`${showDetail ? 'flex' : 'hidden lg:flex'} flex-col flex-1 overflow-hidden sticky self-start rounded-r-2xl`}
-            style={{ top: '16px', height: 'calc(100vh - 40px)' }}
+            className={`${showDetail ? 'flex' : 'hidden lg:flex'} flex-col flex-1 border border-border/50 rounded-2xl bg-card overflow-hidden sticky self-start`}
+            style={{ top: '80px', height: 'calc(100vh - 100px)' }}
           >
             {selectedAnn ? (
               <AdminAnnouncementDetail
@@ -346,9 +364,9 @@ export default function AdminAnnouncementsPage() {
       {/* Fetch Progress Modal */}
       {fetchModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => { if (fetchDone) setFetchModal(false) }}>
-          <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" style={fetchModalStyle} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold flex items-center gap-2">
+              <h3 className="text-lg font-bold flex items-center gap-2 cursor-move select-none" onMouseDown={handleFetchModalMouseDown}>
                 {fetchDone ? <Megaphone className="w-5 h-5 text-primary" /> : <Loader2 className="w-5 h-5 animate-spin text-primary" />}
                 공고 수집 {fetchDone ? '완료' : '진행 중'}
               </h3>
@@ -411,7 +429,7 @@ function AdminAnnouncementDetail({ announcement: ann, onTogglePublish, onBack }:
   const dday = calcDDay(ann.end_date)
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="lg:hidden px-4 py-3 border-b border-border/50">
+      <div className="lg:hidden px-4 py-3 border-b border-border/50 sticky top-0 bg-card z-10">
         <button onClick={onBack} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground cursor-pointer">
           <ArrowLeft className="w-4 h-4" /> 목록으로
         </button>

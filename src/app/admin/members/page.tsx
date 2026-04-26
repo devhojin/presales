@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
+import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { Badge } from '@/components/ui/badge'
 import {
   Search,
@@ -25,6 +26,7 @@ import {
   Users,
   FileDown,
   Star,
+  AlertTriangle,
 } from 'lucide-react'
 
 // ===========================
@@ -46,6 +48,8 @@ interface Profile {
   role: string
   admin_memo: string | null
   created_at: string
+  deleted_at?: string | null
+  deletion_reason?: string | null
 }
 
 function parseMemberMemos(raw: string | null): MemoEntry[] {
@@ -245,6 +249,8 @@ function ConfirmModal({
   onCancel: () => void
   loading: boolean
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
+
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onCancel()
@@ -256,8 +262,8 @@ function ConfirmModal({
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4">
-        <div className="flex items-center gap-3 mb-4">
+      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-sm w-full mx-4" style={modalStyle}>
+        <div className="flex items-center gap-3 mb-4 cursor-move" onMouseDown={handleMouseDown}>
           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${iconBg}`}>
             {icon}
           </div>
@@ -303,6 +309,7 @@ function MemoModal({
   onSave: (memoJson: string) => Promise<void>
   onCancel: () => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const [memos, setMemos] = useState<MemoEntry[]>(() => parseMemberMemos(initialMemoRaw))
   const [newContent, setNewContent] = useState('')
   const [saving, setSaving] = useState(false)
@@ -347,8 +354,8 @@ function MemoModal({
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
-      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4 max-h-[80vh] flex flex-col">
-        <div className="flex items-center justify-between mb-4 shrink-0">
+      <div className="relative bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4 max-h-[80vh] flex flex-col" style={modalStyle}>
+        <div className="flex items-center justify-between mb-4 shrink-0 cursor-move" onMouseDown={handleMouseDown}>
           <h3 className="text-sm font-semibold text-foreground">
             관리자 메모 - {memberName || '(이름 없음)'}
           </h3>
@@ -581,6 +588,7 @@ function MemberDetailModal({
   defaultTab?: ModalTab
   onMemberUpdated?: (updated: Profile) => void
 }) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
   const [activeTab, setActiveTab] = useState<ModalTab>(defaultTab)
   const [orders, setOrders] = useState<Order[]>([])
   const [downloads, setDownloads] = useState<DownloadLog[]>([])
@@ -625,6 +633,7 @@ function MemberDetailModal({
         )
         .eq('user_id', member.id)
         .order('created_at', { ascending: false })
+        .limit(200)
         .then(({ data }) => {
           setOrders((data as unknown as Order[]) || [])
           setLoadingOrders(false)
@@ -642,6 +651,7 @@ function MemberDetailModal({
         .select('id, user_id, product_id, downloaded_at, products ( title )')
         .eq('user_id', member.id)
         .order('downloaded_at', { ascending: false })
+        .limit(500)
         .then(({ data }) => {
           setDownloads((data as unknown as DownloadLog[]) || [])
           setLoadingDownloads(false)
@@ -736,9 +746,9 @@ function MemberDetailModal({
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[5vh] pb-[5vh]">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col overflow-hidden" style={modalStyle}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 cursor-move" onMouseDown={handleMouseDown}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
               {(member.name || '?')[0]}
@@ -1072,7 +1082,7 @@ function MemberDetailModal({
 // Main Page
 // ===========================
 
-type FilterTab = 'all' | 'user' | 'admin'
+type FilterTab = 'all' | 'user' | 'admin' | 'deleted'
 
 export default function AdminMembers() {
   const [members, setMembers] = useState<Profile[]>([])
@@ -1134,13 +1144,21 @@ export default function AdminMembers() {
 
   async function handleRoleChange(id: string, newRole: string) {
     const supabase = createClient()
-    await supabase.from('profiles').update({ role: newRole }).eq('id', id)
+    const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', id)
+    if (error) {
+      alert(`권한 변경 실패: ${error.message}`)
+      return
+    }
     setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, role: newRole } : m)))
   }
 
   async function handleMemoSave(id: string, memo: string) {
     const supabase = createClient()
-    await supabase.from('profiles').update({ admin_memo: memo }).eq('id', id)
+    const { error } = await supabase.from('profiles').update({ admin_memo: memo }).eq('id', id)
+    if (error) {
+      alert(`메모 저장 실패: ${error.message}`)
+      return
+    }
     setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, admin_memo: memo } : m)))
   }
 
@@ -1148,7 +1166,16 @@ export default function AdminMembers() {
     setActionLoading(true)
     try {
       const supabase = createClient()
-      await supabase.from('profiles').delete().eq('id', id)
+      const { error } = await supabase.from('profiles').delete().eq('id', id)
+      if (error) {
+        const isFkViolation = error.code === '23503' || /foreign key|violates/i.test(error.message || '')
+        alert(
+          isFkViolation
+            ? '이 회원은 주문/리뷰 등 이력이 있어 완전 삭제할 수 없습니다.'
+            : `삭제 실패: ${error.message}`
+        )
+        return
+      }
       setMembers((prev) => prev.filter((m) => m.id !== id))
       setSelectedIds((prev) => {
         const next = new Set(prev)
@@ -1163,7 +1190,11 @@ export default function AdminMembers() {
 
   // Filter + Search
   const filtered = useMemo(() => {
-    let result = members
+    // 기본적으로 탈퇴(soft-deleted) 회원은 제외, deleted 탭에서만 노출
+    const isDeleted = (m: Profile) => Boolean(m.deleted_at)
+    let result = filterTab === 'deleted'
+      ? members.filter(isDeleted)
+      : members.filter((m) => !isDeleted(m))
     if (filterTab === 'user') result = result.filter((m) => m.role !== 'admin')
     if (filterTab === 'admin') result = result.filter((m) => m.role === 'admin')
     if (search.trim()) {
@@ -1187,10 +1218,12 @@ export default function AdminMembers() {
     setCurrentPage(1)
   }, [search, filterTab, pageSize])
 
-  // Stats
-  const totalCount = members.length
-  const adminCount = members.filter((m) => m.role === 'admin').length
+  // Stats (탈퇴 회원 제외한 활성 기준)
+  const activeMembers = members.filter((m) => !m.deleted_at)
+  const totalCount = activeMembers.length
+  const adminCount = activeMembers.filter((m) => m.role === 'admin').length
   const userCount = totalCount - adminCount
+  const deletedCount = members.length - activeMembers.length
 
   // Selection
   const allPageSelected = paged.length > 0 && paged.every((m) => selectedIds.has(m.id))
@@ -1225,6 +1258,7 @@ export default function AdminMembers() {
     { key: 'all', label: '전체 사용자', count: totalCount, icon: <Users className="w-4 h-4" /> },
     { key: 'user', label: '일반회원', count: userCount, icon: <User className="w-4 h-4" /> },
     { key: 'admin', label: '관리자', count: adminCount, icon: <Shield className="w-4 h-4" /> },
+    { key: 'deleted', label: '탈퇴 회원', count: deletedCount, icon: <AlertTriangle className="w-4 h-4" /> },
   ]
 
   return (
@@ -1465,15 +1499,25 @@ export default function AdminMembers() {
                           <td className="px-4 py-3 text-sm text-muted-foreground">{m.email}</td>
                           {/* 회원유형 */}
                           <td className="px-4 py-3">
-                            <Badge
-                              className={
-                                m.role === 'admin'
-                                  ? 'bg-red-50 text-red-700 border border-red-200'
-                                  : 'bg-muted text-muted-foreground border border-border'
-                              }
-                            >
-                              {m.role === 'admin' ? '관리자' : '일반'}
-                            </Badge>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <Badge
+                                className={
+                                  m.role === 'admin'
+                                    ? 'bg-red-50 text-red-700 border border-red-200'
+                                    : 'bg-muted text-muted-foreground border border-border'
+                                }
+                              >
+                                {m.role === 'admin' ? '관리자' : '일반'}
+                              </Badge>
+                              {m.deleted_at && (
+                                <Badge
+                                  className="bg-gray-900 text-white border border-gray-900"
+                                  title={m.deletion_reason ? `사유: ${m.deletion_reason}` : '탈퇴'}
+                                >
+                                  탈퇴 {formatDate(m.deleted_at)}
+                                </Badge>
+                              )}
+                            </div>
                           </td>
                           {/* 가입일 (relative) */}
                           <td

@@ -1,5 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -10,8 +10,13 @@ import { NextRequest, NextResponse } from 'next/server'
  * - DELETE: Delete post(s), with permanent option (add to blocked_community_posts)
  */
 
+// 판별 유니온 — 성공 시 supabase 가 non-null 로 좁혀짐 (! 어설션 불필요)
+type AdminAuthResult =
+  | { error: 'unauthorized' | 'forbidden'; user: null; supabase: null }
+  | { error: null; user: User; supabase: SupabaseClient }
+
 // Helper: Auth check
-async function getAdminAuth() {
+async function getAdminAuth(): Promise<AdminAuthResult> {
   const cookieStore = await cookies()
   const supabaseAuth = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -80,7 +85,7 @@ export async function GET(request: NextRequest) {
   const source = searchParams.get('source') || ''
 
   try {
-    let query = supabase!.from('community_posts').select('*', { count: 'exact' })
+    let query = supabase.from('community_posts').select('*', { count: 'exact' })
 
     // Category filter
     if (category !== 'all') {
@@ -101,8 +106,10 @@ export async function GET(request: NextRequest) {
 
     // Search filter (title, content, author_name)
     if (search) {
+      // ilike 패턴 문자(%, _) 이스케이프 → DoS 유발 패턴 남용 방지
+      const safe = search.replace(/[%_\\]/g, (m) => '\\' + m)
       query = query.or(
-        `title.ilike.%${search}%,content.ilike.%${search}%,author_name.ilike.%${search}%`
+        `title.ilike.%${safe}%,content.ilike.%${safe}%,author_name.ilike.%${safe}%`
       )
     }
 
@@ -117,7 +124,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Count by tab
-    const { data: counts } = await supabase!
+    const { data: counts } = await supabase
       .from('community_posts')
       .select('is_published, category', { count: 'exact' })
 
@@ -206,7 +213,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Bulk update
-    const { error: updateError } = await supabase!
+    const { error: updateError } = await supabase
       .from('community_posts')
       .update({ ...filteredUpdates, updated_at: new Date().toISOString() })
       .in('id', updateIds)
@@ -216,7 +223,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Log changes for each updated post
-    const { data: posts } = await supabase!
+    const { data: posts } = await supabase
       .from('community_posts')
       .select('id, title')
       .in('id', updateIds)
@@ -228,7 +235,7 @@ export async function PATCH(request: NextRequest) {
         post_title: post.title || '',
         detail: `수정됨: ${Object.keys(filteredUpdates).join(', ')}`,
       }))
-      await supabase!.from('feed_logs').insert(logs)
+      await supabase.from('feed_logs').insert(logs)
     }
 
     return NextResponse.json({ success: true, updated: updateIds.length })
@@ -267,13 +274,13 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get posts for logging
-    const { data: posts } = await supabase!
+    const { data: posts } = await supabase
       .from('community_posts')
       .select('id, title, source, external_id')
       .in('id', ids)
 
     // Delete from community_posts table
-    const { error: deleteError } = await supabase!
+    const { error: deleteError } = await supabase
       .from('community_posts')
       .delete()
       .in('id', ids)
@@ -295,13 +302,13 @@ export async function DELETE(request: NextRequest) {
         }))
 
       if (blockedRows.length > 0) {
-        await supabase!.from('blocked_community_posts').insert(blockedRows)
+        await supabase.from('blocked_community_posts').insert(blockedRows)
       }
     }
 
     // Log deletions
     for (const post of posts || []) {
-      await supabase!.from('feed_logs').insert({
+      await supabase.from('feed_logs').insert({
         action: 'deleted',
         post_id: post.id,
         post_title: post.title || '',

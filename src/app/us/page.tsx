@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -101,16 +101,132 @@ function CountUp({ target, suffix = '' }: { target: number; suffix?: string }) {
   return <><span ref={ref}>0</span>{suffix}</>
 }
 
+/**
+ * Decimal count-up: animates to a decimal value (e.g. 4.8)
+ * Self-contained implementation with IntersectionObserver + requestAnimationFrame
+ */
+function DecimalCountUp({ target, suffix = '', decimals = 1 }: { target: number; suffix?: string; decimals?: number }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const started = useRef(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+
+    let rafId: number | null = null
+    let cancelled = false
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started.current) {
+          started.current = true
+          const startTime = performance.now()
+          const duration = 2000
+          function animate(now: number) {
+            if (cancelled) return
+            const node = ref.current
+            if (!node) return
+            const progress = Math.min((now - startTime) / duration, 1)
+            const eased = 1 - Math.pow(1 - progress, 3)
+            node.textContent = (target * eased).toFixed(decimals)
+            if (progress < 1) rafId = requestAnimationFrame(animate)
+          }
+          rafId = requestAnimationFrame(animate)
+          observer.unobserve(el)
+        }
+      },
+      { threshold: 0.5 },
+    )
+    observer.observe(el)
+    return () => {
+      cancelled = true
+      if (rafId !== null) cancelAnimationFrame(rafId)
+      observer.disconnect()
+    }
+  }, [target, decimals])
+
+  return <><span ref={ref}>0</span>{suffix}</>
+}
+
 /* ============================================================
    Main Page
    ============================================================ */
 export default function UsPage() {
   const [heroReady, setHeroReady] = useState(false)
   const [productThumbs, setProductThumbs] = useState<{ id: string; title: string; thumbnail_url: string }[]>([])
+  const [totalDownloads, setTotalDownloads] = useState(0)
+  const [productCount, setProductCount] = useState(0)
+  const [reviewAvg, setReviewAvg] = useState(0)
+  const [positiveReviewRate, setPositiveReviewRate] = useState(0)
+  const [testimonials, setTestimonials] = useState<{ quote: string; name: string; role: string }[]>([])
 
   useEffect(() => {
     const t = setTimeout(() => setHeroReady(true), 300)
     return () => clearTimeout(t)
+  }, [])
+
+  // Fetch real stats from Supabase
+  useEffect(() => {
+    const supabase = createClient()
+
+    // Product count
+    supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_published', true)
+      .then(({ count }) => {
+        if (count != null) setProductCount(count)
+      })
+
+    // Total downloads + review average
+    supabase
+      .from('products')
+      .select('download_count, review_avg')
+      .eq('is_published', true)
+      .then(({ data }) => {
+        if (data) {
+          const downloads = data.reduce((sum, p) => sum + (p.download_count || 0), 0)
+          setTotalDownloads(downloads)
+
+          const withReviews = data.filter((p) => p.review_avg != null && p.review_avg > 0)
+          if (withReviews.length > 0) {
+            const avg = withReviews.reduce((sum, p) => sum + p.review_avg, 0) / withReviews.length
+            setReviewAvg(Math.round(avg * 10) / 10)
+          }
+        }
+      })
+
+    // 긍정 후기 비율 (4점 이상 / 전체) — DB 기반 실제 수치
+    supabase
+      .from('reviews')
+      .select('rating')
+      .eq('is_published', true)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const positive = data.filter((r) => (r.rating ?? 0) >= 4).length
+          setPositiveReviewRate(Math.round((positive / data.length) * 100))
+        }
+      })
+
+    // 실제 후기 3건 (최신 4~5점 + 긴 본문)
+    supabase
+      .from('reviews')
+      .select('content, title, reviewer_name, rating, helpful_count')
+      .eq('is_published', true)
+      .gte('rating', 4)
+      .not('content', 'is', null)
+      .order('helpful_count', { ascending: false })
+      .limit(30)
+      .then(({ data }) => {
+        if (!data || data.length === 0) return
+        const pool = data.filter((r) => (r.content?.length ?? 0) >= 30 && (r.content?.length ?? 0) <= 180)
+        const picks = (pool.length >= 3 ? pool : data).slice(0, 3).map((r) => ({
+          quote: r.content ?? '',
+          name: r.reviewer_name ? `${r.reviewer_name.charAt(0)}○○` : '익명',
+          role: r.title ?? '구매 고객',
+        }))
+        if (picks.length > 0) setTestimonials(picks)
+      })
   }, [])
 
   useEffect(() => {
@@ -275,7 +391,7 @@ export default function UsPage() {
       <section className="bg-[#0a0a0a] text-white py-24 md:py-32 px-6">
         <div className="max-w-5xl mx-auto">
           <Reveal className="text-center mb-16">
-            <p className="text-xs text-blue-400 font-semibold uppercase tracking-[4px] mb-3">ECOSYSTEM</p>
+            <p className="text-xs text-blue-400 font-semibold tracking-[4px] mb-3">입찰 생태계</p>
             <h2 className="text-2xl md:text-4xl font-bold tracking-tight">제안서만이 아닙니다</h2>
             <p className="text-zinc-400 mt-4 max-w-lg mx-auto">입찰 성공에 필요한 모든 것이 여기 있습니다</p>
           </Reveal>
@@ -308,35 +424,37 @@ export default function UsPage() {
       <section className="bg-[#0d0f14] text-white py-24 md:py-32 px-6">
         <div className="max-w-5xl mx-auto">
           <Reveal className="text-center mb-16">
-            <p className="text-xs text-blue-400 font-semibold uppercase tracking-[4px] mb-3">TRACK RECORD</p>
+            <p className="text-xs text-blue-400 font-semibold tracking-[4px] mb-3">수주 실적</p>
             <h2 className="text-2xl md:text-4xl font-bold tracking-tight">숫자가 말합니다</h2>
           </Reveal>
 
           {/* 숫자 */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
             {[
-              { target: 1200, suffix: '+', label: '누적 다운로드' },
-              { target: 51, suffix: '', label: '검증된 템플릿' },
-              { target: 93, suffix: '%', label: '재구매율' },
-              { target: 48, suffix: '', label: '평균 만족도 (5점)' },
+              { target: totalDownloads || 0, suffix: '+', label: '누적 다운로드', decimal: false },
+              { target: productCount || 0, suffix: '', label: '검증된 템플릿', decimal: false },
+              { target: positiveReviewRate || 0, suffix: '%', label: '긍정 후기 비율', decimal: false },
+              { target: reviewAvg || 0, suffix: '', label: '평균 만족도 (5점)', decimal: true },
             ].map((stat) => (
               <Reveal key={stat.label} className="text-center">
                 <p className="text-3xl md:text-5xl font-bold text-blue-400 tabular-nums">
-                  <CountUp target={stat.target} suffix={stat.suffix} />
+                  {stat.decimal ? (
+                    <DecimalCountUp target={stat.target} suffix={stat.suffix} />
+                  ) : (
+                    <CountUp target={stat.target} suffix={stat.suffix} />
+                  )}
                 </p>
                 <p className="text-xs text-zinc-500 mt-2">{stat.label}</p>
               </Reveal>
             ))}
           </div>
 
-          {/* 후기 */}
+          {/* 후기 — DB 기반 실제 후기 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { quote: '입찰 3일 전에 급하게 찾았는데, 진짜 낙찰됐습니다. 구성이 이미 다 잡혀있어서 내용만 바꿨어요.', name: '김○○', role: 'IT 서비스 기업 대표', delay: 0 },
-              { quote: '정부과제 제안서를 처음 써보는데, 이런 레퍼런스가 있다는 것 자체가 혁신이에요.', name: '박○○', role: '스타트업 사업개발 팀장', delay: 150 },
-              { quote: '컨설팅 업체에 500만원 맡기던 걸 이 템플릿 하나로 직접 했습니다.', name: '이○○', role: '중소기업 경영지원실', delay: 300 },
-            ].map((t) => (
-              <Reveal key={t.name} delay={t.delay}>
+            {(testimonials.length > 0 ? testimonials : [
+              { quote: '실제 구매자 후기가 준비되는 대로 여기에 표시됩니다.', name: '', role: '' },
+            ]).map((t, idx) => (
+              <Reveal key={`${t.name}-${idx}`} delay={idx * 150}>
                 <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 hover:border-blue-500/20 transition-colors">
                   <div className="flex gap-0.5 mb-4">
                     {Array.from({ length: 5 }).map((_, i) => (
@@ -364,7 +482,7 @@ export default function UsPage() {
               href="/store"
               className="inline-flex items-center gap-2 h-14 px-10 rounded-full bg-blue-500 text-white font-semibold text-base hover:bg-blue-400 transition-all active:scale-[0.98] shadow-[0_0_30px_rgba(37,99,235,0.2)]"
             >
-              전체 51개 템플릿 보기
+              전체 {productCount || ''}개 템플릿 보기
               <ArrowRight className="w-5 h-5" />
             </Link>
           </Reveal>
@@ -378,7 +496,7 @@ export default function UsPage() {
                   style={{ animation: 'marquee-scroll 30s linear infinite' }}
                 >
                   {[...productThumbs, ...productThumbs].map((p, i) => (
-                    <div key={`${p.id}-${i}`} className="flex-shrink-0 w-40 md:w-48">
+                    <Link key={`${p.id}-${i}`} href={`/store/${p.id}`} className="flex-shrink-0 w-40 md:w-48">
                       <div className="rounded-xl border border-white/[0.08] overflow-hidden bg-white/[0.03] hover:border-blue-500/30 transition-colors">
                         <Image
                           src={p.thumbnail_url}
@@ -388,7 +506,7 @@ export default function UsPage() {
                           className="w-full h-auto"
                         />
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -404,7 +522,7 @@ export default function UsPage() {
         </div>
         <div className="relative z-10 max-w-xl text-center space-y-10">
           <Reveal>
-            <p className="text-xs text-blue-400 font-semibold uppercase tracking-[4px]">OUR BELIEF</p>
+            <p className="text-xs text-blue-400 font-semibold tracking-[4px]">우리의 철학</p>
           </Reveal>
           <Reveal delay={200}>
             <p className="text-xl md:text-2xl lg:text-3xl leading-[1.8] tracking-tight font-medium">
@@ -438,7 +556,7 @@ export default function UsPage() {
             </h2>
           </Reveal>
           <Reveal delay={200}>
-            <p className="text-white/70 mb-10">1,200개 기업이 선택한 제안서 템플릿</p>
+            <p className="text-white/70 mb-10">{totalDownloads > 0 ? `${totalDownloads.toLocaleString()}+ 다운로드 달성` : ''} 제안서 템플릿</p>
           </Reveal>
           <Reveal delay={400} className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
             <Link
