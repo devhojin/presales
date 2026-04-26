@@ -1,0 +1,4 @@
+data/
+*.local
+.env
+_legacy/

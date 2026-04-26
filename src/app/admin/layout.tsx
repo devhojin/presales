@@ -25,6 +25,7 @@ const adminNav: NavItem[] = [
   // 마케팅
   { divider: true, label: '마케팅' },
   { href: '/admin/brief', icon: Mail, label: '모닝 브리프' },
+  { href: '/admin/morning-brief', icon: Mail, label: '모닝브리프 (MB)' },
   { href: '/admin/coupons', icon: Tag, label: '쿠폰 관리' },
   { href: '/admin/discount-matches', icon: Link2, label: '할인 매칭' },
   { href: '/admin/reviews', icon: Star, label: '리뷰 관리' },
