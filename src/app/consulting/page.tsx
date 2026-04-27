@@ -619,18 +619,18 @@ export default function ConsultingPage() {
             </span>
           </div>
 
-          {/* Case 2: AI 스마트빌리지 */}
+          {/* Case 2: AI 도시 데이터 관제 */}
           <div className="rounded-2xl bg-[#0C1220] p-6 border border-blue-900/30 hover:border-blue-700/50 transition-colors">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-violet-700 flex items-center justify-center mb-5">
               <Sparkles className="w-6 h-6 text-white" />
             </div>
-            <h3 className="text-sm font-bold text-white mb-2">경기도 스마트빌리지 AI 서비스</h3>
+            <h3 className="text-sm font-bold text-white mb-2">AI 도시 데이터 통합 관제 플랫폼</h3>
             <p className="text-xs text-blue-200/70 leading-relaxed mb-4">
-              AI 기반 서비스 기획부터 제안서 구조까지 원스톱으로 점검. 기술 난이도가 높은 사업도 평가위원이 이해하기 쉬운 흐름으로 정리했습니다.
+              민원, CCTV, IoT 센서 데이터를 하나의 운영 시나리오로 묶고 서비스 개념도와 단계별 구축 로드맵을 평가표에 맞춰 재구성했습니다.
             </p>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/15 text-violet-300 text-[11px] font-medium">
               <Sparkles className="w-3 h-3" />
-              원스톱 코칭 완료
+              AI 관제 구조화
             </span>
           </div>
 
