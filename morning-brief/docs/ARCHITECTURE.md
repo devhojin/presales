@@ -52,8 +52,8 @@
                           │  Vercel Cron            │
                           │  (presales project 안)  │
                           │                         │
-                          │  /api/cron/collect-news │
-                          │  /api/cron/send-brief   │
+                          │  /api/cron/morning-brief/collect │
+                          │  /api/cron/morning-brief/send    │
                           └─────────────────────────┘
 ```
 
@@ -74,7 +74,7 @@
     │   ├── render-brief.ts        # HTML 본문 생성
     │   └── send-mail.ts           # 메일플러그 SMTP
     ├── scripts/                   # 일회성/유지보수 스크립트
-    │   ├── migrate-from-presales.ts   # 기존 brief_subscribers 이관
+    │   ├── migrate-news-db.py         # 뉴스 아카이브 이관 스크립트
     │   └── upload-docs.ts             # docs/*.md → Storage 업로드
     ├── sql/
     │   ├── 001_init.sql           # 초기 스키마
@@ -88,15 +88,15 @@
 ```json
 {
   "crons": [
-    { "path": "/api/cron/collect-news", "schedule": "50 21 * * *" },
-    { "path": "/api/cron/send-brief",    "schedule": "0 22 * * *" }
+    { "path": "/api/cron/morning-brief/collect", "schedule": "50 21 * * *" },
+    { "path": "/api/cron/morning-brief/send",    "schedule": "0 22 * * *" }
   ]
 }
 ```
 
 > Vercel Cron은 UTC 기준. KST 07:00 = UTC 22:00 (전날). KST 06:50 = UTC 21:50 (전날).
 
-라우트는 `process.env.CRON_SECRET`을 헤더(`Authorization: Bearer ...`)로 검증해서 외부 호출을 차단.
+라우트는 `process.env.MB_CRON_SECRET`을 헤더(`Authorization: Bearer ...`)로 검증해서 외부 호출을 차단.
 
 ## 6. 자매 경계
 

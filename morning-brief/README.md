@@ -33,7 +33,7 @@ MORNING_BRIEF_SOURCE=presales
 
 # 발송용 (presales 프로젝트만 필요, Cron Route 안에서)
 MORNING_BRIEF_SUPABASE_SERVICE_KEY=eyJhbGciOi...
-CRON_SECRET=<random-string>
+MB_CRON_SECRET=<random-string>
 ANTHROPIC_API_KEY=<claude-haiku용>
 MAILPLUG_HOST=smtp.mailplug.co.kr
 MAILPLUG_PORT=465
@@ -47,12 +47,9 @@ MAILPLUG_PASS=<mailplug 비번>
 # 문서 업로드 (Storage 동기화)
 npx tsx morning-brief/scripts/upload-docs.ts
 
-# 구독자 일괄 import (CSV)
-npx tsx morning-brief/scripts/import-subscribers.ts <csv> --source=admin
-
 # 수동 수집/발송 (Vercel 배포 후)
-curl -X POST https://presales-zeta.vercel.app/api/cron/collect-news \
-  -H "Authorization: Bearer $CRON_SECRET"
-curl -X POST https://presales-zeta.vercel.app/api/cron/send-brief \
-  -H "Authorization: Bearer $CRON_SECRET"
+curl -X POST https://presales-zeta.vercel.app/api/cron/morning-brief/collect \
+  -H "Authorization: Bearer $MB_CRON_SECRET"
+curl -X POST https://presales-zeta.vercel.app/api/cron/morning-brief/send \
+  -H "Authorization: Bearer $MB_CRON_SECRET"
 ```

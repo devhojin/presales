@@ -7,7 +7,7 @@
  * 5. briefs 에 오늘자 row 생성/업데이트 (status='ready')
  *
  * vercel.json 의 schedule: "50 21 * * *"
- * 인증: Authorization: Bearer ${CRON_SECRET} (Vercel Cron 자동 부여)
+ * 인증: Authorization: Bearer ${MB_CRON_SECRET} (Vercel Cron 자동 부여)
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { collectByCategory } from '../../../../../../morning-brief/lib/collect-news'

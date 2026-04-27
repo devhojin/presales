@@ -4,9 +4,9 @@
 
 | 시간 (KST) | 시간 (UTC) | 작업 | 위치 |
 |------------|-----------|------|------|
-| 06:50 | 21:50 (전날) | Vercel Cron → `/api/cron/collect-news` | presales |
+| 06:50 | 21:50 (전날) | Vercel Cron → `/api/cron/morning-brief/collect` | presales |
 | 06:50~07:00 | | Google News RSS 5카테고리 수집, dedup, news_items INSERT, briefs ready | presales |
-| 07:00 | 22:00 (전날) | Vercel Cron → `/api/cron/send-brief` | presales |
+| 07:00 | 22:00 (전날) | Vercel Cron → `/api/cron/morning-brief/send` | presales |
 | 07:00~07:05 | | active 구독자 전체에게 메일플러그 SMTP 발송, brief_sends 기록 | presales |
 
 ## 장애 시 점검 순서
@@ -16,8 +16,8 @@
 ```
 1. Supabase morning-brief → briefs 테이블에서 오늘 날짜 row 조회
    - 없음     → Cron이 안 돌았음. Vercel 대시보드 cron 로그 확인
-   - status=pending  → collect-news 실패. /api/cron/collect-news 수동 호출 + 로그
-   - status=ready    → send-brief 실패. /api/cron/send-brief 수동 호출 + 로그
+   - status=collecting  → collect 단계 실패 가능성. /api/cron/morning-brief/collect 수동 호출 + 로그
+   - status=ready       → send 단계 실패. /api/cron/morning-brief/send 수동 호출 + 로그
    - status=sent     → brief_sends에서 해당 구독자 찾아서 status/error 확인
    - status=failed   → briefs.error 필드 확인
 2. 메일플러그 SMTP 응답 코드 확인 (5xx면 외부 장애)
@@ -36,34 +36,21 @@
 
 ```
 1. Vercel 대시보드 → Project → Settings → Cron Jobs 활성 확인
-2. CRON_SECRET 환경변수 일치 확인
-3. /api/cron/collect-news 직접 GET (Authorization 헤더와 함께) → 200 확인
+2. MB_CRON_SECRET 환경변수 일치 확인
+3. /api/cron/morning-brief/collect 직접 GET (Authorization 헤더와 함께) → 200 확인
 ```
 
 ## 수동 발송 절차 (긴급 / 누락분 복구)
 
 ```bash
-# 1. 특정 날짜 수집부터 다시
-curl -X POST https://presales-zeta.vercel.app/api/cron/collect-news \
-  -H "Authorization: Bearer $CRON_SECRET" \
-  -H "Content-Type: application/json" \
-  -d '{"date": "2026-04-26"}'
+# 1. 오늘 날짜 수집 다시 실행 (collect route 는 현재 KST 오늘 기준)
+curl -X POST "https://presales-zeta.vercel.app/api/cron/morning-brief/collect" \
+  -H "Authorization: Bearer $MB_CRON_SECRET"
 
-# 2. 발송
-curl -X POST https://presales-zeta.vercel.app/api/cron/send-brief \
-  -H "Authorization: Bearer $CRON_SECRET" \
-  -H "Content-Type: application/json" \
-  -d '{"date": "2026-04-26"}'
+# 2. 특정 날짜 발송
+curl -X POST "https://presales-zeta.vercel.app/api/cron/morning-brief/send?date=2026-04-26" \
+  -H "Authorization: Bearer $MB_CRON_SECRET"
 ```
-
-## 신규 구독자 일괄 import
-
-```bash
-cd ~/presales/morning-brief
-npx tsx scripts/import-subscribers.ts <csv-path> --source=admin
-```
-
-CSV 포맷: `email,name`
 
 ## 백업
 

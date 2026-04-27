@@ -47,5 +47,13 @@ export async function requireAdminForMorningBrief(): Promise<AdminAuthResult> {
     return { ok: false, status: 403, error: 'forbidden' }
   }
 
-  return { ok: true, userId: user.id, mb: morningBriefService() }
+  try {
+    return { ok: true, userId: user.id, mb: morningBriefService() }
+  } catch (error) {
+    return {
+      ok: false,
+      status: 503,
+      error: error instanceof Error ? error.message : 'morning-brief unavailable',
+    }
+  }
 }
