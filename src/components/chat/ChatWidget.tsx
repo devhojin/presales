@@ -15,16 +15,20 @@ import { fetchSignedUrl } from '@/lib/storage-signed-url'
 
 // DB 에는 storage path 만 저장 → 렌더 시점에 서명 URL 재발급해서 표시
 function useChatSignedUrl(storedValue: string | null | undefined, guestId: string | null) {
-  const [url, setUrl] = useState<string | null>(null)
+  const [signedFile, setSignedFile] = useState<{ storedValue: string; guestId: string | null; url: string | null } | null>(null)
+
   useEffect(() => {
-    if (!storedValue) { setUrl(null); return }
+    if (!storedValue) return
     let aborted = false
     fetchSignedUrl({ bucket: 'chat-files', storedValue, guestId }).then((signed) => {
-      if (!aborted) setUrl(signed)
+      if (!aborted) setSignedFile({ storedValue, guestId, url: signed })
     })
     return () => { aborted = true }
   }, [storedValue, guestId])
-  return url
+
+  return storedValue && signedFile?.storedValue === storedValue && signedFile.guestId === guestId
+    ? signedFile.url
+    : null
 }
 
 function ChatImageMessage({ msg, guestId }: { msg: ChatMessage; guestId: string | null }) {

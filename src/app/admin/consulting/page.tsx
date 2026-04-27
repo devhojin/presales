@@ -531,10 +531,6 @@ export default function AdminConsulting() {
   const [selectedRequest, setSelectedRequest] = useState<ConsultingRequest | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => {
-    loadRequests()
-  }, [])
-
   async function loadRequests() {
     const supabase = createClient()
     const { data } = await supabase
@@ -545,6 +541,13 @@ export default function AdminConsulting() {
     setRequests(data || [])
     setLoading(false)
   }
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void loadRequests()
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   const handleStatusChange = useCallback(async (id: number, status: string) => {
     const supabase = createClient()
@@ -590,11 +593,6 @@ export default function AdminConsulting() {
   const safePage = Math.min(currentPage, totalPages)
   const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
 
-  // Reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [search, filterTab, pageSize])
-
   // Stats
   const totalCount = requests.length
   const pendingCount = requests.filter((r) => r.status === 'pending').length
@@ -629,7 +627,10 @@ export default function AdminConsulting() {
               {filterTabs.map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => setFilterTab(tab.key)}
+                  onClick={() => {
+                    setFilterTab(tab.key)
+                    setCurrentPage(1)
+                  }}
                   className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
                     filterTab === tab.key
                       ? 'bg-gray-900 text-white shadow-sm'
@@ -656,7 +657,10 @@ export default function AdminConsulting() {
                   ref={searchRef}
                   type="text"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setSearch(e.target.value)
+                    setCurrentPage(1)
+                  }}
                   placeholder="이름, 이메일, 회사 검색"
                   className="w-full sm:w-64 pl-9 pr-8 py-2 border border-border rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
                 />
@@ -664,6 +668,7 @@ export default function AdminConsulting() {
                   <button
                     onClick={() => {
                       setSearch('')
+                      setCurrentPage(1)
                       searchRef.current?.focus()
                     }}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
@@ -674,7 +679,10 @@ export default function AdminConsulting() {
               </div>
               <select
                 value={pageSize}
-                onChange={(e) => setPageSize(Number(e.target.value))}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value))
+                  setCurrentPage(1)
+                }}
                 className="border border-border rounded-xl px-3 py-2 text-sm text-foreground bg-white focus:outline-none focus:border-primary"
               >
                 <option value={20}>20개</option>

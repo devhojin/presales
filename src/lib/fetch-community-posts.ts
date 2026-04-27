@@ -288,7 +288,7 @@ function extractXmlField(xml: string, fieldName: string): string {
   const regex = new RegExp(`<${fieldName}[^>]*>([\\s\\S]*?)</${fieldName}>`)
   const match = xml.match(regex)
   if (!match) return ''
-  let value = match[1]
+  const value = match[1]
   // CDATA 처리
   const cdataMatch = value.match(/<!\[CDATA\[([\s\S]*?)\]\]>/)
   if (cdataMatch) return cdataMatch[1]

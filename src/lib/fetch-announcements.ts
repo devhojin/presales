@@ -783,7 +783,7 @@ async function fetchWevityAnnouncements(onProgress?: ProgressCallback): Promise<
         seen.add(contestId)
 
         // Clean title
-        let title = match[3].replace(/<[^>]*>/g, '').trim()
+        const title = match[3].replace(/<[^>]*>/g, '').trim()
         if (!title || title.length < 5 || title.length > 200) continue
         // Skip navigation/UI links
         if (title.includes('이전') || title.includes('다음') || title.includes('페이지')) continue

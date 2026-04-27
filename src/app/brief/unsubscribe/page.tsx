@@ -8,16 +8,12 @@ import Link from 'next/link'
 function UnsubscribeInner() {
   const params = useSearchParams()
   const token = params?.get('token') || ''
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
-  const [message, setMessage] = useState('')
+  const [status, setStatus] = useState<'loading' | 'success' | 'error'>(token ? 'loading' : 'error')
+  const [message, setMessage] = useState(token ? '' : '유효하지 않은 요청입니다')
   const [email, setEmail] = useState('')
 
   useEffect(() => {
-    if (!token) {
-      setStatus('error')
-      setMessage('유효하지 않은 요청입니다')
-      return
-    }
+    if (!token) return
     fetch(`/api/brief/unsubscribe?token=${encodeURIComponent(token)}`)
       .then((res) => res.json())
       .then((data) => {

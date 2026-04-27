@@ -52,7 +52,7 @@ export default function TermsPage() {
         <section id="purpose">
           <h2 className="text-base font-bold mb-3 border-b border-border pb-2">제1조 (목적)</h2>
           <p>
-            본 약관은 AMARANS Partners(이하 "회사")가 운영하는 PRESALES(이하 "서비스")를 이용함에 있어 회사와 이용자 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.
+            본 약관은 AMARANS Partners(이하 &quot;회사&quot;)가 운영하는 PRESALES(이하 &quot;서비스&quot;)를 이용함에 있어 회사와 이용자 간의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.
           </p>
           <p className="mt-3">
             본 약관은 「전자상거래 등에서의 소비자보호에 관한 법률」, 「약관의 규제에 관한 법률」, 「전자문서 및 전자거래 기본법」, 「전자금융거래법」, 「정보통신망 이용촉진 및 정보보호 등에 관한 법률」 등 관련 법령에 따라 제정됩니다.
@@ -63,11 +63,11 @@ export default function TermsPage() {
         <section id="definitions">
           <h2 className="text-base font-bold mb-3 border-b border-border pb-2">제2조 (용어 정의)</h2>
           <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-            <li><span className="text-foreground font-medium">"서비스"</span>란 회사가 제공하는 공공조달 문서 템플릿 판매 및 전문가 컨설팅 플랫폼(PRESALES)을 의미합니다.</li>
-            <li><span className="text-foreground font-medium">"이용자"</span>란 회사의 서비스에 접속하여 본 약관에 따라 서비스를 이용하는 회원 및 비회원을 말합니다.</li>
-            <li><span className="text-foreground font-medium">"회원"</span>이란 회사에 개인정보를 제공하여 회원 가입을 한 자로, 지속적으로 서비스를 이용할 수 있는 자를 말합니다.</li>
-            <li><span className="text-foreground font-medium">"디지털 콘텐츠"</span>란 회사가 판매하는 문서 템플릿(PPT, PPTX, PDF, DOC, DOCX, XLS, XLSX, HWP 등 형식의 파일)을 의미합니다.</li>
-            <li><span className="text-foreground font-medium">"컨설팅 서비스"</span>란 공공조달 입찰 제안서 작성을 위한 전문가 자문 서비스를 의미합니다.</li>
+            <li><span className="text-foreground font-medium">&quot;서비스&quot;</span>란 회사가 제공하는 공공조달 문서 템플릿 판매 및 전문가 컨설팅 플랫폼(PRESALES)을 의미합니다.</li>
+            <li><span className="text-foreground font-medium">&quot;이용자&quot;</span>란 회사의 서비스에 접속하여 본 약관에 따라 서비스를 이용하는 회원 및 비회원을 말합니다.</li>
+            <li><span className="text-foreground font-medium">&quot;회원&quot;</span>이란 회사에 개인정보를 제공하여 회원 가입을 한 자로, 지속적으로 서비스를 이용할 수 있는 자를 말합니다.</li>
+            <li><span className="text-foreground font-medium">&quot;디지털 콘텐츠&quot;</span>란 회사가 판매하는 문서 템플릿(PPT, PPTX, PDF, DOC, DOCX, XLS, XLSX, HWP 등 형식의 파일)을 의미합니다.</li>
+            <li><span className="text-foreground font-medium">&quot;컨설팅 서비스&quot;</span>란 공공조달 입찰 제안서 작성을 위한 전문가 자문 서비스를 의미합니다.</li>
           </ol>
         </section>
 

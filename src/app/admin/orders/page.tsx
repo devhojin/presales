@@ -318,41 +318,50 @@ function MemberDetailModal({
     }
   }, [onClose])
 
-  useEffect(() => {
-    if (activeTab === 'orders' && orders.length === 0 && !loadingOrders) {
-      setLoadingOrders(true)
-      const supabase = createClient()
-      supabase
-        .from('orders')
-        .select(
-          `id, order_number, user_id, status, total_amount, created_at,
-           order_items ( id, order_id, product_id, price, products ( title, thumbnail_url ) )`
-        )
-        .eq('user_id', member.id)
-        .order('created_at', { ascending: false })
-        .limit(200)
-        .then(({ data }) => {
-          setOrders((data as unknown as Order[]) || [])
-          setLoadingOrders(false)
-        })
-    }
-  }, [activeTab, member.id, orders.length, loadingOrders])
+  const loadMemberOrders = useCallback(async () => {
+    setLoadingOrders(true)
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('orders')
+      .select(
+        `id, order_number, user_id, status, total_amount, created_at,
+         order_items ( id, order_id, product_id, price, products ( title, thumbnail_url ) )`
+      )
+      .eq('user_id', member.id)
+      .order('created_at', { ascending: false })
+      .limit(200)
+    setOrders((data as unknown as Order[]) || [])
+    setLoadingOrders(false)
+  }, [member.id])
 
-  useEffect(() => {
-    if (activeTab === 'consulting' && consulting.length === 0 && !loadingConsulting) {
-      setLoadingConsulting(true)
-      const supabase = createClient()
-      supabase
-        .from('consulting_requests')
-        .select('id, user_id, package_type, message, status, created_at')
-        .eq('user_id', member.id)
-        .order('created_at', { ascending: false })
-        .then(({ data }) => {
-          setConsulting((data as ConsultingRequest[]) || [])
-          setLoadingConsulting(false)
-        })
+  const loadMemberConsulting = useCallback(async () => {
+    setLoadingConsulting(true)
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('consulting_requests')
+      .select('id, user_id, package_type, message, status, created_at')
+      .eq('user_id', member.id)
+      .order('created_at', { ascending: false })
+    setConsulting((data as ConsultingRequest[]) || [])
+    setLoadingConsulting(false)
+  }, [member.id])
+
+  const handleTabChange = useCallback((tab: MemberModalTab) => {
+    setActiveTab(tab)
+    if (tab === 'orders' && orders.length === 0 && !loadingOrders) {
+      void loadMemberOrders()
     }
-  }, [activeTab, member.id, consulting.length, loadingConsulting])
+    if (tab === 'consulting' && consulting.length === 0 && !loadingConsulting) {
+      void loadMemberConsulting()
+    }
+  }, [
+    consulting.length,
+    loadMemberConsulting,
+    loadMemberOrders,
+    loadingConsulting,
+    loadingOrders,
+    orders.length,
+  ])
 
   const tabs: { key: MemberModalTab; label: string; icon: React.ReactNode }[] = [
     { key: 'info', label: '회원정보', icon: <User className="w-3.5 h-3.5" /> },
@@ -389,7 +398,7 @@ function MemberDetailModal({
           {tabs.map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => handleTabChange(tab.key)}
               className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
                 activeTab === tab.key
                   ? 'border-blue-600 text-primary'
@@ -1248,10 +1257,6 @@ export default function AdminOrders() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
   async function loadData() {
     const supabase = createClient()
 
@@ -1293,6 +1298,13 @@ export default function AdminOrders() {
     setDownloadLogs((logsResult.data as DownloadLogEntry[]) || [])
     setLoading(false)
   }
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void loadData()
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   // Status change handler
   const handleStatusChange = useCallback(async (orderId: number, status: string) => {
@@ -1347,42 +1359,6 @@ export default function AdminOrders() {
     setSelectedIds(new Set())
     setBulkDropdownOpen(false)
     setToast(`${ids.length}건의 주문 상태가 변경되었습니다`)
-  }, [selectedIds])
-
-  // Excel download
-  const handleExcelDownload = useCallback(() => {
-    const target = selectedIds.size > 0
-      ? filtered.filter((o) => selectedIds.has(o.id))
-      : filtered
-
-    const header = '주문번호,주문일시,주문자,이메일,연락처,상품,총결제금액,결제방법,결제상태'
-    const rows = target.map((o) => {
-      const p = o.profiles
-      const items = o.order_items?.map((i) => i.products?.title || '').join(' / ') || ''
-      const statusLabel = STATUS_CONFIG[o.status]?.label || o.status
-      const paymentLabel = PAYMENT_METHOD_LABEL[o.payment_method || ''] || o.payment_method || ''
-      return [
-        o.order_number,
-        formatDateTime(o.created_at),
-        p?.name || '',
-        p?.email || '',
-        p?.phone || '',
-        `"${items}"`,
-        o.total_amount,
-        paymentLabel,
-        statusLabel,
-      ].join(',')
-    })
-
-    const bom = '\uFEFF'
-    const csv = bom + header + '\n' + rows.join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `orders_${new Date().toISOString().slice(0, 10)}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
   }, [selectedIds])
 
   // Download count map: { `${user_id}_${product_id}`: count }
@@ -1455,9 +1431,41 @@ export default function AdminOrders() {
   const safePage = Math.min(currentPage, totalPages)
   const paged = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
 
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [search, statusFilter, pageSize, dateFrom, dateTo])
+  // Excel download
+  const handleExcelDownload = useCallback(() => {
+    const target = selectedIds.size > 0
+      ? filtered.filter((o) => selectedIds.has(o.id))
+      : filtered
+
+    const header = '주문번호,주문일시,주문자,이메일,연락처,상품,총결제금액,결제방법,결제상태'
+    const rows = target.map((o) => {
+      const p = o.profiles
+      const items = o.order_items?.map((i) => i.products?.title || '').join(' / ') || ''
+      const statusLabel = STATUS_CONFIG[o.status]?.label || o.status
+      const paymentLabel = PAYMENT_METHOD_LABEL[o.payment_method || ''] || o.payment_method || ''
+      return [
+        o.order_number,
+        formatDateTime(o.created_at),
+        p?.name || '',
+        p?.email || '',
+        p?.phone || '',
+        `"${items}"`,
+        o.total_amount,
+        paymentLabel,
+        statusLabel,
+      ].join(',')
+    })
+
+    const bom = '\uFEFF'
+    const csv = bom + header + '\n' + rows.join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `orders_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [filtered, selectedIds])
 
   // Selection helpers
   const allPageSelected = paged.length > 0 && paged.every((o) => selectedIds.has(o.id))
@@ -1497,7 +1505,10 @@ export default function AdminOrders() {
           {STATUS_TABS.map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setStatusFilter(tab.key)}
+              onClick={() => {
+                setStatusFilter(tab.key)
+                setCurrentPage(1)
+              }}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
                 statusFilter === tab.key
                   ? 'bg-gray-900 text-white shadow-sm'
@@ -1527,7 +1538,10 @@ export default function AdminOrders() {
                   ref={searchRef}
                   type="text"
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => {
+                    setSearch(e.target.value)
+                    setCurrentPage(1)
+                  }}
                   placeholder="주문번호, 주문자, 이메일, 상품명"
                   className="w-full pl-9 pr-8 py-2 border border-border rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
                 />
@@ -1535,6 +1549,7 @@ export default function AdminOrders() {
                   <button
                     onClick={() => {
                       setSearch('')
+                      setCurrentPage(1)
                       searchRef.current?.focus()
                     }}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground cursor-pointer"
@@ -1549,14 +1564,20 @@ export default function AdminOrders() {
                 <input
                   type="date"
                   value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
+                  onChange={(e) => {
+                    setDateFrom(e.target.value)
+                    setCurrentPage(1)
+                  }}
                   className="border border-border rounded-xl px-3 py-2 text-sm text-foreground bg-white focus:outline-none focus:border-primary"
                 />
                 <span className="text-muted-foreground text-sm">~</span>
                 <input
                   type="date"
                   value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
+                  onChange={(e) => {
+                    setDateTo(e.target.value)
+                    setCurrentPage(1)
+                  }}
                   className="border border-border rounded-xl px-3 py-2 text-sm text-foreground bg-white focus:outline-none focus:border-primary"
                 />
               </div>
@@ -1565,7 +1586,10 @@ export default function AdminOrders() {
             {/* Page size */}
             <select
               value={pageSize}
-              onChange={(e) => setPageSize(Number(e.target.value))}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value))
+                setCurrentPage(1)
+              }}
               className="border border-border rounded-xl px-3 py-2 text-sm text-foreground bg-white focus:outline-none focus:border-primary cursor-pointer"
             >
               <option value={20}>20개</option>

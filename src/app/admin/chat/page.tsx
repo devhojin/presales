@@ -14,16 +14,18 @@ import { fetchSignedUrl } from '@/lib/storage-signed-url'
 
 // DB 에는 storage path 만 저장 → 렌더 시점에 서명 URL 재발급 (admin 은 모든 방 접근 가능)
 function useAdminChatSignedUrl(storedValue: string | null | undefined) {
-  const [url, setUrl] = useState<string | null>(null)
+  const [signedFile, setSignedFile] = useState<{ storedValue: string; url: string | null } | null>(null)
+
   useEffect(() => {
-    if (!storedValue) { setUrl(null); return }
+    if (!storedValue) return
     let aborted = false
     fetchSignedUrl({ bucket: 'chat-files', storedValue }).then((signed) => {
-      if (!aborted) setUrl(signed)
+      if (!aborted) setSignedFile({ storedValue, url: signed })
     })
     return () => { aborted = true }
   }, [storedValue])
-  return url
+
+  return storedValue && signedFile?.storedValue === storedValue ? signedFile.url : null
 }
 
 function AdminChatImage({ msg }: { msg: ChatMessage }) {

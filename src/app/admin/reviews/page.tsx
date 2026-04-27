@@ -125,15 +125,7 @@ export default function AdminReviewsPage() {
     return () => document.removeEventListener('keydown', handleEsc)
   }, [selectedReview, deleteTarget])
 
-  // When opening a review, populate reply text
-  useEffect(() => {
-    if (selectedReview) {
-      setReplyText(selectedReview.admin_reply || '')
-    }
-  }, [selectedReview])
-
   const loadReviews = useCallback(async () => {
-    setLoading(true)
     const supabase = createClient()
 
     // Build base query with server-side search
@@ -206,7 +198,10 @@ export default function AdminReviewsPage() {
   }, [page, search, ratingFilter])
 
   useEffect(() => {
-    loadReviews()
+    const timer = window.setTimeout(() => {
+      void loadReviews()
+    }, 0)
+    return () => window.clearTimeout(timer)
   }, [loadReviews])
 
   async function togglePublished(review: DbReview) {
@@ -459,7 +454,10 @@ export default function AdminReviewsPage() {
                   <td className="px-6 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button
-                        onClick={() => setSelectedReview(review)}
+                        onClick={() => {
+                          setSelectedReview(review)
+                          setReplyText(review.admin_reply || '')
+                        }}
                         className="text-xs px-3 py-1.5 rounded-xl bg-primary/8 text-primary hover:bg-primary/10 transition-colors cursor-pointer"
                       >
                         상세

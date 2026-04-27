@@ -519,7 +519,7 @@ export default function Home() {
             <div className="text-center mb-14">
               <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">낙찰 후기</p>
               <h2 className="text-2xl md:text-3xl font-bold tracking-tight">낙찰 후기</h2>
-              <p className="text-muted-foreground mt-2">"이 제안서로 실제 수주했습니다"</p>
+              <p className="text-muted-foreground mt-2">&quot;이 제안서로 실제 수주했습니다&quot;</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {reviews.map((t, i) => (

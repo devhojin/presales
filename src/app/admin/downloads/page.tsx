@@ -37,7 +37,6 @@ export default function AdminDownloads() {
   const [page, setPage] = useState(1)
 
   const loadLogs = useCallback(async () => {
-    setLoading(true)
     const supabase = createClient()
 
     // Build user_id / product_id arrays from search first if needed
@@ -151,13 +150,11 @@ export default function AdminDownloads() {
   }, [page, search, dateFrom, dateTo])
 
   useEffect(() => {
-    loadLogs()
+    const timer = window.setTimeout(() => {
+      void loadLogs()
+    }, 0)
+    return () => window.clearTimeout(timer)
   }, [loadLogs])
-
-  // Reset page when filters change
-  useEffect(() => {
-    setPage(1)
-  }, [search, dateFrom, dateTo])
 
   async function handleCSVExport() {
     // Fetch all matching records for CSV

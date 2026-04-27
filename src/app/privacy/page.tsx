@@ -49,7 +49,7 @@ export default function PrivacyPage() {
 
       <div className="space-y-10 text-sm leading-relaxed text-foreground">
         <p className="text-muted-foreground">
-          AMARANS Partners(이하 "회사")는 「개인정보 보호법」 제30조에 따라 정보주체의 개인정보를 보호하고 이와 관련한 고충을 신속하고 원활하게 처리할 수 있도록 다음과 같이 개인정보처리방침을 수립·공개합니다.
+          AMARANS Partners(이하 &quot;회사&quot;)는 「개인정보 보호법」 제30조에 따라 정보주체의 개인정보를 보호하고 이와 관련한 고충을 신속하고 원활하게 처리할 수 있도록 다음과 같이 개인정보처리방침을 수립·공개합니다.
         </p>
 
         {/* 제1조 */}

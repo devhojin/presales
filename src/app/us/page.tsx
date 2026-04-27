@@ -273,7 +273,7 @@ export default function UsPage() {
               heroReady ? 'opacity-100' : 'opacity-0'
             }`}
           >
-            "이번에도 떨어지면 어떡하지—"
+            &quot;이번에도 떨어지면 어떡하지—&quot;
           </p>
         </div>
 
@@ -461,7 +461,7 @@ export default function UsPage() {
                       <Star key={i} className="w-4 h-4 text-blue-400 fill-blue-400" />
                     ))}
                   </div>
-                  <p className="text-sm text-zinc-300 leading-relaxed mb-4">"{t.quote}"</p>
+                  <p className="text-sm text-zinc-300 leading-relaxed mb-4">&quot;{t.quote}&quot;</p>
                   <p className="text-xs text-zinc-500">— {t.name}, {t.role}</p>
                 </div>
               </Reveal>

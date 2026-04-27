@@ -4,6 +4,7 @@
  * Uses sharp (SVG → PNG)
  * Usage: node scripts/generate-thumbnails.js
  */
+/* eslint-disable @typescript-eslint/no-require-imports */
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');

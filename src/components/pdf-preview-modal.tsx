@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { X, ChevronLeft, ChevronRight, Lock, ShoppingCart, Info } from 'lucide-react'
+import type { PDFDocumentProxy } from 'pdfjs-dist'
 
 interface PdfPreviewModalProps {
   isOpen: boolean
@@ -30,7 +31,7 @@ export function PdfPreviewModal({
   purchaseLabel,
 }: PdfPreviewModalProps) {
   const [currentPage, setCurrentPage] = useState(1)
-  const [pdfDoc, setPdfDoc] = useState<any>(null)
+  const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -82,18 +83,19 @@ export function PdfPreviewModal({
   // Render page
   useEffect(() => {
     if (!pdfDoc || !canvasRef.current) return
+    const doc = pdfDoc
+    const canvas = canvasRef.current
 
     async function renderPage() {
       try {
-        const page = await pdfDoc.getPage(currentPage)
+        const page = await doc.getPage(currentPage)
         const viewport = page.getViewport({ scale: 1.5 })
-        const canvas = canvasRef.current!
         const ctx = canvas.getContext('2d')!
 
         canvas.width = viewport.width
         canvas.height = viewport.height
 
-        await page.render({ canvasContext: ctx, viewport }).promise
+        await page.render({ canvas, canvasContext: ctx, viewport }).promise
       } catch (err) {
         console.error('Page render error:', err)
       }

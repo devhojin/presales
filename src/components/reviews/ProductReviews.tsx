@@ -85,7 +85,6 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
 
   // Load reviews
   const loadReviews = useCallback(async () => {
-    setLoading(true)
     const supabase = createClient()
 
     // Get rating distribution
@@ -138,7 +137,10 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
   }, [productId, sort, page])
 
   useEffect(() => {
-    loadReviews()
+    const timer = window.setTimeout(() => {
+      void loadReviews()
+    }, 0)
+    return () => window.clearTimeout(timer)
   }, [loadReviews])
 
   const totalPages = Math.ceil(totalCount / REVIEWS_PER_PAGE)

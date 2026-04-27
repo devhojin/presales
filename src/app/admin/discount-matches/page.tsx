@@ -611,7 +611,7 @@ export default function DiscountMatchesPage() {
         <h1 className="text-3xl font-bold text-foreground mb-2">할인 상품 매칭</h1>
         <p className="text-muted-foreground">상품 간 할인을 설정합니다. 소스 상품을 구매한 사용자가 타겟 상품을 구매할 때 할인이 적용됩니다.</p>
         <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3 inline-block">
-          <strong>자동(auto) 할인</strong>은 사용자가 소스 상품에 <strong>실제로 지불한 금액</strong>(쿠폰 할인 반영 후)을 차감합니다. 아래 표의 "할인액" 은 매칭 생성 시점의 참고값이며, 실제 차감액은 구매자별 결제 이력에 따라 달라집니다.
+          <strong>자동(auto) 할인</strong>은 사용자가 소스 상품에 <strong>실제로 지불한 금액</strong>(쿠폰 할인 반영 후)을 차감합니다. 아래 표의 &quot;할인액&quot; 은 매칭 생성 시점의 참고값이며, 실제 차감액은 구매자별 결제 이력에 따라 달라집니다.
         </p>
       </div>
 
@@ -640,7 +640,7 @@ export default function DiscountMatchesPage() {
       ) : matches.length === 0 ? (
         <div className="bg-white rounded-xl border border-border p-12 text-center">
           <div className="text-muted-foreground mb-2">할인 매칭이 없습니다</div>
-          <p className="text-sm text-muted-foreground">"새 매칭 추가" 버튼을 클릭하여 할인 매칭을 생성해주세요.</p>
+          <p className="text-sm text-muted-foreground">&quot;새 매칭 추가&quot; 버튼을 클릭하여 할인 매칭을 생성해주세요.</p>
         </div>
       ) : (
         <div className="bg-white rounded-xl border border-border overflow-hidden">

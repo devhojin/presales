@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 
 // ── helpers ──────────────────────────────────────────────────────────
@@ -252,12 +252,7 @@ export default function AnalyticsPage() {
   // Recent signups
   const [recentSignups, setRecentSignups] = useState<{ name: string | null; email: string | null; created_at: string }[]>([])
 
-  useEffect(() => {
-    fetchAll()
-  }, [periodDays])
-
-  async function fetchAll() {
-    setLoading(true)
+  const fetchAll = useCallback(async () => {
     const supabase = createClient()
     const today = startOfDay(new Date())
     const sevenAgo = addDays(today, -(periodDays - 1))
@@ -425,7 +420,14 @@ export default function AnalyticsPage() {
     }
     setMonthlyData(monthly)
     setLoading(false)
-  }
+  }, [periodDays])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchAll()
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [fetchAll])
 
   if (loading) {
     return (

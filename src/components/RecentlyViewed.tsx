@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Clock, FileText, X } from 'lucide-react'
@@ -18,13 +18,12 @@ interface RecentItem {
 }
 
 export function RecentlyViewed() {
-  const [items, setItems] = useState<RecentItem[]>([])
-  const [collapsed, setCollapsed] = useState(false)
-
-  useEffect(() => {
+  const [items, setItems] = useState<RecentItem[]>(() => {
+    if (typeof window === 'undefined') return []
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') as RecentItem[]
-    setItems(stored.slice(0, MAX_DISPLAY))
-  }, [])
+    return stored.slice(0, MAX_DISPLAY)
+  })
+  const [collapsed, setCollapsed] = useState(false)
 
   const removeItem = (id: number, e: React.MouseEvent) => {
     e.preventDefault()

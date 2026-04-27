@@ -1,3 +1,21 @@
+# 🔄 이어가기
+
+## 2026-04-27 현재 상태 — Windows PC 인수인계 준비
+
+- GitHub 기준 최신 브랜치: `master`
+- 기준 커밋: `b736d3b refactor: consolidate morning-brief admin`
+- 2026-04-27 개발 준비 커밋을 GitHub에 push하면 Windows PC에서는 `git clone` 또는 `git pull --ff-only` 후 이어가면 됩니다.
+- Windows 세팅 문서: `docs/WINDOWS_SETUP.md`
+- 검증 완료 명령:
+  - `npm run codex:doctor` hard failure 없음
+  - `npm run lint -- --quiet` 통과
+  - `npm run build` 통과
+  - `npm run dev -- --hostname 127.0.0.1` 로컬 200 확인
+- `.env.local`은 Git에 올라가지 않으므로 Windows PC에서 `.env.example`을 복사한 뒤 실제 값을 채워야 합니다.
+- `node_modules`는 OS별 native package가 달라서 복사하지 말고 Windows에서 `npm ci`로 새로 설치합니다.
+
+---
+
 # 🔄 이어가기 (2026-04-19 → 다음 세션)
 
 **호진님이 "프리세일즈 이어가자" 하시면 이 파일부터 읽으세요.**
