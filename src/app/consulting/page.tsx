@@ -358,38 +358,38 @@ export default function ConsultingPage() {
       </div>
 
       {/* ===========================
-          1. Roy.Chae 전문가 프로필 섹션
+          1. 프리세일즈 컨설팅 소개 섹션
           =========================== */}
       <div className="max-w-4xl mx-auto mb-12">
         <div className="rounded-2xl border border-border bg-card p-8 md:p-10">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
-            {/* 이니셜 아바타 */}
+            {/* 서비스 이니셜 아바타 */}
             <div className="shrink-0 w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <span className="text-2xl font-bold text-white tracking-wide">RC</span>
+              <span className="text-2xl font-bold text-white tracking-wide">PS</span>
             </div>
 
-            {/* 프로필 텍스트 */}
+            {/* 서비스 소개 텍스트 */}
             <div className="flex-1 text-center md:text-left">
-              <h2 className="text-xl font-bold text-foreground mb-1">Roy. Chae</h2>
-              <p className="text-sm text-primary font-medium mb-3">공공조달 전략 컨설턴트 | Pre-sales 총괄</p>
+              <h2 className="text-xl font-bold text-foreground mb-1">PRESALES Consulting</h2>
+              <p className="text-sm text-primary font-medium mb-3">공공조달 제안서 리뷰와 입찰 전략 코칭</p>
               <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-                ITS·스마트시티·AI 분야의 공공조달 제안 프로젝트를 다수 수행한 전문가.
-                공고 분석부터 제안서 발표까지, 평가표와 제안 흐름을 함께 정리합니다.
+                공공조달 제안서, RFP, 평가표를 함께 검토하며 제안 구조와 메시지를 정리합니다.
+                프리세일즈의 문서 데이터와 실무 검토 프로세스를 바탕으로 일관된 컨설팅 품질을 제공합니다.
               </p>
 
-              {/* 핵심 실적 뱃지 */}
+              {/* 핵심 영역 뱃지 */}
               <div className="flex flex-wrap justify-center md:justify-start gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
                   <Trophy className="w-3.5 h-3.5" />
-                  ITS/스마트시티 제안 경험
+                  평가표 기반 구조 점검
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
                   <Factory className="w-3.5 h-3.5" />
-                  스마트팩토리 PM 경력
+                  RFP 요구사항 매핑
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
                   <Sparkles className="w-3.5 h-3.5" />
-                  AI 기반 신사업 기획
+                  발표 흐름 리허설
                 </span>
               </div>
             </div>
@@ -416,9 +416,9 @@ export default function ConsultingPage() {
               감점으로 이어질 수 있는 표현을 줄이는 방법을 점검합니다.
             </p>
             <p className="text-sm md:text-base text-white font-semibold leading-relaxed">
-              그 차이를 만드는 것이 제 일입니다.
+              그 차이를 만드는 것이 프리세일즈 컨설팅의 역할입니다.
             </p>
-            <p className="text-xs text-blue-300/60 mt-4 font-medium">— Roy. Chae</p>
+            <p className="text-xs text-blue-300/60 mt-4 font-medium">— PRESALES Consulting</p>
           </div>
         </div>
       </div>
