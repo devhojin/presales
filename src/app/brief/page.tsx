@@ -91,7 +91,7 @@ export default function BriefPage() {
       }
       setSubscribeDone(true)
       setSubscribeEmail('')
-      addToast('✉️ 구독 신청 완료! 내일 아침부터 받으실 수 있습니다', 'success')
+      addToast('구독 신청 완료. 내일 아침부터 받으실 수 있습니다', 'success')
     } catch {
       addToast('요청 중 오류가 발생했습니다', 'error')
     } finally {
@@ -175,15 +175,12 @@ export default function BriefPage() {
         </div>
       ) : (
         <div className="flex gap-4 mb-12 items-start">
-          {/* LEFT: 브리프 리스트 (fixed-height + 독립 스크롤) */}
-          <div
-            className={`${showDetail ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[38%] border border-border/50 rounded-2xl overflow-hidden bg-card sticky self-start`}
-            style={{ top: '80px', height: 'calc(100vh - 100px)' }}
-          >
-            <div className="px-4 py-3 border-b border-border/50 bg-muted/30 shrink-0">
+          {/* LEFT: 브리프 리스트 (자연 높이, 페이지 스크롤) */}
+          <div className={`${showDetail ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[38%] border border-border/50 rounded-2xl overflow-hidden bg-card`}>
+            <div className="px-4 py-3 border-b border-border/50 bg-muted/30">
               <p className="text-xs text-muted-foreground font-medium">{briefs.length}개 브리프 · 최신순</p>
             </div>
-            <div className="flex-1 overflow-y-auto divide-y divide-border/50">
+            <div className="divide-y divide-border/50">
               {briefs.map((b) => {
                 const isActive = b.id === selectedId
                 return (
@@ -278,14 +275,16 @@ function BriefDetail({ brief, onBack }: { brief: DailyBrief; onBack: () => void 
             <ArrowLeft className="w-3 h-3" /> 목록으로
           </button>
           <h2 className="text-sm md:text-base font-semibold truncate">{brief.subject}</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            📅 {formatFullDate(brief.brief_date)}
-            {' · '}
-            뉴스 <strong>{brief.total_news}</strong>건
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              {formatFullDate(brief.brief_date)}
+            </span>
+            <span>뉴스 <strong>{brief.total_news}</strong>건</span>
             {brief.total_announcements > 0 && (
-              <> · 공고 <strong>{brief.total_announcements}</strong>건</>
+              <span>공고 <strong>{brief.total_announcements}</strong>건</span>
             )}
-          </p>
+          </div>
         </div>
       </div>
 
