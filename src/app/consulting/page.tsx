@@ -186,7 +186,7 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
               <Check className="w-8 h-8 text-blue-700" />
             </div>
             <h3 className="text-lg font-bold text-foreground mb-2">문의가 접수되었습니다</h3>
-            <p className="text-sm text-muted-foreground mb-6">24시간 이내에 담당자가 연락드리겠습니다.</p>
+            <p className="text-sm text-muted-foreground mb-6">영업일 기준 24시간 이내에 담당자가 연락드리겠습니다.</p>
             <button onClick={onClose} className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 cursor-pointer">
               확인
             </button>
@@ -255,7 +255,7 @@ function InquiryModal({ isOpen, onClose, initialPackage }: { isOpen: boolean; on
 
             {/* 첨부파일 (선택) */}
             <div>
-              <label className={labelClass}>첨부파일 <span className="text-muted-foreground">(선택, RFP/사업계획서, 10MB 이하)</span></label>
+              <label className={labelClass}>첨부파일 <span className="text-muted-foreground">(선택, RFP/사업계획서, 1GB 이하)</span></label>
               <div className="relative">
                 <input type="file" accept=".pdf,.doc,.docx,.hwp,.pptx,.ppt,.xlsx,.xls,.zip" onChange={handleFileChange} className="hidden" id="inquiry-file" />
                 <label htmlFor="inquiry-file" className="flex items-center gap-2 px-4 py-2.5 border border-dashed border-border rounded-lg cursor-pointer hover:border-gray-400 hover:bg-muted transition-colors">
@@ -354,7 +354,7 @@ export default function ConsultingPage() {
           <MessageSquare className="w-7 h-7 text-primary" />
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">컨설팅</h1>
         </div>
-        <p className="text-muted-foreground">이번 입찰, 혼자 준비하지 마세요 — 낙찰 전략을 함께 짜는 전문가 컨설팅</p>
+        <p className="text-muted-foreground">이번 입찰, 혼자 준비하지 마세요. 제안서 구조와 평가 대응 전략을 함께 정리합니다.</p>
       </div>
 
       {/* ===========================
@@ -373,15 +373,15 @@ export default function ConsultingPage() {
               <h2 className="text-xl font-bold text-foreground mb-1">Roy. Chae</h2>
               <p className="text-sm text-primary font-medium mb-3">공공조달 전략 컨설턴트 | Pre-sales 총괄</p>
               <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-                ITS·스마트시티·AI 분야에서 수십 건의 낙찰을 이끈 공공조달 전문가.
-                공고 분석부터 제안서 발표까지, 수주의 전 과정을 함께합니다.
+                ITS·스마트시티·AI 분야의 공공조달 제안 프로젝트를 다수 수행한 전문가.
+                공고 분석부터 제안서 발표까지, 평가표와 제안 흐름을 함께 정리합니다.
               </p>
 
               {/* 핵심 실적 뱃지 */}
               <div className="flex flex-wrap justify-center md:justify-start gap-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
                   <Trophy className="w-3.5 h-3.5" />
-                  ITS/스마트시티 수주 10건+
+                  ITS/스마트시티 제안 경험
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
                   <Factory className="w-3.5 h-3.5" />
@@ -408,12 +408,12 @@ export default function ConsultingPage() {
               대부분의 제안서는 &lsquo;기술을 설명&rsquo;합니다.
             </p>
             <p className="text-sm md:text-base text-white font-semibold leading-relaxed">
-              하지만 낙찰되는 제안서는 &lsquo;평가위원을 설득&rsquo;합니다.
+              하지만 잘 읽히는 제안서는 &lsquo;평가표에 맞춰 설득&rsquo;합니다.
             </p>
             <div className="w-12 h-px bg-primary/40 mx-auto" />
             <p className="text-sm md:text-base text-blue-100/80 leading-relaxed">
-              저는 평가위원이 어떤 구조에서 높은 점수를 주는지,<br className="hidden md:block" />
-              어떤 표현이 감점을 유발하는지 알고 있습니다.
+              평가표와 맞물리는 구조를 먼저 잡고,<br className="hidden md:block" />
+              감점으로 이어질 수 있는 표현을 줄이는 방법을 점검합니다.
             </p>
             <p className="text-sm md:text-base text-white font-semibold leading-relaxed">
               그 차이를 만드는 것이 제 일입니다.
@@ -477,7 +477,7 @@ export default function ConsultingPage() {
                       : 'border border-border hover:bg-muted'
                   }`}
                 >
-                  Roy.Chae에게 문의하기
+                  상담 문의하기
                 </button>
               </div>
             ))}
@@ -601,7 +601,7 @@ export default function ConsultingPage() {
           =========================== */}
       <div className="max-w-5xl mx-auto mb-20">
         <h2 className="text-xl font-bold text-center mb-2">함께한 기업들의 이야기</h2>
-        <p className="text-sm text-muted-foreground text-center mb-8">실제 프로젝트 기반의 컨설팅 성과</p>
+        <p className="text-sm text-muted-foreground text-center mb-8">비식별 수행 사례를 바탕으로 한 컨설팅 방향</p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Case 1: ITS */}
@@ -611,11 +611,11 @@ export default function ConsultingPage() {
             </div>
             <h3 className="text-sm font-bold text-white mb-2">수도권 광역시 ITS 유지관리 용역</h3>
             <p className="text-xs text-blue-200/70 leading-relaxed mb-4">
-              3주 만에 제안서 완성. 공고 분석부터 발표 리허설까지 전 과정을 코칭하여 기술점수 1위로 낙찰.
+              3주 일정 안에서 공고 분석, 목차 재정리, 발표 리허설까지 단계별로 점검해 평가 대응 구조를 정리했습니다.
             </p>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-300 text-[11px] font-medium">
               <Trophy className="w-3 h-3" />
-              기술점수 1위 낙찰
+              평가 대응 구조화
             </span>
           </div>
 
@@ -626,7 +626,7 @@ export default function ConsultingPage() {
             </div>
             <h3 className="text-sm font-bold text-white mb-2">경기도 스마트빌리지 AI 서비스</h3>
             <p className="text-xs text-blue-200/70 leading-relaxed mb-4">
-              AI 기반 서비스 기획부터 제안서까지 원스톱 코칭. 기술 난이도가 높은 사업에서도 평가위원이 이해할 수 있는 구조를 설계.
+              AI 기반 서비스 기획부터 제안서 구조까지 원스톱으로 점검. 기술 난이도가 높은 사업도 평가위원이 이해하기 쉬운 흐름으로 정리했습니다.
             </p>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-500/15 text-violet-300 text-[11px] font-medium">
               <Sparkles className="w-3 h-3" />
@@ -641,14 +641,17 @@ export default function ConsultingPage() {
             </div>
             <h3 className="text-sm font-bold text-white mb-2">반도체 기업 스마트공장 구축</h3>
             <p className="text-xs text-blue-200/70 leading-relaxed mb-4">
-              300페이지 기술제안서를 2주 만에 구조화. PM 경험을 바탕으로 실행 가능성 중심의 제안 전략을 수립.
+              300페이지 규모의 기술제안서를 2주 안에 구조화. PM 경험을 바탕으로 실행 가능성 중심의 제안 전략을 수립했습니다.
             </p>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-300 text-[11px] font-medium">
               <Factory className="w-3 h-3" />
-              2주 만에 구조화 완료
+              실행 전략 구조화
             </span>
           </div>
         </div>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          사례는 고객 정보를 비식별 처리하고 유사 유형으로 재구성했습니다. 컨설팅은 낙찰 또는 특정 평가점수를 보장하지 않습니다.
+        </p>
       </div>
 
       {/* Process - Timeline style */}
@@ -663,7 +666,7 @@ export default function ConsultingPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {[
               { icon: FileText, step: '01', title: '상담 신청', desc: '온라인 폼으로 간편하게 신청하세요. 요금 방식을 선택하고 RFP를 첨부할 수 있습니다.', color: 'from-blue-400 to-blue-500' },
-              { icon: Clock, step: '02', title: '전문가 매칭', desc: '24시간 이내 프로젝트에 적합한 전문가를 배정하고 일정을 조율합니다.', color: 'from-blue-500 to-blue-600' },
+              { icon: Clock, step: '02', title: '자료 확인 및 일정 조율', desc: '영업일 기준 24시간 이내에 자료 범위와 상담 일정을 먼저 확인합니다.', color: 'from-blue-500 to-blue-600' },
               { icon: Video, step: '03', title: '컨설팅 진행', desc: '화상 또는 대면 미팅으로 제안서 리뷰, 전략 수립, 코칭을 진행합니다.', color: 'from-blue-600 to-indigo-600' },
               { icon: Star, step: '04', title: '리포트 & 지원', desc: '피드백 리포트를 전달하고 후속 질의응답을 지원합니다.', color: 'from-indigo-600 to-indigo-700' },
             ].map((item, i) => (
@@ -701,7 +704,7 @@ export default function ConsultingPage() {
             <h3 className="font-bold text-sm text-foreground mb-2">합리적 비용</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
               컨설팅 외주 {formatWonShort(INDUSTRY_CONSULTING_PRICE_FLOOR_WON)}+ 대비, 스팟 상담은 <span className="text-primary font-semibold">{formatWonShort(CONSULTING_PACKAGES.spot.priceWon)}</span>부터.
-              핵심만 짚어주는 집중 상담으로 최소 비용, 최대 효과를 만듭니다.
+              필요한 범위만 선택할 수 있어 과도한 외주 비용 없이 핵심 점검부터 시작할 수 있습니다.
             </p>
           </div>
 
@@ -710,10 +713,10 @@ export default function ConsultingPage() {
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center mb-5">
               <ShieldCheck className="w-6 h-6 text-white" />
             </div>
-            <h3 className="font-bold text-sm text-foreground mb-2">감점 포인트 사전 차단</h3>
+            <h3 className="font-bold text-sm text-foreground mb-2">감점 포인트 사전 점검</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              평가표 항목별로 감점이 발생하는 패턴을 미리 파악하고 차단합니다.
-              내용이 좋아도 구성 실수로 탈락하는 일을 막습니다.
+              평가표 항목별로 감점이 발생하기 쉬운 패턴을 미리 확인합니다.
+              내용이 좋아도 구성 실수로 손해 보는 상황을 줄입니다.
             </p>
           </div>
 
@@ -725,7 +728,7 @@ export default function ConsultingPage() {
             <h3 className="font-bold text-sm text-foreground mb-2">발표 리허설까지</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
               제안서 작성에서 끝나지 않습니다. 발표 PT 리허설까지 함께하여
-              수주의 <span className="text-primary font-semibold">마지막 1%</span>를 챙깁니다.
+              제출 전 <span className="text-primary font-semibold">마지막 점검</span>을 돕습니다.
             </p>
           </div>
         </div>

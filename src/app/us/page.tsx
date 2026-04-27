@@ -152,18 +152,13 @@ function DecimalCountUp({ target, suffix = '', decimals = 1 }: { target: number;
    Main Page
    ============================================================ */
 export default function UsPage() {
-  const [heroReady, setHeroReady] = useState(false)
+  const [heroReady] = useState(true)
   const [productThumbs, setProductThumbs] = useState<{ id: string; title: string; thumbnail_url: string }[]>([])
-  const [totalDownloads, setTotalDownloads] = useState(0)
-  const [productCount, setProductCount] = useState(0)
-  const [reviewAvg, setReviewAvg] = useState(0)
-  const [positiveReviewRate, setPositiveReviewRate] = useState(0)
+  const [totalDownloads, setTotalDownloads] = useState<number | null>(null)
+  const [productCount, setProductCount] = useState<number | null>(null)
+  const [reviewAvg, setReviewAvg] = useState<number | null>(null)
+  const [positiveReviewRate, setPositiveReviewRate] = useState<number | null>(null)
   const [testimonials, setTestimonials] = useState<{ quote: string; name: string; role: string }[]>([])
-
-  useEffect(() => {
-    const t = setTimeout(() => setHeroReady(true), 300)
-    return () => clearTimeout(t)
-  }, [])
 
   // Fetch real stats from Supabase
   useEffect(() => {
@@ -294,9 +289,9 @@ export default function UsPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { title: '구색 맞추기 제안서', body: '요구사항을 나열만 하고, 평가위원이 원하는 "답"을 쓰지 않습니다. 기술점수 70점 미만 — 가격이 아무리 낮아도 탈락.', icon: FileText, delay: 0 },
-              { title: '처음 보는 구성', body: '관공서 제안서에는 암묵적 "정답 포맷"이 있습니다. 그걸 모르면 내용이 좋아도 읽히지 않습니다.', icon: Pen, delay: 150 },
-              { title: '레퍼런스 없는 도전', body: '낙찰된 제안서를 한 번도 본 적 없이 감으로 쓰는 건, 기출 없이 시험 치는 것과 같습니다.', icon: BarChart3, delay: 300 },
+              { title: '구색 맞추기 제안서', body: '요구사항을 나열만 하고, 평가위원이 확인해야 할 핵심 답변 구조가 약합니다.', icon: FileText, delay: 0 },
+              { title: '처음 보는 구성', body: '공공조달 제안서는 평가표와 목차의 연결이 중요합니다. 그 흐름이 약하면 좋은 내용도 읽히기 어렵습니다.', icon: Pen, delay: 150 },
+              { title: '레퍼런스 없는 도전', body: '검증된 제안서 흐름을 보지 못한 채 감으로 쓰면, 준비 시간이 길어지고 판단 기준이 흐려집니다.', icon: BarChart3, delay: 300 },
             ].map((card) => (
               <Reveal key={card.title} delay={card.delay}>
                 <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-6 md:p-8 backdrop-blur-sm hover:border-blue-500/30 transition-colors">
@@ -321,12 +316,12 @@ export default function UsPage() {
           </Reveal>
           <Reveal type="scale" delay={300}>
             <h2 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight">
-              <span className="text-blue-400">낙찰받은 제안서</span>는<br />이미 존재합니다.
+              <span className="text-blue-400">검증된 제안서 흐름</span>은<br />이미 있습니다.
             </h2>
           </Reveal>
           <Reveal delay={800}>
             <p className="text-lg text-zinc-400">
-              실제 나라장터에서 선정된 제안서를<br />그대로 볼 수 있다면?
+              수주 경험에서 검증된 목차와 설득 흐름을<br />참고할 수 있다면?
             </p>
           </Reveal>
         </div>
@@ -337,19 +332,19 @@ export default function UsPage() {
         <div className="max-w-5xl mx-auto">
           <Reveal className="text-center mb-20">
             <p className="text-xs text-blue-400 font-semibold uppercase tracking-[4px] mb-3">PRESALES</p>
-            <h2 className="text-2xl md:text-4xl font-bold tracking-tight">낙찰의 공식을 템플릿으로 만들었습니다</h2>
+            <h2 className="text-2xl md:text-4xl font-bold tracking-tight">평가 흐름을 템플릿으로 정리했습니다</h2>
           </Reveal>
 
-          {/* 01 — 실제 낙찰된 제안서 */}
+          {/* 01 — 실전 수주 경험 기반 구성 */}
           <div className="flex flex-col md:flex-row items-center gap-8 md:gap-16 mb-20">
             <Reveal type="left" className="flex-1">
               <p className="text-6xl font-bold text-blue-500/20 mb-4">01</p>
-              <h3 className="text-xl md:text-2xl font-bold mb-4">실제 낙찰된 제안서</h3>
-              <p className="text-zinc-400 leading-relaxed">ITS, 스마트시티, 스마트팩토리, AI, 금융SI — 실제 나라장터에서 선정된 원본 구성을 담았습니다. 감이 아닌 실적으로 검증된 제안서.</p>
+              <h3 className="text-xl md:text-2xl font-bold mb-4">실전 수주 경험 기반 구성</h3>
+              <p className="text-zinc-400 leading-relaxed">ITS, 스마트시티, 스마트팩토리, AI, 금융SI. 민감정보를 제거하고 공개 가능한 범위에서 재구성한 실무형 제안 흐름을 담았습니다.</p>
             </Reveal>
             <Reveal type="right" delay={200} className="flex-1">
               <div className="w-full rounded-2xl border border-white/[0.08] overflow-hidden shadow-[0_0_40px_rgba(37,99,235,0.08)]">
-                <Image src="/images/us/proposal-detail.jpg" alt="실제 낙찰된 제안서 내부 페이지" width={800} height={450} className="w-full h-auto" />
+                <Image src="/images/us/proposal-detail.jpg" alt="공공조달 제안서 내부 페이지 예시" width={800} height={450} className="w-full h-auto" />
               </div>
             </Reveal>
           </div>
@@ -359,7 +354,7 @@ export default function UsPage() {
             <Reveal type="right" className="flex-1">
               <p className="text-6xl font-bold text-blue-500/20 mb-4">02</p>
               <h3 className="text-xl md:text-2xl font-bold mb-4">열어서 바로 편집</h3>
-              <p className="text-zinc-400 leading-relaxed">PPT, PDF 원본 파일 그대로 제공. 다운로드 후 우리 회사 내용만 채우면 전문가 수준의 제안서가 완성됩니다.</p>
+              <p className="text-zinc-400 leading-relaxed">PPT, PDF 원본 파일을 내려받아 우리 회사의 실적, 기술, 일정에 맞게 바로 편집할 수 있습니다.</p>
             </Reveal>
             <Reveal type="left" delay={200} className="flex-1">
               <div className="w-full rounded-2xl border border-white/[0.08] overflow-hidden shadow-[0_0_40px_rgba(37,99,235,0.08)]">
@@ -401,7 +396,7 @@ export default function UsPage() {
               { icon: Megaphone, title: '공고 사업', desc: '매일 자동 수집되는 최신 공공조달 공고. 놓치는 공고 없이 기회를 포착하세요.', href: '/announcements', color: 'from-blue-500/20 to-blue-600/10', delay: 0 },
               { icon: Rss, title: 'IT피드', desc: '스타트업·IT·정책 시장 동향을 실시간 업데이트. 제안서에 최신 트렌드를 반영하세요.', href: '/feeds', color: 'from-orange-500/20 to-orange-600/10', delay: 100 },
               { icon: Mail, title: '모닝 브리프', desc: '매일 아침 이메일로 받는 시장 인사이트. 구독 한 번이면 매일 아침 5분 브리핑.', href: '/brief', color: 'from-violet-500/20 to-violet-600/10', delay: 200 },
-              { icon: Users, title: '전문가 컨설팅', desc: '입찰 전략부터 발표 리허설까지 1:1 코칭. 공공조달 전문가가 낙찰 전략을 함께 짭니다.', href: '/consulting', color: 'from-blue-500/20 to-blue-700/10', delay: 300 },
+              { icon: Users, title: '전문가 컨설팅', desc: '입찰 전략부터 발표 리허설까지 1:1 코칭. 공공조달 전문가가 평가 대응 흐름을 함께 정리합니다.', href: '/consulting', color: 'from-blue-500/20 to-blue-700/10', delay: 300 },
             ].map((item) => (
               <Reveal key={item.title} delay={item.delay}>
                 <Link
@@ -431,14 +426,16 @@ export default function UsPage() {
           {/* 숫자 */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
             {[
-              { target: totalDownloads || 0, suffix: '+', label: '누적 다운로드', decimal: false },
-              { target: productCount || 0, suffix: '', label: '검증된 템플릿', decimal: false },
-              { target: positiveReviewRate || 0, suffix: '%', label: '긍정 후기 비율', decimal: false },
-              { target: reviewAvg || 0, suffix: '', label: '평균 만족도 (5점)', decimal: true },
+              { target: totalDownloads, suffix: '+', label: '누적 다운로드', decimal: false },
+              { target: productCount, suffix: '', label: '실무형 템플릿', decimal: false },
+              { target: positiveReviewRate, suffix: '%', label: '긍정 후기 비율', decimal: false },
+              { target: reviewAvg, suffix: '', label: '평균 만족도 (5점)', decimal: true },
             ].map((stat) => (
               <Reveal key={stat.label} className="text-center">
                 <p className="text-3xl md:text-5xl font-bold text-blue-400 tabular-nums">
-                  {stat.decimal ? (
+                  {stat.target == null ? (
+                    <span className="text-lg md:text-xl text-zinc-500">집계 중</span>
+                  ) : stat.decimal ? (
                     <DecimalCountUp target={stat.target} suffix={stat.suffix} />
                   ) : (
                     <CountUp target={stat.target} suffix={stat.suffix} />
@@ -462,7 +459,9 @@ export default function UsPage() {
                     ))}
                   </div>
                   <p className="text-sm text-zinc-300 leading-relaxed mb-4">&quot;{t.quote}&quot;</p>
-                  <p className="text-xs text-zinc-500">— {t.name}, {t.role}</p>
+                  {(t.name || t.role) && (
+                    <p className="text-xs text-zinc-500">— {[t.name, t.role].filter(Boolean).join(', ')}</p>
+                  )}
                 </div>
               </Reveal>
             ))}
@@ -474,7 +473,7 @@ export default function UsPage() {
       <section className="bg-[#0a0a0a] text-white py-24 md:py-32 px-6">
         <div className="max-w-5xl mx-auto text-center">
           <Reveal>
-            <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-4">검증된 제안서, 지금 확인하세요</h2>
+            <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-4">실무형 제안서, 지금 확인하세요</h2>
             <p className="text-zinc-400 mb-10">ITS · 스마트시티 · 스마트팩토리 · AI · 금융SI · 사업계획서</p>
           </Reveal>
           <Reveal delay={200}>
@@ -482,7 +481,7 @@ export default function UsPage() {
               href="/store"
               className="inline-flex items-center gap-2 h-14 px-10 rounded-full bg-blue-500 text-white font-semibold text-base hover:bg-blue-400 transition-all active:scale-[0.98] shadow-[0_0_30px_rgba(37,99,235,0.2)]"
             >
-              전체 {productCount || ''}개 템플릿 보기
+              {productCount ? `전체 ${productCount}개 템플릿 보기` : '문서 스토어 보기'}
               <ArrowRight className="w-5 h-5" />
             </Link>
           </Reveal>
@@ -528,12 +527,12 @@ export default function UsPage() {
             <p className="text-xl md:text-2xl lg:text-3xl leading-[1.8] tracking-tight font-medium">
               좋은 기술을 가진 기업이<br />
               제안서 때문에 기회를 잃는 건<br />
-              이 시장의 <span className="text-blue-400 underline underline-offset-4 decoration-blue-400/50">구조적 불공정</span>입니다.
+              이 시장의 <span className="text-blue-400 underline underline-offset-4 decoration-blue-400/50">정보 격차</span>입니다.
             </p>
           </Reveal>
           <Reveal delay={600}>
             <p className="text-lg md:text-xl text-zinc-400 leading-[1.8]">
-              우리는 낙찰의 경험을 공유해서<br />
+              우리는 수주 경험에서 얻은 흐름을 공유해서<br />
               실력 있는 기업이 정당하게 선정되는<br />
               조달 시장을 만들고 싶습니다.
             </p>
@@ -552,11 +551,11 @@ export default function UsPage() {
         <div className="relative z-10 max-w-3xl mx-auto text-center text-white">
           <Reveal>
             <h2 className="text-2xl md:text-4xl font-bold tracking-tight mb-4">
-              다음 입찰,<br className="md:hidden" /> 프리세일즈와 함께 낙찰받으세요
+              다음 입찰,<br className="md:hidden" /> 더 선명하게 준비하세요
             </h2>
           </Reveal>
           <Reveal delay={200}>
-            <p className="text-white/70 mb-10">{totalDownloads > 0 ? `${totalDownloads.toLocaleString()}+ 다운로드 달성` : ''} 제안서 템플릿</p>
+            <p className="text-white/70 mb-10">{totalDownloads && totalDownloads > 0 ? `${totalDownloads.toLocaleString()}+ 다운로드 달성` : '공공조달 실무형'} 제안서 템플릿</p>
           </Reveal>
           <Reveal delay={400} className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
             <Link
@@ -567,7 +566,7 @@ export default function UsPage() {
               <ArrowRight className="w-5 h-5" />
             </Link>
             <Link
-              href="/store?filter=free"
+              href="/store?price=free"
               className="h-14 px-10 rounded-full border-2 border-white/30 text-white font-semibold text-base hover:bg-white/10 transition-all flex items-center gap-2"
             >
               무료 샘플 받기

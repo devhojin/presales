@@ -15,6 +15,7 @@ import { createClient } from '@/lib/supabase'
 import { validatePassword } from '@/lib/password-policy'
 import { useToastStore } from '@/stores/toast-store'
 import { useDraggableModal } from '@/hooks/useDraggableModal'
+import { OrderReceiptDocument, buildReceiptPrintHtml } from '@/components/orders/OrderReceiptDocument'
 
 // ===========================
 // Types
@@ -44,6 +45,8 @@ interface Order {
   status: string
   created_at: string
   paid_at?: string | null
+  payment_method?: string | null
+  cash_receipt_url?: string | null
   refund_reason?: string | null
   order_items?: OrderItem[]
 }
@@ -223,7 +226,7 @@ export default function MyConsolePage() {
         { data: feedBmData },
       ] = await Promise.all([
         supabase.from('profiles').select('name, email, phone, company, role, created_at').eq('id', user.id).single(),
-        supabase.from('orders').select('id, order_number, total_amount, status, created_at, paid_at, refund_reason, order_items(id, price, original_price, discount_amount, products(id, title, price))').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('orders').select('id, order_number, total_amount, status, created_at, paid_at, payment_method, cash_receipt_url, refund_reason, order_items(id, price, original_price, discount_amount, products(id, title, price))').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(title)').eq('user_id', user.id).order('downloaded_at', { ascending: false }),
         supabase.from('announcement_bookmarks').select('announcement_id').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('feed_bookmarks').select('post_id').eq('user_id', user.id).order('created_at', { ascending: false }),
@@ -343,18 +346,9 @@ export default function MyConsolePage() {
   }
 
   function printReceipt(order: Order) {
-    const printWindow = window.open('', '_blank', 'width=600,height=800')
+    const printWindow = window.open('', '_blank', 'width=980,height=1200')
     if (!printWindow) return
-    const receiptDate = order.paid_at ? new Date(order.paid_at).toLocaleDateString('ko-KR') : new Date(order.created_at).toLocaleDateString('ko-KR')
-    const itemsHtml = (order.order_items || []).map(item => {
-      const prod = Array.isArray(item.products) ? item.products[0] : item.products
-      const hasDiscount = (item.discount_amount ?? 0) > 0 && item.original_price && item.original_price > item.price
-      if (hasDiscount) {
-        return `<tr><td>${prod?.title || '상품'}<br/><span style="color:#2563EB;font-size:11px">할인 -${(item.discount_amount || 0).toLocaleString()}원</span></td><td style="text-align:right"><span style="color:#999;text-decoration:line-through;font-size:11px">${(item.original_price || 0).toLocaleString()}원</span><br/>${item.price.toLocaleString()}원</td></tr>`
-      }
-      return `<tr><td>${prod?.title || '상품'}</td><td style="text-align:right">${item.price.toLocaleString()}원</td></tr>`
-    }).join('')
-    printWindow.document.write(`<html><head><meta charset="UTF-8"/><title>거래 영수증</title><style>body{font-family:'Malgun Gothic',sans-serif;padding:40px;max-width:500px;margin:0 auto;color:#333}h1{text-align:center;font-size:24px;border-bottom:2px solid #333;padding-bottom:16px}table{width:100%;border-collapse:collapse;margin:20px 0}th,td{padding:8px;border-bottom:1px solid #ddd;text-align:left;font-size:14px}th{background:#f5f5f5;font-weight:600}.total{font-weight:bold;font-size:18px;text-align:right;padding-top:16px;border-top:2px solid #333}.footer{margin-top:40px;text-align:center;color:#666;font-size:12px}.info dt{color:#999;font-size:12px;margin:8px 0 4px}.info dd{margin:0 0 12px;font-weight:500;font-size:14px}.company-info{margin-top:32px;padding:16px;background:#fafafa;border-radius:4px;font-size:13px}@media print{body{padding:0}}</style></head><body><h1>거래 영수증</h1><dl class="info"><dt>주문번호</dt><dd>${order.order_number || order.id}</dd><dt>발행일</dt><dd>${receiptDate}</dd></dl><table><thead><tr><th>상품명</th><th style="text-align:right">금액</th></tr></thead><tbody>${itemsHtml}</tbody></table><p class="total">합계: ${order.total_amount?.toLocaleString()}원</p><hr/><div class="company-info"><dl class="info"><dt>공급자</dt><dd>주식회사 아마란스</dd><dt>대표</dt><dd>채호진</dd><dt>이메일</dt><dd>hojin@amarans.co.kr</dd></dl></div><div class="footer"><p>이 영수증은 전자상거래 거래증빙용입니다.</p><button onclick="window.print()" style="margin-top:16px;padding:8px 24px;cursor:pointer;border:1px solid #999;background:#fff;border-radius:4px">인쇄</button></div></body></html>`)
+    printWindow.document.write(buildReceiptPrintHtml(order, profile))
     printWindow.document.close()
   }
 
@@ -1019,16 +1013,18 @@ export default function MyConsolePage() {
 
       {/* Receipt/Order Detail Modal */}
       {receiptOrder && (() => {
-        const items = (receiptOrder.order_items || []) as OrderItem[]
         const statusInfo = statusMap[receiptOrder.status] || { label: receiptOrder.status, class: 'bg-muted text-muted-foreground border-border' }
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setReceiptOrder(null)}>
-            <div className="bg-background rounded-2xl max-w-lg w-full max-h-[85vh] shadow-xl flex flex-col" style={receiptStyle} onClick={e => e.stopPropagation()}>
+            <div className="bg-background rounded-2xl max-w-5xl w-full max-h-[90vh] shadow-xl flex flex-col overflow-hidden" style={receiptStyle} onClick={e => e.stopPropagation()}>
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b border-border/50 shrink-0 cursor-move" onMouseDown={receiptMouseDown}>
+              <div className="flex items-center justify-between gap-4 p-5 border-b border-border/50 shrink-0 cursor-move" onMouseDown={receiptMouseDown}>
                 <div>
-                  <h3 className="text-lg font-semibold">주문서</h3>
-                  <p className="text-xs font-mono text-muted-foreground mt-1">{receiptOrder.order_number}</p>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-semibold">주문서</h3>
+                    <Badge className={`text-xs border ${statusInfo.class}`}>{statusInfo.label}</Badge>
+                  </div>
+                  <p className="text-xs font-mono text-muted-foreground mt-1">{receiptOrder.order_number || `PS-${receiptOrder.id}`}</p>
                 </div>
                 <button type="button" onClick={() => setReceiptOrder(null)} className="text-muted-foreground hover:text-foreground cursor-pointer">
                   <X className="w-5 h-5" />
@@ -1036,78 +1032,8 @@ export default function MyConsolePage() {
               </div>
 
               {/* Body */}
-              <div className="flex-1 overflow-y-auto p-6">
-                {/* Meta */}
-                <div className="grid grid-cols-2 gap-3 mb-5 pb-5 border-b border-border/50">
-                  <div>
-                    <p className="text-xs text-muted-foreground">주문 상태</p>
-                    <Badge className={`text-xs border mt-1 ${statusInfo.class}`}>{statusInfo.label}</Badge>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">주문 일시</p>
-                    <p className="text-sm font-medium mt-0.5">{formatDate(receiptOrder.created_at)}</p>
-                  </div>
-                  {receiptOrder.paid_at && (
-                    <div>
-                      <p className="text-xs text-muted-foreground">결제 완료</p>
-                      <p className="text-sm font-medium mt-0.5">{formatDate(receiptOrder.paid_at)}</p>
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-xs text-muted-foreground">주문자</p>
-                    <p className="text-sm font-medium mt-0.5">{profile?.name || profile?.email || '-'}</p>
-                  </div>
-                </div>
-
-                {/* Items */}
-                <p className="text-xs font-semibold text-muted-foreground mb-2">주문 상품</p>
-                <div className="space-y-2 mb-5">
-                  {items.map(item => {
-                    const prod = Array.isArray(item.products) ? item.products[0] : item.products
-                    const hasDiscount = (item.discount_amount ?? 0) > 0 && item.original_price && item.original_price > item.price
-                    return (
-                      <div key={item.id} className="py-2.5 px-3 rounded-lg border border-border/50 bg-muted/20">
-                        <div className="flex items-center justify-between">
-                          <div className="min-w-0 flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
-                            <p className="text-sm font-medium truncate">{prod?.title || '-'}</p>
-                          </div>
-                          <div className="text-right shrink-0 ml-3">
-                            {hasDiscount && (
-                              <p className="text-[10px] text-muted-foreground line-through">{formatPrice(item.original_price || 0)}</p>
-                            )}
-                            <p className="text-sm font-semibold">{formatPrice(item.price)}</p>
-                          </div>
-                        </div>
-                        {hasDiscount && (
-                          <p className="text-[11px] text-blue-700 mt-1 pl-6">
-                            ▸ 할인 -{formatPrice(item.discount_amount || 0)}
-                          </p>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-
-                {/* Total */}
-                {(() => {
-                  const totalDiscount = items.reduce((sum, it) => sum + (it.discount_amount || 0), 0)
-                  return (
-                    <div className="pt-4 border-t border-border/50 space-y-1.5">
-                      {totalDiscount > 0 && (
-                        <div className="flex items-center justify-between text-xs">
-                          <p className="text-muted-foreground">할인 합계</p>
-                          <p className="text-blue-700 font-medium">-{formatPrice(totalDiscount)}</p>
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold">총 결제 금액</p>
-                        <p className="text-lg font-bold text-primary">{formatPrice(receiptOrder.total_amount)}</p>
-                      </div>
-                    </div>
-                  )
-                })()}
-
+              <div className="flex-1 overflow-y-auto bg-neutral-100 p-4 sm:p-6">
+                <OrderReceiptDocument order={receiptOrder} profile={profile} className="rounded-sm" />
                 {receiptOrder.refund_reason && (
                   <div className="mt-4 p-3 rounded-lg bg-orange-50 border border-orange-200">
                     <p className="text-xs font-semibold text-orange-700 mb-1">환불 문의 내용</p>
@@ -1118,6 +1044,16 @@ export default function MyConsolePage() {
 
               {/* Footer */}
               <div className="flex items-center justify-end gap-2 p-4 border-t border-border/50 shrink-0">
+                {receiptOrder.cash_receipt_url && (
+                  <a
+                    href={receiptOrder.cash_receipt_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 text-xs font-medium border border-border rounded-lg hover:bg-muted cursor-pointer"
+                  >
+                    현금영수증 확인
+                  </a>
+                )}
                 {(receiptOrder.status === 'paid' || receiptOrder.status === 'completed') && (
                   <button type="button" onClick={() => printReceipt(receiptOrder)} className="px-4 py-2 text-xs font-medium border border-blue-300 text-primary rounded-lg hover:bg-primary/8 cursor-pointer">영수증 인쇄</button>
                 )}

@@ -2,16 +2,43 @@ import type { Metadata } from 'next'
 import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
-  title: '우리는 — 공공조달 제안서의 새로운 기준',
-  description: '좋은 기술을 가진 기업이 제안서 때문에 기회를 잃는 건 구조적 불공정입니다. 프리세일즈는 낙찰의 경험을 공유해 실력 있는 기업이 정당하게 선정되는 조달 시장을 만듭니다.',
+  title: '우리는 — 공공조달 제안서 마켓플레이스의 기준',
+  description: '프리세일즈는 공공조달 제안서 템플릿, 입찰 정보, IT피드, 모닝 브리프, 전문가 컨설팅을 연결해 제안 준비의 정보 격차를 줄입니다.',
+  keywords: ['공공조달 제안서', '나라장터 제안서', '입찰 제안서 템플릿', '조달청 입찰', '프리세일즈'],
   alternates: { canonical: `${SITE_URL}/us` },
   openGraph: {
-    title: '우리는 — 공공조달 제안서의 새로운 기준',
-    description: '낙찰받은 기업의 제안서로 당신의 성공을 설계합니다.',
+    title: '우리는 — 공공조달 제안서 마켓플레이스의 기준',
+    description: '제안서 템플릿, 입찰 정보, IT피드, 전문가 컨설팅을 연결하는 PRESALES.',
     url: `${SITE_URL}/us`,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '우리는 — PRESALES',
+    description: '공공조달 제안 준비의 정보 격차를 줄이는 제안서 마켓플레이스.',
+  },
+}
+
+const aboutPageJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'AboutPage',
+  name: '우리는 — PRESALES',
+  url: `${SITE_URL}/us`,
+  description: metadata.description,
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'PRESALES',
+    url: SITE_URL,
   },
 }
 
 export default function UsLayout({ children }: { children: React.ReactNode }) {
-  return children
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageJsonLd) }}
+      />
+      {children}
+    </>
+  )
 }

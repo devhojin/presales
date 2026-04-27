@@ -61,8 +61,8 @@ export function Footer() {
               <ul className="space-y-3.5">
                 {[
                   { href: '/store', label: '문서 스토어' },
+                  { href: '/store?price=free', label: '무료 자료' },
                   { href: '/consulting', label: '전문가 컨설팅' },
-                  { href: '/store?price=free', label: '무료 가이드' },
                 ].map((link) => (
                   <li key={link.href}>
                     <Link href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 inline-flex items-center gap-1 group">
@@ -78,9 +78,11 @@ export function Footer() {
               <h4 className="text-xs font-semibold text-foreground uppercase tracking-widest mb-5">지원</h4>
               <ul className="space-y-3.5">
                 {[
-                  { href: '/about', label: '회사소개' },
-                  { href: '/faq', label: '자주 묻는 질문' },
-                  { href: '/consulting', label: '문의하기' },
+                  { href: '/us', label: '우리는' },
+                  { href: '/announcements', label: '입찰 공고' },
+                  { href: '/feeds', label: 'IT피드' },
+                  { href: '/brief', label: '모닝 브리프' },
+                  { href: '/faq', label: '고객지원' },
                 ].map((link) => (
                   <li key={link.href}>
                     <Link href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300">
