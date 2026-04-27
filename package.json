@@ -5,6 +5,7 @@
   "scripts": {
     "predev": "node scripts/generate-work-history.js",
     "codex:doctor": "node scripts/codex-doctor.mjs",
+    "mcp:telegram": "node scripts/telegram-mcp.mjs",
     "products:remediate": "node scripts/remediate-product-catalog.mjs",
     "products:detail-pages": "node scripts/build-product-detail-pages.mjs",
     "products:thumbnails": "node scripts/generate-thumbnails.js",
@@ -51,6 +52,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@resvg/resvg-js": "^2.6.2",
     "@tailwindcss/postcss": "^4",
     "@types/dompurify": "^3.0.5",
@@ -62,6 +64,7 @@
     "eslint-config-next": "16.2.1",
     "satori": "^0.26.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "zod": "^4.3.6"
   }
 }

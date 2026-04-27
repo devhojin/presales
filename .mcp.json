@@ -25,6 +25,15 @@
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp"]
     },
+    "telegram-presales": {
+      "command": "node",
+      "args": ["scripts/telegram-mcp.mjs"],
+      "env": {
+        "TELEGRAM_BOT_TOKEN": "${TELEGRAM_BOT_TOKEN}",
+        "TELEGRAM_CHAT_ID": "${TELEGRAM_CHAT_ID}",
+        "TELEGRAM_ALLOWED_CHAT_IDS": "${TELEGRAM_ALLOWED_CHAT_IDS}"
+      }
+    },
     "github-presales": {
       "command": "npx",
       "args": ["-y", "@modelcontextprotocol/server-github"],
