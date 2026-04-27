@@ -338,8 +338,16 @@ export default function MyConsolePage() {
     setRefundSubmitting(true)
     try {
       const supabase = createClient()
-      const { error } = await supabase.from('orders').update({ refund_reason: reason }).eq('id', orderId)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { addToast('로그인이 필요합니다', 'error'); return }
+      const { data, error } = await supabase
+        .from('orders')
+        .update({ refund_reason: reason })
+        .eq('id', orderId)
+        .eq('user_id', user.id)
+        .select('id')
       if (error) { addToast('환불 문의 접수 실패: ' + error.message, 'error') }
+      else if (!data || data.length === 0) { addToast('주문 접근 권한을 확인할 수 없습니다', 'error') }
       else { setOrders(prev => prev.map(o => o.id === orderId ? { ...o, refund_reason: reason } : o)); setRefundOrderId(null); setRefundReason(''); addToast('환불 문의가 접수되었습니다', 'success') }
     } catch { addToast('환불 문의 접수 중 오류', 'error') }
     finally { setRefundSubmitting(false) }

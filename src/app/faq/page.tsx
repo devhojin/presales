@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
+import { createServerClient } from '@supabase/ssr'
 import { FaqClient } from './FaqClient'
 import { SITE_URL } from '@/lib/constants'
+import { safeJsonLd } from '@/lib/json-ld'
 
 export const metadata: Metadata = {
   title: '자주 묻는 질문 (FAQ) | 프리세일즈',
@@ -16,6 +18,67 @@ export const metadata: Metadata = {
   },
 }
 
-export default function FaqPage() {
-  return <FaqClient />
+type FaqRow = {
+  question: string
+  answer: string
+  is_active: boolean
+  sort_order: number
+}
+
+type FaqCategoryRow = {
+  faqs: FaqRow[] | null
+}
+
+async function getFaqJsonLd() {
+  try {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { cookies: { getAll() { return [] } } },
+    )
+
+    const { data } = await supabase
+      .from('faq_categories')
+      .select('faqs (question, answer, is_active, sort_order)')
+      .eq('is_active', true)
+      .order('sort_order')
+      .order('sort_order', { referencedTable: 'faqs' })
+
+    const faqs = ((data ?? []) as FaqCategoryRow[])
+      .flatMap((category) => category.faqs ?? [])
+      .filter((item) => item.is_active && item.question && item.answer)
+
+    if (faqs.length === 0) return null
+
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map((item) => ({
+        '@type': 'Question',
+        name: item.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: item.answer,
+        },
+      })),
+    }
+  } catch {
+    return null
+  }
+}
+
+export default async function FaqPage() {
+  const faqJsonLd = await getFaqJsonLd()
+
+  return (
+    <>
+      {faqJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }}
+        />
+      )}
+      <FaqClient />
+    </>
+  )
 }

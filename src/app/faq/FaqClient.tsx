@@ -82,37 +82,12 @@ export function FaqClient() {
   const totalFaqs = categories.reduce((sum, s) => sum + s.faqs.length, 0)
   const totalMatches = filteredData.reduce((sum, s) => sum + s.faqs.length, 0)
 
-  // FAQ structured data (JSON-LD) for SEO
-  const faqJsonLd = useMemo(() => {
-    const allFaqs = categories.flatMap(c => c.faqs)
-    if (allFaqs.length === 0) return null
-    return {
-      '@context': 'https://schema.org',
-      '@type': 'FAQPage',
-      mainEntity: allFaqs.map(item => ({
-        '@type': 'Question',
-        name: item.question,
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: item.answer,
-        },
-      })),
-    }
-  }, [categories])
-
   if (loading) {
     return <div className="min-h-[60vh] flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>
   }
 
   return (
     <>
-      {/* JSON-LD: FAQ data is admin-curated from Supabase, safe for structured data output */}
-      {faqJsonLd && (
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-        />
-      )}
     <div className="max-w-[1400px] mx-auto px-4 md:px-8">
       {/* Header */}
       <div className="py-8 md:py-12">

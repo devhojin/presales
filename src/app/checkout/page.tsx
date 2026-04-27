@@ -34,6 +34,7 @@ export default function CheckoutPage() {
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null)
   // 토스 가상계좌/현금영수증 SMS/이메일 발송에 필요
   const customerRef = useRef<{ name?: string; email?: string; phone?: string }>({})
+  const currentUserIdRef = useRef<string | null>(null)
 
   // 세금계산서/추가정보
   const [showExtraInfo, setShowExtraInfo] = useState(false)
@@ -153,6 +154,7 @@ export default function CheckoutPage() {
           router.push(`/auth/login?redirect=${encodeURIComponent(redirectUrl)}`)
           return
         }
+        currentUserIdRef.current = user.id
 
         // 채팅 결제: pending 주문 생성 (order_items 없음)
         const { data: order, error: orderError } = await supabase
@@ -224,6 +226,7 @@ export default function CheckoutPage() {
           router.push('/auth/login?redirect=/checkout')
           return
         }
+        currentUserIdRef.current = user.id
 
         // 1.5. 장바구니 상품 유효성 검증
         const productIds = paidItems.map(item => item.productId)
@@ -431,6 +434,7 @@ export default function CheckoutPage() {
             .from('orders')
             .update(orderUpdateFields)
             .eq('id', existingOrder.id)
+            .eq('user_id', user.id)
 
           if (updateError) {
             addToast('주문 금액 업데이트에 실패했습니다.', 'error')
@@ -592,12 +596,14 @@ export default function CheckoutPage() {
       addToast(error.message || '결제 요청에 실패했습니다.', 'error')
 
       // pending 주문 취소 (실패 시 서버 로그로만 남김 — 사용자 에러 토스트 이미 표시됨)
-      if (dbOrderId) {
+      const currentUserId = currentUserIdRef.current
+      if (dbOrderId && currentUserId) {
         const supabase = createClient()
         const { error: cancelErr } = await supabase
           .from('orders')
           .update({ status: 'cancelled' })
           .eq('id', dbOrderId)
+          .eq('user_id', currentUserId)
         if (cancelErr) {
           console.error('[checkout] pending 주문 취소 실패:', cancelErr)
         }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CONSULTING_PACKAGES, SITE_URL } from "@/lib/constants";
+import { safeJsonLd } from "@/lib/json-ld";
 
 export const metadata: Metadata = {
   title: "컨설팅 — 공공조달 제안서 리뷰와 입찰 전략 코칭",
@@ -47,7 +48,7 @@ export default function ConsultingLayout({ children }: { children: React.ReactNo
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(consultingServiceJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(consultingServiceJsonLd) }}
       />
       {children}
     </>

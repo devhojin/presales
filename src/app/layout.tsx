@@ -9,6 +9,7 @@ import { ToastContainer } from "@/components/Toast";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 import { ExitIntentPopup } from "@/components/ExitIntentPopup";
 import { SITE_URL } from "@/lib/constants";
+import { safeJsonLd } from "@/lib/json-ld";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -102,11 +103,11 @@ export default function RootLayout({
         <GoogleAnalytics />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLd) }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(websiteJsonLd) }}
         />
       </head>
       <body className="min-h-full flex flex-col">

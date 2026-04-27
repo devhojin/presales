@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { SITE_URL } from '@/lib/constants'
+import { safeJsonLd } from '@/lib/json-ld'
 
 export const metadata: Metadata = {
   title: '우리는 — 공공조달 제안서 마켓플레이스의 기준',
@@ -36,7 +37,7 @@ export default function UsLayout({ children }: { children: React.ReactNode }) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutPageJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(aboutPageJsonLd) }}
       />
       {children}
     </>
