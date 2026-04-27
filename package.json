@@ -6,6 +6,8 @@
     "predev": "node scripts/generate-work-history.js",
     "codex:doctor": "node scripts/codex-doctor.mjs",
     "products:remediate": "node scripts/remediate-product-catalog.mjs",
+    "products:detail-pages": "node scripts/build-product-detail-pages.mjs",
+    "products:thumbnails": "node scripts/generate-thumbnails.js",
     "dev": "next dev",
     "prebuild": "node scripts/generate-work-history.js",
     "build": "next build",

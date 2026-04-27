@@ -14,6 +14,22 @@
 - `.env.local`은 Git에 올라가지 않으므로 Windows PC에서 `.env.example`을 복사한 뒤 실제 값을 채워야 합니다.
 - `node_modules`는 OS별 native package가 달라서 복사하지 말고 Windows에서 `npm ci`로 새로 설치합니다.
 
+## 2026-04-27 상품 상세페이지/썸네일 일괄 구축
+
+- `https://presales-zeta.vercel.app/api/products?limit=100` 기준 게시 상품 63개를 확인하고 상세 데이터와 썸네일을 일괄 구축했습니다.
+- Supabase `products` 테이블에 `description`, `description_html`, `overview`, `features`, `specs`, `file_types`, `thumbnail_url`, `tags`, `seller`를 업데이트했습니다.
+- 가격은 상품 DB의 기존 `price`/`is_free` 표시만 유지하고, 생성한 상세 콘텐츠와 썸네일 디자인에는 가격을 넣지 않았습니다.
+- 관리자 상품 편집 화면에서 수정 가능한 배열형 필드(`overview`, `features`, `specs`, `file_types`)를 상세페이지 렌더러가 그대로 표시하도록 보정했습니다.
+- 적용 전 백업: `C:\Users\hojin\AppData\Local\Temp\presales-product-detail-backup-2026-04-27T11-12-44-558Z.json`
+- 검증:
+  - `npm run products:detail-pages -- --dry-run`
+  - `npm run products:thumbnails`
+  - `npm run products:detail-pages`
+  - `npm run lint -- --quiet`
+  - `npm run build`
+  - `npm run codex:doctor`
+  - `http://127.0.0.1:3000/store`, `/store/58` Playwright 스크린샷 확인
+
 ---
 
 # 🔄 이어가기 (2026-04-19 → 다음 세션)

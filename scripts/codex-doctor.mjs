@@ -19,12 +19,31 @@ function fail(message) {
   failures++
 }
 
-function run(cmd, args) {
-  return execFileSync(cmd, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim()
+function run(cmd, args, options = {}) {
+  return execFileSync(cmd, args, {
+    cwd,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    ...options,
+  }).trim()
+}
+
+function quoteCmdArg(value) {
+  const text = String(value)
+  if (/^[A-Za-z0-9._@/:=-]+$/.test(text)) return text
+  return `"${text.replaceAll('"', '""')}"`
+}
+
+function runNpm(args) {
+  if (process.platform !== 'win32') return run('npm', args)
+
+  const comSpec = process.env.ComSpec || 'cmd.exe'
+  const command = ['npm', ...args].map(quoteCmdArg).join(' ')
+  return run(comSpec, ['/d', '/s', '/c', command])
 }
 
 function packageAvailable(pkg) {
-  const version = run('npm', ['view', pkg, 'version'])
+  const version = runNpm(['view', pkg, 'version'])
   return version
 }
 
@@ -84,7 +103,7 @@ for (const [key, required] of envChecks) {
 
 try {
   const nodeVersion = run('node', ['-v'])
-  const npmVersion = run('npm', ['-v'])
+  const npmVersion = runNpm(['-v'])
   ok(`node ${nodeVersion}`)
   ok(`npm ${npmVersion}`)
 } catch (error) {
@@ -113,10 +132,27 @@ try {
 }
 
 try {
+  const version = packageAvailable('@modelcontextprotocol/server-filesystem')
+  ok(`filesystem MCP package resolved (${version})`)
+} catch (error) {
+  fail(`filesystem MCP package check failed: ${error instanceof Error ? error.message : String(error)}`)
+}
+
+try {
   const version = packageAvailable('@supabase/mcp-server-supabase')
   ok(`supabase MCP package resolved (${version})`)
 } catch (error) {
   fail(`supabase MCP package check failed: ${error instanceof Error ? error.message : String(error)}`)
+}
+
+try {
+  const filesystemServer = mcpConfig?.mcpServers?.['filesystem-presales']
+  const rootArg = filesystemServer?.args?.at(-1)
+  if (!rootArg) fail('filesystem MCP root path is missing')
+  else if (fs.existsSync(rootArg)) ok(`filesystem MCP root exists: ${rootArg}`)
+  else fail(`filesystem MCP root does not exist: ${rootArg}`)
+} catch (error) {
+  fail(`filesystem MCP root check failed: ${error instanceof Error ? error.message : String(error)}`)
 }
 
 try {

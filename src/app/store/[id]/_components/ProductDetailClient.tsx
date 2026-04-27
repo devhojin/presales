@@ -31,6 +31,101 @@ interface ProductFile {
   created_at: string
 }
 
+interface FeatureItem {
+  title: string
+  description?: string
+}
+
+interface SpecItem {
+  label: string
+  value: string
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function cleanText(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+function normalizeStringList(value: unknown, objectKey = 'items'): string[] {
+  if (Array.isArray(value)) {
+    return value.map(cleanText).filter(Boolean)
+  }
+
+  if (isRecord(value)) {
+    const items = value[objectKey] ?? value.items ?? value.points
+    if (Array.isArray(items)) return items.map(cleanText).filter(Boolean)
+  }
+
+  return []
+}
+
+function normalizeFeatures(value: unknown): FeatureItem[] {
+  const source = isRecord(value) && Array.isArray(value.items) ? value.items : value
+  if (!Array.isArray(source)) return []
+
+  return source
+    .map((item): FeatureItem | null => {
+      if (typeof item === 'string') {
+        const title = item.trim()
+        return title ? { title } : null
+      }
+      if (!isRecord(item)) return null
+      const title = cleanText(item.title)
+      const description = cleanText(item.description)
+      return title ? { title, ...(description ? { description } : {}) } : null
+    })
+    .filter((item): item is FeatureItem => item !== null)
+}
+
+function normalizeSpecs(value: unknown): SpecItem[] {
+  const source = isRecord(value) && Array.isArray(value.items) ? value.items : value
+  if (!Array.isArray(source)) return []
+
+  return source
+    .map((item): SpecItem | null => {
+      if (typeof item === 'string') {
+        const [label, ...rest] = item.split(':')
+        const value = rest.join(':').trim()
+        return label.trim() && value ? { label: label.trim(), value } : null
+      }
+      if (!isRecord(item)) return null
+      const label = cleanText(item.label)
+      const value = cleanText(item.value)
+      return label && value ? { label, value } : null
+    })
+    .filter((item): item is SpecItem => item !== null)
+}
+
+function normalizeOverview(value: unknown, fallbackSummary: string | null) {
+  const points = normalizeStringList(value, 'points')
+  const summary = isRecord(value) ? cleanText(value.summary) : ''
+  return {
+    summary: summary || cleanText(fallbackSummary),
+    points,
+  }
+}
+
+function normalizeFileTypes(value: unknown, format: string | null): string[] {
+  const fromField = normalizeStringList(value)
+  if (fromField.length > 0) return fromField
+  if (!format) return []
+
+  const found = new Set<string>()
+  const upper = format.toUpperCase()
+  for (const type of ['PPTX', 'PPT', 'PDF', 'XLSX', 'XLS', 'DOCX', 'DOC', 'HWP', 'ZIP']) {
+    if (upper.includes(type)) {
+      if (type === 'PPTX') found.add('PPT')
+      else if (type === 'XLSX') found.add('XLS')
+      else if (type === 'DOCX') found.add('DOC')
+      else found.add(type)
+    }
+  }
+  return Array.from(found)
+}
+
 function ImagePreviewModal({ images, onClose }: { images: string[]; onClose: () => void }) {
   const [current, setCurrent] = useState(0)
 
@@ -335,6 +430,19 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
     ? Math.round((1 - product.price / product.original_price) * 100)
     : 0
   const inCart = isInCart(product.id)
+  const categoryNames = getCategoryNames(product)
+  const overview = normalizeOverview(product.overview, product.description)
+  const featureItems = normalizeFeatures(product.features)
+  const specItems = normalizeSpecs(product.specs)
+  const fileTypeItems = normalizeFileTypes(product.file_types, product.format)
+  const hasDetailContent =
+    Boolean(overview.summary) ||
+    overview.points.length > 0 ||
+    featureItems.length > 0 ||
+    specItems.length > 0 ||
+    fileTypeItems.length > 0 ||
+    Boolean(product.description_html || product.description)
+  const productSerial = String(product.id).padStart(3, '0')
 
   const tabs: { id: TabId; label: string }[] = [
     { id: 'info', label: '상품정보' },
@@ -343,38 +451,42 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
   ]
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-10">
-      <Link href="/store" className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border/50 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-300 mb-8">
+    <div className="bg-[linear-gradient(180deg,#FAFAF9_0%,#F7F8FA_46%,#FAFAF9_100%)]">
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-8 md:py-12">
+      <Link href="/store" className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border/60 bg-white/80 text-sm text-muted-foreground shadow-[0_8px_24px_rgba(15,23,42,0.04)] backdrop-blur hover:text-foreground hover:bg-white transition-all duration-300 mb-8 active:scale-[0.98]">
         <ArrowLeft className="w-4 h-4" /> 스토어로 돌아가기
       </Link>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-8 lg:gap-12">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,0.95fr)_minmax(0,1.35fr)] gap-8 lg:gap-12 items-start">
         {/* Left: Image + Preview */}
-        <div className="space-y-4">
-          <div className="relative rounded-2xl overflow-hidden bg-muted flex items-center justify-center border border-border/50 shadow-[0_8px_30px_rgba(0,0,0,0.06)]">
+        <div className="space-y-4 lg:sticky lg:top-24">
+          <div className="relative overflow-hidden rounded-[1.75rem] border border-white/80 bg-[#101827] p-3 shadow-[0_32px_80px_-42px_rgba(15,23,42,0.55)]">
+            <div className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.8)_1px,transparent_1px)] [background-size:32px_32px]" />
+            <div className="relative rounded-[1.25rem] overflow-hidden bg-muted flex items-center justify-center">
             {product.thumbnail_url ? (
-              <Image src={product.thumbnail_url} alt={product.title} width={400} height={300} className="w-full h-auto object-contain max-h-[500px]" />
+              <Image src={product.thumbnail_url} alt={product.title} width={800} height={600} className="w-full h-auto object-contain max-h-[500px]" priority />
             ) : (
               <div className="w-full aspect-[4/3] bg-gradient-to-br from-blue-950 to-blue-800 flex items-center justify-center">
                 <FileText className="w-16 h-16 text-blue-200" />
               </div>
             )}
-            <Badge className={`absolute top-4 left-4 border font-bold tracking-tight ${product.is_free ? 'bg-primary text-white border-primary' : 'bg-zinc-900 text-white border-zinc-900'}`}>
+            <Badge className={`absolute top-4 left-4 border font-bold tracking-tight shadow-sm ${product.is_free ? 'bg-blue-600 text-white border-blue-600' : 'bg-zinc-950 text-white border-zinc-900'}`}>
               {product.is_free ? '무료' : '유료'}
             </Badge>
+            </div>
           </div>
 
           {/* PDF Preview Button */}
           {product.preview_pdf_url ? (
             <button
               onClick={() => setShowPdfPreview(true)}
-              className="w-full bg-card border border-border/50 rounded-2xl py-3 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-center justify-center gap-2 text-sm font-medium text-foreground"
+            className="w-full bg-white border border-border/60 rounded-2xl py-3 hover:shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition-all duration-300 flex items-center justify-center gap-2 text-sm font-medium text-foreground active:scale-[0.98]"
             >
               <BookOpen className="w-4 h-4" />
               문서 미리보기
             </button>
           ) : (product.preview_note || product.format) && (
-            <div className="w-full bg-card border border-border/50 rounded-2xl py-3 px-4 text-center">
+            <div className="w-full bg-white border border-border/60 rounded-2xl py-3 px-4 text-center">
               <p className="text-sm text-muted-foreground">
                 {product.preview_note || (product.is_free ? '무료 다운로드 후 바로 사용 가능합니다' : '구매 후 원본 파일을 다운로드할 수 있습니다')}
               </p>
@@ -386,7 +498,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           {product.preview_images && product.preview_images.length > 0 && (
             <button
               onClick={() => setShowImagePreview(true)}
-              className="w-full bg-card border border-border/50 rounded-2xl py-3 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300 flex items-center justify-center gap-2 text-sm font-medium text-foreground"
+              className="w-full bg-white border border-border/60 rounded-2xl py-3 hover:shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition-all duration-300 flex items-center justify-center gap-2 text-sm font-medium text-foreground active:scale-[0.98]"
             >
               <ImageIcon className="w-4 h-4" />
               이미지 미리보기
@@ -397,16 +509,35 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
 
         {/* Right: Info */}
         <div className="space-y-6">
-          <div>
+          <div className="rounded-[1.75rem] border border-border/60 bg-white/88 p-6 sm:p-8 shadow-[0_28px_70px_-50px_rgba(15,23,42,0.5)] backdrop-blur">
+            <div className="flex items-start justify-between gap-4 mb-5">
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-700">PRESALES DOC {productSerial}</p>
+                <div className="flex gap-2 flex-wrap mt-3">
+                  {categoryNames.map((name) => (
+                    <span key={name} className="rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{name}</span>
+                  ))}
+                  {fileTypeItems.slice(0, 4).map((type) => (
+                    <span key={type} className="rounded-md bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-700">{type}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="hidden sm:flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#0C1220] text-white shadow-[0_18px_45px_-30px_rgba(12,18,32,0.9)]">
+                <FileText className="h-5 w-5" />
+              </div>
+            </div>
             <div className="flex gap-2 flex-wrap mb-2">
-              {getCategoryNames(product).map((name) => (
+              {categoryNames.map((name) => (
                 <span key={name} className="text-xs font-semibold text-muted-foreground uppercase tracking-tight">{name}</span>
               ))}
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">{product.title}</h1>
+            <h1 className="text-3xl md:text-5xl font-semibold tracking-tight leading-[1.08] text-zinc-950 text-balance">{product.title}</h1>
+            {overview.summary && (
+              <p className="mt-5 max-w-[68ch] text-[15px] leading-7 text-zinc-600">{overview.summary}</p>
+            )}
           </div>
 
-          <div className="flex items-baseline gap-3">
+          <div className="flex items-baseline gap-3 px-1">
             {product.is_free ? (
               <span className="text-4xl font-bold text-primary">무료</span>
             ) : (
@@ -464,7 +595,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
             )}
             <div className="py-2 flex justify-between">
               <p className="text-muted-foreground">카테고리</p>
-              <p className="font-medium">{getCategoryNames(product).join(', ') || '-'}</p>
+                <p className="font-medium">{categoryNames.join(', ') || '-'}</p>
             </div>
             <div className="py-2 flex justify-between">
               <p className="text-muted-foreground">다운로드</p>
@@ -630,7 +761,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
 
       {/* Tabs */}
       <div className="mt-14">
-        <div className="border-b border-border/50 sticky top-0 bg-background z-10">
+        <div className="border-b border-border/50 sticky top-0 bg-background/90 z-10 backdrop-blur">
           <nav className="flex gap-0 -mb-px">
             {tabs.map((tab) => (
               <button
@@ -653,49 +784,48 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           {/* 상품정보 Tab */}
           {activeTab === 'info' && (
             <div className="space-y-10">
-              {/* Overview: 핵심 요약 */}
-              {(() => {
-                const ov = (product.overview ?? {}) as { points?: string[]; summary?: string }
-                const points = Array.isArray(ov.points) ? ov.points.filter((p): p is string => typeof p === 'string' && p.trim().length > 0) : []
-                const summary = typeof ov.summary === 'string' ? ov.summary.trim() : ''
-                if (!summary && points.length === 0) return null
-                return (
-                  <section className="rounded-2xl bg-gradient-to-br from-blue-50 to-white border border-blue-100 p-6">
-                    <h3 className="text-sm font-semibold tracking-widest text-blue-600 mb-3">핵심 요약</h3>
-                    {summary && <p className="text-[15px] text-slate-700 leading-relaxed mb-4">{summary}</p>}
-                    {points.length > 0 && (
-                      <ul className="grid gap-2 sm:grid-cols-2">
-                        {points.map((p, i) => (
-                          <li key={i} className="flex items-start gap-2 text-[14px] text-slate-700">
-                            <CheckCircle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                            <span>{p}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </section>
-                )
-              })()}
-
-              {/* Features: 주요 특징 */}
-              {(() => {
-                const ft = (product.features ?? {}) as { items?: { title: string; description?: string }[] }
-                const items = Array.isArray(ft.items) ? ft.items.filter((f) => f && typeof f.title === 'string' && f.title.trim().length > 0) : []
-                if (items.length === 0) return null
-                return (
-                  <section>
-                    <h3 className="text-lg font-bold tracking-tight mb-4">주요 특징</h3>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      {items.map((f, i) => (
-                        <div key={i} className="rounded-xl border border-slate-200 bg-white p-4 hover:shadow-sm transition-shadow">
-                          <p className="font-semibold text-slate-900 mb-1">{f.title}</p>
-                          {f.description && <p className="text-sm text-slate-600 leading-relaxed">{f.description}</p>}
-                        </div>
+              {(overview.summary || overview.points.length > 0) && (
+                <section className="relative overflow-hidden rounded-[1.75rem] border border-blue-100 bg-white p-6 sm:p-8 shadow-[0_22px_55px_-42px_rgba(37,99,235,0.55)]">
+                  <div className="absolute inset-x-0 top-0 h-1 bg-blue-600" />
+                  <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">핵심 요약</p>
+                  {overview.summary && <p className="max-w-[72ch] text-[15px] leading-8 text-slate-700">{overview.summary}</p>}
+                  {overview.points.length > 0 && (
+                    <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+                      {overview.points.map((point, i) => (
+                        <li key={i} className="flex items-start gap-3 rounded-2xl bg-slate-50/80 p-4 text-[14px] leading-6 text-slate-700">
+                          <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
+                          <span>{point}</span>
+                        </li>
                       ))}
+                    </ul>
+                  )}
+                </section>
+              )}
+
+              {featureItems.length > 0 && (
+                <section>
+                  <div className="mb-5 flex items-end justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">구매 전 확인</p>
+                      <h3 className="mt-2 text-2xl font-semibold tracking-tight text-zinc-950">무엇을 바로 쓸 수 있나</h3>
                     </div>
-                  </section>
-                )
-              })()}
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {featureItems.map((feature, i) => (
+                      <article
+                        key={`${feature.title}-${i}`}
+                        className="rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-[0_18px_45px_-40px_rgba(15,23,42,0.45)] transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-200"
+                      >
+                        <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                          <CheckCircle className="h-4 w-4" />
+                        </div>
+                        <p className="font-semibold text-slate-950">{feature.title}</p>
+                        {feature.description && <p className="mt-2 text-sm leading-6 text-slate-600">{feature.description}</p>}
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              )}
 
               {product.description_html ? (
                 <div
@@ -706,59 +836,45 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                 <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
               ) : null}
 
-              {/* Specs: 상세 스펙 */}
-              {(() => {
-                const sp = (product.specs ?? {}) as { items?: { label: string; value: string }[] }
-                const items = Array.isArray(sp.items) ? sp.items.filter((s) => s && typeof s.label === 'string' && s.label.trim().length > 0) : []
-                if (items.length === 0) return null
-                return (
-                  <section>
-                    <h3 className="text-lg font-bold tracking-tight mb-4">상세 스펙</h3>
-                    <dl className="rounded-xl border border-slate-200 overflow-hidden bg-white">
-                      {items.map((s, i) => (
-                        <div key={i} className={`grid grid-cols-[140px_1fr] text-sm ${i !== items.length - 1 ? 'border-b border-slate-100' : ''}`}>
-                          <dt className="bg-slate-50 px-4 py-3 font-medium text-slate-600">{s.label}</dt>
-                          <dd className="px-4 py-3 text-slate-900">{s.value}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </section>
-                )
-              })()}
-
-              {/* File Types: 포함 파일 */}
-              {(() => {
-                const ft = (product.file_types ?? {}) as { items?: string[] }
-                const items = Array.isArray(ft.items) ? ft.items.filter((t): t is string => typeof t === 'string' && t.trim().length > 0) : []
-                if (items.length === 0) return null
-                return (
-                  <section>
-                    <h3 className="text-lg font-bold tracking-tight mb-3">포함 파일</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {items.map((t, i) => (
-                        <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-sm font-medium">
-                          <FileText className="w-3.5 h-3.5" />
-                          {t}
-                        </span>
-                      ))}
+              {(specItems.length > 0 || fileTypeItems.length > 0) && (
+                <section className="grid gap-6 lg:grid-cols-[1fr_0.72fr]">
+                  {specItems.length > 0 && (
+                    <div>
+                      <h3 className="mb-4 text-xl font-semibold tracking-tight text-zinc-950">상세 스펙</h3>
+                      <dl className="overflow-hidden rounded-[1.25rem] border border-slate-200 bg-white">
+                        {specItems.map((spec, i) => (
+                          <div key={`${spec.label}-${i}`} className={`grid grid-cols-[118px_1fr] text-sm sm:grid-cols-[160px_1fr] ${i !== specItems.length - 1 ? 'border-b border-slate-100' : ''}`}>
+                            <dt className="bg-slate-50 px-4 py-3 font-medium text-slate-600">{spec.label}</dt>
+                            <dd className="px-4 py-3 text-slate-900">{spec.value}</dd>
+                          </div>
+                        ))}
+                      </dl>
                     </div>
-                  </section>
-                )
-              })()}
+                  )}
 
-              {/* 아무것도 없을 때 */}
-              {!product.description_html && !product.description && (() => {
-                const anyExtra =
-                  (product.overview && Object.keys(product.overview).length > 0) ||
-                  (product.features && Object.keys(product.features).length > 0) ||
-                  (product.specs && Object.keys(product.specs).length > 0) ||
-                  (product.file_types && Object.keys(product.file_types).length > 0)
-                return anyExtra ? null : (
-                  <div className="text-center py-16 text-muted-foreground">
-                    <p>등록된 상품 상세 정보가 없습니다.</p>
-                  </div>
-                )
-              })()}
+                  {fileTypeItems.length > 0 && (
+                    <div>
+                      <h3 className="mb-4 text-xl font-semibold tracking-tight text-zinc-950">포함 파일</h3>
+                      <div className="rounded-[1.25rem] border border-slate-200 bg-white p-4">
+                        <div className="flex flex-wrap gap-2">
+                          {fileTypeItems.map((type, i) => (
+                            <span key={`${type}-${i}`} className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700">
+                              <FileText className="h-3.5 w-3.5" />
+                              {type}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {!hasDetailContent && (
+                <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-white/70 py-16 text-center text-muted-foreground">
+                  <p>등록된 상품 상세 정보가 없습니다.</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -960,6 +1076,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           onClose={() => setShowFreeUpsell(false)}
         />
       )}
+      </div>
     </div>
   )
 }
