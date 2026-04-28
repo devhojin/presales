@@ -20,6 +20,7 @@ import { useRecentlyViewed } from '@/hooks/useRecentlyViewed'
 import * as gtag from '@/lib/gtag'
 import { SITE_URL } from '@/lib/constants'
 import { shareToKakao } from '@/lib/kakao-share'
+import { buildProductTagSearchHref } from '@/lib/product-tags'
 
 type TabId = 'info' | 'video' | 'review'
 
@@ -677,7 +678,11 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           {product.tags && product.tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {product.tags.map((tag) => (
-                <Badge key={tag} variant="outline" className="text-xs">#{tag}</Badge>
+                <Link key={tag} href={buildProductTagSearchHref(tag)}>
+                  <Badge variant="outline" className="text-xs hover:border-primary hover:text-primary transition-colors cursor-pointer">
+                    #{tag}
+                  </Badge>
+                </Link>
               ))}
             </div>
           )}

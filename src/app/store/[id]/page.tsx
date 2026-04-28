@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { SITE_URL, SITE_NAME } from '@/lib/constants'
 import { formatPrice } from '@/lib/types'
+import { normalizeProductTags } from '@/lib/product-tags'
 import ProductDetailClient from './_components/ProductDetailClient'
 
 async function getProduct(id: string) {
@@ -46,14 +47,20 @@ export async function generateMetadata(
 
   const title = `${product.title} | ${SITE_NAME}`
   const priceText = product.is_free ? '무료' : formatPrice(product.price)
-  const description = product.description
+  const productTags = normalizeProductTags(product.tags)
+  const baseDescription = product.description
     ? product.description.slice(0, 120)
     : `${product.title} — ${priceText} · 공공조달 제안서 템플릿`
+  const tagContext = productTags.length > 0
+    ? ` 관련 키워드: ${productTags.slice(0, 6).join(', ')}`
+    : ''
+  const description = `${baseDescription}${tagContext}`.slice(0, 160)
   const pageUrl = `${SITE_URL}/store/${id}`
 
   return {
     title,
     description,
+    ...(productTags.length > 0 ? { keywords: productTags } : {}),
     openGraph: {
       title,
       description,

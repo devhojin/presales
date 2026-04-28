@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { type DbProduct, type DbCategory, formatPrice, priceTypes } from '@/lib/types'
 import { RecentlyViewed } from '@/components/RecentlyViewed'
+import { normalizeProductSearchTerm } from '@/lib/product-tags'
 
 const LIMIT = 12
 
@@ -64,21 +65,24 @@ function highlightText(text: string, query: string): ReactNode {
   if (!query.trim()) return text
   const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const regex = new RegExp(`(${escaped})`, 'gi')
+  const matcher = new RegExp(`^${escaped}$`, 'i')
   const parts = text.split(regex)
   if (parts.length === 1) return text
   return parts.map((part, i) =>
-    regex.test(part) ? <mark key={i} className="bg-yellow-200 dark:bg-yellow-800 dark:text-yellow-100 px-0.5 rounded">{part}</mark> : part
+    matcher.test(part) ? <mark key={i} className="bg-yellow-200 dark:bg-yellow-800 dark:text-yellow-100 px-0.5 rounded">{part}</mark> : part
   )
 }
 
 function ProductCard({
   product,
   onFileTypeClick,
+  onTagClick,
   categoryNames,
   searchQuery,
 }: {
   product: DbProduct
   onFileTypeClick: (type: string) => void
+  onTagClick: (tag: string) => void
   categoryNames: string[]
   searchQuery?: string
 }) {
@@ -168,7 +172,26 @@ function ProductCard({
           {product.tags && product.tags.length > 0 && (
             <div className="flex gap-1 flex-wrap">
               {product.tags.slice(0, 3).map((tag) => (
-                <span key={tag} className="text-[10px] text-primary">#{tag}</span>
+                <span
+                  key={tag}
+                  role="button"
+                  tabIndex={0}
+                  title={`태그 검색: ${tag}`}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    onTagClick(tag)
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key !== 'Enter' && e.key !== ' ') return
+                    e.preventDefault()
+                    e.stopPropagation()
+                    onTagClick(tag)
+                  }}
+                  className="text-[10px] text-primary hover:underline cursor-pointer"
+                >
+                  #{searchQuery ? highlightText(tag, searchQuery) : tag}
+                </span>
               ))}
               {product.tags.length > 3 && (
                 <span className="text-[10px] text-muted-foreground">+{product.tags.length - 3}</span>
@@ -451,6 +474,13 @@ export default function StoreClient() {
     applyFilters({ fileType: newFileType })
   }
 
+  const handleTagClick = (tag: string) => {
+    const query = normalizeProductSearchTerm(tag)
+    if (!query) return
+    applyFilters({ query })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const resetFilters = () => {
     applyFilters({
       cats: new Set(),
@@ -650,6 +680,7 @@ export default function StoreClient() {
                 key={product.id}
                 product={product}
                 onFileTypeClick={handleFileTypeClick}
+                onTagClick={handleTagClick}
                 categoryNames={getCategoryNames(product)}
                 searchQuery={searchQuery}
               />
@@ -685,6 +716,7 @@ export default function StoreClient() {
                     key={product.id}
                     product={product}
                     onFileTypeClick={handleFileTypeClick}
+                    onTagClick={handleTagClick}
                     categoryNames={getCategoryNames(product)}
                   />
                 ))}

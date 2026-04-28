@@ -1,8 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { normalizeProductSearchTerm, productMatchesSearch } from '@/lib/product-tags'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
+const SEARCH_FETCH_LIMIT = 1000
 
 /**
  * Public API: Get paginated published products
@@ -19,6 +21,7 @@ export async function GET(request: NextRequest) {
   const fileType = sp.get('fileType') || ''
   const priceRange = sp.get('priceRange') || '' // free | under50k | 50k_100k | over100k
   const price = sp.get('price') || '' // free | paid (free/paid toggle, separate from priceRange)
+  const hasSearch = normalizeProductSearchTerm(q).length > 0
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -46,12 +49,6 @@ export async function GET(request: NextRequest) {
       ].join(',')
       query = query.or(orParts)
     }
-  }
-
-  // Search filter
-  if (q) {
-    const escaped = q.replace(/[%_]/g, '\\$&')
-    query = query.or(`title.ilike.%${escaped}%,description.ilike.%${escaped}%`)
   }
 
   // File type filter — format is a text field containing file extension names
@@ -101,17 +98,27 @@ export async function GET(request: NextRequest) {
   }
 
   const offset = (page - 1) * limit
-  const { data, error, count } = await query.range(offset, offset + limit - 1)
+  const rangeStart = hasSearch ? 0 : offset
+  const rangeEnd = hasSearch ? SEARCH_FETCH_LIMIT - 1 : offset + limit - 1
+  const { data, error, count } = await query.range(rangeStart, rangeEnd)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  const filteredProducts = hasSearch
+    ? (data ?? []).filter((product) => productMatchesSearch(product, q))
+    : (data ?? [])
+  const paginatedProducts = hasSearch
+    ? filteredProducts.slice(offset, offset + limit)
+    : filteredProducts
+  const total = hasSearch ? filteredProducts.length : (count ?? 0)
+
   return NextResponse.json({
-    products: data ?? [],
-    total: count ?? 0,
+    products: paginatedProducts,
+    total,
     page,
     limit,
-    totalPages: Math.ceil((count ?? 0) / limit),
+    totalPages: Math.ceil(total / limit),
   })
 }
