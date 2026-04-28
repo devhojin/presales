@@ -10,6 +10,7 @@ const scriptSrc = [
   "https://cdn.portone.io",
   "https://www.googletagmanager.com",
   "https://www.google-analytics.com",
+  "https://t1.kakaocdn.net",
 ].join(" ");
 
 const connectSrc = [
@@ -21,6 +22,7 @@ const connectSrc = [
   "https://*.google-analytics.com",
   "https://api.tosspayments.com",
   "https://*.portone.io",
+  "https://*.kakao.com",
   ...(isDev
     ? [
         "ws://localhost:*",
@@ -38,12 +40,12 @@ const cspDirectives = [
   "img-src 'self' data: blob: https://vswkrbemigyclgjrpgqt.supabase.co https://*.supabase.co https://www.google-analytics.com https://img.youtube.com https://i.ytimg.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   `connect-src ${connectSrc}`,
-  "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://js.tosspayments.com https://*.portone.io",
+  "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://js.tosspayments.com https://*.portone.io https://*.kakao.com",
   "media-src 'self' blob: https://vswkrbemigyclgjrpgqt.supabase.co",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
-  "form-action 'self'",
+  "form-action 'self' https://*.kakao.com",
   "frame-ancestors 'none'",
   "upgrade-insecure-requests",
 ].join("; ");

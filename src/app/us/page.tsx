@@ -16,9 +16,9 @@ import { createClient } from '@/lib/supabase'
 const revealStyle = `
   [data-reveal] {
     opacity: 0;
-    transform: translateY(40px);
-    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(24px);
+    transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
   }
   [data-reveal][data-visible="true"] {
     opacity: 1;
@@ -26,9 +26,9 @@ const revealStyle = `
   }
   [data-reveal-left] {
     opacity: 0;
-    transform: translateX(-80px);
-    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateX(-40px);
+    transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
   }
   [data-reveal-left][data-visible="true"] {
     opacity: 1;
@@ -36,9 +36,9 @@ const revealStyle = `
   }
   [data-reveal-right] {
     opacity: 0;
-    transform: translateX(80px);
-    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateX(40px);
+    transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
   }
   [data-reveal-right][data-visible="true"] {
     opacity: 1;
@@ -46,9 +46,9 @@ const revealStyle = `
   }
   [data-reveal-scale] {
     opacity: 0;
-    transform: scale(0.85);
-    transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1),
-                transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: scale(0.94);
+    transition: opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
   }
   [data-reveal-scale][data-visible="true"] {
     opacity: 1;
@@ -270,6 +270,25 @@ export default function UsPage() {
           >
             &quot;이번에도 떨어지면 어떡하지—&quot;
           </p>
+          <div
+            className={`flex flex-col sm:flex-row items-center justify-center gap-3 pt-4 transition-all duration-1000 delay-[1200ms] ${
+              heroReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}
+          >
+            <Link
+              href="/store"
+              className="inline-flex h-12 w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-white px-7 text-sm font-semibold text-zinc-950 transition-all hover:bg-zinc-200 active:scale-[0.98]"
+            >
+              문서 스토어 보기
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              href="/store?price=free"
+              className="inline-flex h-12 w-full sm:w-auto items-center justify-center rounded-full border border-white/20 px-7 text-sm font-semibold text-white transition-all hover:bg-white/10 active:scale-[0.98]"
+            >
+              무료 샘플 먼저 보기
+            </Link>
+          </div>
         </div>
 
         {/* Scroll arrow */}

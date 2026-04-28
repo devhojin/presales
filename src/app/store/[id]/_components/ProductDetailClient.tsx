@@ -19,6 +19,7 @@ import { RecentlyViewed } from '@/components/RecentlyViewed'
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed'
 import * as gtag from '@/lib/gtag'
 import { SITE_URL } from '@/lib/constants'
+import { shareToKakao } from '@/lib/kakao-share'
 
 type TabId = 'info' | 'video' | 'review'
 
@@ -191,6 +192,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
   const [productFiles, setProductFiles] = useState<ProductFile[]>([])
   const [downloading, setDownloading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [sharingKakao, setSharingKakao] = useState(false)
   const [showFreeUpsell, setShowFreeUpsell] = useState(false)
   const [matchDiscount, setMatchDiscount] = useState<{
     sourceTitle: string
@@ -385,6 +387,61 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
       addToast('다운로드 중 오류가 발생했습니다', 'error')
     } finally {
       setDownloading(false)
+    }
+  }
+
+  async function copyShareUrl(pageUrl: string) {
+    try {
+      await navigator.clipboard.writeText(pageUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  function getAbsoluteUrl(value: string | null | undefined, baseUrl: string) {
+    if (!value) return undefined
+    try {
+      return new URL(value, baseUrl).toString()
+    } catch {
+      return undefined
+    }
+  }
+
+  async function handleKakaoShare(pageUrl: string) {
+    if (!product || sharingKakao) return
+
+    setSharingKakao(true)
+    try {
+      const result = await shareToKakao({
+        javascriptKey: process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY,
+        url: pageUrl,
+        title: product.title,
+        description: overview.summary || product.description || '프리세일즈 공공조달 제안서 상품을 확인해보세요.',
+        imageUrl: getAbsoluteUrl(product.thumbnail_url, pageUrl),
+      })
+
+      if (result === 'missing-key') {
+        const copiedLink = await copyShareUrl(pageUrl)
+        addToast(
+          copiedLink
+            ? '카카오 공유 설정이 없어 링크를 복사했습니다'
+            : '카카오 공유 설정이 필요합니다',
+          copiedLink ? 'info' : 'error'
+        )
+      }
+    } catch {
+      const copiedLink = await copyShareUrl(pageUrl)
+      addToast(
+        copiedLink
+          ? '카카오톡 공유를 열지 못해 링크를 복사했습니다'
+          : '카카오톡 공유를 열지 못했습니다',
+        copiedLink ? 'info' : 'error'
+      )
+    } finally {
+      setSharingKakao(false)
     }
   }
 
@@ -723,28 +780,23 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
               <div className="flex items-center gap-2 flex-wrap pt-2">
                 <span className="text-xs text-muted-foreground font-medium">공유:</span>
                 <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(pageUrl).then(() => {
-                      setCopied(true)
-                      setTimeout(() => setCopied(false), 2000)
-                    })
-                  }}
+                  onClick={() => void copyShareUrl(pageUrl)}
                   title="링크 복사"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border/50 text-xs font-medium hover:bg-muted transition-all duration-300 cursor-pointer"
                 >
                   <Copy className="w-3.5 h-3.5" />
                   {copied ? '복사됨!' : '링크 복사'}
                 </button>
-                <a
-                  href={`https://sharer.kakao.com/talk/friends/picker/link?url=${encodeURIComponent(pageUrl)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => void handleKakaoShare(pageUrl)}
+                  disabled={sharingKakao}
                   title="카카오톡 공유"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border/50 text-xs font-medium hover:bg-muted transition-all duration-300 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border/50 text-xs font-medium hover:bg-muted disabled:opacity-60 transition-all duration-300 cursor-pointer"
                 >
                   <Share2 className="w-3.5 h-3.5" />
-                  카카오톡
-                </a>
+                  {sharingKakao ? '여는 중...' : '카카오톡'}
+                </button>
                 <a
                   href={`mailto:?subject=${encodeURIComponent(product.title)}&body=${encodeURIComponent(pageUrl)}`}
                   title="이메일 공유"

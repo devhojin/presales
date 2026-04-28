@@ -7,16 +7,22 @@ import Link from 'next/link'
 import { Mail, Lock, Eye, EyeOff, ShieldAlert } from 'lucide-react'
 import { checkLoginLock, recordLoginFailure, resetLoginAttempts } from '@/lib/password-policy'
 import { sanitizeRedirect } from '@/lib/safe-redirect'
+import { getAuthErrorMessage } from '@/lib/auth-errors'
+import { buildOAuthCallbackUrl } from '@/lib/oauth'
 
 function LoginForm() {
   const searchParams = useSearchParams()
   const reason = searchParams.get('reason')
+  const authError = searchParams.get('error')
   const redirectTo = searchParams.get('redirect')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState(reason === 'timeout' ? '장시간 미사용으로 자동 로그아웃되었습니다.' : '')
+  const [error, setError] = useState(
+    getAuthErrorMessage(authError) || (reason === 'timeout' ? '장시간 미사용으로 자동 로그아웃되었습니다.' : '')
+  )
   const [loading, setLoading] = useState(false)
+  const [oauthLoading, setOauthLoading] = useState(false)
   const [lockInfo, setLockInfo] = useState<{ locked: boolean; remainingMinutes: number }>({ locked: false, remainingMinutes: 0 })
 
   // 이메일 입력 후 잠금 상태 확인 (서버사이드, 500ms 디바운스)
@@ -89,6 +95,25 @@ function LoginForm() {
     window.location.href = destination
   }
 
+  async function handleGoogleLogin() {
+    setError('')
+    setOauthLoading(true)
+
+    const supabase = createClient()
+    const destination = sanitizeRedirect(redirectTo, '/mypage')
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: buildOAuthCallbackUrl(window.location.origin, destination, 'login'),
+      },
+    })
+
+    if (oauthError) {
+      setError('Google 로그인 시작에 실패했습니다. 다시 시도해주세요.')
+      setOauthLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-[100dvh] flex items-center justify-center px-4 py-8 bg-background">
       <div className="w-full max-w-md">
@@ -107,15 +132,8 @@ function LoginForm() {
           <div className="space-y-4">
             <button
               type="button"
-              onClick={() => {
-                const supabase = createClient()
-                supabase.auth.signInWithOAuth({
-                  provider: 'google',
-                  options: {
-                    redirectTo: window.location.origin + '/auth/callback',
-                  },
-                })
-              }}
+              onClick={handleGoogleLogin}
+              disabled={oauthLoading}
               className="w-full h-12 rounded-full border border-border bg-white hover:bg-gray-50 flex items-center justify-center gap-3 text-sm font-medium text-gray-700 active:scale-[0.98] transition-all cursor-pointer shadow-sm"
             >
               {/* Google 공식 SVG 아이콘 */}
@@ -125,7 +143,7 @@ function LoginForm() {
                 <path d="M3.964 10.71A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
                 <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
               </svg>
-              Google로 계속하기
+              {oauthLoading ? 'Google로 이동 중...' : 'Google로 계속하기'}
             </button>
 
             <div className="relative flex items-center">

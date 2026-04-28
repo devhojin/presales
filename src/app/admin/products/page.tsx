@@ -64,6 +64,7 @@ interface Product {
   is_free: boolean
   download_count: number
   created_at: string
+  updated_at: string | null
   category_id: number | null
   category_ids: number[] | null
   format: string | null
@@ -72,7 +73,7 @@ interface Product {
 }
 
 type StatusFilter = 'all' | 'published' | 'unpublished'
-type SortField = 'title' | 'category' | 'price' | 'is_free' | 'is_published' | 'download_count' | 'created_at' | null
+type SortField = 'title' | 'category' | 'price' | 'is_free' | 'is_published' | 'download_count' | 'updated_at' | 'created_at' | null
 type SortDir = 'asc' | 'desc'
 
 const PAGE_SIZES = [20, 50, 100] as const
@@ -85,6 +86,34 @@ function formatPrice(price: number): string {
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '-'
   return dateStr.split('T')[0]
+}
+
+function formatDateTimeParts(dateStr: string | null): { date: string; time: string } {
+  if (!dateStr) return { date: '-', time: '' }
+
+  const date = new Date(dateStr)
+  if (Number.isNaN(date.getTime())) return { date: formatDate(dateStr), time: '' }
+
+  const dateText = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date)
+
+  const timeText = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Seoul',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(date)
+
+  return { date: dateText, time: timeText }
+}
+
+function formatDateTime(dateStr: string | null): string {
+  const { date, time } = formatDateTimeParts(dateStr)
+  return time ? `${date} ${time}` : date
 }
 
 // ===========================
@@ -472,6 +501,8 @@ function ProductRowCells({
   categoryName: string
   onDownloadDetail: (product: Product) => void
 }) {
+  const updatedAt = formatDateTimeParts(product.updated_at || product.created_at)
+
   return (
     <>
       {/* Title + external link */}
@@ -556,6 +587,11 @@ function ProductRowCells({
           {product.download_count}
         </button>
       </td>
+      {/* Updated date */}
+      <td className="px-3 py-3 text-center text-xs text-muted-foreground leading-tight">
+        <div>{updatedAt.date}</div>
+        {updatedAt.time && <div className="mt-0.5 text-[11px] text-muted-foreground/70">{updatedAt.time}</div>}
+      </td>
       {/* Created date */}
       <td className="px-3 py-3 text-center text-xs text-muted-foreground">
         {formatDate(product.created_at)}
@@ -636,7 +672,7 @@ export default function AdminProducts() {
   const loadProducts = useCallback(async () => {
     const { data } = await supabase
       .from('products')
-      .select('id, title, price, original_price, tier, is_published, is_free, download_count, created_at, category_id, format, sort_order, categories(name)')
+      .select('id, title, price, original_price, tier, is_published, is_free, download_count, created_at, updated_at, category_id, format, sort_order, categories(name)')
       .order('sort_order', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false })
     if (data) setProducts(data as Product[])
@@ -961,6 +997,7 @@ export default function AdminProducts() {
         case 'is_free': va = a.is_free ? 0 : 1; vb = b.is_free ? 0 : 1; break
         case 'is_published': va = a.is_published ? 0 : 1; vb = b.is_published ? 0 : 1; break
         case 'download_count': va = a.download_count; vb = b.download_count; break
+        case 'updated_at': va = a.updated_at || a.created_at; vb = b.updated_at || b.created_at; break
         case 'created_at': va = a.created_at; vb = b.created_at; break
       }
       if (va < vb) return sortDir === 'asc' ? -1 : 1
@@ -975,7 +1012,7 @@ export default function AdminProducts() {
     const target = selectedIds.size > 0
       ? filtered.filter((p) => selectedIds.has(p.id))
       : filtered
-    const header = '상품명,카테고리,가격,상태,다운로드수,등록일'
+    const header = '상품명,카테고리,가격,상태,다운로드수,수정일,등록일'
     const rows = target.map((p) => {
       const catName = Array.isArray(p.categories)
         ? (p.categories[0]?.name || '')
@@ -986,6 +1023,7 @@ export default function AdminProducts() {
         p.is_free ? 0 : p.price,
         p.is_published ? '공개' : '비공개',
         p.download_count,
+        formatDateTime(p.updated_at || p.created_at),
         formatDate(p.created_at),
       ].join(',')
     })
@@ -1272,6 +1310,7 @@ export default function AdminProducts() {
                     { field: 'is_free' as SortField, label: '구분', align: 'center', cls: 'w-20' },
                     { field: 'is_published' as SortField, label: '상태', align: 'center', cls: 'w-20' },
                     { field: 'download_count' as SortField, label: '다운로드', align: 'center', cls: 'w-20' },
+                    { field: 'updated_at' as SortField, label: '수정일', align: 'center', cls: 'w-24' },
                   ].map(col => (
                     <th
                       key={col.field}
@@ -1299,13 +1338,13 @@ export default function AdminProducts() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={10} className="text-center py-16 text-muted-foreground text-sm">
+                    <td colSpan={11} className="text-center py-16 text-muted-foreground text-sm">
                       로딩 중...
                     </td>
                   </tr>
                 ) : paginated.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="text-center py-16 text-muted-foreground text-sm">
+                    <td colSpan={11} className="text-center py-16 text-muted-foreground text-sm">
                       {search ? '검색 결과가 없습니다' : '등록된 상품이 없습니다'}
                     </td>
                   </tr>

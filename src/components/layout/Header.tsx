@@ -101,10 +101,10 @@ export function Header() {
           : 'bg-transparent'
       }`}
     >
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8">
+      <div className="max-w-[1400px] mx-auto px-4 lg:px-5 xl:px-8">
         <div className="h-16 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
+          <Link href="/" className="flex shrink-0 items-center gap-2.5 group">
             <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center transition-transform duration-300 group-hover:scale-[1.04]">
               <span className="text-primary-foreground text-xs font-bold tracking-tight">PS</span>
             </div>
@@ -119,14 +119,14 @@ export function Header() {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-0 xl:gap-1">
             {navLinks.map((link) => {
               const isActive = pathname === link.href || pathname?.startsWith(link.href + '/')
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`relative px-4 py-2 text-sm font-medium transition-colors duration-300 rounded-lg ${
+                  className={`relative whitespace-nowrap px-2.5 xl:px-3 2xl:px-4 py-2 text-[13px] xl:text-sm font-medium transition-colors duration-300 rounded-lg ${
                     isActive
                       ? 'text-primary'
                       : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -142,7 +142,7 @@ export function Header() {
           </nav>
 
           {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className="hidden lg:flex shrink-0 items-center gap-1.5 xl:gap-2">
             <CartDrawer />
             {authLoading || (user && !profile) ? (
               <div className="w-20 h-8" />
@@ -195,13 +195,13 @@ export function Header() {
               <div className="flex items-center gap-2">
                 <Link
                   href="/auth/login"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2"
+                  className="whitespace-nowrap px-2 xl:px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   로그인
                 </Link>
                 <Link
                   href="/auth/signup"
-                  className="inline-flex items-center h-9 px-4 rounded-full text-sm font-medium bg-foreground text-background hover:bg-foreground/90 transition-all duration-300 active:scale-[0.98]"
+                  className="inline-flex h-9 items-center whitespace-nowrap rounded-full bg-foreground px-3 xl:px-4 text-sm font-medium text-background transition-all duration-300 hover:bg-foreground/90 active:scale-[0.98]"
                 >
                   무료로 시작하기
                 </Link>
@@ -210,7 +210,7 @@ export function Header() {
           </div>
 
           {/* Mobile */}
-          <div className="md:hidden flex items-center gap-1">
+          <div className="lg:hidden flex items-center gap-1">
             <CartDrawer />
             <button
               className="min-w-[44px] min-h-[44px] flex items-center justify-center text-foreground"
@@ -226,7 +226,7 @@ export function Header() {
 
       {/* Mobile Menu — Full overlay (불투명 배경 + 스크롤 차단) */}
       <div
-        className={`md:hidden absolute left-0 right-0 top-16 bg-background z-[60] transition-all duration-500 overflow-y-auto ${
+        className={`lg:hidden absolute left-0 right-0 top-16 bg-background z-[60] transition-all duration-500 overflow-y-auto ${
           isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         style={{ height: isMobileMenuOpen ? 'calc(100dvh - 4rem)' : 0 }}

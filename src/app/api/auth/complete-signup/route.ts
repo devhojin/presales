@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies, headers } from 'next/headers'
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/client-ip'
@@ -44,6 +45,15 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return NextResponse.json({ error: '인증이 필요합니다' }, { status: 401 })
 
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    const service = serviceRoleKey
+      ? createServiceClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          serviceRoleKey,
+          { auth: { persistSession: false, autoRefreshToken: false } }
+        )
+      : null
+
     const body = (await request.json().catch(() => ({}))) as Body
 
     if (!body.agreeTerms || !body.agreePrivacy || !body.agreeOverseas || !body.agreeAge) {
@@ -51,11 +61,17 @@ export async function POST(request: NextRequest) {
     }
 
     // 이미 동의 처리된 계정이면 무시 (중복 쿠폰 방지)
-    const { data: existing } = await supabase
+    const profileClient = service ?? supabase
+    const { data: existing, error: existingErr } = await profileClient
       .from('profiles')
       .select('terms_agreed_at, deleted_at, email')
       .eq('id', user.id)
       .maybeSingle()
+
+    if (existingErr) {
+      logger.error('complete-signup profile 조회 실패', 'auth/complete-signup', { error: existingErr.message, userId: user.id })
+      return NextResponse.json({ error: '프로필 조회 실패' }, { status: 500 })
+    }
 
     if (existing?.deleted_at) {
       return NextResponse.json({ error: '탈퇴된 계정입니다' }, { status: 403 })
@@ -68,7 +84,7 @@ export async function POST(request: NextRequest) {
     const company = (body.company || '').toString().slice(0, 120)
     const phone = (body.phone || '').toString().slice(0, 20)
 
-    const { error: updErr } = await supabase.from('profiles').update({
+    const profileValues = {
       name: name || null,
       company: company || null,
       phone: phone || null,
@@ -78,10 +94,46 @@ export async function POST(request: NextRequest) {
       age_agreed_at: nowIso,
       marketing_opt_in: Boolean(body.agreeMarketing),
       marketing_opt_in_at: body.agreeMarketing ? nowIso : null,
-    }).eq('id', user.id)
+    }
+
+    const email = existing?.email || user.email
+    if (!email) {
+      return NextResponse.json({ error: '이메일 정보를 확인할 수 없습니다' }, { status: 400 })
+    }
+
+    if (!existing && !service) {
+      logger.error('SUPABASE_SERVICE_ROLE_KEY 누락으로 OAuth profile 생성 불가', 'auth/complete-signup', { userId: user.id })
+      return NextResponse.json({ error: '프로필 저장 설정 오류' }, { status: 500 })
+    }
+
+    const saveResult = existing
+      ? await profileClient
+          .from('profiles')
+          .update(profileValues)
+          .eq('id', user.id)
+          .select('id')
+          .maybeSingle()
+      : await service!
+          .from('profiles')
+          .insert({
+            id: user.id,
+            email,
+            role: 'user',
+            ...profileValues,
+          })
+          .select('id')
+          .single()
+
+    const updErr = saveResult.error
+    const savedProfile = saveResult.data
 
     if (updErr) {
       logger.error('complete-signup profile update 실패', 'auth/complete-signup', { error: updErr.message, userId: user.id })
+      return NextResponse.json({ error: '프로필 저장 실패' }, { status: 500 })
+    }
+
+    if (!savedProfile) {
+      logger.error('complete-signup profile 저장 결과 없음', 'auth/complete-signup', { userId: user.id })
       return NextResponse.json({ error: '프로필 저장 실패' }, { status: 500 })
     }
 
