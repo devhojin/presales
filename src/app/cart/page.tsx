@@ -337,8 +337,13 @@ export default function CartPage() {
 
           {/* 쿠폰 선택/입력 */}
           <div className="border border-border/50 rounded-2xl p-5 bg-card">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold">쿠폰 사용</h3>
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <h3 className="text-sm font-semibold">사용할 수 있는 쿠폰</h3>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  쿠폰은 결제하시기 전에 이 화면에서 적용할 수 있습니다.
+                </p>
+              </div>
               {ownedCoupons.length > 0 && (
                 <div className="flex gap-1 bg-muted/50 p-0.5 rounded-lg">
                   <button

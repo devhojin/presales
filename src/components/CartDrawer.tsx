@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useCartStore } from '@/stores/cart-store'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
-import { ShoppingCart, Trash2, X } from 'lucide-react'
+import { ShoppingCart, Tag, Trash2, X } from 'lucide-react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase'
 import { useCartDiscountSources } from '@/hooks/use-cart-discount-sources'
 import { getCartDiscountSummary, getCartItemDiscountBreakdown } from '@/lib/cart-discounts'
 
@@ -15,6 +16,7 @@ export function CartDrawer() {
   const discountSummary = getCartDiscountSummary(items, discountSources)
   const [open, setOpen] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [availableCouponCount, setAvailableCouponCount] = useState<number | null>(null)
   const cancelButtonRef = useRef<HTMLButtonElement>(null)
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -32,6 +34,47 @@ export function CartDrawer() {
       cancelButtonRef.current.focus()
     }
   }, [showClearConfirm])
+
+  useEffect(() => {
+    if (!open) return
+
+    let cancelled = false
+
+    async function loadCouponCount() {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        if (!cancelled) setAvailableCouponCount(0)
+        return
+      }
+
+      const { data } = await supabase
+        .from('user_coupons')
+        .select('used_at, coupons:coupon_id(valid_from, valid_until, usage_count, max_usage, is_active)')
+        .eq('user_id', user.id)
+        .is('used_at', null)
+
+      const now = new Date()
+      const count = (data || []).filter((row) => {
+        const coupon = Array.isArray(row.coupons) ? row.coupons[0] : row.coupons
+        if (!coupon?.is_active) return false
+        if (coupon.valid_from && new Date(coupon.valid_from) > now) return false
+        if (coupon.valid_until && new Date(coupon.valid_until) < now) return false
+        if (coupon.max_usage !== null && coupon.usage_count >= coupon.max_usage) return false
+        return true
+      }).length
+
+      if (!cancelled) setAvailableCouponCount(count)
+    }
+
+    loadCouponCount().catch(() => {
+      if (!cancelled) setAvailableCouponCount(0)
+    })
+
+    return () => {
+      cancelled = true
+    }
+  }, [open])
 
   const formatPrice = (price: number) => price === 0 ? '무료' : new Intl.NumberFormat('ko-KR').format(price) + '원'
 
@@ -119,6 +162,20 @@ export function CartDrawer() {
             </div>
 
             <div className="border-t border-border px-4 pt-4 pb-2 space-y-3 shrink-0">
+              <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5 text-xs leading-relaxed">
+                <div className="flex items-center justify-between gap-3 text-blue-900">
+                  <span className="inline-flex items-center gap-1.5 font-semibold">
+                    <Tag className="w-3.5 h-3.5" />
+                    사용할 수 있는 쿠폰
+                  </span>
+                  <span className="font-bold">
+                    {availableCouponCount === null ? '확인 중' : `${availableCouponCount}장`}
+                  </span>
+                </div>
+                <p className="mt-1 text-blue-700">
+                  쿠폰은 결제하시기 전에 장바구니 화면에서 적용할 수 있습니다.
+                </p>
+              </div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">상품 금액</span>

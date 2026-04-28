@@ -78,7 +78,7 @@ export default function CheckoutSuccessPage() {
           supabase.from('profiles').select('name, email, phone, company').eq('id', user.id).single(),
           supabase
             .from('orders')
-            .select('id, order_number, total_amount, status, created_at, paid_at, payment_method, cash_receipt_url, order_items(id, price, original_price, discount_amount, products(id, title, price))')
+            .select('id, order_number, total_amount, status, created_at, paid_at, payment_method, cash_receipt_url, order_items(id, price, original_price, discount_amount, discount_reason, discount_source_product_id, products(id, title, price))')
             .eq('id', orderPk)
             .eq('user_id', user.id)
             .single(),
@@ -87,7 +87,26 @@ export default function CheckoutSuccessPage() {
         setProfile(profileData
           ? { ...profileData, email: profileData.email || user.email || null }
           : { name: null, email: user.email || null, phone: null, company: null })
-        if (orderData) setCheckoutOrder(orderData as unknown as ReceiptOrder)
+        if (orderData) {
+          const checkoutOrder = orderData as unknown as ReceiptOrder
+          const discountSourceIds = Array.from(new Set(
+            (checkoutOrder.order_items || [])
+              .map(item => item.discount_source_product_id)
+              .filter((id): id is number => typeof id === 'number' && id > 0)
+          ))
+          if (discountSourceIds.length > 0) {
+            const { data: discountSourceProducts } = await supabase
+              .from('products')
+              .select('id, title, price')
+              .in('id', discountSourceIds)
+            const sourceMap = new Map((discountSourceProducts || []).map(product => [product.id, product]))
+            checkoutOrder.order_items = (checkoutOrder.order_items || []).map(item => ({
+              ...item,
+              discount_source_product: item.discount_source_product_id ? sourceMap.get(item.discount_source_product_id) ?? null : null,
+            }))
+          }
+          setCheckoutOrder(checkoutOrder)
+        }
       } catch {
         // 주문서 조회 실패는 결제 승인 결과를 막지 않습니다.
       }

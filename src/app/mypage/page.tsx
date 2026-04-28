@@ -35,6 +35,9 @@ interface OrderItem {
   price: number
   original_price?: number | null
   discount_amount?: number | null
+  discount_reason?: string | null
+  discount_source_product_id?: number | null
+  discount_source_product?: { id: number; title: string; price: number } | null
   products: { id: number; title: string; price: number } | { id: number; title: string; price: number }[] | null
 }
 
@@ -226,7 +229,7 @@ export default function MyConsolePage() {
         { data: feedBmData },
       ] = await Promise.all([
         supabase.from('profiles').select('name, email, phone, company, role, created_at').eq('id', user.id).single(),
-        supabase.from('orders').select('id, order_number, total_amount, status, created_at, paid_at, payment_method, cash_receipt_url, refund_reason, order_items(id, price, original_price, discount_amount, products(id, title, price))').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('orders').select('id, order_number, total_amount, status, created_at, paid_at, payment_method, cash_receipt_url, refund_reason, order_items(id, price, original_price, discount_amount, discount_reason, discount_source_product_id, products(id, title, price))').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(title)').eq('user_id', user.id).order('downloaded_at', { ascending: false }),
         supabase.from('announcement_bookmarks').select('announcement_id').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('feed_bookmarks').select('post_id').eq('user_id', user.id).order('created_at', { ascending: false }),
@@ -266,8 +269,31 @@ export default function MyConsolePage() {
         if (posts) setFeedBookmarks(ids.map(id => posts.find(p => p.id === id)).filter(Boolean) as BookmarkFeed[])
       }
 
+      const normalizedOrders: Order[] = ((ordersData || []) as Order[]).map(order => ({
+        ...order,
+        order_items: (order.order_items || []).map(item => ({ ...item, discount_source_product: null })),
+      }))
+      const discountSourceIds = Array.from(new Set(
+        normalizedOrders.flatMap(order => (order.order_items || [])
+          .map(item => item.discount_source_product_id)
+          .filter((id): id is number => typeof id === 'number' && id > 0))
+      ))
+      if (discountSourceIds.length > 0) {
+        const { data: discountSourceProducts } = await supabase
+          .from('products')
+          .select('id, title, price')
+          .in('id', discountSourceIds)
+        const sourceMap = new Map((discountSourceProducts || []).map(product => [product.id, product]))
+        for (const order of normalizedOrders) {
+          order.order_items = (order.order_items || []).map(item => ({
+            ...item,
+            discount_source_product: item.discount_source_product_id ? sourceMap.get(item.discount_source_product_id) ?? null : null,
+          }))
+        }
+      }
+
       setProfile(profileData || { name: null, email: user.email || '', phone: null, company: null, role: 'user', created_at: user.created_at || '' })
-      setOrders(ordersData || [])
+      setOrders(normalizedOrders)
       setDownloadLogs((logsData || []) as DownloadLog[])
       setKpi({
         orders: ordersData?.length || 0,
@@ -331,7 +357,6 @@ export default function MyConsolePage() {
     if (!user) return
     const { data: newLogs } = await supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(title)').eq('user_id', user.id).order('downloaded_at', { ascending: false })
     setDownloadLogs((newLogs || []) as DownloadLog[])
-    setTimeout(() => addToast('상품 페이지에서 리뷰를 작성해주세요!', 'info'), 1500)
   }
 
   async function handleRefundRequest(orderId: number, reason: string) {
@@ -354,10 +379,37 @@ export default function MyConsolePage() {
   }
 
   function printReceipt(order: Order) {
-    const printWindow = window.open('', '_blank', 'width=980,height=1200')
-    if (!printWindow) return
-    printWindow.document.write(buildReceiptPrintHtml(order, profile))
-    printWindow.document.close()
+    const iframe = document.createElement('iframe')
+    iframe.style.position = 'fixed'
+    iframe.style.right = '0'
+    iframe.style.bottom = '0'
+    iframe.style.width = '0'
+    iframe.style.height = '0'
+    iframe.style.border = '0'
+    iframe.setAttribute('aria-hidden', 'true')
+    document.body.appendChild(iframe)
+
+    const printDocument = iframe.contentWindow?.document
+    if (!printDocument) {
+      iframe.remove()
+      addToast('인쇄 창을 열 수 없습니다. 다시 시도해주세요.', 'error')
+      return
+    }
+
+    printDocument.open()
+    printDocument.write(buildReceiptPrintHtml(order, profile))
+    printDocument.close()
+
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus()
+        iframe.contentWindow?.print()
+      } catch {
+        addToast('영수증 인쇄를 시작하지 못했습니다. 브라우저 인쇄 설정을 확인해주세요.', 'error')
+      } finally {
+        setTimeout(() => iframe.remove(), 1000)
+      }
+    }, 150)
   }
 
   // Recent activities
@@ -737,9 +789,16 @@ export default function MyConsolePage() {
                                 <div className="min-w-0">
                                   <p className="text-sm font-medium truncate">{prod?.title || '-'}</p>
                                   {hasDiscount && (
-                                    <p className="text-[10px] text-blue-700 mt-0.5">
-                                      할인 -{formatPrice(item.discount_amount || 0)}
-                                    </p>
+                                    <div className="mt-1 space-y-0.5">
+                                      <p className="text-[10px] text-blue-700">
+                                        구매 이력 할인 -{formatPrice(item.discount_amount || 0)}
+                                      </p>
+                                      {item.discount_source_product && (
+                                        <p className="text-[10px] text-blue-800">
+                                          구매한 상품: {item.discount_source_product.title}
+                                        </p>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0 ml-3">

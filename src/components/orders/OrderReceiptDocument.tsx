@@ -11,6 +11,9 @@ export interface ReceiptOrderItem {
   price: number
   original_price?: number | null
   discount_amount?: number | null
+  discount_reason?: string | null
+  discount_source_product_id?: number | null
+  discount_source_product?: ReceiptProduct | null
   products: ReceiptProduct | ReceiptProduct[] | null
 }
 
@@ -51,6 +54,10 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
 
 function getProduct(item: ReceiptOrderItem): ReceiptProduct | null {
   return Array.isArray(item.products) ? item.products[0] ?? null : item.products
+}
+
+function getDiscountSourceProduct(item: ReceiptOrderItem): ReceiptProduct | null {
+  return item.discount_source_product ?? null
 }
 
 function isPaid(order: ReceiptOrder): boolean {
@@ -186,14 +193,25 @@ export function OrderReceiptDocument({ order, profile, className = '' }: OrderRe
               {items.length > 0 ? (
                 items.map((item) => {
                   const product = getProduct(item)
+                  const discountSourceProduct = getDiscountSourceProduct(item)
                   const unitPrice = item.original_price && item.original_price > item.price ? item.original_price : item.price
+                  const discount = item.discount_amount ?? 0
                   return (
                     <tr key={item.id} className="border-b border-neutral-200">
-                      <td className="py-3 pr-4 text-neutral-950">{product?.title || 'PRESALES 문서 상품'}</td>
+                      <td className="py-3 pr-4 text-neutral-950">
+                        <p>{product?.title || 'PRESALES 문서 상품'}</p>
+                        {discount > 0 && (discountSourceProduct || item.discount_source_product_id) && (
+                          <div className="mt-1.5 rounded-md border border-blue-100 bg-blue-50 px-2 py-1.5 text-[11px] leading-relaxed text-blue-800">
+                            <p className="font-semibold">구매한 상품</p>
+                            <p>{discountSourceProduct?.title || `상품 #${item.discount_source_product_id}`}</p>
+                            <p className="text-blue-700">이 구매 이력으로 {formatWon(discount)} 차감되었습니다.</p>
+                          </div>
+                        )}
+                      </td>
                       <td className="px-4 py-3 text-right text-neutral-800">1</td>
                       <td className="px-4 py-3 text-right text-neutral-800">{formatWon(unitPrice)}</td>
                       <td className="px-4 py-3 text-right text-neutral-800">
-                        {(item.discount_amount ?? 0) > 0 ? `-${formatWon(item.discount_amount)}` : '-'}
+                        {discount > 0 ? `-${formatWon(discount)}` : '-'}
                       </td>
                       <td className="py-3 pl-4 text-right font-medium text-neutral-950">{formatWon(item.price)}</td>
                     </tr>
@@ -290,11 +308,15 @@ export function buildReceiptPrintHtml(order: ReceiptOrder, profile?: ReceiptProf
     products: { title: 'PRESALES 주문' },
   }]).map((item) => {
     const product = getProduct(item)
+    const discountSourceProduct = getDiscountSourceProduct(item)
     const unitPrice = item.original_price && item.original_price > item.price ? item.original_price : item.price
     const discount = item.discount_amount ?? 0
+    const discountSourceHtml = discount > 0 && (discountSourceProduct || item.discount_source_product_id)
+      ? `<div class="discount-source"><strong>구매한 상품</strong><br>${escapeHtml(discountSourceProduct?.title || `상품 #${item.discount_source_product_id}`)}<br><span>이 구매 이력으로 ${formatWon(discount)} 차감되었습니다.</span></div>`
+      : ''
     return `
       <tr>
-        <td>${escapeHtml(product?.title || 'PRESALES 문서 상품')}</td>
+        <td>${escapeHtml(product?.title || 'PRESALES 문서 상품')}${discountSourceHtml}</td>
         <td class="num">1</td>
         <td class="num">${formatWon(unitPrice)}</td>
         <td class="num">${discount > 0 ? `-${formatWon(discount)}` : '-'}</td>
@@ -324,6 +346,9 @@ export function buildReceiptPrintHtml(order: ReceiptOrder, profile?: ReceiptProf
     .label { font-weight: 700; color: #0a0a0a; }
     .paid { margin-top: 42px; font-size: 25px; font-weight: 800; }
     .note { max-width: 680px; margin-top: 16px; font-size: 14px; line-height: 1.6; color: #404040; }
+    .discount-source { margin-top: 8px; border: 1px solid #bfdbfe; background: #eff6ff; color: #1e40af; padding: 7px 9px; border-radius: 6px; font-size: 11px; line-height: 1.45; }
+    .discount-source strong { color: #1e3a8a; }
+    .discount-source span { color: #1d4ed8; }
     table { width: 100%; border-collapse: collapse; margin-top: 44px; font-size: 14px; }
     th { border-bottom: 1.5px solid #0a0a0a; padding: 12px 10px; color: #404040; font-size: 12px; font-weight: 500; }
     td { border-bottom: 1px solid #e5e5e5; padding: 13px 10px; }
