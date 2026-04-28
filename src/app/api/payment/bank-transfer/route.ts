@@ -7,6 +7,7 @@ import { logger } from '@/lib/logger'
 import { SITE_URL } from '@/lib/constants'
 import { escapeHtml } from '@/lib/html-escape'
 import { recomputeExpectedAmount } from '@/lib/payment-recompute'
+import { reserveRewardPoints, rollbackRewardPoints } from '@/lib/reward-points'
 
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'help@amarans.co.kr'
 
@@ -87,6 +88,7 @@ export async function POST(request: NextRequest) {
         status,
         total_amount,
         coupon_id,
+        reward_discount,
         deposit_memo,
         profiles ( name, email ),
         order_items (
@@ -117,6 +119,7 @@ export async function POST(request: NextRequest) {
       orderId,
       user.id,
       order.coupon_id as string | null,
+      Number(order.reward_discount ?? 0),
     )
     if (expectedAmount === null) {
       logger.error('무통장 주문 재계산 실패', 'payment/bank-transfer', { orderId })
@@ -135,6 +138,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const rewardDiscount = Math.max(0, Number(order.reward_discount ?? 0))
+    let rewardReserved = false
+    if (rewardDiscount > 0) {
+      const reserve = await reserveRewardPoints(supabase, user.id, orderId, rewardDiscount)
+      if (!reserve.ok) {
+        logger.error('무통장 적립금 예약 실패', 'payment/bank-transfer', {
+          orderId,
+          reason: reserve.reason,
+        })
+        return NextResponse.json({ error: '적립금을 사용할 수 없습니다' }, { status: 409 })
+      }
+      rewardReserved = true
+    }
+
     // 4. 주문 상태를 pending_transfer로 변경
     const { error: updateError } = await supabase
       .from('orders')
@@ -147,6 +164,7 @@ export async function POST(request: NextRequest) {
       .eq('status', 'pending')
 
     if (updateError) {
+      if (rewardReserved) await rollbackRewardPoints(supabase, orderId)
       logger.error('무통장 주문 상태 변경 실패', 'payment/bank-transfer', { error: updateError.message })
       return NextResponse.json({ error: '주문 상태 변경에 실패했습니다' }, { status: 500 })
     }

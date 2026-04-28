@@ -9,7 +9,7 @@ import {
   FileText, Download, User, Loader2, Mail, Phone, Building, Pencil, Save, X,
   Lock, Eye, EyeOff, ChevronDown, ShoppingBag, AlertTriangle, Clock, Bookmark,
   ExternalLink, Megaphone, Rss, Package, ArrowRight, Store, BookOpen,
-  ArrowLeft, BookmarkCheck, MessageCircle, CreditCard, HelpCircle, Tag, Copy, Check,
+  ArrowLeft, BookmarkCheck, MessageCircle, CreditCard, HelpCircle, Tag, Copy, Check, Coins,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { validatePassword } from '@/lib/password-policy'
@@ -26,6 +26,7 @@ interface Profile {
   email: string
   phone: string | null
   company: string | null
+  reward_balance?: number | null
   role: string
   created_at: string
 }
@@ -51,6 +52,8 @@ interface Order {
   payment_method?: string | null
   cash_receipt_url?: string | null
   refund_reason?: string | null
+  coupon_discount?: number | null
+  reward_discount?: number | null
   order_items?: OrderItem[]
 }
 
@@ -99,6 +102,16 @@ interface ConsultingRequest {
   status: string
   created_at: string
   message: string | null
+}
+
+interface RewardLedgerItem {
+  id: number
+  amount: number
+  balance_after: number
+  type: string
+  status: string
+  memo: string | null
+  created_at: string
 }
 
 interface BookmarkAnn { id: string; title: string; organization: string | null; status: string; end_date: string | null; source_url: string | null; description?: string | null; start_date?: string | null }
@@ -167,6 +180,7 @@ export default function MyConsolePage() {
   const [coupons, setCoupons] = useState<DbCoupon[]>([])
   const [showCouponModal, setShowCouponModal] = useState(false)
   const [consultingRequests, setConsultingRequests] = useState<ConsultingRequest[]>([])
+  const [rewardLedger, setRewardLedger] = useState<RewardLedgerItem[]>([])
 
   // KPI counts
   const [kpi, setKpi] = useState({ orders: 0, bookmarks: 0, downloads: 0, chats: 0 })
@@ -227,12 +241,14 @@ export default function MyConsolePage() {
         { data: logsData },
         { data: annBmData },
         { data: feedBmData },
+        { data: rewardLedgerData },
       ] = await Promise.all([
-        supabase.from('profiles').select('name, email, phone, company, role, created_at').eq('id', user.id).single(),
-        supabase.from('orders').select('id, order_number, total_amount, status, created_at, paid_at, payment_method, cash_receipt_url, refund_reason, order_items(id, price, original_price, discount_amount, discount_reason, discount_source_product_id, products(id, title, price))').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('profiles').select('name, email, phone, company, reward_balance, role, created_at').eq('id', user.id).single(),
+        supabase.from('orders').select('id, order_number, total_amount, status, created_at, paid_at, payment_method, cash_receipt_url, refund_reason, coupon_discount, reward_discount, order_items(id, price, original_price, discount_amount, discount_reason, discount_source_product_id, products(id, title, price))').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(title)').eq('user_id', user.id).order('downloaded_at', { ascending: false }),
         supabase.from('announcement_bookmarks').select('announcement_id').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('feed_bookmarks').select('post_id').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('reward_point_ledger').select('id, amount, balance_after, type, status, memo, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
       ])
 
       // Purchased products
@@ -292,9 +308,10 @@ export default function MyConsolePage() {
         }
       }
 
-      setProfile(profileData || { name: null, email: user.email || '', phone: null, company: null, role: 'user', created_at: user.created_at || '' })
+      setProfile(profileData || { name: null, email: user.email || '', phone: null, company: null, reward_balance: 0, role: 'user', created_at: user.created_at || '' })
       setOrders(normalizedOrders)
       setDownloadLogs((logsData || []) as DownloadLog[])
+      setRewardLedger((rewardLedgerData || []) as RewardLedgerItem[])
       setKpi({
         orders: ordersData?.length || 0,
         bookmarks: (annBmData?.length || 0) + (feedBmData?.length || 0),
@@ -433,6 +450,15 @@ export default function MyConsolePage() {
 
   const catLabel = (c: string) => ({ news: '뉴스', policy: '정책', bid: '입찰', task: '과제', event: '행사' }[c] || c)
   const catColor = (c: string) => ({ news: 'bg-blue-100 text-blue-700', policy: 'bg-blue-100 text-blue-800', bid: 'bg-orange-100 text-orange-700', task: 'bg-purple-100 text-purple-700', event: 'bg-pink-100 text-pink-700' }[c] || 'bg-muted text-muted-foreground')
+  const rewardTypeLabel = (type: string) => ({
+    signup: '회원가입',
+    review: '후기 작성',
+    purchase: '구매 적립',
+    use: '주문 사용',
+    refund: '환불 복원',
+    cancel: '취소',
+    admin_adjust: '관리자 조정',
+  }[type] || type)
 
   // ===========================
   // Loading
@@ -659,7 +685,7 @@ export default function MyConsolePage() {
       </div>
 
       {/* Row 2: KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
         {/* 내 쿠폰 (맨 앞, 버튼) */}
         <button
           type="button"
@@ -672,6 +698,14 @@ export default function MyConsolePage() {
           <p className="text-2xl font-bold text-foreground">{coupons.length}<span className="text-sm font-normal text-muted-foreground ml-1">장</span></p>
           <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 group-hover:text-pink-600 transition-colors">내 쿠폰 <ArrowRight className="w-3 h-3" /></p>
         </button>
+        <Link href="/cart"
+          className="group bg-card border border-border/50 rounded-2xl p-5 hover:shadow-md transition-all cursor-pointer">
+          <div className="w-10 h-10 rounded-xl text-blue-700 bg-blue-50 flex items-center justify-center mb-3">
+            <Coins className="w-5 h-5" />
+          </div>
+          <p className="text-2xl font-bold text-foreground">{formatPrice(profile?.reward_balance || 0)}</p>
+          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 group-hover:text-blue-700 transition-colors">내 적립금 <ArrowRight className="w-3 h-3" /></p>
+        </Link>
         {[
           { label: '내 주문', value: kpi.orders, icon: Package, color: 'text-primary bg-primary/10', href: '#orders' },
           { label: '다운로드', value: kpi.downloads, icon: Download, color: 'text-orange-600 bg-orange-50', href: '#orders' },
@@ -822,7 +856,12 @@ export default function MyConsolePage() {
                               </button>
                               {(order.status === 'paid' || order.status === 'completed') && <button type="button" onClick={e => { e.stopPropagation(); printReceipt(order) }} className="px-3 py-1.5 rounded-lg border border-blue-300 text-primary text-xs font-medium hover:bg-primary/8 cursor-pointer">영수증 인쇄</button>}
                             </div>
-                            <p className="text-sm font-semibold">합계: {formatPrice(order.total_amount)}</p>
+                            <div className="text-right">
+                              {(order.reward_discount ?? 0) > 0 && (
+                                <p className="text-[10px] text-blue-700">적립금 -{formatPrice(order.reward_discount || 0)}</p>
+                              )}
+                              <p className="text-sm font-semibold">합계: {formatPrice(order.total_amount)}</p>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -889,6 +928,34 @@ export default function MyConsolePage() {
 
         {/* RIGHT Column (1/3) - Sticky */}
         <div className="space-y-6 lg:sticky lg:top-20 lg:self-start">
+
+          {/* Reward Points */}
+          <div className="bg-card border border-border/50 rounded-2xl p-5">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div className="flex items-center gap-2">
+                <Coins className="w-4 h-4 text-blue-700" />
+                <h3 className="text-sm font-semibold">내 적립금</h3>
+              </div>
+              <p className="text-base font-bold text-primary">{formatPrice(profile?.reward_balance || 0)}</p>
+            </div>
+            {rewardLedger.length === 0 ? (
+              <p className="py-6 text-center text-xs text-muted-foreground">적립금 내역이 없습니다</p>
+            ) : (
+              <div className="space-y-2">
+                {rewardLedger.slice(0, 5).map(item => (
+                  <div key={item.id} className="flex items-start justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-foreground">{item.memo || rewardTypeLabel(item.type)}</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">{formatDate(item.created_at)} · 잔액 {formatPrice(item.balance_after)}</p>
+                    </div>
+                    <span className={`shrink-0 text-xs font-semibold ${item.amount > 0 ? 'text-blue-700' : 'text-red-600'}`}>
+                      {item.amount > 0 ? '+' : '-'}{formatPrice(Math.abs(item.amount))}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Quick Links */}
           <div className="bg-card border border-border/50 rounded-2xl p-5">

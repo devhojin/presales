@@ -26,6 +26,8 @@ export interface ReceiptOrder {
   paid_at?: string | null
   payment_method?: string | null
   cash_receipt_url?: string | null
+  coupon_discount?: number | null
+  reward_discount?: number | null
   order_items?: ReceiptOrderItem[]
 }
 
@@ -50,6 +52,7 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
   VIRTUAL_ACCOUNT: '가상계좌',
   bank_transfer: '무통장입금',
   free: '무료 주문',
+  reward: '적립금',
 }
 
 const RECEIPT_SITE_URL = 'https://www.presales.co.kr'
@@ -140,6 +143,8 @@ export function OrderReceiptDocument({ order, profile, className = '' }: OrderRe
   const paid = isPaid(order)
   const subtotal = getSubtotal(order)
   const discountTotal = getDiscountTotal(order)
+  const couponDiscount = Math.max(0, Number(order.coupon_discount ?? 0))
+  const rewardDiscount = Math.max(0, Number(order.reward_discount ?? 0))
   const displayDate = order.paid_at || order.created_at
   const buyerName = profile?.company || profile?.name || '구매자'
   const buyerEmail = displayReceiptEmail(profile?.email)
@@ -249,6 +254,18 @@ export function OrderReceiptDocument({ order, profile, className = '' }: OrderRe
               <span>-{formatWon(discountTotal)}</span>
             </div>
           )}
+          {couponDiscount > 0 && (
+            <div className="flex items-center justify-between border-b border-neutral-200 py-1.5">
+              <span className="text-neutral-800">Coupon</span>
+              <span>-{formatWon(couponDiscount)}</span>
+            </div>
+          )}
+          {rewardDiscount > 0 && (
+            <div className="flex items-center justify-between border-b border-neutral-200 py-1.5">
+              <span className="text-neutral-800">Reward points</span>
+              <span>-{formatWon(rewardDiscount)}</span>
+            </div>
+          )}
           <div className="flex items-center justify-between border-b border-neutral-200 py-1.5">
             <span className="text-neutral-800">Total</span>
             <span>{formatWon(order.total_amount)}</span>
@@ -306,6 +323,8 @@ export function buildReceiptPrintHtml(order: ReceiptOrder, profile?: ReceiptProf
   const displayDate = order.paid_at || order.created_at
   const subtotal = getSubtotal(order)
   const discountTotal = getDiscountTotal(order)
+  const couponDiscount = Math.max(0, Number(order.coupon_discount ?? 0))
+  const rewardDiscount = Math.max(0, Number(order.reward_discount ?? 0))
   const buyerName = profile?.company || profile?.name || '구매자'
   const buyerEmail = displayReceiptEmail(profile?.email)
   const receiptId = receiptNumber(order)
@@ -425,6 +444,8 @@ export function buildReceiptPrintHtml(order: ReceiptOrder, profile?: ReceiptProf
     <section class="summary">
       <div><span>Subtotal</span><span>${formatWon(subtotal)}</span></div>
       ${discountTotal > 0 ? `<div><span>Discount</span><span>-${formatWon(discountTotal)}</span></div>` : ''}
+      ${couponDiscount > 0 ? `<div><span>Coupon</span><span>-${formatWon(couponDiscount)}</span></div>` : ''}
+      ${rewardDiscount > 0 ? `<div><span>Reward points</span><span>-${formatWon(rewardDiscount)}</span></div>` : ''}
       <div><span>Total</span><span>${formatWon(order.total_amount)}</span></div>
       <div class="total"><span>${paid ? 'Amount paid' : 'Amount due'}</span><span>${formatWon(order.total_amount)}</span></div>
     </section>

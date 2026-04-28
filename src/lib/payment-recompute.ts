@@ -1,4 +1,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import {
+  clampRewardUseAmount,
+  loadRewardBalance,
+  loadRewardSettings,
+} from '@/lib/reward-points'
+
+export interface OrderPricingBreakdown {
+  listTotal: number
+  productAndMatchTotal: number
+  couponDiscount: number
+  rewardDiscount: number
+  total: number
+}
 
 /**
  * 주문 금액 서버 재계산.
@@ -20,7 +33,25 @@ export async function recomputeExpectedAmount(
   orderId: number,
   userId: string,
   couponId: string | null,
+  rewardUseAmount = 0,
 ): Promise<number | null> {
+  const breakdown = await recomputeOrderPricing(
+    supabase,
+    orderId,
+    userId,
+    couponId,
+    rewardUseAmount,
+  )
+  return breakdown?.total ?? null
+}
+
+export async function recomputeOrderPricing(
+  supabase: SupabaseClient,
+  orderId: number,
+  userId: string,
+  couponId: string | null,
+  rewardUseAmount = 0,
+): Promise<OrderPricingBreakdown | null> {
   // 1) 주문 상품 + 현재 DB 가격
   const { data: items, error: itemsErr } = await supabase
     .from('order_items')
@@ -104,8 +135,10 @@ export async function recomputeExpectedAmount(
 
   // 4) 각 아이템별 최대 할인 적용 후 합산
   let rawTotal = 0
+  let listTotal = 0
   for (const it of normalized) {
     if (it.isFree) continue
+    listTotal += it.price
     const itemMatches = matches.filter((m) => m.target_product_id === it.productId)
     let bestDiscount = 0
     for (const m of itemMatches) {
@@ -121,6 +154,7 @@ export async function recomputeExpectedAmount(
   // 5) 쿠폰 재검증
   let couponDiscount = 0
   if (couponId) {
+    let canApplyCoupon = true
     const { data: ownedRows } = await supabase
       .from('user_coupons')
       .select('id, used_at')
@@ -134,35 +168,55 @@ export async function recomputeExpectedAmount(
       )
       if (!hasUnused) {
         // 보유 이력은 있지만 전부 소진 → 재사용 시도로 간주하고 쿠폰 미적용.
-        return rawTotal
+        canApplyCoupon = false
       }
     }
 
-    const { data: coupon } = await supabase
-      .from('coupons')
-      .select(
-        'discount_type, discount_value, min_order_amount, valid_from, valid_until, usage_count, max_usage, is_active',
-      )
-      .eq('id', couponId)
-      .maybeSingle()
-    if (coupon && coupon.is_active) {
-      const now = new Date()
-      const validFrom = coupon.valid_from ? new Date(coupon.valid_from as string) : null
-      const validUntil = coupon.valid_until ? new Date(coupon.valid_until as string) : null
-      const usageOk =
-        coupon.max_usage === null ||
-        Number(coupon.usage_count ?? 0) < Number(coupon.max_usage)
-      const minOk = !coupon.min_order_amount || rawTotal >= Number(coupon.min_order_amount)
-      const fromOk = !validFrom || validFrom <= now
-      const untilOk = !validUntil || validUntil >= now
-      if (usageOk && minOk && fromOk && untilOk) {
-        const dv = Number(coupon.discount_value ?? 0)
-        couponDiscount = coupon.discount_type === 'percentage'
-          ? Math.floor((rawTotal * dv) / 100)
-          : Math.min(dv, rawTotal)
+    if (canApplyCoupon) {
+      const { data: coupon } = await supabase
+        .from('coupons')
+        .select(
+          'discount_type, discount_value, min_order_amount, valid_from, valid_until, usage_count, max_usage, is_active',
+        )
+        .eq('id', couponId)
+        .maybeSingle()
+      if (coupon && coupon.is_active) {
+        const now = new Date()
+        const validFrom = coupon.valid_from ? new Date(coupon.valid_from as string) : null
+        const validUntil = coupon.valid_until ? new Date(coupon.valid_until as string) : null
+        const usageOk =
+          coupon.max_usage === null ||
+          Number(coupon.usage_count ?? 0) < Number(coupon.max_usage)
+        const minOk = !coupon.min_order_amount || rawTotal >= Number(coupon.min_order_amount)
+        const fromOk = !validFrom || validFrom <= now
+        const untilOk = !validUntil || validUntil >= now
+        if (usageOk && minOk && fromOk && untilOk) {
+          const dv = Number(coupon.discount_value ?? 0)
+          couponDiscount = coupon.discount_type === 'percentage'
+            ? Math.floor((rawTotal * dv) / 100)
+            : Math.min(dv, rawTotal)
+        }
       }
     }
   }
 
-  return Math.max(0, rawTotal - couponDiscount)
+  const afterCouponTotal = Math.max(0, rawTotal - couponDiscount)
+  const [settings, rewardBalance] = await Promise.all([
+    loadRewardSettings(supabase),
+    loadRewardBalance(supabase, userId),
+  ])
+  const rewardDiscount = clampRewardUseAmount(
+    rewardUseAmount,
+    rewardBalance,
+    afterCouponTotal,
+    settings,
+  )
+
+  return {
+    listTotal,
+    productAndMatchTotal: rawTotal,
+    couponDiscount,
+    rewardDiscount,
+    total: Math.max(0, afterCouponTotal - rewardDiscount),
+  }
 }

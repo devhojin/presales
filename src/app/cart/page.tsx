@@ -13,6 +13,13 @@ import * as gtag from '@/lib/gtag'
 import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { useCartDiscountSources } from '@/hooks/use-cart-discount-sources'
 import { getCartDiscountSummary, getCartItemDiscountBreakdown } from '@/lib/cart-discounts'
+import {
+  DEFAULT_REWARD_SETTINGS,
+  RewardSettings,
+  clampRewardUseAmount,
+  loadRewardBalance,
+  loadRewardSettings,
+} from '@/lib/reward-points'
 
 interface OwnedCoupon {
   id: string
@@ -46,6 +53,10 @@ export default function CartPage() {
   } | null>(null)
   const [ownedCoupons, setOwnedCoupons] = useState<OwnedCoupon[]>([])
   const [couponMode, setCouponMode] = useState<'select' | 'code'>('select')
+  const [rewardSettings, setRewardSettings] = useState<RewardSettings>(DEFAULT_REWARD_SETTINGS)
+  const [rewardBalance, setRewardBalance] = useState(0)
+  const [rewardInput, setRewardInput] = useState('')
+  const [rewardApplied, setRewardApplied] = useState(0)
 
 
   const router = useRouter()
@@ -82,6 +93,34 @@ export default function CartPage() {
       if (owned.length === 0) setCouponMode('code')
     }
     loadOwned()
+  }, [])
+
+  // 적립금 설정/잔액 로드
+  useEffect(() => {
+    const loadRewards = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      const settings = await loadRewardSettings(supabase)
+      setRewardSettings(settings)
+      if (!user) {
+        setRewardBalance(0)
+        setRewardApplied(0)
+        sessionStorage.removeItem('presales-reward-use')
+        return
+      }
+      const balance = await loadRewardBalance(supabase, user.id)
+      setRewardBalance(balance)
+
+      const stored = sessionStorage.getItem('presales-reward-use')
+      if (stored) {
+        const requested = Math.max(0, Math.floor(Number(stored) || 0))
+        setRewardInput(String(requested))
+        setRewardApplied(requested)
+      }
+    }
+    loadRewards().catch(() => {
+      setRewardBalance(0)
+    })
   }, [])
 
   const allFree = items.length > 0 && items.every((item) => item.price === 0)
@@ -153,6 +192,64 @@ export default function CartPage() {
       return Math.floor((cartTotal * appliedCoupon.discount_value) / 100)
     }
     return Math.min(appliedCoupon.discount_value, cartTotal)
+  }
+
+  const couponDiscount = getCouponDiscount()
+  const rewardBaseAmount = Math.max(0, effectiveCartTotal - couponDiscount)
+  const rewardMaxUsable = clampRewardUseAmount(
+    rewardBaseAmount,
+    rewardBalance,
+    rewardBaseAmount,
+    rewardSettings,
+  )
+  const rewardDiscount = clampRewardUseAmount(
+    rewardApplied,
+    rewardBalance,
+    rewardBaseAmount,
+    rewardSettings,
+  )
+  const finalPayAmount = Math.max(0, rewardBaseAmount - rewardDiscount)
+
+  useEffect(() => {
+    if (rewardApplied <= 0) return
+    const clamped = clampRewardUseAmount(
+      rewardApplied,
+      rewardBalance,
+      rewardBaseAmount,
+      rewardSettings,
+    )
+    if (clamped !== rewardApplied) {
+      setRewardApplied(clamped)
+      setRewardInput(clamped > 0 ? String(clamped) : '')
+      if (clamped > 0) sessionStorage.setItem('presales-reward-use', String(clamped))
+      else sessionStorage.removeItem('presales-reward-use')
+    }
+  }, [rewardApplied, rewardBalance, rewardBaseAmount, rewardSettings])
+
+  function applyRewardPoints(requested?: number) {
+    const amount = clampRewardUseAmount(
+      requested ?? Number(rewardInput),
+      rewardBalance,
+      rewardBaseAmount,
+      rewardSettings,
+    )
+    if (amount <= 0) {
+      setRewardApplied(0)
+      setRewardInput('')
+      sessionStorage.removeItem('presales-reward-use')
+      addToast('사용 가능한 적립금이 없습니다.', 'error')
+      return
+    }
+    setRewardApplied(amount)
+    setRewardInput(String(amount))
+    sessionStorage.setItem('presales-reward-use', String(amount))
+    addToast(`${amount.toLocaleString('ko-KR')}원 적립금이 적용되었습니다.`, 'success')
+  }
+
+  function clearRewardPoints() {
+    setRewardApplied(0)
+    setRewardInput('')
+    sessionStorage.removeItem('presales-reward-use')
   }
 
 
@@ -474,15 +571,73 @@ export default function CartPage() {
               {getCouponDiscount() > 0 && (
                 <div className="flex justify-between text-blue-700 font-medium">
                   <span>쿠폰 할인</span>
-                  <span>-{formatPrice(getCouponDiscount())}</span>
+                  <span>-{formatPrice(couponDiscount)}</span>
+                </div>
+              )}
+              {rewardDiscount > 0 && (
+                <div className="flex justify-between text-blue-700 font-medium">
+                  <span>적립금 사용</span>
+                  <span>-{formatPrice(rewardDiscount)}</span>
                 </div>
               )}
               <Separator />
               <div className="flex justify-between font-bold text-lg pt-2">
                 <span>결제 금액</span>
-                <span className="text-primary">{formatPrice(Math.max(0, effectiveCartTotal - getCouponDiscount()))}</span>
+                <span className="text-primary">{formatPrice(finalPayAmount)}</span>
               </div>
             </div>
+
+            {hasPaidItems && rewardSettings.enabled && (
+              <div className="rounded-xl border border-blue-100 bg-blue-50/70 px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-blue-950">적립금</p>
+                    <p className="mt-0.5 text-xs text-blue-700">
+                      보유 {formatPrice(rewardBalance)} · 1회 최대 {formatPrice(rewardSettings.useLimitPerOrder)}
+                    </p>
+                  </div>
+                  {rewardDiscount > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearRewardPoints}
+                      className="text-xs text-blue-700 hover:text-blue-950 cursor-pointer"
+                    >
+                      해제
+                    </button>
+                  )}
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    step={100}
+                    value={rewardInput}
+                    onChange={(e) => setRewardInput(e.target.value)}
+                    placeholder="사용할 적립금"
+                    className="flex-1 h-10 rounded-xl border border-blue-200 bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => applyRewardPoints()}
+                    disabled={rewardMaxUsable <= 0}
+                    className="h-10 px-4 rounded-xl bg-blue-700 text-white text-sm font-medium hover:bg-blue-800 disabled:opacity-50 cursor-pointer"
+                  >
+                    적용
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyRewardPoints(rewardMaxUsable)}
+                    disabled={rewardMaxUsable <= 0}
+                    className="h-10 px-3 rounded-xl border border-blue-200 bg-white text-blue-800 text-sm font-medium hover:bg-blue-100 disabled:opacity-50 cursor-pointer"
+                  >
+                    전액
+                  </button>
+                </div>
+                <p className="mt-2 text-[11px] text-blue-700">
+                  적립금은 쿠폰까지 적용된 최종 금액에서 차감됩니다.
+                </p>
+              </div>
+            )}
 
             <div className="flex flex-col gap-3 pt-2">
               <div className="flex gap-3">
@@ -511,13 +666,18 @@ export default function CartPage() {
                         setProcessing(false)
                       }
                     } else {
+                      if (rewardDiscount > 0) {
+                        sessionStorage.setItem('presales-reward-use', String(rewardDiscount))
+                      } else {
+                        sessionStorage.removeItem('presales-reward-use')
+                      }
                       router.push('/checkout')
                     }
                   }}
                   disabled={processing}
                   className="flex-1 h-12 rounded-full bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition-all duration-300 cursor-pointer disabled:opacity-50 active:scale-[0.98]"
                 >
-                  {processing ? '처리 중...' : allFree ? '무료 다운로드' : `결제하기 (${formatPrice(Math.max(0, effectiveCartTotal - getCouponDiscount()))})`}
+                  {processing ? '처리 중...' : allFree ? '무료 다운로드' : `결제하기 (${formatPrice(finalPayAmount)})`}
                 </button>
               </div>
 

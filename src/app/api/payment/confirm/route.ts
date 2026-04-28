@@ -6,6 +6,12 @@ import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/client-ip'
 import { recomputeExpectedAmount } from '@/lib/payment-recompute'
+import {
+  confirmRewardPoints,
+  grantPurchaseRewardForOrder,
+  reserveRewardPoints,
+  rollbackRewardPoints,
+} from '@/lib/reward-points'
 
 const TOSS_SECRET_KEY = process.env.TOSS_SECRET_KEY!
 const TOSS_CONFIRM_URL = 'https://api.tosspayments.com/v1/payments/confirm'
@@ -81,7 +87,7 @@ export async function POST(request: NextRequest) {
     //   - 여기서 DB products.price 기준으로 재계산해서 일치 안 하면 거부.
     const { data: order } = await supabase
       .from('orders')
-      .select('id, user_id, total_amount, status, coupon_id, coupon_discount')
+      .select('id, user_id, total_amount, status, coupon_id, coupon_discount, reward_discount')
       .eq('id', dbOrderId)
       .single()
 
@@ -148,7 +154,13 @@ export async function POST(request: NextRequest) {
       }
       expectedAmount = Number(pr.amount)
     } else {
-      expectedAmount = await recomputeExpectedAmount(supabase, dbOrderId, user.id, order.coupon_id)
+      expectedAmount = await recomputeExpectedAmount(
+        supabase,
+        dbOrderId,
+        user.id,
+        order.coupon_id,
+        Number(order.reward_discount ?? 0),
+      )
     }
     if (expectedAmount === null) {
       logger.error('주문 재계산 실패', 'payment/confirm', { orderId: dbOrderId })
@@ -174,6 +186,7 @@ export async function POST(request: NextRequest) {
     //   진 쪽은 결제 완료 후 로그만 남고 할인은 그대로 먹음.
     //   → "예약 먼저 → 토스 confirm → 실패 시 rollback" 으로 순서 변경.
     let couponReserved = false
+    let rewardReserved = false
     if (order.coupon_id) {
       const { data: rpcResult, error: rpcErr } = await supabase.rpc('increment_coupon_usage', {
         p_coupon_id: order.coupon_id,
@@ -201,6 +214,31 @@ export async function POST(request: NextRequest) {
         )
       }
       couponReserved = true
+    }
+
+    const rewardDiscount = Math.max(0, Number(order.reward_discount ?? 0))
+    if (!chat_payment_id && rewardDiscount > 0) {
+      const rewardReserve = await reserveRewardPoints(
+        supabase,
+        user.id,
+        dbOrderId,
+        rewardDiscount,
+      )
+      if (!rewardReserve.ok) {
+        if (couponReserved && order.coupon_id) {
+          await supabase.rpc('rollback_coupon_usage', {
+            p_coupon_id: order.coupon_id,
+            p_user_id: user.id,
+            p_order_id: dbOrderId,
+          })
+        }
+        logger.error('적립금 예약 실패 (토스 호출 차단)', 'payment/confirm', {
+          orderId: dbOrderId,
+          reason: rewardReserve.reason,
+        })
+        return NextResponse.json({ error: '적립금을 사용할 수 없습니다' }, { status: 409 })
+      }
+      rewardReserved = true
     }
 
     // 3. 토스페이먼츠 결제 승인 요청 (서버 재검증 + 쿠폰 예약 완료 후)
@@ -233,6 +271,15 @@ export async function POST(request: NextRequest) {
           })
         }
       }
+      if (rewardReserved) {
+        const rbReward = await rollbackRewardPoints(supabase, dbOrderId)
+        if (!rbReward.ok) {
+          logger.error('적립금 rollback 실패 (수동 정정 필요)', 'payment/confirm', {
+            orderId: dbOrderId,
+            reason: rbReward.reason,
+          })
+        }
+      }
       return NextResponse.json(
         { error: tossData.message || '결제 승인에 실패했습니다' },
         { status: 400 }
@@ -242,6 +289,29 @@ export async function POST(request: NextRequest) {
     // C-5: 토스페이먼츠 응답 금액 검증
     if (tossData.totalAmount !== amount) {
       logger.error('금액 불일치', 'payment/confirm', { requestAmount: amount, tossAmount: tossData.totalAmount })
+      if (couponReserved && order.coupon_id) {
+        const { error: rbErr } = await supabase.rpc('rollback_coupon_usage', {
+          p_coupon_id: order.coupon_id,
+          p_user_id: user.id,
+          p_order_id: dbOrderId,
+        })
+        if (rbErr) {
+          logger.error('금액 불일치 경로 쿠폰 rollback 실패 (수동 정정 필요)', 'payment/confirm', {
+            couponId: order.coupon_id,
+            orderId: dbOrderId,
+            error: rbErr.message,
+          })
+        }
+      }
+      if (rewardReserved) {
+        const rbReward = await rollbackRewardPoints(supabase, dbOrderId)
+        if (!rbReward.ok) {
+          logger.error('금액 불일치 경로 적립금 rollback 실패 (수동 정정 필요)', 'payment/confirm', {
+            orderId: dbOrderId,
+            reason: rbReward.reason,
+          })
+        }
+      }
       return NextResponse.json(
         { error: '결제 금액이 불일치합니다. 다시 시도해주세요.' },
         { status: 400 }
@@ -272,6 +342,14 @@ export async function POST(request: NextRequest) {
       .select('id')
 
     if (updateError) {
+      if (couponReserved && order.coupon_id) {
+        await supabase.rpc('rollback_coupon_usage', {
+          p_coupon_id: order.coupon_id,
+          p_user_id: user.id,
+          p_order_id: dbOrderId,
+        })
+      }
+      if (rewardReserved) await rollbackRewardPoints(supabase, dbOrderId)
       logger.error('주문 업데이트 실패', 'payment/confirm', { error: updateError.message })
       return NextResponse.json({ error: '주문 상태 업데이트에 실패했습니다' }, { status: 500 })
     }
@@ -295,10 +373,38 @@ export async function POST(request: NextRequest) {
           })
         }
       }
+      if (rewardReserved) {
+        const rbReward = await rollbackRewardPoints(supabase, dbOrderId)
+        if (!rbReward.ok) {
+          logger.error('경쟁 경로 적립금 rollback 실패 (수동 정정 필요)', 'payment/confirm', {
+            orderId: dbOrderId,
+            reason: rbReward.reason,
+          })
+        }
+      }
       return NextResponse.json({ error: '주문이 이미 처리되었거나 상태가 변경되었습니다' }, { status: 409 })
     }
 
     // 4.5. 쿠폰 예약은 이미 토스 confirm 이전에 완료됨 (위 2-post 블록).
+    if (!chat_payment_id && rewardReserved && nextStatus === 'paid') {
+      const rewardConfirm = await confirmRewardPoints(supabase, dbOrderId)
+      if (!rewardConfirm.ok) {
+        logger.error('적립금 사용 확정 실패', 'payment/confirm', {
+          orderId: dbOrderId,
+          reason: rewardConfirm.reason,
+        })
+      }
+    }
+
+    if (!chat_payment_id && nextStatus === 'paid') {
+      const grant = await grantPurchaseRewardForOrder(supabase, dbOrderId)
+      if (grant.ok === false) {
+        logger.error('구매 적립금 지급 실패', 'payment/confirm', {
+          orderId: dbOrderId,
+          reason: grant.reason,
+        })
+      }
+    }
 
     // 5. 채팅 결제요청 상태 업데이트 (chat_payment_id가 있을 때).
     //   .eq('status', 'pending') 는 이중 업데이트 방지 (동일 결제요청에 대한 경쟁 요청).
@@ -389,4 +495,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
-

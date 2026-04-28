@@ -123,6 +123,10 @@ function SignupForm() {
           console.warn('[signup] WELCOME10K 쿠폰 발급 실패:', couponErr.message)
         }
       }
+
+      fetch('/api/rewards/signup', { method: 'POST' }).catch(() => {
+        // 적립금 지급 실패는 가입 성공에 영향 없음
+      })
     }
 
     // 환영 이메일 발송 (fire-and-forget: 실패해도 가입 성공으로 처리)
@@ -134,7 +138,7 @@ function SignupForm() {
       // 이메일 발송 실패는 가입 성공에 영향 없음
     })
 
-    addToast('환영합니다! 🎉 회원가입 축하 1만원 쿠폰이 발급되었습니다', 'success')
+    addToast('환영합니다! 회원가입 혜택이 지급되었습니다', 'success')
     router.push('/mypage')
     router.refresh()
   }

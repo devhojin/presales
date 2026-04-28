@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/client-ip'
+import { confirmRewardPoints, grantPurchaseRewardForOrder, rollbackRewardPoints } from '@/lib/reward-points'
 
 // 토스페이먼츠 webhook: 가상계좌 입금 완료 등 결제 상태 변경 이벤트
 // 대시보드(https://dashboard.tosspayments.com/my/webhook) 에서
@@ -150,6 +151,20 @@ export async function POST(request: NextRequest) {
 
     // DONE 으로 전환된 경우 주문 확인 이메일 트리거
     if (nextStatus === 'paid') {
+      const rewardConfirm = await confirmRewardPoints(supabase, dbOrderId)
+      if (!rewardConfirm.ok) {
+        logger.error('토스 webhook: 적립금 사용 확정 실패', 'payment/webhook/toss', {
+          dbOrderId,
+          reason: rewardConfirm.reason,
+        })
+      }
+      const grant = await grantPurchaseRewardForOrder(supabase, dbOrderId)
+      if (grant.ok === false) {
+        logger.error('토스 webhook: 구매 적립금 지급 실패', 'payment/webhook/toss', {
+          dbOrderId,
+          reason: grant.reason,
+        })
+      }
       try {
         const baseUrl = request.nextUrl.origin
         const internalSecret = process.env.CRON_SECRET
@@ -168,6 +183,16 @@ export async function POST(request: NextRequest) {
       } catch (emailErr) {
         const message = emailErr instanceof Error ? emailErr.message : '알 수 없는 오류'
         logger.error('토스 webhook: 이메일 발송 실패(무시)', 'payment/webhook/toss', { error: message })
+      }
+    }
+
+    if (nextStatus === 'cancelled') {
+      const rewardRollback = await rollbackRewardPoints(supabase, dbOrderId)
+      if (!rewardRollback.ok) {
+        logger.error('토스 webhook: 적립금 사용 예약 취소 실패', 'payment/webhook/toss', {
+          dbOrderId,
+          reason: rewardRollback.reason,
+        })
       }
     }
 

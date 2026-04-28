@@ -59,6 +59,20 @@ export default function CheckoutSuccessPage() {
     const amount = searchParams.get('amount')
     const chatPaymentId = searchParams.get('chat_payment_id')
 
+    const rewardOnlyOrderId = !paymentKey && orderId && !amount ? Number(orderId) : null
+    if (rewardOnlyOrderId && Number.isInteger(rewardOnlyOrderId) && rewardOnlyOrderId > 0) {
+      setConfirmedOrderId(rewardOnlyOrderId)
+      setStatus('success')
+      loadOrderDocument(rewardOnlyOrderId)
+      clearCart()
+      sessionStorage.removeItem('presales-applied-coupon')
+      sessionStorage.removeItem('presales-reward-use')
+      sessionStorage.removeItem('presales-tax-info')
+      gtag.trackPurchase(String(rewardOnlyOrderId), 0)
+      addToast('적립금 주문이 완료되었습니다!', 'success')
+      return
+    }
+
     if (!paymentKey || !orderId || !amount) {
       setStatus('error')
       setErrorMessage('결제 정보가 올바르지 않습니다.')
@@ -78,7 +92,7 @@ export default function CheckoutSuccessPage() {
           supabase.from('profiles').select('name, email, phone, company').eq('id', user.id).single(),
           supabase
             .from('orders')
-            .select('id, order_number, total_amount, status, created_at, paid_at, payment_method, cash_receipt_url, order_items(id, price, original_price, discount_amount, discount_reason, discount_source_product_id, products(id, title, price))')
+            .select('id, order_number, total_amount, status, created_at, paid_at, payment_method, cash_receipt_url, coupon_discount, reward_discount, order_items(id, price, original_price, discount_amount, discount_reason, discount_source_product_id, products(id, title, price))')
             .eq('id', orderPk)
             .eq('user_id', user.id)
             .single(),
@@ -144,6 +158,7 @@ export default function CheckoutSuccessPage() {
           // 일반 결제: 장바구니 & 세션 정리
           clearCart()
           sessionStorage.removeItem('presales-applied-coupon')
+          sessionStorage.removeItem('presales-reward-use')
           sessionStorage.removeItem('presales-tax-info')
         }
 

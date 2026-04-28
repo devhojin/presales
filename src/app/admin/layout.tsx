@@ -4,7 +4,7 @@ import './admin-theme.css'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, ArrowLeft, ChevronLeft, ChevronRight, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail, History } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, ArrowLeft, ChevronLeft, ChevronRight, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail, History, Coins } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
 type NavItem = { href: string; icon: typeof LayoutDashboard; label: string } | { divider: true; label: string }
@@ -36,6 +36,7 @@ const adminNav: NavItem[] = [
   { href: '/admin/downloads', icon: Download, label: '다운로드 관리' },
   { href: '/admin/analytics', icon: BarChart3, label: '통계 분석' },
   { href: '/admin/settings', icon: Settings, label: '사이트 설정' },
+  { href: '/admin/settings/rewards', icon: Coins, label: '적립금' },
   { href: '/admin/work-history', icon: History, label: '작업 히스토리' },
 ]
 
@@ -168,8 +169,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
             )
           }
+          const exactOnly = item.href === '/admin/settings'
           const isActive = pathname === item.href ||
-            (item.href !== '/admin' && pathname?.startsWith(item.href))
+            (!exactOnly && item.href !== '/admin' && pathname?.startsWith(item.href))
           const badgeCount = badges[item.href] || 0
           const isChat = item.href === '/admin/chat'
           const isConsulting = item.href === '/admin/consulting'

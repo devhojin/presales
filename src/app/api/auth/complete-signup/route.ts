@@ -5,6 +5,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/client-ip'
+import { grantRewardPoints, loadRewardSettings } from '@/lib/reward-points'
 
 type Body = {
   agreeTerms?: boolean
@@ -169,6 +170,25 @@ export async function POST(request: NextRequest) {
           logger.warn('complete-signup WELCOME10K 발급 실패', 'auth/complete-signup', { error: couponErr.message })
         } else {
           couponIssued = true
+        }
+      }
+    }
+
+    if (service) {
+      const settings = await loadRewardSettings(service)
+      if (settings.enabled && settings.signupBonus > 0) {
+        const rewardResult = await grantRewardPoints(service, {
+          userId: user.id,
+          amount: settings.signupBonus,
+          type: 'signup',
+          sourceKey: `signup:${user.id}`,
+          memo: '신규회원가입 적립금',
+        })
+        if (rewardResult.ok === false) {
+          logger.warn('complete-signup 회원가입 적립금 지급 실패', 'auth/complete-signup', {
+            userId: user.id,
+            reason: rewardResult.reason,
+          })
         }
       }
     }

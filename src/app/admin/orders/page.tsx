@@ -81,6 +81,7 @@ interface Order {
   profiles: Profile | null
   coupon_code: string | null
   coupon_discount: number | null
+  reward_discount: number | null
   tax_contact_info: string | null
   business_cert_url: string | null
   business_cert_name: string | null
@@ -777,6 +778,12 @@ function OrderDetailModal({
                     </p>
                   </div>
                 )}
+                {(order.reward_discount ?? 0) > 0 && (
+                  <div>
+                    <p className="text-[11px] text-muted-foreground mb-1">사용 적립금</p>
+                    <p className="text-sm font-medium text-blue-700">-{formatWon(order.reward_discount || 0)}</p>
+                  </div>
+                )}
                 {order.tax_contact_info && (
                   <div>
                     <p className="text-[11px] text-muted-foreground mb-1">세금계산서 담당자 정보</p>
@@ -1265,7 +1272,7 @@ export default function AdminOrders() {
       .from('orders')
       .select(
         `id, order_number, user_id, status, total_amount, payment_method, payment_key, paid_at, cancelled_at, refund_reason, admin_memo, created_at, updated_at,
-         coupon_code, coupon_discount, tax_contact_info, business_cert_url, business_cert_name, deposit_memo, card_memo,
+         coupon_code, coupon_discount, reward_discount, tax_contact_info, business_cert_url, business_cert_name, deposit_memo, card_memo,
          order_items ( id, order_id, product_id, price, products ( title, thumbnail_url ) )`
       )
       .order('created_at', { ascending: false })
@@ -1308,16 +1315,19 @@ export default function AdminOrders() {
 
   // Status change handler
   const handleStatusChange = useCallback(async (orderId: number, status: string) => {
-    const supabase = createClient()
-    const updates: Record<string, unknown> = { status, updated_at: new Date().toISOString() }
-    if (status === 'paid') updates.paid_at = new Date().toISOString()
-    if (status === 'cancelled') updates.cancelled_at = new Date().toISOString()
-
-    const { error } = await supabase.from('orders').update(updates).eq('id', orderId)
-    if (error) {
-      setToast(`주문 상태 변경 실패: ${error.message}`)
+    const res = await fetch(`/api/admin/orders/${orderId}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    })
+    const payload = (await res.json().catch(() => null)) as
+      | { success?: boolean; updates?: Record<string, unknown>; error?: string }
+      | null
+    if (!res.ok || !payload?.success || !payload.updates) {
+      setToast(`주문 상태 변경 실패: ${payload?.error ?? '알 수 없는 오류'}`)
       return
     }
+    const updates = payload.updates
 
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, ...updates } as Order : o))
@@ -1341,20 +1351,29 @@ export default function AdminOrders() {
   // Bulk status change
   const handleBulkStatusChange = useCallback(async (status: string) => {
     if (selectedIds.size === 0) return
-    const supabase = createClient()
-    const updates: Record<string, unknown> = { status, updated_at: new Date().toISOString() }
-    if (status === 'paid') updates.paid_at = new Date().toISOString()
-    if (status === 'cancelled') updates.cancelled_at = new Date().toISOString()
-
     const ids = Array.from(selectedIds)
-    const { error } = await supabase.from('orders').update(updates).in('id', ids)
-    if (error) {
-      setToast(`일괄 상태 변경 실패: ${error.message}`)
+    const results = await Promise.all(ids.map(async (id) => {
+      const res = await fetch(`/api/admin/orders/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      const payload = (await res.json().catch(() => null)) as
+        | { success?: boolean; updates?: Record<string, unknown>; error?: string }
+        | null
+      return { id, ok: res.ok && payload?.success === true, updates: payload?.updates }
+    }))
+    const failed = results.filter((result) => !result.ok)
+    if (failed.length > 0) {
+      setToast(`일괄 상태 변경 실패: ${failed.length}건`)
       return
     }
 
     setOrders((prev) =>
-      prev.map((o) => (selectedIds.has(o.id) ? { ...o, ...updates } as Order : o))
+      prev.map((o) => {
+        const result = results.find((r) => r.id === o.id)
+        return result?.updates ? { ...o, ...result.updates } as Order : o
+      })
     )
     setSelectedIds(new Set())
     setBulkDropdownOpen(false)
@@ -1799,6 +1818,12 @@ export default function AdminOrders() {
                               <span>상품 금액</span>
                               <span>{formatWon(order.order_items?.reduce((sum, i) => sum + i.price, 0) || 0)}</span>
                             </div>
+                            {(order.reward_discount ?? 0) > 0 && (
+                              <div className="flex justify-between text-xs text-blue-700">
+                                <span>적립금 사용</span>
+                                <span>-{formatWon(order.reward_discount || 0)}</span>
+                              </div>
+                            )}
                             <div className="flex justify-between text-sm font-semibold text-foreground pt-1 border-t border-border/50 mt-1">
                               <span>총 결제 금액</span>
                               <span>{formatWon(order.total_amount)}</span>

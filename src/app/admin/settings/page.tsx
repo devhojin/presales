@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Settings, Save, Loader2 } from 'lucide-react'
+import Link from 'next/link'
 
 interface SettingRow {
   key: string
@@ -121,6 +122,21 @@ export default function SiteSettingsPage() {
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {saving ? '저장 중...' : '저장'}
         </button>
+      </div>
+
+      <div className="mb-6 flex gap-2">
+        <Link
+          href="/admin/settings"
+          className="h-9 px-4 rounded-xl bg-primary text-white text-sm font-medium inline-flex items-center"
+        >
+          사이트 설정
+        </Link>
+        <Link
+          href="/admin/settings/rewards"
+          className="h-9 px-4 rounded-xl border border-border bg-white text-sm font-medium hover:bg-muted inline-flex items-center"
+        >
+          적립금
+        </Link>
       </div>
 
       {/* Groups */}

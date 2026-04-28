@@ -124,6 +124,7 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
       cons: null,
       image_urls: imageUrls,
     }
+    let createdReview = false
 
     if (existingReview) {
       const { error: updateError } = await supabase
@@ -156,6 +157,7 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
         setSubmitting(false)
         return
       }
+      createdReview = true
     }
 
     // Update product review_count and review_avg
@@ -176,6 +178,15 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
     }
 
     setSubmitting(false)
+    if (createdReview) {
+      fetch('/api/rewards/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId }),
+      }).catch(() => {
+        // 적립금 지급 실패는 후기 등록 성공에 영향 없음
+      })
+    }
     onSuccess()
   }
 

@@ -6,8 +6,13 @@ import { useCartStore } from '@/stores/cart-store'
 import { createClient } from '@/lib/supabase'
 import { useToastStore } from '@/stores/toast-store'
 import { loadTossPayments, TossPaymentsWidgets } from '@tosspayments/tosspayments-sdk'
-import { ArrowLeft, ShieldCheck, Loader2, CreditCard, Building2, MessageCircle, ChevronDown, Upload, Check } from 'lucide-react'
+import { ArrowLeft, ShieldCheck, Loader2, CreditCard, Building2, MessageCircle, ChevronDown, Upload, Check, Coins } from 'lucide-react'
 import Link from 'next/link'
+import {
+  clampRewardUseAmount,
+  loadRewardBalance,
+  loadRewardSettings,
+} from '@/lib/reward-points'
 
 const CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY!
 
@@ -130,6 +135,8 @@ export default function CheckoutPage() {
   const [finalAmount, setFinalAmount] = useState<number>(isChatPayment ? (chatAmount ?? 0) : cartTotal)
   const [couponDiscount, setCouponDiscount] = useState<number>(0)
   const [couponCode, setCouponCode] = useState<string | null>(null)
+  const [rewardBalance, setRewardBalance] = useState<number>(0)
+  const [rewardDiscount, setRewardDiscount] = useState<number>(0)
 
   useEffect(() => {
     // 채팅 결제: 장바구니 비어있어도 통과
@@ -165,6 +172,7 @@ export default function CheckoutPage() {
             status: 'pending',
             payment_method: 'card',
             coupon_discount: 0,
+            reward_discount: 0,
           })
           .select('id')
           .single()
@@ -382,10 +390,35 @@ export default function CheckoutPage() {
           }
         }
 
+        // 2.6. 적립금 적용 (쿠폰까지 적용된 최종 할인 전 금액에서 차감)
+        let appliedRewardDiscount = 0
+        const rawReward = typeof window !== 'undefined' ? sessionStorage.getItem('presales-reward-use') : null
+        if (rawReward) {
+          const requestedReward = Math.max(0, Math.floor(Number(rawReward) || 0))
+          if (requestedReward > 0) {
+            const [rewardSettings, currentRewardBalance] = await Promise.all([
+              loadRewardSettings(supabase),
+              loadRewardBalance(supabase, user.id),
+            ])
+            appliedRewardDiscount = clampRewardUseAmount(
+              requestedReward,
+              currentRewardBalance,
+              expectedTotalAmount,
+              rewardSettings,
+            )
+            setRewardBalance(currentRewardBalance)
+            expectedTotalAmount = Math.max(0, expectedTotalAmount - appliedRewardDiscount)
+          }
+        } else {
+          const currentRewardBalance = await loadRewardBalance(supabase, user.id)
+          setRewardBalance(currentRewardBalance)
+        }
+
         // 서버 재계산이 최종 결제 금액. 클라이언트가 조작했더라도 무관.
         setFinalAmount(expectedTotalAmount)
         setCouponDiscount(appliedCouponInfo?.coupon_discount || 0)
         setCouponCode(appliedCouponInfo?.code || null)
+        setRewardDiscount(appliedRewardDiscount)
 
         // 2. 주문 생성 또는 재사용 (pending 상태)
         // 기존 pending 주문 확인
@@ -421,6 +454,7 @@ export default function CheckoutPage() {
           coupon_id: appliedCouponInfo?.id ?? null,
           coupon_code: appliedCouponInfo?.code ?? null,
           coupon_discount: appliedCouponInfo?.coupon_discount ?? 0,
+          reward_discount: appliedRewardDiscount,
           tax_contact_info: taxInfo.tax_contact_info || null,
           business_cert_url: taxInfo.business_cert_path || null,
           business_cert_name: taxInfo.business_cert_name || null,
@@ -478,13 +512,16 @@ export default function CheckoutPage() {
         }
 
         // 주문 상품 등록 (할인 메타 포함)
+        const productPriceMap = new Map(validProducts.map((product) => [product.id, Number(product.price)]))
         const orderItems = paidItems.map((item) => {
           const discount = itemDiscountMap.get(item.productId)
+          const originalPrice = discount?.originalPrice ?? productPriceMap.get(item.productId) ?? item.price
+          const unitPrice = Math.max(0, originalPrice - (discount?.discountAmount ?? 0))
           return {
             order_id: order.id,
             product_id: item.productId,
-            price: item.price,
-            original_price: discount?.originalPrice ?? item.price,
+            price: unitPrice,
+            original_price: originalPrice,
             discount_amount: discount?.discountAmount ?? 0,
             discount_reason: discount?.discountReason ?? null,
             discount_source_product_id: discount?.discountSourceProductId ?? null,
@@ -514,6 +551,12 @@ export default function CheckoutPage() {
           name: prof?.name ?? undefined,
           email: prof?.email ?? user.email ?? undefined,
           phone: prof?.phone ?? undefined,
+        }
+
+        if (expectedTotalAmount <= 0) {
+          setReady(true)
+          setLoading(false)
+          return
         }
 
         // 3. 토스 위젯 초기화
@@ -560,6 +603,10 @@ export default function CheckoutPage() {
   }, [])
 
   async function handleCardPayment() {
+    if (finalAmount <= 0) {
+      await handleRewardOnlyPayment()
+      return
+    }
     if (!widgetsRef.current || !orderId) return
 
     setPaying(true)
@@ -655,8 +702,38 @@ export default function CheckoutPage() {
     }
   }
 
+  async function handleRewardOnlyPayment() {
+    if (!dbOrderId) return
+
+    setPaying(true)
+    try {
+      const res = await fetch('/api/payment/reward-only', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: dbOrderId }),
+      })
+      const data = await res.json() as { success?: boolean; orderId?: number; error?: string }
+      if (!res.ok || !data.success) {
+        addToast(data.error || '적립금 주문 처리에 실패했습니다.', 'error')
+        setPaying(false)
+        return
+      }
+      clearCart()
+      sessionStorage.removeItem('presales-applied-coupon')
+      sessionStorage.removeItem('presales-reward-use')
+      addToast('적립금으로 주문이 완료되었습니다. 마이페이지에서 다운로드하세요.', 'success')
+      router.push(`/checkout/success?orderId=${data.orderId}`)
+    } catch (err) {
+      console.error('[적립금 결제 오류]', err)
+      addToast('적립금 주문 처리 중 오류가 발생했습니다.', 'error')
+      setPaying(false)
+    }
+  }
+
   function handlePayment() {
-    if (selectedMethod === 'bank_transfer') {
+    if (!isChatPayment && finalAmount <= 0) {
+      handleRewardOnlyPayment()
+    } else if (selectedMethod === 'bank_transfer') {
       handleBankTransferPayment()
     } else {
       handleCardPayment()
@@ -717,6 +794,21 @@ export default function CheckoutPage() {
               <div className="flex justify-between text-sm text-blue-700">
                 <span>쿠폰 할인{couponCode && ` (${couponCode})`}</span>
                 <span>-{formatPrice(couponDiscount)}</span>
+              </div>
+            )}
+            {rewardDiscount > 0 && (
+              <div className="flex justify-between text-sm text-blue-700">
+                <span className="inline-flex items-center gap-1">
+                  <Coins className="w-3.5 h-3.5" />
+                  적립금 사용
+                </span>
+                <span>-{formatPrice(rewardDiscount)}</span>
+              </div>
+            )}
+            {rewardBalance > 0 && (
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>남은 적립금</span>
+                <span>{formatPrice(Math.max(0, rewardBalance - rewardDiscount))}</span>
               </div>
             )}
           </>
@@ -891,7 +983,7 @@ export default function CheckoutPage() {
       )}
 
       {/* 토스 결제 위젯 (카드 선택 시 또는 채팅 결제 시 표시) */}
-      {(isChatPayment || selectedMethod === 'card') && (
+      {(isChatPayment || selectedMethod === 'card') && finalAmount > 0 && (
         <>
           {loading && (
             <div className="flex items-center justify-center py-20 text-muted-foreground">
@@ -915,6 +1007,11 @@ export default function CheckoutPage() {
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
               처리 중...
+            </>
+          ) : !isChatPayment && finalAmount <= 0 ? (
+            <>
+              <Coins className="w-5 h-5" />
+              적립금으로 주문 완료
             </>
           ) : !isChatPayment && selectedMethod === 'bank_transfer' ? (
             <>

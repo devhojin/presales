@@ -1199,6 +1199,7 @@ export type Database = {
           payment_key: string | null
           payment_method: string | null
           refund_reason: string | null
+          reward_discount: number
           status: string | null
           tax_contact_info: string | null
           total_amount: number
@@ -1222,6 +1223,7 @@ export type Database = {
           payment_key?: string | null
           payment_method?: string | null
           refund_reason?: string | null
+          reward_discount?: number
           status?: string | null
           tax_contact_info?: string | null
           total_amount?: number
@@ -1245,6 +1247,7 @@ export type Database = {
           payment_key?: string | null
           payment_method?: string | null
           refund_reason?: string | null
+          reward_discount?: number
           status?: string | null
           tax_contact_info?: string | null
           total_amount?: number
@@ -1524,6 +1527,7 @@ export type Database = {
           marketing_opt_in_at: string | null
           name: string | null
           phone: string | null
+          reward_balance: number
           role: string | null
           updated_at: string | null
         }
@@ -1539,6 +1543,7 @@ export type Database = {
           marketing_opt_in_at?: string | null
           name?: string | null
           phone?: string | null
+          reward_balance?: number
           role?: string | null
           updated_at?: string | null
         }
@@ -1554,10 +1559,71 @@ export type Database = {
           marketing_opt_in_at?: string | null
           name?: string | null
           phone?: string | null
+          reward_balance?: number
           role?: string | null
           updated_at?: string | null
         }
         Relationships: []
+      }
+      reward_point_ledger: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string
+          id: number
+          memo: string | null
+          order_id: number | null
+          review_id: number | null
+          source_key: string
+          status: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          created_at?: string
+          id?: number
+          memo?: string | null
+          order_id?: number | null
+          review_id?: number | null
+          source_key: string
+          status?: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          id?: number
+          memo?: string | null
+          order_id?: number | null
+          review_id?: number | null
+          source_key?: string
+          status?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_point_ledger_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reward_point_ledger_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       review_helpful: {
         Row: {
@@ -1775,10 +1841,34 @@ export type Database = {
       }
     }
     Functions: {
+      confirm_reward_points: {
+        Args: { p_order_id: number }
+        Returns: Json
+      }
       decrement_helpful: { Args: { rid: number }; Returns: undefined }
+      grant_reward_points: {
+        Args: {
+          p_amount: number
+          p_memo?: string | null
+          p_order_id?: number | null
+          p_review_id?: number | null
+          p_source_key: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
       increment_helpful: { Args: { rid: number }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
       nextval_guest_name: { Args: never; Returns: number }
+      reserve_reward_points: {
+        Args: { p_amount: number; p_order_id: number; p_user_id: string }
+        Returns: Json
+      }
+      rollback_reward_points: {
+        Args: { p_order_id: number }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
