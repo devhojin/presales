@@ -644,7 +644,7 @@ export default function StoreClient() {
         </div>
       ) : products.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 ${totalPages <= 1 ? 'mb-20 md:mb-24' : ''}`}>
             {products.map((product) => (
               <ProductCard
                 key={product.id}
