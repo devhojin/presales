@@ -34,6 +34,9 @@ TELEGRAM_ALLOWED_CHAT_IDS=123456789
 
 환경변수를 입력한 뒤 Codex MCP 세션을 재시작하면 다음 도구를 사용할 수 있습니다.
 
+`scripts/telegram-mcp.mjs`는 OS 환경변수가 비어 있으면 프로젝트 루트의 `.env.local`도 읽습니다.
+단, 현재 떠 있는 Codex 세션에 새 MCP 도구를 즉시 주입하지는 못하므로 설정 후 Codex 창을 재시작해야 합니다.
+
 - `telegram_get_me`: 봇 연결 확인
 - `telegram_get_updates`: 최근 메시지 조회 및 `chat_id` 확인
 - `telegram_send_message`: 기본 채팅 또는 허용된 채팅으로 메시지 전송

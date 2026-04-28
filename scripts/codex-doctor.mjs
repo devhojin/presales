@@ -6,6 +6,47 @@ import { execFileSync } from 'node:child_process'
 
 const cwd = process.cwd()
 
+function parseEnvLine(line) {
+  const trimmed = line.trim()
+  if (!trimmed || trimmed.startsWith('#')) return null
+
+  const separatorIndex = trimmed.indexOf('=')
+  if (separatorIndex === -1) return null
+
+  const key = trimmed.slice(0, separatorIndex).trim()
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) return null
+
+  let value = trimmed.slice(separatorIndex + 1).trim()
+  if (
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"))
+  ) {
+    value = value.slice(1, -1)
+  } else {
+    value = value.replace(/\s+#.*$/, '').trim()
+  }
+
+  return [key, value]
+}
+
+function loadLocalEnv() {
+  const filePath = path.join(cwd, '.env.local')
+  if (!fs.existsSync(filePath)) return
+
+  const lines = fs.readFileSync(filePath, 'utf8').split(/\r?\n/)
+  for (const line of lines) {
+    const parsed = parseEnvLine(line)
+    if (!parsed) continue
+
+    const [key, value] = parsed
+    if (process.env[key] === undefined) {
+      process.env[key] = value
+    }
+  }
+}
+
+loadLocalEnv()
+
 function ok(message) {
   console.log(`OK   ${message}`)
 }
@@ -93,6 +134,9 @@ const envChecks = [
   ['GITHUB_PERSONAL_ACCESS_TOKEN', true],
   ['SUPABASE_ACCESS_TOKEN', true],
   ['CONTEXT7_API_KEY', false],
+  ['TELEGRAM_BOT_TOKEN', false],
+  ['TELEGRAM_CHAT_ID', false],
+  ['TELEGRAM_ALLOWED_CHAT_IDS', false],
 ]
 
 for (const [key, required] of envChecks) {

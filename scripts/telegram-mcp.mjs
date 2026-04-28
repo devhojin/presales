@@ -1,3 +1,7 @@
+import fs from 'node:fs'
+import https from 'node:https'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod'
@@ -6,6 +10,54 @@ const server = new McpServer({
   name: 'presales-telegram',
   version: '1.0.0',
 })
+
+function parseEnvLine(line) {
+  const trimmed = line.trim()
+  if (!trimmed || trimmed.startsWith('#')) return null
+
+  const separatorIndex = trimmed.indexOf('=')
+  if (separatorIndex === -1) return null
+
+  const key = trimmed.slice(0, separatorIndex).trim()
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) return null
+
+  let value = trimmed.slice(separatorIndex + 1).trim()
+  if (
+    (value.startsWith('"') && value.endsWith('"')) ||
+    (value.startsWith("'") && value.endsWith("'"))
+  ) {
+    value = value.slice(1, -1)
+  } else {
+    value = value.replace(/\s+#.*$/, '').trim()
+  }
+
+  return [key, value]
+}
+
+function loadLocalEnv() {
+  const scriptDir = path.dirname(fileURLToPath(import.meta.url))
+  const candidates = [
+    path.join(process.cwd(), '.env.local'),
+    path.join(scriptDir, '..', '.env.local'),
+  ]
+
+  for (const filePath of [...new Set(candidates)]) {
+    if (!fs.existsSync(filePath)) continue
+
+    const lines = fs.readFileSync(filePath, 'utf8').split(/\r?\n/)
+    for (const line of lines) {
+      const parsed = parseEnvLine(line)
+      if (!parsed) continue
+
+      const [key, value] = parsed
+      if (process.env[key] === undefined) {
+        process.env[key] = value
+      }
+    }
+  }
+}
+
+loadLocalEnv()
 
 function getConfig() {
   const botToken = process.env.TELEGRAM_BOT_TOKEN
@@ -37,17 +89,46 @@ async function callTelegram(method, payload = {}, tokenOverride) {
   const token = tokenOverride || getConfig().botToken
   if (!token) throw new Error('TELEGRAM_BOT_TOKEN is required.')
 
-  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(payload),
+  const body = JSON.stringify(payload)
+  const data = await new Promise((resolve, reject) => {
+    const request = https.request({
+      hostname: 'api.telegram.org',
+      path: `/bot${token}/${method}`,
+      method: 'POST',
+      family: 4,
+      timeout: 20_000,
+      headers: {
+        'content-type': 'application/json',
+        'content-length': Buffer.byteLength(body),
+      },
+    }, (response) => {
+      let responseBody = ''
+      response.setEncoding('utf8')
+      response.on('data', (chunk) => {
+        responseBody += chunk
+      })
+      response.on('end', () => {
+        try {
+          const parsed = JSON.parse(responseBody)
+          if (!response.statusCode || response.statusCode < 200 || response.statusCode >= 300 || !parsed?.ok) {
+            reject(new Error(parsed?.description || `Telegram API request failed with status ${response.statusCode}`))
+            return
+          }
+          resolve(parsed)
+        } catch {
+          reject(new Error(`Telegram API returned invalid JSON with status ${response.statusCode}`))
+        }
+      })
+    })
+
+    request.on('timeout', () => {
+      request.destroy(new Error('Telegram API request timed out.'))
+    })
+    request.on('error', reject)
+    request.write(body)
+    request.end()
   })
 
-  const data = await response.json().catch(() => null)
-  if (!response.ok || !data?.ok) {
-    const description = data?.description || `Telegram API request failed with status ${response.status}`
-    throw new Error(description)
-  }
   return data.result
 }
 
