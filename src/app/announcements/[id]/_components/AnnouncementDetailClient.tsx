@@ -12,7 +12,6 @@ import {
   FileText,
   Phone,
   Loader2,
-  ArrowRight,
 } from 'lucide-react'
 import DOMPurify from 'dompurify'
 import {
@@ -243,27 +242,6 @@ export default function AnnouncementDetailClient({ params }: { params: Promise<{
             </a>
           </div>
         )}
-
-        {/* Related Proposals CTA */}
-        <div className="bg-gradient-to-r from-blue-50 to-blue-50/50 rounded-2xl p-8 md:p-12 border border-blue-200/50">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div>
-              <h3 className="text-lg font-semibold tracking-tight text-foreground mb-2">
-                관련 제안서 찾기
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                이 공고에 필요한 맞춤형 제안서 템플릿과 문서 가이드를 확인해보세요.
-              </p>
-            </div>
-            <Link
-              href="/store"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full bg-primary text-primary-foreground text-sm font-semibold uppercase tracking-widest hover:bg-primary/90 transition-all duration-300 active:scale-[0.98] whitespace-nowrap"
-            >
-              스토어 보기
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
       </div>
     </div>
   )
