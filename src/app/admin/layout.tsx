@@ -80,7 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             .eq('is_published', true).gte('created_at', todayIso),
           // 관리자 미읽은 채팅
           supabase.from('chat_rooms').select('admin_unread_count')
-            .eq('hidden_by_admin', false).gt('admin_unread_count', 0),
+            .eq('hidden_by_admin', false).not('last_message', 'is', null).gt('admin_unread_count', 0),
           // pending 컨설팅
           supabase.from('consulting_requests').select('id', { count: 'exact', head: true })
             .eq('status', 'pending'),
@@ -100,7 +100,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
     loadBadges()
     const interval = setInterval(loadBadges, 30000)
-    return () => clearInterval(interval)
+
+    const refreshBadges = () => { void loadBadges() }
+    window.addEventListener('admin-badges-refresh', refreshBadges)
+
+    const chatChannel = supabase
+      .channel('admin-sidebar-chat-badges')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'chat_rooms' },
+        refreshBadges,
+      )
+      .subscribe()
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('admin-badges-refresh', refreshBadges)
+      supabase.removeChannel(chatChannel)
+    }
   }, [ready])
 
   const toggle = () => {

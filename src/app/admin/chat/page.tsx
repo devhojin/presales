@@ -370,6 +370,7 @@ export default function AdminChatPage() {
     const res = await fetch('/api/chat/rooms')
     const data = await res.json()
     if (data.rooms) setRooms(data.rooms)
+    window.dispatchEvent(new Event('admin-badges-refresh'))
     setLoading(false)
   }, [])
 
