@@ -270,6 +270,24 @@ function formatErr(e: unknown): string {
   return String(e ?? '알 수 없는 오류')
 }
 
+function getValidCategoryIds(
+  categoryIds: unknown,
+  categoryId: unknown,
+  validCategoryIds: Set<number>,
+): number[] {
+  const normalized = Array.isArray(categoryIds)
+    ? categoryIds
+        .map((value) => Number(value))
+        .filter((value, index, array) => Number.isInteger(value) && array.indexOf(value) === index)
+    : []
+
+  const validIds = normalized.filter((value) => validCategoryIds.has(value))
+  if (validIds.length > 0) return validIds
+
+  const fallbackId = Number(categoryId)
+  return Number.isInteger(fallbackId) && validCategoryIds.has(fallbackId) ? [fallbackId] : []
+}
+
 function normalizeProductsReturnTo(value: string | null): string {
   if (value === '/admin/products' || value?.startsWith('/admin/products?')) {
     return value
@@ -437,10 +455,13 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           ? Promise.resolve({ data: null })
           : supabase.from('products').select('*').eq('id', Number(id)).maybeSingle(),
       ])
-      setCategories(catRes.data || [])
+      const categoryRows = catRes.data || []
+      const validCategoryIds = new Set(categoryRows.map((category) => category.id))
+      setCategories(categoryRows)
 
       if (prodRes.data) {
         const p = prodRes.data
+        const productCategoryIds = getValidCategoryIds(p.category_ids, p.category_id, validCategoryIds)
         const overview = Array.isArray(p.overview) ? p.overview : []
         const features = Array.isArray(p.features) ? p.features : []
         const specs = Array.isArray(p.specs) ? p.specs : []
@@ -455,8 +476,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           preview_note: p.preview_note || '',
           price: p.price || 0,
           original_price: p.original_price || 0,
-          category_id: String(p.category_id || ''),
-          category_ids: Array.isArray(p.category_ids) ? p.category_ids : (p.category_id ? [p.category_id] : []),
+          category_id: productCategoryIds.length > 0 ? String(productCategoryIds[0]) : '',
+          category_ids: productCategoryIds,
           tier: p.tier || 'basic',
           format: p.format || '',
           pages: p.pages ? String(p.pages) : '',
@@ -516,6 +537,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     setSaving(true)
     try {
       const supabase = createClient()
+      const validCategoryIds = new Set(categories.map((category) => category.id))
+      const selectedCategoryIds = getValidCategoryIds(form.category_ids, form.category_id, validCategoryIds)
       const dbRow: Record<string, unknown> = {
         title: form.title,
         description: form.description || null,
@@ -527,8 +550,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         preview_note: form.preview_note || null,
         price: form.is_free ? 0 : form.price,
         original_price: form.is_free ? 0 : form.original_price,
-        category_id: form.category_ids.length > 0 ? form.category_ids[0] : (form.category_id ? parseInt(form.category_id) : null),
-        category_ids: form.category_ids,
+        category_id: selectedCategoryIds[0] ?? null,
+        category_ids: selectedCategoryIds,
         tier: form.tier,
         format: form.format || null,
         pages: form.pages ? parseInt(form.pages) : null,
