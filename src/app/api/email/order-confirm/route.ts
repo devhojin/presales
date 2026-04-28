@@ -94,11 +94,11 @@ export async function POST(request: NextRequest) {
       .select(`
         id,
         order_number,
+        user_id,
         status,
         total_amount,
         payment_method,
         created_at,
-        profiles ( name, email ),
         order_items (
           id,
           price,
@@ -112,6 +112,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '주문을 찾을 수 없습니다.' }, { status: 404 })
     }
 
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('name, email')
+      .eq('id', order.user_id)
+      .maybeSingle()
+
     // 소유권 확인: 본인 주문 또는 관리자만 허용 (internal call 은 검증된 토큰으로 우회)
     if (!isInternalCall && callerUserId) {
       const { data: userProfile } = await supabase
@@ -120,17 +126,11 @@ export async function POST(request: NextRequest) {
         .eq('id', callerUserId)
         .single()
       const isAdmin = userProfile?.role === 'admin'
-      const { data: orderOwner } = await supabase
-        .from('orders')
-        .select('user_id')
-        .eq('id', orderId)
-        .single()
-      if (!isAdmin && orderOwner?.user_id !== callerUserId) {
+      if (!isAdmin && order.user_id !== callerUserId) {
         return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
       }
     }
 
-    const profile = order.profiles as unknown as { name: string | null; email: string } | null
     if (!profile?.email) {
       return NextResponse.json({ error: '주문자 이메일이 없습니다.' }, { status: 400 })
     }

@@ -91,7 +91,6 @@ export async function POST(request: NextRequest) {
         coupon_discount,
         reward_discount,
         deposit_memo,
-        profiles ( name, email ),
         order_items (
           id,
           price,
@@ -138,6 +137,12 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       )
     }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('name, email')
+      .eq('id', order.user_id)
+      .maybeSingle()
 
     let couponReserved = false
     if (order.coupon_id) {
@@ -211,7 +216,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '주문 상태 변경에 실패했습니다' }, { status: 500 })
     }
 
-    const profile = order.profiles as unknown as { name: string | null; email: string } | null
     const items = order.order_items as unknown as { id: string; price: number; products: { title: string } | null }[]
 
     // 5. 입금 안내 이메일 발송 (실패해도 API는 성공 반환)
