@@ -270,6 +270,15 @@ function formatErr(e: unknown): string {
   return String(e ?? '알 수 없는 오류')
 }
 
+function isForeignKeyViolation(e: unknown): boolean {
+  if (e && typeof e === 'object') {
+    const code = (e as { code?: unknown }).code
+    if (code === '23503') return true
+  }
+
+  return /foreign key|still referenced|violates/i.test(formatErr(e))
+}
+
 // ===========================
 // Main Page
 // ===========================
@@ -568,7 +577,33 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       showToast('상품이 삭제되었습니다.')
       setTimeout(() => router.push('/admin/products'), 1000)
     } catch (e) {
-      showToast(`삭제 오류: ${formatErr(e)}`)
+      if (!isForeignKeyViolation(e)) {
+        showToast(`삭제 오류: ${formatErr(e)}`)
+        return
+      }
+
+      const confirmUnpublish = window.confirm(
+        '이 상품은 주문·다운로드·리뷰 이력이 있어 완전 삭제할 수 없습니다.\n대신 비공개 처리하시겠습니까? (스토어에서 숨김, 이력은 보존)'
+      )
+      if (!confirmUnpublish) {
+        showToast('상품 삭제가 취소되었습니다.')
+        return
+      }
+
+      const supabase = createClient()
+      const { error: unpublishError } = await supabase
+        .from('products')
+        .update({ is_published: false, updated_at: new Date().toISOString() })
+        .eq('id', Number(id))
+
+      if (unpublishError) {
+        showToast(`비공개 처리 실패: ${unpublishError.message}`)
+        return
+      }
+
+      setForm(prev => ({ ...prev, is_published: false }))
+      showToast('주문 이력이 있어 완전 삭제 대신 비공개 처리했습니다.')
+      setTimeout(() => router.push('/admin/products'), 1000)
     }
   }
 
