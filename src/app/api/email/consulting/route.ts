@@ -10,7 +10,7 @@ import { getClientIp } from '@/lib/client-ip'
 
 import { CONSULTING_PACKAGES, SITE_URL } from '@/lib/constants'
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'help@presales.co.kr'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'help@amarans.co.kr'
 
 // lib/constants.ts 의 CONSULTING_PACKAGES 를 단일 진실 공급원으로 사용
 const PACKAGE_LABELS: Record<string, string> = Object.fromEntries(

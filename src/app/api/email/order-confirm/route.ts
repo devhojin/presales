@@ -9,7 +9,7 @@ import { escapeHtml } from '@/lib/html-escape'
 import { getClientIp } from '@/lib/client-ip'
 import { SITE_URL } from '@/lib/constants'
 
-const ADMIN_EMAIL = 'help@presales.co.kr'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'help@amarans.co.kr'
 
 function formatKRW(amount: number) {
   return new Intl.NumberFormat('ko-KR').format(amount) + '원'

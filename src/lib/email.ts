@@ -12,9 +12,19 @@ function siteLinkHref(): string {
 // SMTP Transporter (메일플러그)
 // ===========================
 
+const DEFAULT_MAIL_FROM_NAME = '프리세일즈'
+const DEFAULT_MAIL_FROM_EMAIL = 'help@amarans.co.kr'
+
+function getMailFrom() {
+  return {
+    name: process.env.MAIL_FROM_NAME || DEFAULT_MAIL_FROM_NAME,
+    address: process.env.MAIL_FROM_EMAIL || process.env.SMTP_USER || DEFAULT_MAIL_FROM_EMAIL,
+  }
+}
+
 export function createTransporter() {
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'mail.mailplug.co.kr',
+    host: process.env.SMTP_HOST || 'smtp.mailplug.co.kr',
     port: Number(process.env.SMTP_PORT) || 465,
     secure: true,
     connectionTimeout: 5000,
@@ -94,7 +104,7 @@ export function buildEmailHtml(title: string, bodyHtml: string): string {
 export async function sendEmail(to: string, subject: string, html: string): Promise<void> {
   const transporter = createTransporter()
   await transporter.sendMail({
-    from: '"프리세일즈" <help@presales.co.kr>',
+    from: getMailFrom(),
     to,
     subject,
     html,
