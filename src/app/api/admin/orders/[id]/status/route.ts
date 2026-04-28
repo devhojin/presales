@@ -62,6 +62,43 @@ export async function PATCH(
       return NextResponse.json({ error: '변경할 수 없는 상태입니다' }, { status: 400 })
     }
 
+    const { data: orderBefore, error: orderBeforeError } = await supabase
+      .from('orders')
+      .select('id, user_id, coupon_id, coupon_discount, status')
+      .eq('id', orderId)
+      .maybeSingle()
+
+    if (orderBeforeError || !orderBefore) {
+      return NextResponse.json({ error: orderBeforeError?.message ?? '주문을 찾을 수 없습니다' }, { status: 404 })
+    }
+
+    let couponReservedForPaid = false
+    if (status === 'paid' && orderBefore.coupon_id) {
+      const { data: couponResult, error: couponErr } = await supabase.rpc('increment_coupon_usage', {
+        p_coupon_id: orderBefore.coupon_id,
+        p_user_id: orderBefore.user_id,
+        p_order_id: orderId,
+        p_applied_amount: orderBefore.coupon_discount || 0,
+      })
+      if (couponErr) {
+        logger.error('관리자 주문 결제확인 쿠폰 예약 RPC 실패', 'admin/orders/status', {
+          orderId,
+          couponId: orderBefore.coupon_id,
+          error: couponErr.message,
+        })
+        return NextResponse.json({ error: '쿠폰 사용 예약에 실패했습니다' }, { status: 500 })
+      }
+      if (couponResult && (couponResult as { ok?: boolean }).ok === false) {
+        logger.error('관리자 주문 결제확인 쿠폰 사용 거부', 'admin/orders/status', {
+          orderId,
+          couponId: orderBefore.coupon_id,
+          result: couponResult,
+        })
+        return NextResponse.json({ error: '쿠폰을 사용할 수 없습니다' }, { status: 409 })
+      }
+      couponReservedForPaid = true
+    }
+
     const now = new Date().toISOString()
     const updates: Record<string, unknown> = { status, updated_at: now }
     if (status === 'paid') updates.paid_at = now
@@ -76,6 +113,13 @@ export async function PATCH(
       .maybeSingle()
 
     if (error || !updated) {
+      if (couponReservedForPaid && orderBefore.coupon_id) {
+        await supabase.rpc('rollback_coupon_usage', {
+          p_coupon_id: orderBefore.coupon_id,
+          p_user_id: orderBefore.user_id,
+          p_order_id: orderId,
+        })
+      }
       return NextResponse.json({ error: error?.message ?? '주문 상태 변경 실패' }, { status: 500 })
     }
 
@@ -97,6 +141,20 @@ export async function PATCH(
     }
 
     if (status === 'cancelled' || status === 'refunded') {
+      if (orderBefore.coupon_id) {
+        const { error: couponRollbackErr } = await supabase.rpc('rollback_coupon_usage', {
+          p_coupon_id: orderBefore.coupon_id,
+          p_user_id: orderBefore.user_id,
+          p_order_id: orderId,
+        })
+        if (couponRollbackErr) {
+          logger.error('관리자 주문 취소/환불 쿠폰 복원 실패', 'admin/orders/status', {
+            orderId,
+            couponId: orderBefore.coupon_id,
+            error: couponRollbackErr.message,
+          })
+        }
+      }
       const rollback = await rollbackRewardPoints(supabase, orderId)
       if (!rollback.ok) {
         logger.error('관리자 주문 취소/환불 적립금 복원 실패', 'admin/orders/status', {

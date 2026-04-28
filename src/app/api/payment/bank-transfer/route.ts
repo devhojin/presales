@@ -88,6 +88,7 @@ export async function POST(request: NextRequest) {
         status,
         total_amount,
         coupon_id,
+        coupon_discount,
         reward_discount,
         deposit_memo,
         profiles ( name, email ),
@@ -138,11 +139,45 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    let couponReserved = false
+    if (order.coupon_id) {
+      const { data: couponResult, error: couponErr } = await supabase.rpc('increment_coupon_usage', {
+        p_coupon_id: order.coupon_id,
+        p_user_id: user.id,
+        p_order_id: orderId,
+        p_applied_amount: order.coupon_discount || 0,
+      })
+      if (couponErr) {
+        logger.error('무통장 쿠폰 예약 RPC 실패', 'payment/bank-transfer', {
+          orderId,
+          couponId: order.coupon_id,
+          error: couponErr.message,
+        })
+        return NextResponse.json({ error: '쿠폰 사용 예약에 실패했습니다' }, { status: 500 })
+      }
+      if (couponResult && (couponResult as { ok?: boolean }).ok === false) {
+        logger.error('무통장 쿠폰 사용 거부', 'payment/bank-transfer', {
+          orderId,
+          couponId: order.coupon_id,
+          result: couponResult,
+        })
+        return NextResponse.json({ error: '쿠폰을 사용할 수 없습니다' }, { status: 409 })
+      }
+      couponReserved = true
+    }
+
     const rewardDiscount = Math.max(0, Number(order.reward_discount ?? 0))
     let rewardReserved = false
     if (rewardDiscount > 0) {
       const reserve = await reserveRewardPoints(supabase, user.id, orderId, rewardDiscount)
       if (!reserve.ok) {
+        if (couponReserved && order.coupon_id) {
+          await supabase.rpc('rollback_coupon_usage', {
+            p_coupon_id: order.coupon_id,
+            p_user_id: user.id,
+            p_order_id: orderId,
+          })
+        }
         logger.error('무통장 적립금 예약 실패', 'payment/bank-transfer', {
           orderId,
           reason: reserve.reason,
@@ -164,6 +199,13 @@ export async function POST(request: NextRequest) {
       .eq('status', 'pending')
 
     if (updateError) {
+      if (couponReserved && order.coupon_id) {
+        await supabase.rpc('rollback_coupon_usage', {
+          p_coupon_id: order.coupon_id,
+          p_user_id: user.id,
+          p_order_id: orderId,
+        })
+      }
       if (rewardReserved) await rollbackRewardPoints(supabase, orderId)
       logger.error('무통장 주문 상태 변경 실패', 'payment/bank-transfer', { error: updateError.message })
       return NextResponse.json({ error: '주문 상태 변경에 실패했습니다' }, { status: 500 })

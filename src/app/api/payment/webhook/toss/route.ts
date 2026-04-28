@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     const { data: order, error: orderErr } = await supabase
       .from('orders')
-      .select('id, status, total_amount, payment_key')
+      .select('id, user_id, status, total_amount, payment_key, coupon_id, coupon_discount')
       .eq('id', dbOrderId)
       .single()
 
@@ -142,9 +142,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: true, ignored: tossStatus })
     }
 
+    let couponReservedForPaid = false
+    if (nextStatus === 'paid' && order.coupon_id) {
+      const { data: couponResult, error: couponErr } = await supabase.rpc('increment_coupon_usage', {
+        p_coupon_id: order.coupon_id,
+        p_user_id: order.user_id,
+        p_order_id: dbOrderId,
+        p_applied_amount: order.coupon_discount || 0,
+      })
+      if (couponErr) {
+        logger.error('토스 webhook: 쿠폰 예약 RPC 실패', 'payment/webhook/toss', {
+          dbOrderId,
+          couponId: order.coupon_id,
+          error: couponErr.message,
+        })
+        return NextResponse.json({ ok: false }, { status: 500 })
+      }
+      if (couponResult && (couponResult as { ok?: boolean }).ok === false) {
+        logger.error('토스 webhook: 쿠폰 사용 거부', 'payment/webhook/toss', {
+          dbOrderId,
+          couponId: order.coupon_id,
+          result: couponResult,
+        })
+        return NextResponse.json({ ok: false }, { status: 409 })
+      }
+      couponReservedForPaid = true
+    }
+
     patch.status = nextStatus
     const { error: upErr } = await supabase.from('orders').update(patch).eq('id', dbOrderId)
     if (upErr) {
+      if (couponReservedForPaid && order.coupon_id) {
+        await supabase.rpc('rollback_coupon_usage', {
+          p_coupon_id: order.coupon_id,
+          p_user_id: order.user_id,
+          p_order_id: dbOrderId,
+        })
+      }
       logger.error('토스 webhook: 주문 업데이트 실패', 'payment/webhook/toss', { dbOrderId, error: upErr.message })
       return NextResponse.json({ ok: false }, { status: 500 })
     }
@@ -187,6 +221,20 @@ export async function POST(request: NextRequest) {
     }
 
     if (nextStatus === 'cancelled') {
+      if (order.coupon_id) {
+        const { error: couponRollbackErr } = await supabase.rpc('rollback_coupon_usage', {
+          p_coupon_id: order.coupon_id,
+          p_user_id: order.user_id,
+          p_order_id: dbOrderId,
+        })
+        if (couponRollbackErr) {
+          logger.error('토스 webhook: 쿠폰 사용 취소 실패', 'payment/webhook/toss', {
+            dbOrderId,
+            couponId: order.coupon_id,
+            error: couponRollbackErr.message,
+          })
+        }
+      }
       const rewardRollback = await rollbackRewardPoints(supabase, dbOrderId)
       if (!rewardRollback.ok) {
         logger.error('토스 webhook: 적립금 사용 예약 취소 실패', 'payment/webhook/toss', {
