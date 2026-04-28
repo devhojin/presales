@@ -11,7 +11,7 @@ const FALLBACK = {
   business_number: '',
   commerce_number: '',
   address: '',
-  email: 'contact@presales.co.kr',
+  email: 'help@presales.co.kr',
   copyright: `${new Date().getFullYear()} AMARANS Partners. All rights reserved.`,
 }
 

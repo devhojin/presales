@@ -498,7 +498,7 @@ export default function PrivacyPage() {
             <ul className="space-y-1 text-sm">
               <li>소속: AMARANS Partners</li>
               <li>책임자: 채호진</li>
-              <li>이메일: contact@presales.co.kr</li>
+              <li>이메일: help@presales.co.kr</li>
               <li>문의 방법: 서비스 내 문의 또는 채팅 기능</li>
             </ul>
             <p className="mt-3 text-xs">
@@ -537,7 +537,7 @@ export default function PrivacyPage() {
 
         <div className="border-t border-border pt-6 text-xs text-muted-foreground">
           <p>시행일: 2026년 4월 27일</p>
-          <p className="mt-1">사업자: AMARANS Partners | 대표자: 채호진 | 문의: contact@presales.co.kr</p>
+          <p className="mt-1">사업자: AMARANS Partners | 대표자: 채호진 | 문의: help@presales.co.kr</p>
         </div>
       </div>
     </div>

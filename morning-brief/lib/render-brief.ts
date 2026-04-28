@@ -68,7 +68,7 @@ export function renderHtml({ newsByCategory, subscriberToken, topicsLabel, date,
         <a href="${base}/brief/unsubscribe?token=${encodeURIComponent(subscriberToken)}" style="color:#9ca3af;text-decoration:underline;">수신거부</a>
       </p>
       수집 키워드: ${escHtml(topicsLabel)}<br />
-      아마란스 · hojin@amarans.co.kr
+      아마란스 · help@presales.co.kr
     </div>
   </div>
 </body>
@@ -89,6 +89,6 @@ export function renderText({ newsByCategory, date }: RenderInput): string {
     lines.push('')
   }
   lines.push('─'.repeat(40))
-  lines.push('아마란스 · hojin@amarans.co.kr')
+  lines.push('아마란스 · help@presales.co.kr')
   return lines.join('\n')
 }

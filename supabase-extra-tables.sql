@@ -71,7 +71,7 @@ INSERT INTO site_settings (key, value) VALUES
 ('business_number', '확인 필요'),
 ('commerce_number', '준비 중'),
 ('address', '서울특별시 강남구 테헤란로 123'),
-('email', 'contact@presales.co.kr'),
+('email', 'help@presales.co.kr'),
 ('phone', '010-9940-7909'),
 ('phone_hours', '11:00-16:00 (평일)'),
 ('copyright', '© 2025 AMARANS Partners. All rights reserved.'),

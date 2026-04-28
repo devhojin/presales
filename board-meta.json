@@ -48,7 +48,7 @@
       },
       "notes": [
         "기존 사이트 www.documento.co.kr (imweb) 유지 중",
-        "대표: 채호진, 010-9940-7909, sales@amarans.co.kr",
+        "대표: 채호진, 010-9940-7909, help@presales.co.kr",
         "NAS 일일 백업: Tailscale 100.69.139.70, DSM 크론 매일 05:00",
         "환경변수 백업: NAS dev-kit/secrets/presales/"
       ]

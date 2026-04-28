@@ -5,17 +5,17 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: 'hojin@amarans.co.kr',
+    user: 'help@presales.co.kr',
     pass: 'zO(9;NhsAQ*ihG7*EZHW',
   },
 })
 
 const htmlBody = process.argv[2] || '<p>내용 없음</p>'
 const subject = process.argv[3] || '[시장동향] 뉴스 정리'
-const to = process.argv[4] || 'hojin@amarans.co.kr'
+const to = process.argv[4] || 'help@presales.co.kr'
 
 const mailOptions = {
-  from: '"프리세일즈 미니컴" <hojin@amarans.co.kr>',
+  from: '"프리세일즈 미니컴" <help@presales.co.kr>',
   to,
   subject,
   html: htmlBody,

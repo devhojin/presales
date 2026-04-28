@@ -1736,7 +1736,7 @@ export function About() {
                 {
                   icon: MailIcon,
                   title: '이메일',
-                  lines: ['contact@presales.co.kr'],
+                  lines: ['help@presales.co.kr'],
                 },
               ].map((info, i) => (
                 <div key={i} className="text-center">

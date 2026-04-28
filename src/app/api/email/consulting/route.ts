@@ -10,7 +10,7 @@ import { getClientIp } from '@/lib/client-ip'
 
 import { CONSULTING_PACKAGES, SITE_URL } from '@/lib/constants'
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@amarans.co.kr'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'help@presales.co.kr'
 
 // lib/constants.ts 의 CONSULTING_PACKAGES 를 단일 진실 공급원으로 사용
 const PACKAGE_LABELS: Record<string, string> = Object.fromEntries(
@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
         <p style="margin:0 0 6px;font-size:13px;color:#1e40af;font-weight:600;">안내사항</p>
         <ul style="margin:0;padding-left:18px;font-size:13px;color:#3b82f6;line-height:1.8;">
           <li>접수 후 24시간 이내에 담당자가 연락드립니다.</li>
-          <li>추가 문의: <a href="mailto:hojin@amarans.co.kr" style="color:#1e40af;">hojin@amarans.co.kr</a></li>
+          <li>추가 문의: <a href="mailto:help@presales.co.kr" style="color:#1e40af;">help@presales.co.kr</a></li>
         </ul>
       </div>
 

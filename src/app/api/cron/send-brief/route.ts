@@ -311,7 +311,7 @@ function buildBriefEmailHtml(opts: BriefEmailOptions): string {
             <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:24px 40px;">
               <p style="margin:0 0 4px;font-size:12px;color:#94a3b8;">본 메일은 모닝 브리프 구독자에게 발송됩니다.</p>
               <p style="margin:0 0 8px;font-size:12px;color:#64748b;">
-                <a href="mailto:hojin@amarans.co.kr" style="color:#3b82f6;text-decoration:none;">hojin@amarans.co.kr</a>
+                <a href="mailto:help@presales.co.kr" style="color:#3b82f6;text-decoration:none;">help@presales.co.kr</a>
                 &nbsp;|&nbsp;
                 <a href="${SITE_URL}" style="color:#3b82f6;text-decoration:none;">presales.co.kr</a>
               </p>

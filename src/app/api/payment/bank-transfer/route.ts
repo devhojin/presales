@@ -8,7 +8,7 @@ import { SITE_URL } from '@/lib/constants'
 import { escapeHtml } from '@/lib/html-escape'
 import { recomputeExpectedAmount } from '@/lib/payment-recompute'
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@amarans.co.kr'
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'help@presales.co.kr'
 
 // 입금 계좌 정보 (환경변수 우선, 미설정 시 기본값)
 // Vercel → Settings → Environment Variables 에서 값 변경 가능

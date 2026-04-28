@@ -119,7 +119,7 @@ export default function RefundPage() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="font-semibold text-blue-700 mb-1">신청 방법</p>
               <p className="text-blue-700 text-xs">
-                이메일(contact@presales.co.kr)로 주문번호, 상품명, 오류 상황을 첨부하여 문의하시면
+                이메일(help@presales.co.kr)로 주문번호, 상품명, 오류 상황을 첨부하여 문의하시면
                 영업일 기준 1일 이내 처리됩니다. 동일 상품 재제공 또는 전액 환불 중 선택 가능합니다.
               </p>
             </div>
@@ -182,7 +182,7 @@ export default function RefundPage() {
           <div className="space-y-4 text-muted-foreground">
             <ol className="list-decimal list-inside space-y-3">
               <li>
-                <span className="text-foreground font-medium">환불 신청:</span> 이메일(contact@presales.co.kr)로 다음 내용을 포함하여 문의
+                <span className="text-foreground font-medium">환불 신청:</span> 이메일(help@presales.co.kr)로 다음 내용을 포함하여 문의
                 <ul className="mt-1 ml-5 list-disc space-y-1 text-xs">
                   <li>주문번호</li>
                   <li>상품명</li>
@@ -195,7 +195,7 @@ export default function RefundPage() {
             </ol>
             <div className="bg-muted rounded-lg p-4 text-xs">
               <p className="font-semibold mb-1">고객센터</p>
-              <p>이메일: contact@presales.co.kr</p>
+              <p>이메일: help@presales.co.kr</p>
               <p>운영시간: 평일 09:00 ~ 18:00 (공휴일 제외)</p>
             </div>
           </div>

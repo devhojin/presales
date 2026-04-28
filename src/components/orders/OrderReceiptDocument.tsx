@@ -149,7 +149,7 @@ export function OrderReceiptDocument({ order, profile, className = '' }: OrderRe
             <p className="font-semibold text-neutral-950">PRESALES by AMARANS Partners</p>
             <p>공공조달 제안서 마켓플레이스</p>
             <p>대표 채호진</p>
-            <p>contact@presales.co.kr</p>
+            <p>help@presales.co.kr</p>
             <p>https://presales-zeta.vercel.app</p>
           </address>
 
@@ -361,7 +361,7 @@ export function buildReceiptPrintHtml(order: ReceiptOrder, profile?: ReceiptProf
         <p class="label">PRESALES by AMARANS Partners</p>
         <p>공공조달 제안서 마켓플레이스</p>
         <p>대표 채호진</p>
-        <p>contact@presales.co.kr</p>
+        <p>help@presales.co.kr</p>
         <p>https://presales-zeta.vercel.app</p>
       </div>
       <div>

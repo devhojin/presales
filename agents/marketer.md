@@ -81,7 +81,7 @@ PRESALES 쇼핑몰의 마케팅 전략과 고객 확보를 담당합니다.
 ## 이메일 템플릿
 
 - 공통 HTML: `src/lib/email.ts` → `buildEmailHtml()`
-- 발신: "프리세일즈" <hojin@amarans.co.kr>
+- 발신: "프리세일즈" <help@presales.co.kr>
 - SMTP: 메일플러그 (mail.mailplug.co.kr:465)
 - CTA 버튼 명확 배치, 모바일 반응형 필수
 

@@ -241,7 +241,7 @@ export async function POST(request: NextRequest) {
 
       // 실패해도 메시지 전송은 이미 성공했으므로 swallow
       await waitForBackgroundEmail(
-        sendEmail('hojin@amarans.co.kr', '[프리세일즈] 새 채팅 문의', html).catch(err => {
+        sendEmail('help@presales.co.kr', '[프리세일즈] 새 채팅 문의', html).catch(err => {
           console.error('[chat-email] send failed:', err)
         })
       )

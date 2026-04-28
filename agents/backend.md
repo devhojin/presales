@@ -72,8 +72,8 @@ src/proxy.ts            → 미들웨어: 세션 타임아웃, 인증 가드 (96
 
 ## 이메일 시스템 (완료)
 - **SMTP**: 메일플러그 (mail.mailplug.co.kr:465, SSL)
-- **발신**: "프리세일즈" <hojin@amarans.co.kr>
-- **주문 확인**: 주문자 + 관리자(admin@amarans.co.kr) 동시 발송
+- **발신**: "프리세일즈" <help@presales.co.kr>
+- **주문 확인**: 주문자 + 관리자(help@presales.co.kr) 동시 발송
 - **컨설팅 접수**: 신청자 + 관리자 동시 발송
 - ⚠️ Gmail 발송 절대 금지 (수신 모니터링 전용)
 

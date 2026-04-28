@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
         <ul style="margin:0;padding-left:18px;font-size:13px;color:#3b82f6;line-height:1.8;">
           <li>링크는 <strong>1시간</strong> 동안만 유효합니다.</li>
           <li>본인이 요청하지 않은 경우 이 메일을 무시하세요.</li>
-          <li>계정 보안에 문제가 있다면 <a href="mailto:hojin@amarans.co.kr" style="color:#1e40af;">hojin@amarans.co.kr</a>로 연락해주세요.</li>
+          <li>계정 보안에 문제가 있다면 <a href="mailto:help@presales.co.kr" style="color:#1e40af;">help@presales.co.kr</a>로 연락해주세요.</li>
         </ul>
       </div>
 

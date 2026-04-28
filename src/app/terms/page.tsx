@@ -160,7 +160,7 @@ export default function TermsPage() {
             <li>컨설팅 서비스는 일정 확정 전 또는 자료 검토 착수 전에는 취소가 가능하며, 일정 확정 후 또는 검토 착수 후에는 제공 단계와 투입 범위에 따라 환불 금액이 달라질 수 있습니다.</li>
             <li>이미 진행된 컨설팅, 제공 완료된 산출물, 이용자의 귀책으로 진행이 지연되거나 불가능해진 경우에는 환불이 제한될 수 있습니다.</li>
             <li>환불은 원칙적으로 결제수단 취소 방식으로 처리하며, 결제수단 또는 PG사 정책에 따라 처리 시간이 달라질 수 있습니다.</li>
-            <li>환불 문의는 서비스 내 문의, 채팅 상담 또는 이메일(contact@presales.co.kr)로 접수합니다.</li>
+            <li>환불 문의는 서비스 내 문의, 채팅 상담 또는 이메일(help@presales.co.kr)로 접수합니다.</li>
           </ol>
         </section>
 
@@ -225,7 +225,7 @@ export default function TermsPage() {
 
         <div className="border-t border-border pt-6 text-xs text-muted-foreground">
           <p>부칙: 본 약관은 2026년 4월 27일부터 시행됩니다.</p>
-          <p className="mt-1">사업자: AMARANS Partners | 대표자: 채호진 | 문의: contact@presales.co.kr</p>
+          <p className="mt-1">사업자: AMARANS Partners | 대표자: 채호진 | 문의: help@presales.co.kr</p>
         </div>
       </div>
     </div>

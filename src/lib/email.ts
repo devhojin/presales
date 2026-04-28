@@ -71,7 +71,7 @@ export function buildEmailHtml(title: string, bodyHtml: string): string {
             <td style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:24px 40px;">
               <p style="margin:0 0 4px;font-size:12px;color:#94a3b8;">본 메일은 발신 전용입니다. 문의는 아래 이메일로 연락 주세요.</p>
               <p style="margin:0;font-size:12px;color:#64748b;">
-                <a href="mailto:hojin@amarans.co.kr" style="color:#3b82f6;text-decoration:none;">hojin@amarans.co.kr</a>
+                <a href="mailto:help@presales.co.kr" style="color:#3b82f6;text-decoration:none;">help@presales.co.kr</a>
                 &nbsp;|&nbsp;
                 <a href="${siteLinkHref()}" style="color:#3b82f6;text-decoration:none;">presales.co.kr</a>
               </p>
@@ -94,7 +94,7 @@ export function buildEmailHtml(title: string, bodyHtml: string): string {
 export async function sendEmail(to: string, subject: string, html: string): Promise<void> {
   const transporter = createTransporter()
   await transporter.sendMail({
-    from: '"프리세일즈" <hojin@amarans.co.kr>',
+    from: '"프리세일즈" <help@presales.co.kr>',
     to,
     subject,
     html,

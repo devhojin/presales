@@ -34,7 +34,7 @@ export interface SendOptions {
 
 export async function sendBriefMail(opts: SendOptions): Promise<{ messageId: string }> {
   const fromName = process.env.MAIL_FROM_NAME ?? '아마란스 모닝브리프'
-  const fromEmail = process.env.MAIL_FROM_EMAIL ?? process.env.SMTP_USER ?? ''
+  const fromEmail = process.env.MAIL_FROM_EMAIL ?? 'help@presales.co.kr'
   const t = getTransporter()
   const info = await t.sendMail({
     from: { name: fromName, address: fromEmail },
