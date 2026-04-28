@@ -140,7 +140,7 @@ function ProductCard({
             </div>
             <FileTypeBadges format={product.format} onClick={onFileTypeClick} />
           </div>
-          <h3 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors duration-300">
+          <h3 className="min-h-[3.65rem] font-semibold text-sm leading-snug line-clamp-3 group-hover:text-primary transition-colors duration-300">
             {searchQuery ? highlightText(product.title, searchQuery) : product.title}
           </h3>
           {product.description && (
