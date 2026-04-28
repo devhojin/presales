@@ -11,6 +11,8 @@ import { createClient } from '@/lib/supabase'
 import { useToastStore } from '@/stores/toast-store'
 import * as gtag from '@/lib/gtag'
 import { useDraggableModal } from '@/hooks/useDraggableModal'
+import { useCartDiscountSources } from '@/hooks/use-cart-discount-sources'
+import { getCartDiscountSummary, getCartItemDiscountBreakdown } from '@/lib/cart-discounts'
 
 interface OwnedCoupon {
   id: string
@@ -24,8 +26,11 @@ interface OwnedCoupon {
 }
 
 export default function CartPage() {
-  const { items, removeItem, clearCart, getTotal, getDiscountTotal } = useCartStore()
+  const { items, removeItem, clearCart } = useCartStore()
   const { addToast } = useToastStore()
+  const discountSources = useCartDiscountSources(items.map((item) => item.productId))
+  const discountSummary = getCartDiscountSummary(items, discountSources)
+  const effectiveCartTotal = discountSummary.total
   const [processing, setProcessing] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [couponCode, setCouponCode] = useState('')
@@ -143,7 +148,7 @@ export default function CartPage() {
 
   function getCouponDiscount() {
     if (!appliedCoupon) return 0
-    const cartTotal = getTotal()
+    const cartTotal = effectiveCartTotal
     if (appliedCoupon.discount_type === 'percentage') {
       return Math.floor((cartTotal * appliedCoupon.discount_value) / 100)
     }
@@ -152,7 +157,7 @@ export default function CartPage() {
 
 
   function applyOwnedCoupon(coupon: OwnedCoupon) {
-    const cartTotal = getTotal()
+    const cartTotal = effectiveCartTotal
     const now = new Date()
     if (coupon.valid_until && new Date(coupon.valid_until) < now) {
       addToast('만료된 쿠폰입니다.', 'error')
@@ -210,7 +215,7 @@ export default function CartPage() {
         addToast('사용 횟수가 소진된 쿠폰입니다.', 'error')
         return
       }
-      const cartTotal = getTotal()
+      const cartTotal = effectiveCartTotal
       if (data.min_order_amount && cartTotal < data.min_order_amount) {
         addToast(`최소 주문금액 ${Number(data.min_order_amount).toLocaleString()}원 이상이어야 합니다.`, 'error')
         return
@@ -268,41 +273,66 @@ export default function CartPage() {
 
           {/* Cart Items */}
           <div className="space-y-4">
-            {items.map((item) => (
-              <div key={item.productId} className="flex gap-4 p-5 rounded-2xl border border-border/50 bg-card">
-                <Link href={`/store/${item.productId}`}>
-                  <img
-                    src={item.thumbnail}
-                    alt={item.title}
-                    className="w-24 h-18 rounded-lg object-cover bg-muted shrink-0"
-                  />
-                </Link>
-                <div className="flex-1 min-w-0">
-                  <Link href={`/store/${item.productId}`} className="hover:text-primary transition-colors">
-                    <h3 className="text-sm font-semibold line-clamp-2 leading-snug">{item.title}</h3>
+            {items.map((item) => {
+              const breakdown = getCartItemDiscountBreakdown(item, discountSources[item.productId])
+              const purchaseSource = breakdown.purchaseSource
+
+              return (
+                <div key={item.productId} className="flex gap-4 p-5 rounded-2xl border border-border/50 bg-card">
+                  <Link href={`/store/${item.productId}`}>
+                    <img
+                      src={item.thumbnail}
+                      alt={item.title}
+                      className="w-24 h-18 rounded-lg object-cover bg-muted shrink-0"
+                    />
                   </Link>
-                  <p className="text-xs text-muted-foreground mt-1">{item.format}</p>
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className="text-base font-bold text-primary">{formatPrice(item.price)}</span>
-                    {item.originalPrice > item.price && (
-                      <>
-                        <span className="text-xs text-muted-foreground line-through">{formatPrice(item.originalPrice)}</span>
-                        <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-50 text-blue-800 border border-blue-200 text-[10px] font-medium">
-                          <Sparkles className="w-3 h-3" />
-                          구매 이력 할인
-                        </div>
-                      </>
+                  <div className="flex-1 min-w-0">
+                    <Link href={`/store/${item.productId}`} className="hover:text-primary transition-colors">
+                      <h3 className="text-sm font-semibold line-clamp-2 leading-snug">{item.title}</h3>
+                    </Link>
+                    <p className="text-xs text-muted-foreground mt-1">{item.format}</p>
+                    <div className="flex items-center gap-2 mt-2 flex-wrap">
+                      <span className="text-base font-bold text-primary">{formatPrice(breakdown.effectivePrice)}</span>
+                      {item.originalPrice > breakdown.effectivePrice && (
+                        <>
+                          <span className="text-xs text-muted-foreground line-through">{formatPrice(item.originalPrice)}</span>
+                          <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg border text-[10px] font-medium ${
+                            purchaseSource ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-muted text-muted-foreground border-border'
+                          }`}>
+                            <Sparkles className="w-3 h-3" />
+                            {purchaseSource ? '구매 이력 할인' : '할인 적용'}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    {purchaseSource && breakdown.purchaseDiscount > 0 && (
+                      <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-xs leading-relaxed">
+                        <p className="font-semibold text-blue-800">구매한 상품</p>
+                        {purchaseSource.sourceProductId > 0 ? (
+                          <Link
+                            href={`/store/${purchaseSource.sourceProductId}`}
+                            className="mt-0.5 block text-blue-950 hover:underline line-clamp-2"
+                          >
+                            {purchaseSource.sourceTitle}
+                          </Link>
+                        ) : (
+                          <p className="mt-0.5 text-blue-950 line-clamp-2">{purchaseSource.sourceTitle}</p>
+                        )}
+                        <p className="mt-1 text-blue-700">
+                          이 구매 이력으로 {formatPrice(breakdown.purchaseDiscount)} 차감되어 결제금액에 반영됩니다.
+                        </p>
+                      </div>
                     )}
                   </div>
+                  <button
+                    onClick={() => removeItem(item.productId)}
+                    className="self-start p-2 text-muted-foreground hover:text-red-500 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => removeItem(item.productId)}
-                  className="self-start p-2 text-muted-foreground hover:text-red-500 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           {/* 쿠폰 선택/입력 */}
@@ -358,7 +388,7 @@ export default function CartPage() {
             ) : couponMode === 'select' && ownedCoupons.length > 0 ? (
               <div className="space-y-2">
                 {ownedCoupons.map((c) => {
-                  const cartTotal = getTotal()
+                  const cartTotal = effectiveCartTotal
                   const canUse = cartTotal >= Number(c.min_order_amount || 0)
                   const discountPreview = c.discount_type === 'percentage'
                     ? `${c.discount_value}%`
@@ -422,12 +452,18 @@ export default function CartPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">상품 금액</span>
-                <span>{formatPrice(getTotal() + getDiscountTotal())}</span>
+                <span>{formatPrice(discountSummary.originalTotal)}</span>
               </div>
-              {getDiscountTotal() > 0 && (
+              {discountSummary.catalogDiscount > 0 && (
                 <div className="flex justify-between text-red-500">
                   <span>상품 할인</span>
-                  <span>-{formatPrice(getDiscountTotal())}</span>
+                  <span>-{formatPrice(discountSummary.catalogDiscount)}</span>
+                </div>
+              )}
+              {discountSummary.purchaseDiscount > 0 && (
+                <div className="flex justify-between text-blue-700 font-medium">
+                  <span>구매 이력 할인</span>
+                  <span>-{formatPrice(discountSummary.purchaseDiscount)}</span>
                 </div>
               )}
               {getCouponDiscount() > 0 && (
@@ -439,7 +475,7 @@ export default function CartPage() {
               <Separator />
               <div className="flex justify-between font-bold text-lg pt-2">
                 <span>결제 금액</span>
-                <span className="text-primary">{formatPrice(Math.max(0, getTotal() - getCouponDiscount()))}</span>
+                <span className="text-primary">{formatPrice(Math.max(0, effectiveCartTotal - getCouponDiscount()))}</span>
               </div>
             </div>
 
@@ -476,7 +512,7 @@ export default function CartPage() {
                   disabled={processing}
                   className="flex-1 h-12 rounded-full bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition-all duration-300 cursor-pointer disabled:opacity-50 active:scale-[0.98]"
                 >
-                  {processing ? '처리 중...' : allFree ? '무료 다운로드' : `결제하기 (${formatPrice(Math.max(0, getTotal() - getCouponDiscount()))})`}
+                  {processing ? '처리 중...' : allFree ? '무료 다운로드' : `결제하기 (${formatPrice(Math.max(0, effectiveCartTotal - getCouponDiscount()))})`}
                 </button>
               </div>
 

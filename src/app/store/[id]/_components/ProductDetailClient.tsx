@@ -196,6 +196,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
   const [sharingKakao, setSharingKakao] = useState(false)
   const [showFreeUpsell, setShowFreeUpsell] = useState(false)
   const [matchDiscount, setMatchDiscount] = useState<{
+    sourceProductId: number
     sourceTitle: string
     discountAmount: number
   } | null>(null)
@@ -309,6 +310,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                 .eq('id', bestMatch.source_product_id)
                 .single()
               setMatchDiscount({
+                sourceProductId: bestMatch.source_product_id,
                 sourceTitle: sourceProduct?.title || '',
                 discountAmount: Math.min(bestMatch.discount, data.price), // 상품 가격 초과 방지
               })
@@ -728,6 +730,11 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                     originalPrice: product.original_price > 0 ? product.original_price : product.price,
                     thumbnail: product.thumbnail_url || '',
                     format: product.format || '',
+                    ...(matchDiscount ? {
+                      discountSourceProductId: matchDiscount.sourceProductId,
+                      discountSourceTitle: matchDiscount.sourceTitle,
+                      discountAmount: matchDiscount.discountAmount,
+                    } : {}),
                   })
                   addToast(wasInCart ? '장바구니에서 제거되었습니다' : '장바구니에 추가되었습니다', wasInCart ? 'info' : 'success', wasInCart ? undefined : { label: '장바구니 보기', href: '/cart' })
                 }}
@@ -1027,7 +1034,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           previewPages={product.preview_clear_pages || Math.min(15, Math.max(3, Math.ceil((product.pages || 30) * 0.3)))}
           productTitle={product.title}
           price={product.price}
-          purchaseLabel={inCart ? '장바구니로 이동' : `장바구니 담기 ${formatPrice(product.price)}`}
+          purchaseLabel={inCart ? '장바구니로 이동' : `장바구니 담기 ${formatPrice(matchDiscount ? Math.max(0, product.price - matchDiscount.discountAmount) : product.price)}`}
           onPurchaseClick={() => {
             setShowPdfPreview(false)
             if (inCart) {
@@ -1043,6 +1050,11 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                 originalPrice: product.original_price > 0 ? product.original_price : product.price,
                 thumbnail: product.thumbnail_url || '',
                 format: product.format || '',
+                ...(matchDiscount ? {
+                  discountSourceProductId: matchDiscount.sourceProductId,
+                  discountSourceTitle: matchDiscount.sourceTitle,
+                  discountAmount: matchDiscount.discountAmount,
+                } : {}),
               })
               addToast('장바구니에 추가되었습니다', 'success', { label: '장바구니 보기', href: '/cart' })
             }
@@ -1100,6 +1112,11 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                   originalPrice: product.original_price > 0 ? product.original_price : product.price,
                   thumbnail: product.thumbnail_url || '',
                   format: product.format || '',
+                  ...(matchDiscount ? {
+                    discountSourceProductId: matchDiscount.sourceProductId,
+                    discountSourceTitle: matchDiscount.sourceTitle,
+                    discountAmount: matchDiscount.discountAmount,
+                  } : {}),
                 })
                 addToast(wasInCart ? '장바구니에서 제거되었습니다' : '장바구니에 추가되었습니다', wasInCart ? 'info' : 'success')
               }}

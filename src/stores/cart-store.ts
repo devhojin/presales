@@ -9,6 +9,9 @@ export interface CartItem {
   originalPrice: number
   thumbnail: string
   format: string
+  discountSourceProductId?: number
+  discountSourceTitle?: string
+  discountAmount?: number
 }
 
 interface CartState {

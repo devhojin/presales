@@ -6,16 +6,20 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Badge } from '@/components/ui/badge'
 import { ShoppingCart, Trash2, X } from 'lucide-react'
 import Link from 'next/link'
+import { useCartDiscountSources } from '@/hooks/use-cart-discount-sources'
+import { getCartDiscountSummary, getCartItemDiscountBreakdown } from '@/lib/cart-discounts'
 
 export function CartDrawer() {
-  const { items, removeItem, clearCart, getTotal, getDiscountTotal } = useCartStore()
+  const { items, removeItem, clearCart } = useCartStore()
+  const discountSources = useCartDiscountSources(items.map((item) => item.productId))
+  const discountSummary = getCartDiscountSummary(items, discountSources)
   const [open, setOpen] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const cancelButtonRef = useRef<HTMLButtonElement>(null)
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') setShowClearConfirm(false)
-  }, [])
+  }, [setShowClearConfirm])
   useEffect(() => {
     if (showClearConfirm) {
       document.addEventListener('keydown', handleKeyDown)
@@ -34,7 +38,10 @@ export function CartDrawer() {
   return (
     <>
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger className="relative min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-primary transition-colors">
+      <SheetTrigger
+        aria-label="장바구니 열기"
+        className="relative min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
+      >
           <ShoppingCart className="w-5 h-5" />
           {items.length > 0 && (
             <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center bg-red-500 text-white text-[10px] border-0 rounded-full">
@@ -60,48 +67,78 @@ export function CartDrawer() {
         ) : (
           <>
             <div className="flex-1 min-h-0 overflow-y-auto py-4 space-y-3 px-4">
-              {items.map((item) => (
-                <div key={item.productId} className="flex gap-3 p-3 rounded-lg border border-border">
-                  <img
-                    src={item.thumbnail}
-                    alt={item.title}
-                    className="w-16 h-12 rounded object-cover bg-muted shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium line-clamp-2 leading-snug">{item.title}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-sm font-bold text-primary">{formatPrice(item.price)}</span>
-                      {item.originalPrice > item.price && (
-                        <span className="text-xs text-muted-foreground line-through">{formatPrice(item.originalPrice)}</span>
+              {items.map((item) => {
+                const breakdown = getCartItemDiscountBreakdown(item, discountSources[item.productId])
+                const purchaseSource = breakdown.purchaseSource
+
+                return (
+                  <div key={item.productId} className="flex gap-3 p-3 rounded-lg border border-border">
+                    <img
+                      src={item.thumbnail}
+                      alt={item.title}
+                      className="w-16 h-12 rounded object-cover bg-muted shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium line-clamp-2 leading-snug">{item.title}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-sm font-bold text-primary">{formatPrice(breakdown.effectivePrice)}</span>
+                        {item.originalPrice > breakdown.effectivePrice && (
+                          <span className="text-xs text-muted-foreground line-through">{formatPrice(item.originalPrice)}</span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{item.format}</p>
+                      {purchaseSource && breakdown.purchaseDiscount > 0 && (
+                        <div className="mt-2 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-2 text-[11px] leading-relaxed">
+                          <p className="font-semibold text-blue-800">구매한 상품</p>
+                          {purchaseSource.sourceProductId > 0 ? (
+                            <Link
+                              href={`/store/${purchaseSource.sourceProductId}`}
+                              onClick={() => setOpen(false)}
+                              className="mt-0.5 block text-blue-900 hover:underline line-clamp-2"
+                            >
+                              {purchaseSource.sourceTitle}
+                            </Link>
+                          ) : (
+                            <p className="mt-0.5 text-blue-900 line-clamp-2">{purchaseSource.sourceTitle}</p>
+                          )}
+                          <p className="mt-1 text-blue-700">
+                            이 구매 이력으로 {formatPrice(breakdown.purchaseDiscount)} 차감
+                          </p>
+                        </div>
                       )}
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{item.format}</p>
+                    <button
+                      onClick={() => removeItem(item.productId)}
+                      className="self-start p-1 text-muted-foreground hover:text-red-500 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => removeItem(item.productId)}
-                    className="self-start p-1 text-muted-foreground hover:text-red-500 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
             <div className="border-t border-border px-4 pt-4 pb-2 space-y-3 shrink-0">
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">상품 금액</span>
-                  <span>{formatPrice(getTotal() + getDiscountTotal())}</span>
+                  <span>{formatPrice(discountSummary.originalTotal)}</span>
                 </div>
-                {getDiscountTotal() > 0 && (
+                {discountSummary.catalogDiscount > 0 && (
                   <div className="flex justify-between text-red-500">
-                    <span>할인</span>
-                    <span>-{formatPrice(getDiscountTotal())}</span>
+                    <span>상품 할인</span>
+                    <span>-{formatPrice(discountSummary.catalogDiscount)}</span>
+                  </div>
+                )}
+                {discountSummary.purchaseDiscount > 0 && (
+                  <div className="flex justify-between text-blue-700">
+                    <span>구매 이력 할인</span>
+                    <span>-{formatPrice(discountSummary.purchaseDiscount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-bold text-base pt-2 border-t border-border">
                   <span>결제 금액</span>
-                  <span className="text-primary">{formatPrice(getTotal())}</span>
+                  <span className="text-primary">{formatPrice(discountSummary.total)}</span>
                 </div>
               </div>
 
@@ -118,7 +155,7 @@ export function CartDrawer() {
                   onClick={() => setOpen(false)}
                   className="flex-1 h-11 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors flex items-center justify-center"
                 >
-                  주문하기 ({formatPrice(getTotal())})
+                  주문하기 ({formatPrice(discountSummary.total)})
                 </Link>
               </div>
 
