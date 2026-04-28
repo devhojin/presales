@@ -25,6 +25,9 @@ type KakaoSdk = {
   Share?: {
     sendDefault: (template: KakaoFeedTemplate) => void
   }
+  Channel?: {
+    chat: (options: { channelPublicId: string }) => void
+  }
 }
 
 type KakaoWindow = Window &
@@ -39,6 +42,11 @@ export type KakaoShareOptions = {
   title: string
   description: string
   imageUrl?: string
+}
+
+export type KakaoChannelChatOptions = {
+  javascriptKey: string | undefined
+  channelPublicId: string | undefined
 }
 
 function getKakaoWindow(): KakaoWindow {
@@ -71,11 +79,16 @@ function loadKakaoSdk(): Promise<KakaoSdk> {
   return kakaoWindow.__kakaoSdkPromise
 }
 
+async function getInitializedKakao(javascriptKey: string): Promise<KakaoSdk> {
+  const kakao = await loadKakaoSdk()
+  if (!kakao.isInitialized()) kakao.init(javascriptKey)
+  return kakao
+}
+
 export async function shareToKakao(options: KakaoShareOptions): Promise<'shared' | 'missing-key'> {
   if (!options.javascriptKey) return 'missing-key'
 
-  const kakao = await loadKakaoSdk()
-  if (!kakao.isInitialized()) kakao.init(options.javascriptKey)
+  const kakao = await getInitializedKakao(options.javascriptKey)
   if (!kakao.Share) throw new Error('Kakao Share API is unavailable')
 
   const link = {
@@ -100,4 +113,20 @@ export async function shareToKakao(options: KakaoShareOptions): Promise<'shared'
   })
 
   return 'shared'
+}
+
+export async function openKakaoChannelChat(
+  options: KakaoChannelChatOptions,
+): Promise<'opened' | 'missing-key' | 'missing-channel'> {
+  if (!options.javascriptKey) return 'missing-key'
+  if (!options.channelPublicId) return 'missing-channel'
+
+  const kakao = await getInitializedKakao(options.javascriptKey)
+  if (!kakao.Channel) throw new Error('Kakao Channel API is unavailable')
+
+  kakao.Channel.chat({
+    channelPublicId: options.channelPublicId,
+  })
+
+  return 'opened'
 }

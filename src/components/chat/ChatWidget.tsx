@@ -12,6 +12,7 @@ import type { ChatMessage } from '@/lib/chat'
 import { MAX_FILE_SIZE, MAX_FILE_SIZE_LABEL } from '@/lib/chat-constants'
 import { uploadFile } from '@/lib/storage-upload'
 import { fetchSignedUrl } from '@/lib/storage-signed-url'
+import { openKakaoChannelChat } from '@/lib/kakao-share'
 
 // DB 에는 storage path 만 저장 → 렌더 시점에 서명 URL 재발급해서 표시
 function useChatSignedUrl(storedValue: string | null | undefined, guestId: string | null) {
@@ -161,6 +162,9 @@ export function ChatWidget() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const kakaoJavascriptKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY
+  const kakaoChannelPublicId = process.env.NEXT_PUBLIC_KAKAO_CHANNEL_PUBLIC_ID
+  const canUseKakaoChannel = Boolean(kakaoJavascriptKey && kakaoChannelPublicId)
 
   // 사용자 상태 확인
   useEffect(() => {
@@ -566,16 +570,45 @@ export function ChatWidget() {
     window.location.href = `/checkout?${params.toString()}`
   }
 
+  const handleKakaoChannelChat = async () => {
+    try {
+      const result = await openKakaoChannelChat({
+        javascriptKey: kakaoJavascriptKey,
+        channelPublicId: kakaoChannelPublicId,
+      })
+      if (result !== 'opened') {
+        setError('카카오톡 채널 설정이 필요합니다')
+        toggle()
+      }
+    } catch {
+      setError('카카오톡 상담을 열지 못했습니다. 채팅 문의로 남겨주세요.')
+      toggle()
+    }
+  }
+
   // 플로팅 버튼 (닫혀있을 때)
   if (!isOpen) {
     return (
-      <button
-        onClick={toggle}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-blue-700 hover:bg-blue-800 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 cursor-pointer"
-        title="채팅 문의"
-      >
-        <MessageCircle className="w-6 h-6" />
-      </button>
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+        {canUseKakaoChannel && (
+          <button
+            onClick={() => { void handleKakaoChannelChat() }}
+            className="w-14 h-14 bg-[#FEE500] hover:bg-[#F4D900] text-[#191919] rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 cursor-pointer"
+            title="카카오톡 상담"
+            aria-label="카카오톡 상담"
+          >
+            <MessageCircle className="w-6 h-6" />
+          </button>
+        )}
+        <button
+          onClick={toggle}
+          className="w-14 h-14 bg-blue-700 hover:bg-blue-800 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 cursor-pointer"
+          title="채팅 문의"
+          aria-label="채팅 문의"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </button>
+      </div>
     )
   }
 

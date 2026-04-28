@@ -77,6 +77,7 @@ type SortField = 'title' | 'category' | 'price' | 'is_free' | 'is_published' | '
 type SortDir = 'asc' | 'desc'
 
 const PAGE_SIZES = [20, 50, 100] as const
+const UPDATED_HIGHLIGHT_MS = 12 * 60 * 60 * 1000
 
 
 function formatPrice(price: number): string {
@@ -114,6 +115,16 @@ function formatDateTimeParts(dateStr: string | null): { date: string; time: stri
 function formatDateTime(dateStr: string | null): string {
   const { date, time } = formatDateTimeParts(dateStr)
   return time ? `${date} ${time}` : date
+}
+
+function isRecentlyUpdated(dateStr: string | null, nowMs: number): boolean {
+  if (!dateStr) return false
+
+  const updatedMs = new Date(dateStr).getTime()
+  if (Number.isNaN(updatedMs)) return false
+
+  const ageMs = nowMs - updatedMs
+  return ageMs >= 0 && ageMs <= UPDATED_HIGHLIGHT_MS
 }
 
 // ===========================
@@ -411,6 +422,7 @@ function SortableProductRow({
   categoryRank,
   categoryName,
   onDownloadDetail,
+  currentTimeMs,
 }: {
   product: Product
   onTogglePublish: (id: number, current: boolean) => void
@@ -421,6 +433,7 @@ function SortableProductRow({
   categoryRank: number | null
   categoryName: string
   onDownloadDetail: (product: Product) => void
+  currentTimeMs: number
 }) {
   const {
     attributes,
@@ -475,6 +488,7 @@ function SortableProductRow({
         categoryRank={categoryRank}
         categoryName={categoryName}
         onDownloadDetail={onDownloadDetail}
+        currentTimeMs={currentTimeMs}
       />
     </tr>
   )
@@ -492,6 +506,7 @@ function ProductRowCells({
   categoryRank,
   categoryName,
   onDownloadDetail,
+  currentTimeMs,
 }: {
   product: Product
   onTogglePublish: (id: number, current: boolean) => void
@@ -500,15 +515,19 @@ function ProductRowCells({
   categoryRank: number | null
   categoryName: string
   onDownloadDetail: (product: Product) => void
+  currentTimeMs: number
 }) {
   const updatedAt = formatDateTimeParts(product.updated_at || product.created_at)
+  const isUpdatedRecent = isRecentlyUpdated(product.updated_at, currentTimeMs)
+  const updatedDateClass = isUpdatedRecent ? 'text-blue-700 font-semibold' : 'text-muted-foreground'
+  const updatedTimeClass = isUpdatedRecent ? 'text-blue-600/80 font-medium' : 'text-muted-foreground/70'
 
   return (
     <>
       {/* Title + external link */}
-      <td className="px-3 py-3">
-        <div className="flex items-center gap-3">
-          <div className="text-[10px] text-muted-foreground leading-tight text-center w-[72px] shrink-0 whitespace-nowrap">
+      <td className="px-2 py-3">
+        <div className="flex items-center gap-2">
+          <div className="text-[10px] text-muted-foreground leading-tight text-center w-[52px] shrink-0 whitespace-nowrap">
             {globalRank !== null ? (
               <>
                 <div className="font-bold text-foreground">#{globalRank}</div>
@@ -520,7 +539,7 @@ function ProductRowCells({
           </div>
           <Link
             href={`/admin/products/${product.id}`}
-            className="text-sm font-medium text-foreground hover:text-primary truncate max-w-[300px] block"
+            className="text-sm font-medium text-foreground hover:text-primary truncate max-w-[250px] block"
           >
             {product.title}
           </Link>
@@ -588,12 +607,12 @@ function ProductRowCells({
         </button>
       </td>
       {/* Updated date */}
-      <td className="px-3 py-3 text-center text-xs text-muted-foreground leading-tight">
+      <td className={`px-3 py-3 text-center text-xs leading-tight whitespace-nowrap ${updatedDateClass}`}>
         <div>{updatedAt.date}</div>
-        {updatedAt.time && <div className="mt-0.5 text-[11px] text-muted-foreground/70">{updatedAt.time}</div>}
+        {updatedAt.time && <div className={`mt-0.5 text-[11px] ${updatedTimeClass}`}>{updatedAt.time}</div>}
       </td>
       {/* Created date */}
-      <td className="px-3 py-3 text-center text-xs text-muted-foreground">
+      <td className="px-3 py-3 text-center text-xs text-muted-foreground whitespace-nowrap">
         {formatDate(product.created_at)}
       </td>
       {/* Actions */}
@@ -656,6 +675,7 @@ export default function AdminProducts() {
   const [bulkPriceLoading, setBulkPriceLoading] = useState(false)
   const [bulkPriceSaving, setBulkPriceSaving] = useState(false)
   const [downloadDetailProduct, setDownloadDetailProduct] = useState<Product | null>(null)
+  const [currentTimeMs, setCurrentTimeMs] = useState(() => Date.now())
 
   const supabase = useMemo(() => createClient(), [])
   const dragBulkPrice = useDraggableModal()
@@ -700,6 +720,11 @@ export default function AdminProducts() {
     loadProducts()
     loadCategories()
   }, [loadProducts, loadCategories])
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTimeMs(Date.now()), 60_000)
+    return () => clearInterval(timer)
+  }, [])
 
   // DnD sensors
   const sensors = useSensors(
@@ -1304,13 +1329,13 @@ export default function AdminProducts() {
                   </th>
                   <th className="w-10" />
                   {[
-                    { field: 'title' as SortField, label: '상품명', align: 'left', cls: 'min-w-[260px]' },
+                    { field: 'title' as SortField, label: '상품명', align: 'left', cls: 'min-w-[220px]' },
                     { field: 'category' as SortField, label: '카테고리', align: 'left', cls: 'w-28' },
                     { field: 'price' as SortField, label: '가격', align: 'right', cls: 'w-28' },
                     { field: 'is_free' as SortField, label: '구분', align: 'center', cls: 'w-20' },
                     { field: 'is_published' as SortField, label: '상태', align: 'center', cls: 'w-20' },
                     { field: 'download_count' as SortField, label: '다운로드', align: 'center', cls: 'w-20' },
-                    { field: 'updated_at' as SortField, label: '수정일', align: 'center', cls: 'w-24' },
+                    { field: 'updated_at' as SortField, label: '수정일', align: 'center', cls: 'w-28' },
                   ].map(col => (
                     <th
                       key={col.field}
@@ -1367,6 +1392,7 @@ export default function AdminProducts() {
                           categoryRank={rank?.category ?? null}
                           categoryName={rank?.categoryName ?? ''}
                           onDownloadDetail={setDownloadDetailProduct}
+                          currentTimeMs={currentTimeMs}
                         />
                       )
                     })}
@@ -1398,6 +1424,7 @@ export default function AdminProducts() {
                         categoryRank={rankMap.get(product.id)?.category ?? null}
                         categoryName={rankMap.get(product.id)?.categoryName ?? ''}
                         onDownloadDetail={setDownloadDetailProduct}
+                        currentTimeMs={currentTimeMs}
                       />
                     </tr>
                   ))
