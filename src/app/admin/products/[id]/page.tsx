@@ -11,7 +11,6 @@ import {
   FileType, User, Check, Download, AlertCircle
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import Link from 'next/link'
 import dynamic from 'next/dynamic'
 
 const RichTextEditor = dynamic(
@@ -268,6 +267,19 @@ function formatErr(e: unknown): string {
     try { return JSON.stringify(e) } catch { return String(e) }
   }
   return String(e ?? '알 수 없는 오류')
+}
+
+function normalizeProductsReturnTo(value: string | null): string {
+  if (value === '/admin/products' || value?.startsWith('/admin/products?')) {
+    return value
+  }
+  return '/admin/products'
+}
+
+function getProductsReturnTo(): string {
+  if (typeof window === 'undefined') return '/admin/products'
+  const params = new URLSearchParams(window.location.search)
+  return normalizeProductsReturnTo(params.get('returnTo'))
 }
 
 // ===========================
@@ -549,7 +561,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       }
 
       showToast(isNew ? '상품이 등록되었습니다.' : '상품이 수정되었습니다.')
-      setTimeout(() => router.push('/admin/products'), 1000)
+      setTimeout(() => router.push(getProductsReturnTo()), 1000)
     } catch (e) {
       console.error('[handleSave] error:', e)
       showToast(`저장 오류: ${formatErr(e)}`)
@@ -567,7 +579,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       if (!response.ok) throw new Error(result?.error || '상품 삭제에 실패했습니다')
 
       showToast('상품이 삭제되었습니다.')
-      setTimeout(() => router.push('/admin/products'), 1000)
+      setTimeout(() => router.push(getProductsReturnTo()), 1000)
     } catch (e) {
       showToast(`삭제 오류: ${formatErr(e)}`)
     }
@@ -749,12 +761,14 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link
-            href="/admin/products"
+          <button
+            type="button"
+            onClick={() => router.push(getProductsReturnTo())}
             className="w-9 h-9 rounded-xl border border-border hover:bg-muted flex items-center justify-center transition-colors"
+            aria-label="상품 목록으로 돌아가기"
           >
             <ArrowLeft className="w-4 h-4 text-muted-foreground" />
-          </Link>
+          </button>
           <div>
             <h1 className="text-xl font-bold text-foreground">
               {isNew ? '상품 등록' : '상품 수정'}

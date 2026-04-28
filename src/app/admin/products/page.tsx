@@ -78,6 +78,9 @@ type SortDir = 'asc' | 'desc'
 
 const PAGE_SIZES = [20, 50, 100] as const
 const UPDATED_HIGHLIGHT_MS = 12 * 60 * 60 * 1000
+const STATUS_FILTERS = ['all', 'published', 'unpublished'] as const
+const PRICE_FILTERS = ['all', 'paid', 'free'] as const
+const SORT_FIELDS = ['title', 'category', 'price', 'is_free', 'is_published', 'download_count', 'updated_at', 'created_at'] as const
 
 async function deleteProduct(productId: number): Promise<void> {
   const response = await fetch(`/api/admin/products/${productId}`, { method: 'DELETE' })
@@ -85,6 +88,73 @@ async function deleteProduct(productId: number): Promise<void> {
   if (!response.ok) {
     throw new Error(result?.error || '상품 삭제에 실패했습니다')
   }
+}
+
+function parseStatusFilter(value: string | null): StatusFilter {
+  return STATUS_FILTERS.includes(value as StatusFilter) ? value as StatusFilter : 'all'
+}
+
+function parsePriceFilter(value: string | null): 'all' | 'paid' | 'free' {
+  return PRICE_FILTERS.includes(value as 'all' | 'paid' | 'free') ? value as 'all' | 'paid' | 'free' : 'all'
+}
+
+function parsePageSize(value: string | null): number {
+  const parsed = Number(value)
+  return PAGE_SIZES.includes(parsed as typeof PAGE_SIZES[number]) ? parsed : 100
+}
+
+function parsePositiveInt(value: string | null, fallback: number): number {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback
+}
+
+function parseCategoryFilter(value: string | null): number | null {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null
+}
+
+function parseSortField(value: string | null): SortField {
+  return SORT_FIELDS.includes(value as Exclude<SortField, null>) ? value as SortField : null
+}
+
+function parseSortDir(value: string | null): SortDir {
+  return value === 'desc' ? 'desc' : 'asc'
+}
+
+function buildProductsListQuery({
+  search,
+  statusFilter,
+  priceFilter,
+  categoryFilter,
+  pageSize,
+  page,
+  sortField,
+  sortDir,
+}: {
+  search: string
+  statusFilter: StatusFilter
+  priceFilter: 'all' | 'paid' | 'free'
+  categoryFilter: number | null
+  pageSize: number
+  page: number
+  sortField: SortField
+  sortDir: SortDir
+}): string {
+  const params = new URLSearchParams()
+  const q = search.trim()
+
+  if (q) params.set('q', q)
+  if (statusFilter !== 'all') params.set('status', statusFilter)
+  if (priceFilter !== 'all') params.set('price', priceFilter)
+  if (categoryFilter !== null) params.set('category', String(categoryFilter))
+  if (pageSize !== 100) params.set('size', String(pageSize))
+  if (page > 1) params.set('page', String(page))
+  if (sortField) {
+    params.set('sort', sortField)
+    if (sortDir !== 'asc') params.set('dir', sortDir)
+  }
+
+  return params.toString()
 }
 
 function formatPrice(price: number): string {
@@ -430,6 +500,7 @@ function SortableProductRow({
   categoryName,
   onDownloadDetail,
   currentTimeMs,
+  getEditHref,
 }: {
   product: Product
   onTogglePublish: (id: number, current: boolean) => void
@@ -441,6 +512,7 @@ function SortableProductRow({
   categoryName: string
   onDownloadDetail: (product: Product) => void
   currentTimeMs: number
+  getEditHref: (productId: number) => string
 }) {
   const {
     attributes,
@@ -496,6 +568,7 @@ function SortableProductRow({
         categoryName={categoryName}
         onDownloadDetail={onDownloadDetail}
         currentTimeMs={currentTimeMs}
+        getEditHref={getEditHref}
       />
     </tr>
   )
@@ -514,6 +587,7 @@ function ProductRowCells({
   categoryName,
   onDownloadDetail,
   currentTimeMs,
+  getEditHref,
 }: {
   product: Product
   onTogglePublish: (id: number, current: boolean) => void
@@ -523,6 +597,7 @@ function ProductRowCells({
   categoryName: string
   onDownloadDetail: (product: Product) => void
   currentTimeMs: number
+  getEditHref: (productId: number) => string
 }) {
   const updatedAt = formatDateTimeParts(product.updated_at || product.created_at)
   const isUpdatedRecent = isRecentlyUpdated(product.updated_at, currentTimeMs)
@@ -545,7 +620,7 @@ function ProductRowCells({
             )}
           </div>
           <Link
-            href={`/admin/products/${product.id}`}
+            href={getEditHref(product.id)}
             className="text-sm font-medium text-foreground hover:text-primary truncate max-w-[250px] block"
           >
             {product.title}
@@ -626,7 +701,7 @@ function ProductRowCells({
       <td className="px-3 py-3">
         <div className="flex items-center justify-end gap-1">
           <Link
-            href={`/admin/products/${product.id}`}
+            href={getEditHref(product.id)}
             className="p-1.5 rounded-md hover:bg-primary/8 text-muted-foreground hover:text-primary transition-colors"
             title="수정"
           >
@@ -683,9 +758,25 @@ export default function AdminProducts() {
   const [bulkPriceSaving, setBulkPriceSaving] = useState(false)
   const [downloadDetailProduct, setDownloadDetailProduct] = useState<Product | null>(null)
   const [currentTimeMs, setCurrentTimeMs] = useState(() => Date.now())
+  const [urlStateReady, setUrlStateReady] = useState(false)
 
   const supabase = useMemo(() => createClient(), [])
   const dragBulkPrice = useDraggableModal()
+  const productsListQuery = useMemo(() => buildProductsListQuery({
+    search,
+    statusFilter,
+    priceFilter,
+    categoryFilter,
+    pageSize,
+    page,
+    sortField,
+    sortDir,
+  }), [search, statusFilter, priceFilter, categoryFilter, pageSize, page, sortField, sortDir])
+  const productsListPath = productsListQuery ? `/admin/products?${productsListQuery}` : '/admin/products'
+  const getProductEditHref = useCallback(
+    (productId: number) => `/admin/products/${productId}?returnTo=${encodeURIComponent(productsListPath)}`,
+    [productsListPath],
+  )
   const getPublishableProductIds = useCallback(async (ids: number[]) => {
     if (ids.length === 0) return new Set<number>()
     const { data, error } = await supabase
@@ -727,6 +818,29 @@ export default function AdminProducts() {
     loadProducts()
     loadCategories()
   }, [loadProducts, loadCategories])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+
+    setSearch(params.get('q') || '')
+    setStatusFilter(parseStatusFilter(params.get('status')))
+    setPriceFilter(parsePriceFilter(params.get('price')))
+    setCategoryFilter(parseCategoryFilter(params.get('category')))
+    setPageSize(parsePageSize(params.get('size')))
+    setPage(parsePositiveInt(params.get('page'), 1))
+    setSortField(parseSortField(params.get('sort')))
+    setSortDir(parseSortDir(params.get('dir')))
+    setUrlStateReady(true)
+  }, [])
+
+  useEffect(() => {
+    if (!urlStateReady) return
+
+    const currentPath = `${window.location.pathname}${window.location.search}`
+    if (currentPath !== productsListPath) {
+      window.history.replaceState(null, '', productsListPath)
+    }
+  }, [productsListPath, urlStateReady])
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTimeMs(Date.now()), 60_000)
@@ -1041,6 +1155,10 @@ export default function AdminProducts() {
   const paginated = sorted.slice((page - 1) * pageSize, page * pageSize)
   const isDragEnabled =
     statusFilter === 'all' && priceFilter === 'all' && categoryFilter === null && !search.trim() && totalPages <= 1
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages)
+  }, [page, totalPages])
 
   // Pagination range
   const getPageRange = () => {
@@ -1368,6 +1486,7 @@ export default function AdminProducts() {
                           categoryName={rank?.categoryName ?? ''}
                           onDownloadDetail={setDownloadDetailProduct}
                           currentTimeMs={currentTimeMs}
+                          getEditHref={getProductEditHref}
                         />
                       )
                     })}
@@ -1400,6 +1519,7 @@ export default function AdminProducts() {
                         categoryName={rankMap.get(product.id)?.categoryName ?? ''}
                         onDownloadDetail={setDownloadDetailProduct}
                         currentTimeMs={currentTimeMs}
+                        getEditHref={getProductEditHref}
                       />
                     </tr>
                   ))
