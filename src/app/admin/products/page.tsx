@@ -157,6 +157,48 @@ function buildProductsListQuery({
   return params.toString()
 }
 
+function getProductCategoryName(product: Product): string {
+  return Array.isArray(product.categories)
+    ? product.categories[0]?.name || ''
+    : product.categories?.name || ''
+}
+
+function getSearchTokens(search: string): string[] {
+  const tokens = search
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+
+  if (tokens.length <= 1) return tokens
+
+  const lastToken = tokens[tokens.length - 1]
+  return lastToken.length <= 1 ? tokens.slice(0, -1) : tokens
+}
+
+function matchesProductSearch(product: Product, search: string): boolean {
+  const rawQuery = search.trim().toLowerCase()
+  if (!rawQuery) return true
+
+  const searchText = [
+    product.title,
+    getProductCategoryName(product),
+    product.format || '',
+  ].join(' ').toLowerCase()
+  const compactSearchText = searchText.replace(/\s+/g, '')
+  const compactQuery = rawQuery.replace(/\s+/g, '')
+
+  if (compactQuery && compactSearchText.includes(compactQuery)) return true
+
+  const tokens = getSearchTokens(search)
+  if (tokens.length === 0) return true
+
+  return tokens.every((token) => {
+    const compactToken = token.replace(/\s+/g, '')
+    return searchText.includes(token) || compactSearchText.includes(compactToken)
+  })
+}
+
 function formatPrice(price: number): string {
   return new Intl.NumberFormat('ko-KR').format(price) + '원'
 }
@@ -1087,8 +1129,7 @@ export default function AdminProducts() {
       return ids.includes(categoryFilter)
     })
     if (search.trim()) {
-      const q = search.trim().toLowerCase()
-      list = list.filter((p) => p.title.toLowerCase().includes(q))
+      list = list.filter((p) => matchesProductSearch(p, search))
     }
     return list
   }, [products, statusFilter, priceFilter, categoryFilter, search])
