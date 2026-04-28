@@ -1,5 +1,159 @@
 # 🔄 이어가기
 
+## 2026-04-28 최신 세션 인계 요약
+
+**다음 세션 시작 시 먼저 할 일**
+
+1. `git pull --ff-only`
+2. `AGENTS.md` 확인
+3. 이 `RESUME.md`의 2026-04-28 섹션부터 확인
+4. 작업 전 `git status --short`로 기존 unrelated 변경 확인
+
+**현재 Git 기준**
+
+- 최신 원격 브랜치: `origin/master`
+- 최신 기능 커밋: `199f8ff fix: update receipt contact details`
+- 이 인계 문서 자체를 커밋했다면 최신 커밋은 `docs: update session handoff notes` 계열일 수 있습니다.
+- 직전 주요 커밋:
+  - `f7c9871 fix: refine post purchase order details`
+  - `5799a0f feat: show cart discount source`
+  - `59e19d0 feat: connect product tags to search and seo`
+  - `ac5e7ca fix: sanitize admin product categories`
+  - `d12c1bb feat: enable google analytics`
+
+**주의: 작업 전부터 남아있는 unrelated 변경**
+
+아래 파일은 현재 요청 작업과 무관한 기존 변경/생성물입니다. 사용자가 별도로 지시하지 않으면 stage/revert 하지 말 것.
+
+- `.env.codex.example`
+- `.mcp.json`
+- `docs/CODEX_SETUP.md`
+- `docs/TELEGRAM_MCP.md`
+- `scripts/codex-doctor.mjs`
+- `scripts/telegram-mcp.mjs`
+- `presales-ps-logo-640.png`
+- `presales-ps-logo.png`
+
+### 완료된 최근 작업
+
+#### 상품 태그 검색/SEO
+
+- 커밋: `59e19d0 feat: connect product tags to search and seo`
+- 상품 해시태그가 검색에 걸리도록 `/api/products` 검색 로직과 로컬 태그 검색을 연결했습니다.
+- 상품 상세 메타데이터/JSON-LD에 태그 컨텍스트를 반영했습니다.
+- 검증: lint, build, 태그 API 검색, 브라우저 태그 클릭 확인.
+
+#### 관리자 상품 목록/검색/필터/삭제 보정
+
+- 커밋: `f5758c5 feat: add admin document orientation filters`, `f8c81a...` 계열 이전 작업 포함.
+- 관리자 상품 목록에 수정일 표시, 오늘 수정 항목 파란색 12시간 유지, 상품명 검색 상태 유지/한글 입력 검색 보정, 문서형식 필터(가로형/세로형/미선택)를 반영했습니다.
+- 상품 삭제 시 주문 참조가 있으면 실제 삭제 대신 숨김 처리로 방어하도록 정리했습니다.
+- 카테고리 FK 오류 방지를 위해 관리자 상품 저장 시 카테고리 값을 정리했습니다.
+
+#### 할인매칭 장바구니/주문서 표시
+
+- 커밋: `5799a0f feat: show cart discount source`
+- PDF 구매 후 PPT 원본 구매 시 자동 차감되는 할인매칭 근거를 장바구니 드로어와 `/cart`에 표시합니다.
+- 표시 예시: `구매한 상품`, 기존 PDF 상품명, `이 구매 이력으로 49,000원 차감`.
+- 요약 금액을 `상품 할인`과 `구매 이력 할인`으로 분리했습니다.
+- 검증 예시:
+  - 상품금액 `199,000원`
+  - 상품할인 `-100,000원`
+  - 구매 이력 할인 `-49,000원`
+  - 결제금액 `50,000원`
+
+#### 마이페이지 다운로드/주문서/영수증 UX
+
+- 커밋: `f7c9871 fix: refine post purchase order details`
+- 다운로드 후 리뷰 작성 유도 토스트를 제거했습니다. 리뷰는 선택 사항입니다.
+- 영수증 인쇄를 새 팝업 방식에서 숨김 iframe 기반 인쇄 방식으로 변경했습니다.
+- 마이페이지 주문 목록, 주문서 모달, 영수증 인쇄본에 할인 출처 상품을 표시합니다.
+- 결제완료 페이지 주문서도 할인 출처 상품을 조회해 표시합니다.
+- 장바구니 페이지와 드로어에 `사용할 수 있는 쿠폰` 및 결제 전 쿠폰 적용 안내를 추가했습니다.
+
+#### 영수증 회사/도메인/관리자 표시 이메일
+
+- 커밋: `199f8ff fix: update receipt contact details`
+- 주문서/영수증 화면 및 인쇄본에서 `대표 채호진` 삭제.
+- 영수증 도메인 `https://presales-zeta.vercel.app` → `https://www.presales.co.kr`.
+- `Bill to` 이메일이 `admin@amarans.co.kr`인 경우 화면 표시만 `sales@presales.co.kr`로 보정.
+- 계정 자체 이메일 변경은 하지 않았습니다. 로그인/권한 영향 방지를 위해 표시 계층만 변경했습니다.
+
+#### 관리자 테스트 구매 이력
+
+DB에 테스트 목적 구매 이력을 수동 생성했습니다. 코드 커밋 대상은 아니며, Supabase 데이터 상태입니다.
+
+- admin 계정: `admin@amarans.co.kr`
+- 상품 80 구매 이력:
+  - 주문 ID `593`
+  - 주문번호 `ADM-20260428180931-P80`
+  - 상품 `80`
+  - 결제금액 `49,000원`
+- 상품 84 구매 후 58 할인 구매 이력:
+  - 84번 주문 ID `594`, 주문번호 `ADM-20260428093522-SRC-P84`, 결제금액 `49,000원`
+  - 58번 주문 ID `595`, 주문번호 `ADM-20260428093522-DST-P58`, 원가 `99,000원`, 할인 `49,000원`, 결제금액 `50,000원`
+  - 58번 `order_items.id=716`, `discount_source_product_id=84`, `discount_reason='84번 구매 할인'`
+
+### 검증 기준
+
+최근 주요 코드 변경은 아래 검증을 통과했습니다.
+
+- `npm run lint -- --quiet`
+- `npm run build`
+- 로컬 브라우저 검수:
+  - `/cart` 쿠폰 안내 및 구매 이력 할인 표시
+  - `/mypage` 주문 목록/주문서 모달의 구매 이력 할인 출처 표시
+  - 주문서 회사정보: `대표 채호진` 제거, `https://www.presales.co.kr`, `sales@presales.co.kr`
+
+### 다음 할 일
+
+#### 1. PG 사 연동
+
+**우선순위: 높음**
+
+- 기존 토스 결제 작업은 `RESUME.md` 하단 2026-04-19 섹션의 Task #9 기록을 함께 확인할 것.
+- 현재 규칙: 이 프로젝트에서는 `vercel deploy`, `vercel link`, `vercel --prod` 실행 금지. 배포는 Git push로만 트리거.
+- 성공 기준:
+  - 카드/가상계좌/간편결제 중 실제 사용할 PG 플로우 결정
+  - 테스트 결제 승인 성공
+  - 결제 성공 후 `orders.status='paid'`, `paid_at`, 결제키/영수증 정보 저장
+  - 마이페이지에서 다운로드 가능
+  - 실패/취소/웹훅 재시도 시 주문 상태가 안전하게 유지됨
+
+#### 2. 도메인 연결
+
+**우선순위: 높음**
+
+- 목표 도메인: `https://www.presales.co.kr`
+- 기존 zeta 도메인은 개발/임시 주소로 취급.
+- 성공 기준:
+  - Vercel 프로젝트에 `www.presales.co.kr` 연결
+  - DNS에서 기존 Imweb 잔재 정리
+  - HTTPS 인증서 정상 발급
+  - canonical/OG/sitemap/robots/영수증/공유 URL이 운영 도메인을 기준으로 동작
+  - 카카오 JavaScript SDK 도메인에도 운영 도메인 반영 확인
+
+#### 3. 적립금 사용제도 구현
+
+**우선순위: 중간-높음**
+
+- 신규 정책 설계가 먼저 필요합니다. 임의 구현하지 말고 사용 정책을 확정한 뒤 개발할 것.
+- 결정해야 할 항목:
+  - 적립률 또는 지급 조건
+  - 사용 가능 최소 주문금액
+  - 주문당 최대 사용 비율/금액
+  - 환불 시 적립금 회수/복원 정책
+  - 관리자 수동 지급/차감 필요 여부
+- 성공 기준:
+  - 사용자 적립금 잔액 조회
+  - 장바구니/결제에서 사용 금액 입력 또는 선택
+  - 서버에서 사용 가능 금액 재검증
+  - 주문 확정 시 적립금 차감/적립 ledger 기록
+  - 취소/환불 시 ledger 보정
+  - 마이페이지에서 적립/사용 내역 확인
+
+---
+
 ## 2026-04-27 현재 상태 — Windows PC 인수인계 준비
 
 - GitHub 기준 최신 브랜치: `master`
