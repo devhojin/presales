@@ -6,6 +6,14 @@ import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import {
+  DOCUMENT_ORIENTATION_FILTERS,
+  DOCUMENT_ORIENTATION_LABELS,
+  getDocumentOrientationKeys,
+  getDocumentOrientationLabels,
+  isDocumentOrientationUnset,
+  type DocumentOrientationFilter,
+} from '@/lib/document-orientation'
+import {
   GripVertical,
   Plus,
   Pencil,
@@ -68,11 +76,13 @@ interface Product {
   category_id: number | null
   category_ids: number[] | null
   format: string | null
+  document_orientation: string | string[] | null
   sort_order: number | null
   categories: { name: string }[] | { name: string } | null
 }
 
 type StatusFilter = 'all' | 'published' | 'unpublished'
+type DocumentOrientationFilterState = DocumentOrientationFilter | null
 type SortField = 'title' | 'category' | 'price' | 'is_free' | 'is_published' | 'download_count' | 'updated_at' | 'created_at' | null
 type SortDir = 'asc' | 'desc'
 
@@ -96,6 +106,12 @@ function parseStatusFilter(value: string | null): StatusFilter {
 
 function parsePriceFilter(value: string | null): 'all' | 'paid' | 'free' {
   return PRICE_FILTERS.includes(value as 'all' | 'paid' | 'free') ? value as 'all' | 'paid' | 'free' : 'all'
+}
+
+function parseDocumentOrientationFilter(value: string | null): DocumentOrientationFilterState {
+  return DOCUMENT_ORIENTATION_FILTERS.includes(value as DocumentOrientationFilter)
+    ? value as DocumentOrientationFilter
+    : null
 }
 
 function parsePageSize(value: string | null): number {
@@ -125,6 +141,7 @@ function buildProductsListQuery({
   search,
   statusFilter,
   priceFilter,
+  documentOrientationFilter,
   categoryFilter,
   pageSize,
   page,
@@ -134,6 +151,7 @@ function buildProductsListQuery({
   search: string
   statusFilter: StatusFilter
   priceFilter: 'all' | 'paid' | 'free'
+  documentOrientationFilter: DocumentOrientationFilterState
   categoryFilter: number | null
   pageSize: number
   page: number
@@ -146,6 +164,7 @@ function buildProductsListQuery({
   if (q) params.set('q', q)
   if (statusFilter !== 'all') params.set('status', statusFilter)
   if (priceFilter !== 'all') params.set('price', priceFilter)
+  if (documentOrientationFilter !== null) params.set('orientation', documentOrientationFilter)
   if (categoryFilter !== null) params.set('category', String(categoryFilter))
   if (pageSize !== 100) params.set('size', String(pageSize))
   if (page > 1) params.set('page', String(page))
@@ -184,6 +203,7 @@ function matchesProductSearch(product: Product, search: string): boolean {
     product.title,
     getProductCategoryName(product),
     product.format || '',
+    getDocumentOrientationLabels(product.document_orientation).join(' '),
   ].join(' ').toLowerCase()
   const compactSearchText = searchText.replace(/\s+/g, '')
   const compactQuery = rawQuery.replace(/\s+/g, '')
@@ -244,6 +264,16 @@ function isRecentlyUpdated(dateStr: string | null, nowMs: number): boolean {
 
   const ageMs = nowMs - updatedMs
   return ageMs >= 0 && ageMs <= UPDATED_HIGHLIGHT_MS
+}
+
+function matchesDocumentOrientationFilter(product: Product, filter: DocumentOrientationFilterState): boolean {
+  if (filter === null) return true
+  if (filter === 'unset') return isDocumentOrientationUnset(product.document_orientation)
+  return getDocumentOrientationKeys(product.document_orientation).includes(filter)
+}
+
+function countDocumentOrientation(products: Product[], filter: DocumentOrientationFilter): number {
+  return products.filter((product) => matchesDocumentOrientationFilter(product, filter)).length
 }
 
 // ===========================
@@ -784,6 +814,7 @@ export default function AdminProducts() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [priceFilter, setPriceFilter] = useState<'all' | 'paid' | 'free'>('all')
+  const [documentOrientationFilter, setDocumentOrientationFilter] = useState<DocumentOrientationFilterState>(null)
   const [categoryFilter, setCategoryFilter] = useState<number | null>(null)
   const [pageSize, setPageSize] = useState<number>(100)
   const [page, setPage] = useState(1)
@@ -808,12 +839,13 @@ export default function AdminProducts() {
     search,
     statusFilter,
     priceFilter,
+    documentOrientationFilter,
     categoryFilter,
     pageSize,
     page,
     sortField,
     sortDir,
-  }), [search, statusFilter, priceFilter, categoryFilter, pageSize, page, sortField, sortDir])
+  }), [search, statusFilter, priceFilter, documentOrientationFilter, categoryFilter, pageSize, page, sortField, sortDir])
   const productsListPath = productsListQuery ? `/admin/products?${productsListQuery}` : '/admin/products'
   const getProductEditHref = useCallback(
     (productId: number) => `/admin/products/${productId}?returnTo=${encodeURIComponent(productsListPath)}`,
@@ -832,7 +864,7 @@ export default function AdminProducts() {
   const loadProducts = useCallback(async () => {
     const { data } = await supabase
       .from('products')
-      .select('id, title, price, original_price, tier, is_published, is_free, download_count, created_at, updated_at, category_id, format, sort_order, categories(name)')
+      .select('id, title, price, original_price, tier, is_published, is_free, download_count, created_at, updated_at, category_id, category_ids, format, document_orientation, sort_order, categories(name)')
       .order('sort_order', { ascending: true, nullsFirst: false })
       .order('created_at', { ascending: false })
     if (data) setProducts(data as Product[])
@@ -867,6 +899,7 @@ export default function AdminProducts() {
     setSearch(params.get('q') || '')
     setStatusFilter(parseStatusFilter(params.get('status')))
     setPriceFilter(parsePriceFilter(params.get('price')))
+    setDocumentOrientationFilter(parseDocumentOrientationFilter(params.get('orientation')))
     setCategoryFilter(parseCategoryFilter(params.get('category')))
     setPageSize(parsePageSize(params.get('size')))
     setPage(parsePositiveInt(params.get('page'), 1))
@@ -1122,6 +1155,9 @@ export default function AdminProducts() {
     if (statusFilter === 'unpublished') list = list.filter((p) => !p.is_published)
     if (priceFilter === 'paid') list = list.filter((p) => !p.is_free)
     if (priceFilter === 'free') list = list.filter((p) => p.is_free)
+    if (documentOrientationFilter !== null) {
+      list = list.filter((p) => matchesDocumentOrientationFilter(p, documentOrientationFilter))
+    }
     if (categoryFilter !== null) list = list.filter((p) => {
       const ids = Array.isArray(p.category_ids) && p.category_ids.length > 0
         ? p.category_ids
@@ -1132,7 +1168,7 @@ export default function AdminProducts() {
       list = list.filter((p) => matchesProductSearch(p, search))
     }
     return list
-  }, [products, statusFilter, priceFilter, categoryFilter, search])
+  }, [products, statusFilter, priceFilter, documentOrientationFilter, categoryFilter, search])
 
   // Sort
   const sorted = useMemo(() => {
@@ -1195,7 +1231,12 @@ export default function AdminProducts() {
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize))
   const paginated = sorted.slice((page - 1) * pageSize, page * pageSize)
   const isDragEnabled =
-    statusFilter === 'all' && priceFilter === 'all' && categoryFilter === null && !search.trim() && totalPages <= 1
+    statusFilter === 'all' &&
+    priceFilter === 'all' &&
+    documentOrientationFilter === null &&
+    categoryFilter === null &&
+    !search.trim() &&
+    totalPages <= 1
 
   useEffect(() => {
     if (page > totalPages) setPage(totalPages)
@@ -1357,6 +1398,31 @@ export default function AdminProducts() {
             ))}
           </div>
 
+          {/* Document orientation filter */}
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-muted-foreground mr-1">문서형식</span>
+            {DOCUMENT_ORIENTATION_FILTERS.map((key) => (
+              <button
+                key={key}
+                onClick={() => {
+                  setDocumentOrientationFilter((current) => current === key ? null : key)
+                  setPage(1)
+                }}
+                className={`px-3 py-2 text-sm font-medium rounded-xl transition cursor-pointer ${
+                  documentOrientationFilter === key
+                    ? key === 'unset' ? 'bg-gray-700 text-white' : 'bg-blue-700 text-white'
+                    : 'text-muted-foreground hover:bg-muted'
+                }`}
+                title={`문서형식 ${DOCUMENT_ORIENTATION_LABELS[key]} 필터`}
+              >
+                {DOCUMENT_ORIENTATION_LABELS[key]}
+                <span className={`ml-1 text-xs ${documentOrientationFilter === key ? 'opacity-70' : 'text-muted-foreground'}`}>
+                  {countDocumentOrientation(products, key)}
+                </span>
+              </button>
+            ))}
+          </div>
+
           {/* Search */}
           <div className="flex-1">
             <div className="relative">
@@ -1403,7 +1469,13 @@ export default function AdminProducts() {
             좌측 핸들을 드래그하여 순서 변경 (위쪽 = 스토어 상단 노출)
             {saving && <span className="ml-2 text-primary">저장 중...</span>}
           </p>
-        ) : (statusFilter !== 'all' || priceFilter !== 'all' || categoryFilter !== null || search.trim()) && (
+        ) : (
+          statusFilter !== 'all' ||
+          priceFilter !== 'all' ||
+          documentOrientationFilter !== null ||
+          categoryFilter !== null ||
+          search.trim()
+        ) && (
           <p className="text-xs text-amber-600 flex items-center gap-1">
             필터를 해제하면 순서를 변경할 수 있습니다
           </p>

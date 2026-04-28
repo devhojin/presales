@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { uploadFile } from '@/lib/storage-upload'
 import { useDraggableModal } from '@/hooks/useDraggableModal'
+import { normalizeDocumentOrientationFormValue, serializeDocumentOrientation } from '@/lib/document-orientation'
 import {
   ArrowLeft, Save, Eye, EyeOff, Trash2, Play, Plus, X,
   ImageIcon, FileText, Tag, Upload, Loader2, Code, Monitor,
@@ -468,9 +469,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           features: features.length > 0 ? features : [''],
           specs: specs.length > 0 ? specs : [{ label: '', value: '' }],
           file_types: Array.isArray(p.file_types) ? p.file_types : [],
-          document_orientation: Array.isArray(p.document_orientation)
-            ? p.document_orientation
-            : p.document_orientation ? [p.document_orientation] : ['가로형'],
+          document_orientation: normalizeDocumentOrientationFormValue(p.document_orientation),
           badge_new: p.badge_new ?? false,
           badge_best: p.badge_best ?? false,
           badge_sale: p.badge_sale ?? false,
@@ -542,7 +541,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         features: form.features.filter(Boolean),
         specs: form.specs.filter(s => s.label || s.value),
         file_types: form.file_types,
-        document_orientation: form.document_orientation,
+        document_orientation: serializeDocumentOrientation(form.document_orientation),
         badge_new: form.badge_new,
         badge_best: form.badge_best,
         badge_sale: form.badge_sale,
