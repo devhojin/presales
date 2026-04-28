@@ -5,7 +5,8 @@ import { createClient } from '@/lib/supabase'
 import { Badge } from '@/components/ui/badge'
 import {
   Search, Megaphone, Calendar, ArrowLeft, ExternalLink,
-  Clock, Loader2, Star, Building2, Phone,
+  Clock, Loader2, Star, Building2, Phone, ChevronDown,
+  SlidersHorizontal, X,
 } from 'lucide-react'
 import {
   type Announcement,
@@ -19,8 +20,76 @@ import { useToastStore } from '@/stores/toast-store'
 
 type FilterStatus = 'all' | 'active' | 'closed'
 type ReadTab = 'unread' | 'read' | 'bookmarks'
+type DeadlineFilter = 'all' | 'urgent' | 'month' | 'later'
+
+type FilterOption = {
+  key: string
+  label: string
+  value?: string
+  values?: string[]
+}
 
 const TWO_WEEKS = 14 * 24 * 60 * 60 * 1000
+
+const SUPPORT_AREA_OPTIONS: FilterOption[] = [
+  { key: 'all', label: '전체 분야' },
+  { key: 'business', label: '사업화', values: ['사업화'] },
+  { key: 'mentoring', label: '멘토링·컨설팅·교육', values: ['멘토링ㆍ컨설팅ㆍ교육'] },
+  { key: 'space', label: '시설·공간·보육', values: ['시설ㆍ공간ㆍ보육'] },
+  { key: 'network', label: '행사·네트워크', values: ['행사ㆍ네트워크'] },
+  { key: 'market', label: '판로·해외진출', values: ['판로ㆍ해외진출'] },
+  { key: 'education', label: '창업교육', values: ['창업교육'] },
+  { key: 'global', label: '글로벌', values: ['글로벌'] },
+  { key: 'rnd', label: '기술개발 R&D', values: ['기술개발(R&amp;D)'] },
+  { key: 'funding', label: '정책자금·융자', values: ['정책자금', '융자ㆍ보증'] },
+]
+
+const REGION_OPTIONS: FilterOption[] = [
+  { key: 'all', label: '전체 지역' },
+  { key: 'national', label: '전국', value: '전국' },
+  { key: 'seoul', label: '서울', value: '서울특별시' },
+  { key: 'gyeonggi', label: '경기', value: '경기도' },
+  { key: 'busan', label: '부산', value: '부산광역시' },
+  { key: 'daejeon', label: '대전', value: '대전광역시' },
+  { key: 'incheon', label: '인천', value: '인천광역시' },
+  { key: 'daegu', label: '대구', value: '대구광역시' },
+  { key: 'gwangju', label: '광주', value: '광주광역시' },
+]
+
+const GOVERNING_BODY_OPTIONS: FilterOption[] = [
+  { key: 'all', label: '전체 기관' },
+  { key: 'public', label: '공공기관', value: '공공기관' },
+  { key: 'private', label: '민간', value: '민간' },
+  { key: 'education', label: '교육기관', value: '교육기관' },
+  { key: 'local', label: '지자체', value: '지자체' },
+]
+
+const TARGET_TYPE_OPTIONS: FilterOption[] = [
+  { key: 'all', label: '전체 대상' },
+  { key: 'company', label: '일반기업', value: '일반기업' },
+  { key: 'creator', label: '1인창조기업', value: '1인창조기업' },
+  { key: 'person', label: '일반인', value: '일반인' },
+  { key: 'student', label: '대학생', value: '대학생' },
+  { key: 'research', label: '연구기관', value: '연구기관' },
+  { key: 'university', label: '대학', value: '대학' },
+]
+
+const BUSINESS_YEAR_OPTIONS: FilterOption[] = [
+  { key: 'all', label: '전체 업력' },
+  { key: 'pre', label: '예비창업자', value: '예비창업자' },
+  { key: '1', label: '1년 미만', value: '1년미만' },
+  { key: '3', label: '3년 미만', value: '3년미만' },
+  { key: '5', label: '5년 미만', value: '5년미만' },
+  { key: '7', label: '7년 미만', value: '7년미만' },
+  { key: '10', label: '10년 미만', value: '10년미만' },
+]
+
+const DEADLINE_OPTIONS: { key: DeadlineFilter; label: string }[] = [
+  { key: 'all', label: '전체 마감' },
+  { key: 'urgent', label: 'D-7 이내' },
+  { key: 'month', label: 'D-8~30' },
+  { key: 'later', label: 'D-31+' },
+]
 
 function DayBadge({ dday }: { dday: number | null }) {
   if (dday === null) return null
@@ -29,6 +98,45 @@ function DayBadge({ dday }: { dday: number | null }) {
     <span className={`text-xs font-mono font-bold ${isUrgent ? 'text-red-600' : 'text-muted-foreground'}`}>
       {dday < 0 ? '마감' : `D-${dday}`}
     </span>
+  )
+}
+
+function FilterPill({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 cursor-pointer ${
+        active
+          ? 'bg-primary text-primary-foreground border-primary'
+          : 'border-border/50 text-foreground hover:border-border hover:bg-muted'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function FilterGroup({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div>
+      <p className="mb-2 text-xs font-semibold text-muted-foreground">{label}</p>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
   )
 }
 
@@ -42,6 +150,13 @@ export default function AnnouncementsClient() {
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all')
+  const [supportAreaKey, setSupportAreaKey] = useState('all')
+  const [regionKey, setRegionKey] = useState('all')
+  const [governingBodyKey, setGoverningBodyKey] = useState('all')
+  const [targetTypeKey, setTargetTypeKey] = useState('all')
+  const [businessYearKey, setBusinessYearKey] = useState('all')
+  const [deadlineFilter, setDeadlineFilter] = useState<DeadlineFilter>('all')
+  const [detailFiltersOpen, setDetailFiltersOpen] = useState(false)
 
   // Debounce search input
   useEffect(() => {
@@ -81,6 +196,17 @@ export default function AnnouncementsClient() {
       })
       if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
       if (filterStatus !== 'all') params.set('status', filterStatus)
+      const areaOption = SUPPORT_AREA_OPTIONS.find(option => option.key === supportAreaKey)
+      if (areaOption?.values?.length) params.set('areas', areaOption.values.join(','))
+      const regionOption = REGION_OPTIONS.find(option => option.key === regionKey)
+      if (regionOption?.value) params.set('region', regionOption.value)
+      const governingBodyOption = GOVERNING_BODY_OPTIONS.find(option => option.key === governingBodyKey)
+      if (governingBodyOption?.value) params.set('governingBody', governingBodyOption.value)
+      const targetTypeOption = TARGET_TYPE_OPTIONS.find(option => option.key === targetTypeKey)
+      if (targetTypeOption?.value) params.set('targetType', targetTypeOption.value)
+      const businessYearOption = BUSINESS_YEAR_OPTIONS.find(option => option.key === businessYearKey)
+      if (businessYearOption?.value) params.set('businessYear', businessYearOption.value)
+      if (deadlineFilter !== 'all') params.set('deadline', deadlineFilter)
       if (userId) params.set('tab', readTab)
 
       const res = await fetch(`/api/announcements?${params.toString()}`)
@@ -96,7 +222,18 @@ export default function AnnouncementsClient() {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [debouncedSearch, filterStatus, userId, readTab])
+  }, [
+    debouncedSearch,
+    filterStatus,
+    supportAreaKey,
+    regionKey,
+    governingBodyKey,
+    targetTypeKey,
+    businessYearKey,
+    deadlineFilter,
+    userId,
+    readTab,
+  ])
 
   useEffect(() => {
     fetchPage(1, false)
@@ -167,7 +304,11 @@ export default function AnnouncementsClient() {
 
   // Auto-select first item
   useEffect(() => {
-    if (!selectedId && filteredAnnouncements.length > 0) {
+    if (filteredAnnouncements.length === 0) {
+      if (selectedId) setSelectedId(null)
+      return
+    }
+    if (!selectedId || !filteredAnnouncements.some(ann => ann.id === selectedId)) {
       setSelectedId(filteredAnnouncements[0].id)
     }
   }, [filteredAnnouncements, selectedId])
@@ -218,6 +359,32 @@ export default function AnnouncementsClient() {
 
   // 서버에서 받은 정확한 카운트 사용
   const tabCounts = serverCounts
+  const secondaryFilterCount = [
+    regionKey !== 'all',
+    governingBodyKey !== 'all',
+    targetTypeKey !== 'all',
+    businessYearKey !== 'all',
+    deadlineFilter !== 'all',
+    Boolean(userId && readTab !== 'unread'),
+  ].filter(Boolean).length
+  const hasAnyFilter =
+    debouncedSearch.trim() ||
+    filterStatus !== 'all' ||
+    supportAreaKey !== 'all' ||
+    secondaryFilterCount > 0
+
+  const resetFilters = useCallback(() => {
+    setSearchQuery('')
+    setDebouncedSearch('')
+    setFilterStatus('all')
+    setSupportAreaKey('all')
+    setRegionKey('all')
+    setGoverningBodyKey('all')
+    setTargetTypeKey('all')
+    setBusinessYearKey('all')
+    setDeadlineFilter('all')
+    setReadTab('unread')
+  }, [])
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 md:px-8">
@@ -243,59 +410,122 @@ export default function AnnouncementsClient() {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Status filters */}
-          {(['all', 'active', 'closed'] as FilterStatus[]).map(f => (
-            <button
-              key={f}
-              onClick={() => setFilterStatus(f)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-widest border transition-all duration-300 cursor-pointer ${
-                filterStatus === f
-                  ? f === 'active' ? 'bg-blue-50 text-blue-800 border-blue-200'
-                    : f === 'closed' ? 'bg-zinc-100 text-zinc-700 border-zinc-200'
-                    : 'bg-primary text-primary-foreground border-primary'
-                  : 'border-border/50 hover:border-border hover:bg-muted'
-              }`}
-            >
-              {f === 'all' ? '전체' : f === 'active' ? '모집중' : '마감'}
-              {f !== 'all' && (
-                <span className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-full ${
-                  filterStatus === f ? 'bg-white/30' : 'bg-muted text-muted-foreground'
-                }`}>
-                  {f === 'active' ? serverCounts.active : serverCounts.closed}
-                </span>
-              )}
-            </button>
-          ))}
+        <div className="space-y-3 rounded-2xl border border-border/50 bg-card p-4">
+          <FilterGroup label="상태">
+            {(['all', 'active', 'closed'] as FilterStatus[]).map(f => (
+              <FilterPill key={f} active={filterStatus === f} onClick={() => setFilterStatus(f)}>
+                {f === 'all' ? '전체' : f === 'active' ? '모집중' : '마감'}
+                {f !== 'all' && (
+                  <span className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-full ${
+                    filterStatus === f ? 'bg-white/25' : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {f === 'active' ? serverCounts.active : serverCounts.closed}
+                  </span>
+                )}
+              </FilterPill>
+            ))}
+          </FilterGroup>
+
+          <FilterGroup label="지원 분야">
+            {SUPPORT_AREA_OPTIONS.map(option => (
+              <FilterPill key={option.key} active={supportAreaKey === option.key} onClick={() => setSupportAreaKey(option.key)}>
+                {option.label}
+              </FilterPill>
+            ))}
+          </FilterGroup>
         </div>
 
-        {/* Read status tabs (logged-in only) */}
-        {userId && (
-          <div className="flex gap-1 border-b border-border/50">
-            {([
-              { key: 'unread' as ReadTab, label: '읽지않음', count: tabCounts.unread },
-              { key: 'read' as ReadTab, label: '읽음', count: tabCounts.read },
-              { key: 'bookmarks' as ReadTab, label: '즐겨찾기', count: tabCounts.bookmarks },
-            ]).map(t => (
-              <button
-                key={t.key}
-                onClick={() => setReadTab(t.key)}
-                className={`px-3 py-2 text-sm font-medium border-b-2 transition cursor-pointer ${
-                  readTab === t.key
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {t.label}
-                <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
-                  readTab === t.key ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
-                }`}>
-                  {t.count}
+        <div className="rounded-2xl border border-border/50 bg-card">
+          <div className="flex items-center justify-between gap-3 p-3">
+            <button
+              type="button"
+              onClick={() => setDetailFiltersOpen(open => !open)}
+              aria-expanded={detailFiltersOpen}
+              className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-muted transition cursor-pointer"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
+              상세 필터
+              {secondaryFilterCount > 0 && (
+                <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] text-primary-foreground">
+                  {secondaryFilterCount}
                 </span>
+              )}
+              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${detailFiltersOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {hasAnyFilter && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+                초기화
               </button>
-            ))}
+            )}
           </div>
-        )}
+          {detailFiltersOpen && (
+            <div className="grid gap-5 border-t border-border/50 p-4 md:grid-cols-2">
+              <FilterGroup label="지역">
+                {REGION_OPTIONS.map(option => (
+                  <FilterPill key={option.key} active={regionKey === option.key} onClick={() => setRegionKey(option.key)}>
+                    {option.label}
+                  </FilterPill>
+                ))}
+              </FilterGroup>
+
+              <FilterGroup label="주관기관">
+                {GOVERNING_BODY_OPTIONS.map(option => (
+                  <FilterPill key={option.key} active={governingBodyKey === option.key} onClick={() => setGoverningBodyKey(option.key)}>
+                    {option.label}
+                  </FilterPill>
+                ))}
+              </FilterGroup>
+
+              <FilterGroup label="지원 대상">
+                {TARGET_TYPE_OPTIONS.map(option => (
+                  <FilterPill key={option.key} active={targetTypeKey === option.key} onClick={() => setTargetTypeKey(option.key)}>
+                    {option.label}
+                  </FilterPill>
+                ))}
+              </FilterGroup>
+
+              <FilterGroup label="업력">
+                {BUSINESS_YEAR_OPTIONS.map(option => (
+                  <FilterPill key={option.key} active={businessYearKey === option.key} onClick={() => setBusinessYearKey(option.key)}>
+                    {option.label}
+                  </FilterPill>
+                ))}
+              </FilterGroup>
+
+              <FilterGroup label="마감">
+                {DEADLINE_OPTIONS.map(option => (
+                  <FilterPill key={option.key} active={deadlineFilter === option.key} onClick={() => setDeadlineFilter(option.key)}>
+                    {option.label}
+                  </FilterPill>
+                ))}
+              </FilterGroup>
+
+              {userId && (
+                <FilterGroup label="내 공고">
+                  {([
+                    { key: 'unread' as ReadTab, label: '읽지않음', count: tabCounts.unread },
+                    { key: 'read' as ReadTab, label: '읽음', count: tabCounts.read },
+                    { key: 'bookmarks' as ReadTab, label: '즐겨찾기', count: tabCounts.bookmarks },
+                  ]).map(t => (
+                    <FilterPill key={t.key} active={readTab === t.key} onClick={() => setReadTab(t.key)}>
+                      {t.label}
+                      <span className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-full ${
+                        readTab === t.key ? 'bg-white/25' : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {t.count}
+                      </span>
+                    </FilterPill>
+                  ))}
+                </FilterGroup>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Split-View Content */}

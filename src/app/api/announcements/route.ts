@@ -6,11 +6,24 @@ import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
+function parseListParam(value: string): string[] {
+  return value
+    .split(',')
+    .map(v => v.trim())
+    .filter(Boolean)
+}
+
+function dateOffset(days: number): string {
+  const d = new Date()
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
 /**
  * Public Announcements API
- * GET: List published announcements
- * - Query params: page, pageSize, search, area, status ('active'|'closed'|'all'),
- *                 tab ('unread'|'read'|'bookmarks')
+ * GET: List published announcements.
+ * Query params: page, pageSize, search, status, areas, region, governingBody,
+ *               targetType, businessYear, deadline, tab.
  * - tab 지정 시 로그인 사용자 기준 서버에서 필터링 + 총계 계산 (클라이언트 허수 방지)
  */
 export async function GET(request: NextRequest) {
@@ -18,7 +31,12 @@ export async function GET(request: NextRequest) {
   const page = Math.max(1, Number(searchParams.get('page')) || 1)
   const pageSize = Math.min(200, Math.max(1, Number(searchParams.get('pageSize')) || 20))
   const search = searchParams.get('search') || ''
-  const area = searchParams.get('area') || ''
+  const supportAreas = parseListParam(searchParams.get('areas') || searchParams.get('area') || '')
+  const region = searchParams.get('region') || ''
+  const governingBody = searchParams.get('governingBody') || ''
+  const targetType = searchParams.get('targetType') || ''
+  const businessYear = searchParams.get('businessYear') || ''
+  const deadline = searchParams.get('deadline') || ''
   const status = searchParams.get('status') || 'all'
   const tab = searchParams.get('tab') || ''
 
@@ -95,24 +113,52 @@ export async function GET(request: NextRequest) {
       .eq('is_published', true)
 
     const today = new Date().toISOString().slice(0, 10)
-    if (status === 'active') {
-      query = query.eq('status', 'active').or(`end_date.gte.${today},end_date.is.null`)
-    } else if (status === 'closed') {
-      query = query.or(`status.eq.closed,end_date.lt.${today}`)
+    const deadline7 = dateOffset(7)
+    const deadline8 = dateOffset(8)
+    const deadline30 = dateOffset(30)
+    const deadline31 = dateOffset(31)
+
+    const applyFilters = (builder: typeof query, includeStatus: boolean) => {
+      let next = builder
+
+      if (includeStatus && status === 'active') {
+        next = next.eq('status', 'active').or(`end_date.gte.${today},end_date.is.null`)
+      } else if (includeStatus && status === 'closed') {
+        next = next.or(`status.eq.closed,end_date.lt.${today}`)
+      }
+
+      if (search) {
+        next = next.or(`title.ilike.%${search}%,organization.ilike.%${search}%,description.ilike.%${search}%`)
+      }
+
+      if (supportAreas.length === 1) {
+        next = next.contains('support_areas', [supportAreas[0]])
+      } else if (supportAreas.length > 1) {
+        next = next.overlaps('support_areas', supportAreas)
+      }
+
+      if (region) next = next.contains('regions', [region])
+      if (governingBody) next = next.eq('governing_body', governingBody)
+      if (targetType) next = next.contains('target_types', [targetType])
+      if (businessYear) next = next.contains('business_years', [businessYear])
+
+      if (deadline === 'urgent') {
+        next = next.eq('status', 'active').gte('end_date', today).lte('end_date', deadline7)
+      } else if (deadline === 'month') {
+        next = next.eq('status', 'active').gte('end_date', deadline8).lte('end_date', deadline30)
+      } else if (deadline === 'later') {
+        next = next.eq('status', 'active').gte('end_date', deadline31)
+      }
+
+      if (idFilter) {
+        if (idFilter.op === 'in') next = next.in('id', idFilter.ids)
+        else if (idFilter.ids.length > 0) next = next.not('id', 'in', `(${idFilter.ids.join(',')})`)
+      }
+
+      return next
     }
 
-    if (search) {
-      query = query.or(`title.ilike.%${search}%,organization.ilike.%${search}%,description.ilike.%${search}%`)
-    }
-
-    if (area) {
-      query = query.contains('support_areas', [area])
-    }
-
-    if (idFilter) {
-      if (idFilter.op === 'in') query = query.in('id', idFilter.ids)
-      else if (idFilter.ids.length > 0) query = query.not('id', 'in', `(${idFilter.ids.join(',')})`)
-    }
+    query = applyFilters(query, true)
 
     const offset = (page - 1) * pageSize
     const { data: announcements, error: queryError, count: total } = await query
@@ -148,17 +194,17 @@ export async function GET(request: NextRequest) {
     // 상태별 카운트 (모집중/마감)
     let activeCount = 0, closedCount = 0
     {
-      let cq = supabase.from('announcements').select('*', { count: 'exact', head: true }).eq('is_published', true)
-      if (search) cq = cq.or(`title.ilike.%${search}%,organization.ilike.%${search}%,description.ilike.%${search}%`)
-      if (idFilter) {
-        if (idFilter.op === 'in') cq = cq.in('id', idFilter.ids)
-        else if (idFilter.ids.length > 0) cq = cq.not('id', 'in', `(${idFilter.ids.join(',')})`)
-      }
+      const activeQuery = applyFilters(
+        supabase.from('announcements').select('*', { count: 'exact', head: true }).eq('is_published', true),
+        false,
+      )
+      const closedQuery = applyFilters(
+        supabase.from('announcements').select('*', { count: 'exact', head: true }).eq('is_published', true),
+        false,
+      )
       const [ac, cc] = await Promise.all([
-        cq.eq('status', 'active').or(`end_date.gte.${today},end_date.is.null`),
-        supabase.from('announcements').select('*', { count: 'exact', head: true }).eq('is_published', true)
-          .or(`status.eq.closed,end_date.lt.${today}`)
-          .then(r => r),
+        activeQuery.eq('status', 'active').or(`end_date.gte.${today},end_date.is.null`),
+        closedQuery.or(`status.eq.closed,end_date.lt.${today}`),
       ])
       activeCount = ac.count || 0
       closedCount = cc.count || 0
