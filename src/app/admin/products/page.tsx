@@ -79,6 +79,13 @@ type SortDir = 'asc' | 'desc'
 const PAGE_SIZES = [20, 50, 100] as const
 const UPDATED_HIGHLIGHT_MS = 12 * 60 * 60 * 1000
 
+async function deleteProduct(productId: number): Promise<void> {
+  const response = await fetch(`/api/admin/products/${productId}`, { method: 'DELETE' })
+  const result = await response.json().catch(() => null) as { error?: string } | null
+  if (!response.ok) {
+    throw new Error(result?.error || '상품 삭제에 실패했습니다')
+  }
+}
 
 function formatPrice(price: number): string {
   return new Intl.NumberFormat('ko-KR').format(price) + '원'
@@ -809,31 +816,11 @@ export default function AdminProducts() {
     if (deleteConfirmId === null) return
     const id = deleteConfirmId
     setDeleteConfirmId(null)
-    const { error } = await supabase.from('products').delete().eq('id', id)
 
-    if (error) {
-      // FK 제약 위반: 주문/다운로드/리뷰 이력이 있으면 물리 삭제 불가
-      const isFkViolation = error.code === '23503' || /foreign key|violates/i.test(error.message || '')
-      if (isFkViolation) {
-        const confirmUnpublish = window.confirm(
-          '이 상품은 주문·다운로드·리뷰 이력이 있어 완전 삭제할 수 없습니다.\n대신 비공개 처리하시겠습니까? (스토어에서 숨김, 이력은 보존)'
-        )
-        if (confirmUnpublish) {
-          const { error: unpubErr } = await supabase
-            .from('products')
-            .update({ is_published: false })
-            .eq('id', id)
-          if (unpubErr) {
-            setToast(`비공개 처리 실패: ${unpubErr.message}`)
-          } else {
-            setToast('상품이 비공개 처리되었습니다')
-            setSelectedIds((prev) => { const next = new Set(prev); next.delete(id); return next })
-            loadProducts()
-          }
-        }
-      } else {
-        setToast(`삭제 실패: ${error.message}`)
-      }
+    try {
+      await deleteProduct(id)
+    } catch (error) {
+      setToast(`삭제 실패: ${error instanceof Error ? error.message : '상품 삭제에 실패했습니다'}`)
       return
     }
 
@@ -918,39 +905,27 @@ export default function AdminProducts() {
     const ids = Array.from(selectedIds)
     const results = await Promise.all(
       ids.map(async (id) => {
-        const { error } = await supabase.from('products').delete().eq('id', id)
-        return { id, error }
+        try {
+          await deleteProduct(id)
+          return { id, ok: true as const }
+        } catch (error) {
+          return {
+            id,
+            ok: false as const,
+            error: error instanceof Error ? error.message : '상품 삭제에 실패했습니다',
+          }
+        }
       })
     )
-    const succeeded = results.filter((r) => !r.error)
-    const failed = results.filter((r) => r.error)
+    const succeeded = results.filter((r) => r.ok)
+    const failed = results.filter((r) => !r.ok)
 
     if (failed.length === 0) {
       setToast(`${succeeded.length}개 상품이 삭제되었습니다`)
     } else if (succeeded.length === 0) {
-      const confirmUnpublish = window.confirm(
-        `선택한 ${failed.length}개 상품 모두 주문·다운로드·리뷰 이력이 있어 완전 삭제할 수 없습니다.\n대신 모두 비공개 처리하시겠습니까?`
-      )
-      if (confirmUnpublish) {
-        await Promise.all(
-          failed.map((r) => supabase.from('products').update({ is_published: false }).eq('id', r.id))
-        )
-        setToast(`${failed.length}개 상품이 비공개 처리되었습니다`)
-      } else {
-        setToast(`${failed.length}개 상품 삭제 실패 (이력 존재)`)
-      }
+      setToast(`삭제 실패: ${failed[0]?.error || '상품 삭제에 실패했습니다'}`)
     } else {
-      const confirmUnpublish = window.confirm(
-        `${succeeded.length}개는 삭제되었고, ${failed.length}개는 이력이 있어 완전 삭제 불가합니다.\n남은 ${failed.length}개를 비공개 처리하시겠습니까?`
-      )
-      if (confirmUnpublish) {
-        await Promise.all(
-          failed.map((r) => supabase.from('products').update({ is_published: false }).eq('id', r.id))
-        )
-        setToast(`삭제 ${succeeded.length}건 · 비공개 전환 ${failed.length}건`)
-      } else {
-        setToast(`삭제 ${succeeded.length}건 · 실패 ${failed.length}건`)
-      }
+      setToast(`삭제 ${succeeded.length}건 · 실패 ${failed.length}건`)
     }
 
     setSelectedIds(new Set())
