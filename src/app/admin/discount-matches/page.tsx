@@ -745,13 +745,13 @@ export default function DiscountMatchesPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   타겟 상품
                 </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  할인 유형
+                <th className="w-24 px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  유형
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="w-40 px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   차감 기준
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <th className="w-40 px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   현재가 기준
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -824,7 +824,7 @@ export default function DiscountMatchesPage() {
                     <td className="px-6 py-4 text-right">
                       {match.discount_type === 'auto' ? (
                         <div className="text-sm">
-                          <div className="font-semibold text-foreground">실구매가 자동 차감</div>
+                          <div className="whitespace-nowrap font-semibold text-foreground">실구매가 차감</div>
                           <div className="mt-1 text-xs text-muted-foreground tabular-nums">
                             현재 소스가 {formatKRW(referenceAmount)}
                           </div>
