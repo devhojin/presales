@@ -1,5 +1,6 @@
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://presales-zeta.vercel.app'
 export const SITE_NAME = '프리세일즈'
+export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-D6P9XZ78RK'
 
 /** 컨설팅 패키지 가격 (한 곳에서 관리 — 각 페이지·이메일·API 가 모두 참조) */
 export const CONSULTING_PACKAGES = {

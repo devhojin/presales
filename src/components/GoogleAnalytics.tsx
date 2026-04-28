@@ -1,12 +1,11 @@
 'use client'
 
 import Script from 'next/script'
+import { GA_MEASUREMENT_ID } from '@/lib/constants'
 
 export function GoogleAnalytics() {
-  const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
-
   // Don't render anything if GA measurement ID is not set
-  if (!measurementId) {
+  if (!GA_MEASUREMENT_ID) {
     return null
   }
 
@@ -14,7 +13,7 @@ export function GoogleAnalytics() {
     <>
       <Script
         strategy="afterInteractive"
-        src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
+        src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
       />
       <Script
         id="google-analytics"
@@ -24,7 +23,7 @@ export function GoogleAnalytics() {
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
-            gtag('config', '${measurementId}', {
+            gtag('config', '${GA_MEASUREMENT_ID}', {
               page_path: window.location.pathname,
             });
           `,

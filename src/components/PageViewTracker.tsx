@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import * as gtag from '@/lib/gtag'
 
 function getSessionId(): string {
   const key = 'pv_session_id'
@@ -17,11 +18,19 @@ function getSessionId(): string {
 export function PageViewTracker() {
   const pathname = usePathname()
   const lastLog = useRef<{ path: string; time: number }>({ path: '', time: 0 })
+  const lastGaPath = useRef<string | null>(null)
 
   useEffect(() => {
     if (!pathname) return
     // Skip admin pages
     if (pathname.startsWith('/admin')) return
+
+    if (lastGaPath.current === null) {
+      lastGaPath.current = pathname
+    } else if (lastGaPath.current !== pathname) {
+      lastGaPath.current = pathname
+      gtag.pageview(pathname)
+    }
 
     // 봇/크롤러 필터 — 방문자 집계에서 제외 (2026-04-14 추가)
     const ua = navigator.userAgent || ''

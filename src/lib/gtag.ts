@@ -3,6 +3,8 @@
  * Use in client-side components only ('use client')
  */
 
+import { GA_MEASUREMENT_ID } from '@/lib/constants'
+
 type EventName =
   | 'product_view'
   | 'add_to_cart'
@@ -21,8 +23,9 @@ interface EventParams {
  */
 export function pageview(url: string) {
   if (typeof window === 'undefined' || !window.gtag) return
+  if (!GA_MEASUREMENT_ID) return
 
-  window.gtag('config', process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '', {
+  window.gtag('config', GA_MEASUREMENT_ID, {
     page_path: url,
   })
 }
