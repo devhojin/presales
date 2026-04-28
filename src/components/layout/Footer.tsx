@@ -6,13 +6,13 @@ import { createClient } from '@/lib/supabase'
 import { ArrowUpRight } from 'lucide-react'
 
 const FALLBACK = {
-  company_name: 'AMARANS Partners',
+  company_name: 'AMARANS',
   ceo_name: '채호진',
   business_number: '',
   commerce_number: '',
   address: '',
   email: 'help@presales.co.kr',
-  copyright: `${new Date().getFullYear()} AMARANS Partners. All rights reserved.`,
+  copyright: `${new Date().getFullYear()} AMARANS. All rights reserved.`,
 }
 
 export function Footer() {

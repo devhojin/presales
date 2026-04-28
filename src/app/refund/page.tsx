@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
-  title: '환불정책 | PRESALES by AMARANS Partners',
+  title: '환불정책 | PRESALES by AMARANS',
   description: 'PRESALES 환불정책 — 디지털 콘텐츠 환불 규정 및 컨설팅 취소 정책',
   alternates: {
     canonical: `${SITE_URL}/refund`,
@@ -206,7 +206,7 @@ export default function RefundPage() {
           <p className="mt-1">
             본 환불정책은 「전자상거래 등에서의 소비자보호에 관한 법률」 및 「콘텐츠산업 진흥법」을 준수합니다.
           </p>
-          <p className="mt-1">사업자: AMARANS Partners | 대표자: 채호진</p>
+          <p className="mt-1">사업자: AMARANS | 대표자: 채호진</p>
         </div>
       </div>
     </div>

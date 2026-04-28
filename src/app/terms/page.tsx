@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
-  title: '이용약관 | PRESALES by AMARANS Partners',
+  title: '이용약관 | PRESALES by AMARANS',
   description: 'PRESALES 문서 스토어, 컨설팅, 모닝 브리프, 채팅 상담, 디지털 콘텐츠 구매에 관한 이용약관입니다.',
   alternates: {
     canonical: `${SITE_URL}/terms`,
@@ -62,7 +62,7 @@ export default function TermsPage() {
         <section className="space-y-3">
           <SectionTitle id="purpose">제1조 목적</SectionTitle>
           <p>
-            본 약관은 AMARANS Partners(이하 &quot;회사&quot;)가 운영하는 PRESALES 웹사이트 및 관련 서비스(이하 &quot;서비스&quot;)를 이용함에 있어 회사와 이용자의 권리, 의무 및 책임사항, 서비스 이용조건과 절차를 정하는 것을 목적으로 합니다.
+            본 약관은 AMARANS(이하 &quot;회사&quot;)가 운영하는 PRESALES 웹사이트 및 관련 서비스(이하 &quot;서비스&quot;)를 이용함에 있어 회사와 이용자의 권리, 의무 및 책임사항, 서비스 이용조건과 절차를 정하는 것을 목적으로 합니다.
           </p>
           <p className="text-muted-foreground">
             본 약관은 「전자상거래 등에서의 소비자보호에 관한 법률」, 「약관의 규제에 관한 법률」, 「전자문서 및 전자거래 기본법」, 「콘텐츠산업 진흥법」 등 관련 법령을 반영하여 작성되었습니다.
@@ -225,7 +225,7 @@ export default function TermsPage() {
 
         <div className="border-t border-border pt-6 text-xs text-muted-foreground">
           <p>부칙: 본 약관은 2026년 4월 27일부터 시행됩니다.</p>
-          <p className="mt-1">사업자: AMARANS Partners | 대표자: 채호진 | 문의: help@presales.co.kr</p>
+          <p className="mt-1">사업자: AMARANS | 대표자: 채호진 | 문의: help@presales.co.kr</p>
         </div>
       </div>
     </div>

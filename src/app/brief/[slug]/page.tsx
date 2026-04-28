@@ -82,7 +82,7 @@ export default async function BriefSlugPage({ params }: Props) {
             description: `${dateStr} 시장동향 브리프 — 뉴스 ${brief.total_news}건, 공고 ${brief.total_announcements}건`,
             publisher: {
               '@type': 'Organization',
-              name: 'PRESALES by AMARANS Partners',
+              name: 'PRESALES by AMARANS',
               url: SITE_URL,
             },
             mainEntityOfPage: `${SITE_URL}/brief/${slug}`,

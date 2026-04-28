@@ -1679,7 +1679,7 @@ export function About() {
               {
                 year: '2024',
                 events: [
-                  'AMARANS Partners 법인 설립',
+                  'AMARANS',
                   '공공조달 제안서 컨설팅 서비스 시작',
                   '핵심 컨설턴트 팀 구성 완료',
                 ],
@@ -2058,5 +2058,4 @@ export function App() {
     </div>
   )
 }
-
 

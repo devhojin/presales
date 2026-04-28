@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         description: desc,
         type: 'article',
         url: `${SITE_URL}/announcements/${id}`,
-        siteName: 'PRESALES by AMARANS Partners',
+        siteName: 'PRESALES by AMARANS',
       },
     }
   } catch {
@@ -69,7 +69,7 @@ export default async function Layout({ children, params }: { children: React.Rea
         datePublished: data.start_date || data.updated_at,
         dateModified: data.updated_at,
         author: { '@type': 'Organization', name: data.organization || 'PRESALES' },
-        publisher: { '@type': 'Organization', name: 'PRESALES by AMARANS Partners' },
+        publisher: { '@type': 'Organization', name: 'PRESALES by AMARANS' },
         mainEntityOfPage: `${SITE_URL}/announcements/${id}`,
       }
     }

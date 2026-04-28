@@ -44,7 +44,7 @@
 ### Test 8: Footer - company info loads from DB
 - **Result:** PASS (with fix applied)
 - **Details:** Footer loads 7 settings from `site_settings` table with fallback values.
-- **Issue Found & Fixed:** Double copyright symbol. DB value is `"© 2025 AMARANS Partners..."` but code had `&copy; {s.copyright}`, producing `© © 2025...`. Removed the `&copy;` prefix from Footer.tsx.
+- **Issue Found & Fixed:** Double copyright symbol. DB value is `"© 2025 AMARANS..."` but code had `&copy; {s.copyright}`, producing `© © 2025...`. Removed the `&copy;` prefix from Footer.tsx.
 
 ---
 

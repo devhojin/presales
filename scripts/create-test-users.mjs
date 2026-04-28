@@ -18,7 +18,7 @@ const testUsers = [
   { email: 'user07@test.com', name: '윤재혁', phone: '010-7890-1234', company: '(주)데이터플러스', role: 'user' },
   { email: 'user08@test.com', name: '서지원', phone: '010-8901-2345', company: '시큐리티랩', role: 'user' },
   { email: 'user09@test.com', name: '강현우', phone: '010-9012-3456', company: '(주)인사이트코리아', role: 'user' },
-  { email: 'admin@amarans.co.kr', name: '채호진', phone: '010-9940-7909', company: 'AMARANS Partners', role: 'admin' },
+  { email: 'admin@amarans.co.kr', name: '채호진', phone: '010-9940-7909', company: 'AMARANS', role: 'admin' },
 ]
 
 async function supabasePost(path, body) {

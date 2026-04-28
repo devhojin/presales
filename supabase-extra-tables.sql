@@ -66,7 +66,7 @@ CREATE POLICY "Admin can manage settings" ON site_settings FOR ALL USING (
 );
 
 INSERT INTO site_settings (key, value) VALUES
-('company_name', 'AMARANS Partners'),
+('company_name', 'AMARANS'),
 ('ceo_name', '채호진'),
 ('business_number', '확인 필요'),
 ('commerce_number', '준비 중'),
@@ -74,10 +74,10 @@ INSERT INTO site_settings (key, value) VALUES
 ('email', 'help@presales.co.kr'),
 ('phone', '010-9940-7909'),
 ('phone_hours', '11:00-16:00 (평일)'),
-('copyright', '© 2025 AMARANS Partners. All rights reserved.'),
+('copyright', '© 2025 AMARANS. All rights reserved.'),
 ('mission', '공공조달 시장의 진입 장벽을 낮추고, 중소기업이 공정하게 경쟁할 수 있는 환경을 만듭니다.'),
 ('vision', '대한민국 No.1 공공조달 제안서 플랫폼으로, 모든 기업이 실력으로 평가받는 시장을 지향합니다.'),
 ('value_statement', '실전 경험 기반의 콘텐츠, 투명한 가격 정책, 고객의 수주 성공이 우리의 성공입니다.'),
 ('timeline_2023', '사업 기획 착수'),
-('timeline_2024', '법인 설립 (AMARANS Partners)'),
+('timeline_2024', 'AMARANS'),
 ('timeline_2025', '베타 오픈 + 템플릿 스토어 런칭');

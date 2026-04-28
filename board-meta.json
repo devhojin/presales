@@ -1,7 +1,7 @@
 {
   "slug": "presales",
   "name": "PRESALES",
-  "fullName": "PRESALES by AMARANS Partners",
+  "fullName": "PRESALES by AMARANS",
   "description": "공공조달 제안서 마켓플레이스 — Next.js 16 + Supabase + Vercel",
   "status": "베타 운영 중 (QA 71건 완료, 도메인+PG 대기)",
   "phase": "Beta",

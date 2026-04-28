@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     description: "공공조달 기술제안서, 입찰가이드, 구축자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",
     type: "website",
     url: SITE_URL,
-    siteName: "PRESALES by AMARANS Partners",
+    siteName: "PRESALES by AMARANS",
     locale: "ko_KR",
     images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "PRESALES - 공공조달 제안서 마켓플레이스" }],
   },
@@ -67,7 +67,7 @@ export const metadata: Metadata = {
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  name: "PRESALES by AMARANS Partners",
+  name: "PRESALES by AMARANS",
   url: SITE_URL,
   description:
     "공공조달 기술제안서, 입찰가이드, 구축자료 등 전문 문서 다운로드 플랫폼. 나라장터·조달청 입찰에 최적화된 제안서 마켓플레이스.",

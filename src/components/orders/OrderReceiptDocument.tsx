@@ -146,7 +146,7 @@ export function OrderReceiptDocument({ order, profile, className = '' }: OrderRe
 
         <section className="mt-8 grid gap-8 sm:grid-cols-2">
           <address className="not-italic text-[15px] leading-relaxed text-neutral-800">
-            <p className="font-semibold text-neutral-950">PRESALES by AMARANS Partners</p>
+            <p className="font-semibold text-neutral-950">PRESALES by AMARANS</p>
             <p>공공조달 제안서 마켓플레이스</p>
             <p>대표 채호진</p>
             <p>help@presales.co.kr</p>
@@ -358,7 +358,7 @@ export function buildReceiptPrintHtml(order: ReceiptOrder, profile?: ReceiptProf
 
     <section class="cols">
       <div>
-        <p class="label">PRESALES by AMARANS Partners</p>
+        <p class="label">PRESALES by AMARANS</p>
         <p>공공조달 제안서 마켓플레이스</p>
         <p>대표 채호진</p>
         <p>help@presales.co.kr</p>

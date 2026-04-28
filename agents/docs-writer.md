@@ -75,7 +75,7 @@ PRESALES 쇼핑몰의 모든 텍스트 콘텐츠를 작성합니다.
 
 ## 프로젝트 컨텍스트
 
-- 브랜드: PRESALES by AMARANS Partners
+- 브랜드: PRESALES by AMARANS
 - 타겟: 공공조달 입찰 참여 기업, IT 기업, 스타트업
 - 상품: 제안서, 기획서, 산출물 템플릿 (51개 활성)
 - 이메일 발송: 메일플러그 SMTP (`src/lib/email.ts` → `buildEmailHtml()`)

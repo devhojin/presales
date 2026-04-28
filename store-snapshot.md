@@ -1166,7 +1166,7 @@
                 - /url: /refund
       - generic [ref=e1372]:
         - generic [ref=e1373]:
-          - paragraph [ref=e1374]: "AMARANS Partners|대표: 채호진|사업자등록번호: 확인 필요|통신판매업신고: 준비 중"
+          - paragraph [ref=e1374]: "AMARANS|대표: 채호진|사업자등록번호: 확인 필요|통신판매업신고: 준비 중"
           - paragraph [ref=e1375]: 서울특별시 강남구 테헤란로 123|help@presales.co.kr
-        - paragraph [ref=e1376]: © 2026 AMARANS Partners
+        - paragraph [ref=e1376]: © 2026 AMARANS
   - alert [ref=e1377]

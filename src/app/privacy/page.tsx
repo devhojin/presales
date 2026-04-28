@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
-  title: '개인정보처리방침 | PRESALES by AMARANS Partners',
+  title: '개인정보처리방침 | PRESALES by AMARANS',
   description:
     'PRESALES가 수집·이용하는 개인정보 항목, 처리 목적, 보유기간, 위탁, 국외 이전, 정보주체 권리를 안내합니다.',
   alternates: {
@@ -220,7 +220,7 @@ export default function PrivacyPage() {
 
       <div className="space-y-10 text-sm leading-relaxed text-foreground">
         <p className="text-muted-foreground">
-          AMARANS Partners(이하 &quot;회사&quot;)는 PRESALES 및 presales.co.kr 관련 서비스(이하
+          AMARANS(이하 &quot;회사&quot;)는 PRESALES 및 presales.co.kr 관련 서비스(이하
           &quot;서비스&quot;)를 운영하면서 개인정보 보호법 등 관련 법령을 준수합니다. 회사는 개인정보가
           어떤 목적으로 수집·이용되고 어떻게 보호되는지 알리기 위해 본 개인정보처리방침을 공개합니다.
         </p>
@@ -496,7 +496,7 @@ export default function PrivacyPage() {
           <div className="border border-border rounded-lg p-4 text-muted-foreground">
             <p className="font-semibold text-foreground mb-2">개인정보 보호책임자</p>
             <ul className="space-y-1 text-sm">
-              <li>소속: AMARANS Partners</li>
+              <li>소속: AMARANS</li>
               <li>책임자: 채호진</li>
               <li>이메일: help@presales.co.kr</li>
               <li>문의 방법: 서비스 내 문의 또는 채팅 기능</li>
@@ -537,7 +537,7 @@ export default function PrivacyPage() {
 
         <div className="border-t border-border pt-6 text-xs text-muted-foreground">
           <p>시행일: 2026년 4월 27일</p>
-          <p className="mt-1">사업자: AMARANS Partners | 대표자: 채호진 | 문의: help@presales.co.kr</p>
+          <p className="mt-1">사업자: AMARANS | 대표자: 채호진 | 문의: help@presales.co.kr</p>
         </div>
       </div>
     </div>

@@ -30,7 +30,7 @@ const consultingServiceJsonLd = {
   description: metadata.description,
   provider: {
     "@type": "Organization",
-    name: "PRESALES by AMARANS Partners",
+    name: "PRESALES by AMARANS",
     url: SITE_URL,
   },
   makesOffer: Object.values(CONSULTING_PACKAGES).map((pkg) => ({
