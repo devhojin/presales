@@ -18,12 +18,32 @@ interface ProductSearchItem {
   price: number
   format: string | null
   is_free: boolean
+  is_published: boolean
   thumbnail_url: string | null
 }
 
 interface DiscountMatch extends DbProductDiscountMatch {
   source_product?: DbProduct
   target_product?: DbProduct
+}
+
+function formatKRW(amount: number | null | undefined) {
+  return `${new Intl.NumberFormat('ko-KR').format(Math.max(0, Number(amount ?? 0)))}원`
+}
+
+function formatProductPrice(product: Pick<ProductSearchItem, 'price' | 'is_free'> | Pick<DbProduct, 'price' | 'is_free'> | null | undefined) {
+  if (!product || product.is_free || Number(product.price ?? 0) === 0) return '무료'
+  return formatKRW(product.price)
+}
+
+function getMatchReferenceAmount(match: DiscountMatch) {
+  if (match.discount_type === 'auto') return Number(match.source_product?.price ?? match.discount_amount ?? 0)
+  return Number(match.discount_amount ?? 0)
+}
+
+function isAutoReferenceOutdated(match: DiscountMatch) {
+  return match.discount_type === 'auto'
+    && Number(match.discount_amount ?? 0) !== Number(match.source_product?.price ?? 0)
 }
 
 // ===========================
@@ -145,15 +165,6 @@ function DeleteModal({
 // Product Search Dropdown
 // ===========================
 
-interface ProductSearchItem {
-  id: number
-  title: string
-  price: number
-  format: string | null
-  is_free: boolean
-  thumbnail_url: string | null
-}
-
 function ProductSearchDropdown({
   value,
   onChange,
@@ -170,19 +181,23 @@ function ProductSearchDropdown({
   const [isLoading, setIsLoading] = useState(false)
 
   const fetchProducts = useCallback(async (query: string) => {
-    if (!query.trim()) {
+    const trimmed = query.trim()
+    if (!trimmed) {
       setProducts([])
       return
     }
     setIsLoading(true)
     try {
       const supabase = createClient()
-      const { data } = await supabase
+      const productQuery = supabase
         .from('products')
-        .select('id, title, price, format, is_free, thumbnail_url')
-        .eq('is_published', true)
-        .ilike('title', `%${query}%`)
+        .select('id, title, price, format, is_free, is_published, thumbnail_url')
+        .order('sort_order', { ascending: true, nullsFirst: false })
+        .order('id', { ascending: true })
         .limit(100)
+      const { data } = /^\d+$/.test(trimmed)
+        ? await productQuery.or(`title.ilike.%${trimmed}%,id.eq.${Number(trimmed)}`)
+        : await productQuery.ilike('title', `%${trimmed}%`)
       setProducts((data || []) as ProductSearchItem[])
     } catch (error) {
       console.error('Failed to fetch products:', error)
@@ -233,9 +248,13 @@ function ProductSearchDropdown({
               className="w-full px-3 py-2 text-left hover:bg-primary/8 transition-colors border-b border-border/50 last:border-b-0 text-sm"
             >
               <div className="font-medium text-foreground">{product.title}</div>
-              <div className="text-xs text-muted-foreground">
-                {product.format && `${product.format} • `}
-                {product.is_free || product.price === 0 ? '무료' : `${product.price.toLocaleString('ko-KR')}원`}
+              <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                <span>#{product.id}</span>
+                {product.format && <span>{product.format}</span>}
+                <span className="font-medium text-foreground tabular-nums">{formatProductPrice(product)}</span>
+                <span className={product.is_published ? 'text-blue-600' : 'text-amber-700'}>
+                  {product.is_published ? '공개' : '비공개'}
+                </span>
               </div>
             </button>
           ))}
@@ -270,6 +289,7 @@ function MatchModal({
       price: match.source_product.price,
       format: match.source_product.format,
       is_free: match.source_product.is_free,
+      is_published: match.source_product.is_published,
       thumbnail_url: match.source_product.thumbnail_url,
     } : null
   )
@@ -280,6 +300,7 @@ function MatchModal({
       price: match.target_product.price,
       format: match.target_product.format,
       is_free: match.target_product.is_free,
+      is_published: match.target_product.is_published,
       thumbnail_url: match.target_product.thumbnail_url,
     } : null
   )
@@ -289,6 +310,7 @@ function MatchModal({
   const [sourceQuery, setSourceQuery] = useState('')
   const [targetQuery, setTargetQuery] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  const [formError, setFormError] = useState('')
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -300,20 +322,21 @@ function MatchModal({
 
   const handleSave = async () => {
     if (!sourceProduct || !targetProduct) {
-      alert('상품을 선택해주세요')
+      setFormError('소스 상품과 타겟 상품을 모두 선택해주세요.')
       return
     }
     if (sourceProduct.id === targetProduct.id) {
-      alert('다른 상품을 선택해주세요')
+      setFormError('소스 상품과 타겟 상품은 서로 달라야 합니다.')
       return
     }
 
     const amount = discountType === 'auto' ? sourceProduct.price : parseInt(discountAmount, 10)
     if (isNaN(amount) || amount <= 0) {
-      alert('할인액을 입력해주세요')
+      setFormError('차감 금액을 1원 이상으로 입력해주세요.')
       return
     }
 
+    setFormError('')
     setIsSaving(true)
     try {
       await onSave({
@@ -328,7 +351,7 @@ function MatchModal({
   }
 
   const finalDiscountAmount = discountType === 'auto' && sourceProduct ? sourceProduct.price : parseInt(discountAmount, 10) || 0
-  const finalPrice = (targetProduct?.price || 0) - finalDiscountAmount
+  const finalPrice = Math.max(0, (targetProduct?.price || 0) - finalDiscountAmount)
 
   return (
     <div
@@ -369,13 +392,21 @@ function MatchModal({
               onSelect={(product) => {
                 setSourceProduct(product)
                 setSourceQuery(product.title)
+                setFormError('')
               }}
             />
             {sourceProduct && (
               <div className="mt-2 p-3 bg-primary/8 rounded-xl flex items-center justify-between">
                 <div className="text-sm">
                   <div className="font-medium text-foreground">{sourceProduct.title}</div>
-                  <div className="text-xs text-muted-foreground">{sourceProduct.price.toLocaleString('ko-KR')}원</div>
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                    <span>#{sourceProduct.id}</span>
+                    {sourceProduct.format && <span>{sourceProduct.format}</span>}
+                    <span className="font-medium text-foreground tabular-nums">{formatProductPrice(sourceProduct)}</span>
+                    <span className={sourceProduct.is_published ? 'text-blue-600' : 'text-amber-700'}>
+                      {sourceProduct.is_published ? '공개' : '비공개'}
+                    </span>
+                  </div>
                 </div>
                 <button
                   onClick={() => {
@@ -402,13 +433,21 @@ function MatchModal({
               onSelect={(product) => {
                 setTargetProduct(product)
                 setTargetQuery(product.title)
+                setFormError('')
               }}
             />
             {targetProduct && (
               <div className="mt-2 p-3 bg-primary/8 rounded-xl flex items-center justify-between">
                 <div className="text-sm">
                   <div className="font-medium text-foreground">{targetProduct.title}</div>
-                  <div className="text-xs text-muted-foreground">{targetProduct.price.toLocaleString('ko-KR')}원</div>
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                    <span>#{targetProduct.id}</span>
+                    {targetProduct.format && <span>{targetProduct.format}</span>}
+                    <span className="font-medium text-foreground tabular-nums">{formatProductPrice(targetProduct)}</span>
+                    <span className={targetProduct.is_published ? 'text-blue-600' : 'text-amber-700'}>
+                      {targetProduct.is_published ? '공개' : '비공개'}
+                    </span>
+                  </div>
                 </div>
                 <button
                   onClick={() => {
@@ -437,8 +476,12 @@ function MatchModal({
                   className="w-4 h-4 cursor-pointer"
                 />
                 <span className="text-sm text-foreground">
-                  소스 상품 가격만큼 자동 할인
-                  {sourceProduct && ` (${sourceProduct.price.toLocaleString('ko-KR')}원)`}
+                  구매 이력 실결제액 자동 차감
+                  {sourceProduct && (
+                    <span className="text-muted-foreground">
+                      {' '}· 현재 소스가 {formatProductPrice(sourceProduct)}
+                    </span>
+                  )}
                 </span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
@@ -464,7 +507,10 @@ function MatchModal({
               <input
                 type="number"
                 value={discountAmount}
-                onChange={(e) => setDiscountAmount(e.target.value)}
+                onChange={(e) => {
+                  setDiscountAmount(e.target.value)
+                  setFormError('')
+                }}
                 min="0"
                 step="1000"
                 className="w-full px-3 py-2 text-sm border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -475,14 +521,25 @@ function MatchModal({
           {/* Preview */}
           {targetProduct && (
             <div className="p-4 bg-muted rounded-xl">
-              <p className="text-xs text-muted-foreground mb-2">미리보기</p>
+              <p className="text-xs text-muted-foreground mb-2">현재가 기준 미리보기</p>
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">타겟 상품 {targetProduct.price.toLocaleString('ko-KR')}원</span>
+                <span className="text-muted-foreground">타겟 상품 {formatProductPrice(targetProduct)}</span>
                 <span className="text-muted-foreground">-</span>
-                <span className="text-red-500 font-medium">할인 {finalDiscountAmount.toLocaleString('ko-KR')}원</span>
+                <span className="text-red-500 font-medium tabular-nums">차감 {formatKRW(finalDiscountAmount)}</span>
                 <span className="text-muted-foreground">=</span>
-                <span className="text-green-600 font-bold">최종가 {finalPrice.toLocaleString('ko-KR')}원</span>
+                <span className="text-green-600 font-bold tabular-nums">예상가 {formatKRW(finalPrice)}</span>
               </div>
+              {discountType === 'auto' && (
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                  실제 차감액은 구매자가 소스 상품에 결제한 금액을 기준으로 계산됩니다.
+                </p>
+              )}
+            </div>
+          )}
+
+          {formError && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {formError}
             </div>
           )}
 
@@ -520,6 +577,14 @@ export default function DiscountMatchesPage() {
   const [editingMatch, setEditingMatch] = useState<DiscountMatch | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null)
   const addToast = useToastStore((state) => state.addToast)
+  const autoMatches = useMemo(
+    () => matches.filter((match) => match.discount_type === 'auto'),
+    [matches],
+  )
+  const outdatedAutoMatches = useMemo(
+    () => autoMatches.filter(isAutoReferenceOutdated),
+    [autoMatches],
+  )
 
   // Load matches
   useEffect(() => {
@@ -534,8 +599,8 @@ export default function DiscountMatchesPage() {
         .from('product_discount_matches')
         .select(`
           *,
-          source_product:products!product_discount_matches_source_product_id_fkey(id, title, price, format, thumbnail_url, is_free),
-          target_product:products!product_discount_matches_target_product_id_fkey(id, title, price, format, thumbnail_url, is_free)
+          source_product:products!product_discount_matches_source_product_id_fkey(id, title, price, format, thumbnail_url, is_free, is_published),
+          target_product:products!product_discount_matches_target_product_id_fkey(id, title, price, format, thumbnail_url, is_free, is_published)
         `)
         .order('created_at', { ascending: false })
 
@@ -610,8 +675,32 @@ export default function DiscountMatchesPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">할인 상품 매칭</h1>
         <p className="text-muted-foreground">상품 간 할인을 설정합니다. 소스 상품을 구매한 사용자가 타겟 상품을 구매할 때 할인이 적용됩니다.</p>
-        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3 inline-block">
-          <strong>자동(auto) 할인</strong>은 사용자가 소스 상품에 <strong>실제로 지불한 금액</strong>(쿠폰 할인 반영 후)을 차감합니다. 아래 표의 &quot;할인액&quot; 은 매칭 생성 시점의 참고값이며, 실제 차감액은 구매자별 결제 이력에 따라 달라집니다.
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="rounded-lg bg-white px-4 py-3 ring-1 ring-border">
+            <p className="text-xs text-muted-foreground">전체 매칭</p>
+            <p className="mt-1 text-2xl font-semibold text-foreground tabular-nums">{matches.length}개</p>
+          </div>
+          <div className="rounded-lg bg-white px-4 py-3 ring-1 ring-border">
+            <p className="text-xs text-muted-foreground">자동 차감</p>
+            <p className="mt-1 text-2xl font-semibold text-foreground tabular-nums">{autoMatches.length}개</p>
+          </div>
+          <div className={`rounded-lg px-4 py-3 ring-1 ${
+            outdatedAutoMatches.length > 0
+              ? 'bg-amber-50 ring-amber-200'
+              : 'bg-white ring-border'
+          }`}>
+            <p className={outdatedAutoMatches.length > 0 ? 'text-xs text-amber-700' : 'text-xs text-muted-foreground'}>
+              기준값 점검
+            </p>
+            <p className={`mt-1 text-2xl font-semibold tabular-nums ${
+              outdatedAutoMatches.length > 0 ? 'text-amber-800' : 'text-foreground'
+            }`}>
+              {outdatedAutoMatches.length}개
+            </p>
+          </div>
+        </div>
+        <p className="mt-3 max-w-4xl rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-relaxed text-blue-800">
+          자동 차감은 구매자가 소스 상품에 실제 결제한 금액을 타겟 상품에서 차감합니다. 표의 현재가 기준 금액은 관리용 예상값이며, 쿠폰이 적용된 과거 구매 이력은 실제 결제액으로 계산됩니다.
         </p>
       </div>
 
@@ -643,8 +732,8 @@ export default function DiscountMatchesPage() {
           <p className="text-sm text-muted-foreground">&quot;새 매칭 추가&quot; 버튼을 클릭하여 할인 매칭을 생성해주세요.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-border overflow-hidden">
-          <table className="w-full">
+        <div className="overflow-x-auto rounded-xl border border-border bg-white">
+          <table className="w-full min-w-[1120px]">
             <thead className="bg-muted border-b border-border">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -660,7 +749,10 @@ export default function DiscountMatchesPage() {
                   할인 유형
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  할인액
+                  차감 기준
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                  현재가 기준
                 </th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   상태
@@ -671,90 +763,129 @@ export default function DiscountMatchesPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {matches.map((match) => (
-                <tr key={match.id} className="hover:bg-muted/50 transition-colors">
-                  {/* Source Product */}
-                  <td className="px-6 py-4">
-                    <div className="text-sm">
-                      <div className="font-medium text-foreground">{match.source_product?.title || '상품 없음'}</div>
-                      {match.source_product && (
-                        <div className="text-xs text-muted-foreground">
-                          {match.source_product.format && `${match.source_product.format} • `}
-                          {match.source_product.price.toLocaleString('ko-KR')}원
-                        </div>
-                      )}
-                    </div>
-                  </td>
+              {matches.map((match) => {
+                const referenceAmount = getMatchReferenceAmount(match)
+                const targetPrice = Number(match.target_product?.price ?? 0)
+                const estimatedPrice = Math.max(0, targetPrice - referenceAmount)
+                const referenceOutdated = isAutoReferenceOutdated(match)
 
-                  {/* Arrow */}
-                  <td className="px-6 py-4 text-center">
-                    <span className="text-muted-foreground">→</span>
-                  </td>
+                return (
+                  <tr key={match.id} className="hover:bg-muted/50 transition-colors">
+                    {/* Source Product */}
+                    <td className="px-6 py-4">
+                      <div className="text-sm">
+                        <div className="font-medium text-foreground">{match.source_product?.title || '상품 없음'}</div>
+                        {match.source_product && (
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                            <span>#{match.source_product.id}</span>
+                            {match.source_product.format && <span>{match.source_product.format}</span>}
+                            <span className="font-medium text-foreground tabular-nums">{formatProductPrice(match.source_product)}</span>
+                            <span className={match.source_product.is_published ? 'text-blue-600' : 'text-amber-700'}>
+                              {match.source_product.is_published ? '공개' : '비공개'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
 
-                  {/* Target Product */}
-                  <td className="px-6 py-4">
-                    <div className="text-sm">
-                      <div className="font-medium text-foreground">{match.target_product?.title || '상품 없음'}</div>
-                      {match.target_product && (
-                        <div className="text-xs text-muted-foreground">
-                          {match.target_product.format && `${match.target_product.format} • `}
-                          {match.target_product.price.toLocaleString('ko-KR')}원
-                        </div>
-                      )}
-                    </div>
-                  </td>
+                    {/* Arrow */}
+                    <td className="px-6 py-4 text-center">
+                      <span className="text-muted-foreground">→</span>
+                    </td>
 
-                  {/* Discount Type */}
-                  <td className="px-6 py-4 text-center">
-                    <Badge
-                      variant={match.discount_type === 'auto' ? 'default' : 'secondary'}
-                      className="text-xs"
-                    >
-                      {match.discount_type === 'auto' ? '자동' : '수동'}
-                    </Badge>
-                  </td>
+                    {/* Target Product */}
+                    <td className="px-6 py-4">
+                      <div className="text-sm">
+                        <div className="font-medium text-foreground">{match.target_product?.title || '상품 없음'}</div>
+                        {match.target_product && (
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                            <span>#{match.target_product.id}</span>
+                            {match.target_product.format && <span>{match.target_product.format}</span>}
+                            <span className="font-medium text-foreground tabular-nums">{formatProductPrice(match.target_product)}</span>
+                            <span className={match.target_product.is_published ? 'text-blue-600' : 'text-amber-700'}>
+                              {match.target_product.is_published ? '공개' : '비공개'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
 
-                  {/* Discount Amount */}
-                  <td className="px-6 py-4 text-right">
-                    <span className="text-sm font-medium text-red-600">
-                      {match.discount_amount.toLocaleString('ko-KR')}원
-                    </span>
-                  </td>
-
-                  {/* Status */}
-                  <td className="px-6 py-4 text-center">
-                    <Badge
-                      variant={match.is_active ? 'default' : 'secondary'}
-                      className="text-xs"
-                    >
-                      {match.is_active ? '활성' : '비활성'}
-                    </Badge>
-                  </td>
-
-                  {/* Actions */}
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => {
-                          setEditingMatch(match)
-                          setIsModalOpen(true)
-                        }}
-                        className="p-1.5 rounded-xl hover:bg-primary/10 transition-colors text-primary"
-                        title="수정"
+                    {/* Discount Type */}
+                    <td className="px-6 py-4 text-center">
+                      <Badge
+                        variant={match.discount_type === 'auto' ? 'default' : 'secondary'}
+                        className="text-xs"
                       >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setDeleteConfirmId(match.id)}
-                        className="p-1.5 rounded-xl hover:bg-red-100 transition-colors text-red-600"
-                        title="삭제"
+                        {match.discount_type === 'auto' ? '자동' : '수동'}
+                      </Badge>
+                    </td>
+
+                    {/* Reference Amount */}
+                    <td className="px-6 py-4 text-right">
+                      {match.discount_type === 'auto' ? (
+                        <div className="text-sm">
+                          <div className="font-semibold text-foreground">실구매가 자동 차감</div>
+                          <div className="mt-1 text-xs text-muted-foreground tabular-nums">
+                            현재 소스가 {formatKRW(referenceAmount)}
+                          </div>
+                          {referenceOutdated && (
+                            <div className="mt-1 text-xs text-amber-700 tabular-nums">
+                              저장 참고값 {formatKRW(match.discount_amount)}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm font-medium text-red-600 tabular-nums">
+                          {formatKRW(match.discount_amount)}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Current Estimate */}
+                    <td className="px-6 py-4 text-right">
+                      <div className="text-sm">
+                        <div className="font-semibold text-foreground tabular-nums">{formatKRW(estimatedPrice)}</div>
+                        <div className="mt-1 text-xs text-muted-foreground tabular-nums">
+                          {formatKRW(targetPrice)} - {formatKRW(referenceAmount)}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-6 py-4 text-center">
+                      <Badge
+                        variant={match.is_active ? 'default' : 'secondary'}
+                        className="text-xs"
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {match.is_active ? '활성' : '비활성'}
+                      </Badge>
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingMatch(match)
+                            setIsModalOpen(true)
+                          }}
+                          className="p-1.5 rounded-xl hover:bg-primary/10 transition-colors text-primary"
+                          title="수정"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setDeleteConfirmId(match.id)}
+                          className="p-1.5 rounded-xl hover:bg-red-100 transition-colors text-red-600"
+                          title="삭제"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
