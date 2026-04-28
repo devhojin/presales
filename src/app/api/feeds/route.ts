@@ -2,13 +2,42 @@ import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { FEED_PERIOD_OPTIONS, FEED_TOPIC_OPTIONS, type FeedPeriodKey, type FeedTopicKey } from '@/lib/feed-filters'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
+function getPeriodStart(period: FeedPeriodKey): string | null {
+  if (period === 'all') return null
+
+  const start = new Date()
+  start.setHours(0, 0, 0, 0)
+  if (period === 'week') start.setDate(start.getDate() - 7)
+  if (period === 'month') start.setDate(start.getDate() - 30)
+  return start.toISOString()
+}
+
+function getTopicKeywords(topic: string): string[] {
+  return FEED_TOPIC_OPTIONS.find(option => option.key === topic)?.keywords ?? []
+}
+
+function normalizeTopic(topic: string): FeedTopicKey {
+  return FEED_TOPIC_OPTIONS.some(option => option.key === topic) ? topic as FeedTopicKey : 'all'
+}
+
+function normalizePeriod(period: string): FeedPeriodKey {
+  return FEED_PERIOD_OPTIONS.some(option => option.key === period) ? period as FeedPeriodKey : 'all'
+}
+
+function textSearchFilter(keywords: string[]): string {
+  return keywords
+    .flatMap(keyword => [`title.ilike.%${keyword}%`, `content.ilike.%${keyword}%`])
+    .join(',')
+}
+
 /**
  * Public API: Get published IT feeds
- * GET /api/feeds?page=1&pageSize=50&search=...&category=news&tab=unread|read|bookmarks
+ * GET /api/feeds?page=1&pageSize=50&search=...&category=news&source=...&period=...&topic=...&tab=...
  * - tab 지정 시 로그인 사용자 기준으로 서버에서 필터링 + 총계 계산 (클라이언트 허수 방지)
  */
 export async function GET(request: NextRequest) {
@@ -17,6 +46,9 @@ export async function GET(request: NextRequest) {
   const pageSize = Math.min(200, Math.max(1, Number(searchParams.get('pageSize')) || 50))
   const search = searchParams.get('search') || ''
   const category = searchParams.get('category') || ''
+  const source = searchParams.get('source') || ''
+  const topic = normalizeTopic(searchParams.get('topic') || 'all')
+  const period = normalizePeriod(searchParams.get('period') || 'all')
   const tab = searchParams.get('tab') || '' // '', unread, read, bookmarks
 
   try {
@@ -94,7 +126,12 @@ export async function GET(request: NextRequest) {
       .eq('status', 'published')
 
     if (category) query = query.eq('category', category)
+    if (source) query = query.eq('source', source)
+    const periodStart = getPeriodStart(period)
+    if (periodStart) query = query.gte('created_at', periodStart)
     if (search) query = query.or(`title.ilike.%${search}%,content.ilike.%${search}%`)
+    const topicKeywords = getTopicKeywords(topic)
+    if (topicKeywords.length > 0) query = query.or(textSearchFilter(topicKeywords))
     if (idFilter) {
       if (idFilter.op === 'in') query = query.in('id', idFilter.ids)
       else if (idFilter.ids.length > 0) query = query.not('id', 'in', `(${idFilter.ids.join(',')})`)

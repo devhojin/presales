@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
 import {
   Search, ExternalLink, Loader2, Rss, Clock, Newspaper, ArrowLeft,
-  Star, Share2,
+  Star, Share2, ChevronDown, SlidersHorizontal, X,
 } from 'lucide-react'
-import { getSourceBadgeStyle, getSourceName, getCategoryLabel, getCategoryColor, FEED_CATEGORIES } from '@/lib/feed-sources'
+import { getSourceBadgeStyle, getSourceName, getCategoryLabel, getCategoryColor, FEED_CATEGORIES, FEED_SOURCES } from '@/lib/feed-sources'
+import { FEED_PERIOD_OPTIONS, FEED_TOPIC_OPTIONS, type FeedPeriodKey, type FeedTopicKey } from '@/lib/feed-filters'
 import { useToastStore } from '@/stores/toast-store'
 import DOMPurify from 'dompurify'
 
@@ -28,11 +29,54 @@ type ReadTab = 'unread' | 'read' | 'bookmarks'
 
 const TWO_WEEKS = 14 * 24 * 60 * 60 * 1000
 
+function FilterPill({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition-all duration-200 cursor-pointer ${
+        active
+          ? 'bg-primary text-primary-foreground border-primary'
+          : 'border-border/50 text-foreground hover:border-border hover:bg-muted'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+function FilterGroup({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div>
+      <p className="mb-2 text-xs font-semibold text-muted-foreground">{label}</p>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
+  )
+}
+
 export default function FeedsClient() {
   const { addToast } = useToastStore()
   const supabase = useMemo(() => createClient(), [])
 
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [selectedTopic, setSelectedTopic] = useState<FeedTopicKey>('all')
+  const [selectedSource, setSelectedSource] = useState<string>('all')
+  const [selectedPeriod, setSelectedPeriod] = useState<FeedPeriodKey>('all')
+  const [detailFiltersOpen, setDetailFiltersOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
@@ -79,6 +123,9 @@ export default function FeedsClient() {
         pageSize: String(PAGE_SIZE),
       })
       if (selectedCategory !== 'all') params.set('category', selectedCategory)
+      if (selectedTopic !== 'all') params.set('topic', selectedTopic)
+      if (selectedSource !== 'all') params.set('source', selectedSource)
+      if (selectedPeriod !== 'all') params.set('period', selectedPeriod)
       if (debouncedSearch.trim()) params.set('search', debouncedSearch.trim())
       if (userId && readTab !== 'unread') params.set('tab', readTab)
       else if (userId) params.set('tab', 'unread')
@@ -99,7 +146,7 @@ export default function FeedsClient() {
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [selectedCategory, debouncedSearch, userId, readTab])
+  }, [selectedCategory, selectedTopic, selectedSource, selectedPeriod, debouncedSearch, userId, readTab])
 
   // Reload when filter/search changes
   useEffect(() => {
@@ -159,7 +206,11 @@ export default function FeedsClient() {
 
   // Auto-select first
   useEffect(() => {
-    if (!selectedId && filteredFeeds.length > 0) {
+    if (filteredFeeds.length === 0) {
+      if (selectedId) setSelectedId(null)
+      return
+    }
+    if (!selectedId || !filteredFeeds.some(feed => feed.id === selectedId)) {
       setSelectedId(filteredFeeds[0].id)
     }
   }, [filteredFeeds, selectedId])
@@ -216,6 +267,27 @@ export default function FeedsClient() {
 
   // 서버에서 받은 정확한 카운트 사용 (허수 방지)
   const tabCounts = serverCounts
+  const secondaryFilterCount = [
+    selectedSource !== 'all',
+    selectedPeriod !== 'all',
+    Boolean(userId && readTab !== 'unread'),
+  ].filter(Boolean).length
+  const hasAnyFilter =
+    debouncedSearch.trim() ||
+    selectedCategory !== 'all' ||
+    selectedTopic !== 'all' ||
+    secondaryFilterCount > 0
+
+  const resetFilters = useCallback(() => {
+    setSelectedCategory('all')
+    setSelectedTopic('all')
+    setSelectedSource('all')
+    setSelectedPeriod('all')
+    setReadTab('unread')
+    setSearch('')
+    setDebouncedSearch('')
+    setSelectedId(null)
+  }, [])
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 md:px-8">
@@ -241,60 +313,97 @@ export default function FeedsClient() {
           />
         </div>
 
-        {/* Category tabs */}
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => { setSelectedCategory('all'); setSelectedId(null) }}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-              selectedCategory === 'all'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-secondary text-foreground hover:bg-secondary/80 border border-border/50'
-            }`}
-          >
-            전체
-          </button>
-          {FEED_CATEGORIES.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => { setSelectedCategory(cat.id); setSelectedId(null) }}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                selectedCategory === cat.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-secondary text-foreground hover:bg-secondary/80 border border-border/50'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
+        <div className="space-y-3 rounded-2xl border border-border/50 bg-card p-4">
+          <FilterGroup label="분류">
+            <FilterPill active={selectedCategory === 'all'} onClick={() => { setSelectedCategory('all'); setSelectedId(null) }}>
+              전체 분류
+            </FilterPill>
+            {FEED_CATEGORIES.map((cat) => (
+              <FilterPill key={cat.id} active={selectedCategory === cat.id} onClick={() => { setSelectedCategory(cat.id); setSelectedId(null) }}>
+                {cat.label}
+              </FilterPill>
+            ))}
+          </FilterGroup>
+
+          <FilterGroup label="주제">
+            {FEED_TOPIC_OPTIONS.map(option => (
+              <FilterPill key={option.key} active={selectedTopic === option.key} onClick={() => { setSelectedTopic(option.key); setSelectedId(null) }}>
+                {option.label}
+              </FilterPill>
+            ))}
+          </FilterGroup>
         </div>
 
-        {/* Read tabs (logged-in) */}
-        {userId && (
-          <div className="flex gap-1 border-b border-border/50">
-            {([
-              { key: 'unread' as ReadTab, label: '읽지않음', count: tabCounts.unread },
-              { key: 'read' as ReadTab, label: '읽음', count: tabCounts.read },
-              { key: 'bookmarks' as ReadTab, label: '즐겨찾기', count: tabCounts.bookmarks },
-            ]).map(t => (
-              <button
-                key={t.key}
-                onClick={() => { setReadTab(t.key); setSelectedId(null) }}
-                className={`px-3 py-2 text-sm font-medium border-b-2 transition cursor-pointer ${
-                  readTab === t.key
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {t.label}
-                <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
-                  readTab === t.key ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
-                }`}>
-                  {t.count}
+        <div className="rounded-2xl border border-border/50 bg-card">
+          <div className="flex items-center justify-between gap-3 p-3">
+            <button
+              type="button"
+              onClick={() => setDetailFiltersOpen(open => !open)}
+              aria-expanded={detailFiltersOpen}
+              className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold hover:bg-muted transition cursor-pointer"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-muted-foreground" />
+              상세 필터
+              {secondaryFilterCount > 0 && (
+                <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] text-primary-foreground">
+                  {secondaryFilterCount}
                 </span>
+              )}
+              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${detailFiltersOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {hasAnyFilter && (
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-foreground transition cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+                초기화
               </button>
-            ))}
+            )}
           </div>
-        )}
+          {detailFiltersOpen && (
+            <div className="grid gap-5 border-t border-border/50 p-4 md:grid-cols-2">
+              <FilterGroup label="출처">
+                <FilterPill active={selectedSource === 'all'} onClick={() => { setSelectedSource('all'); setSelectedId(null) }}>
+                  전체 출처
+                </FilterPill>
+                {FEED_SOURCES.map(source => (
+                  <FilterPill key={source.id} active={selectedSource === source.id} onClick={() => { setSelectedSource(source.id); setSelectedId(null) }}>
+                    {source.name}
+                  </FilterPill>
+                ))}
+              </FilterGroup>
+
+              <FilterGroup label="기간">
+                {FEED_PERIOD_OPTIONS.map(option => (
+                  <FilterPill key={option.key} active={selectedPeriod === option.key} onClick={() => { setSelectedPeriod(option.key); setSelectedId(null) }}>
+                    {option.label}
+                  </FilterPill>
+                ))}
+              </FilterGroup>
+
+              {userId && (
+                <FilterGroup label="내 피드">
+                  {([
+                    { key: 'unread' as ReadTab, label: '읽지않음', count: tabCounts.unread },
+                    { key: 'read' as ReadTab, label: '읽음', count: tabCounts.read },
+                    { key: 'bookmarks' as ReadTab, label: '즐겨찾기', count: tabCounts.bookmarks },
+                  ]).map(t => (
+                    <FilterPill key={t.key} active={readTab === t.key} onClick={() => { setReadTab(t.key); setSelectedId(null) }}>
+                      {t.label}
+                      <span className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-full ${
+                        readTab === t.key ? 'bg-white/25' : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {t.count}
+                      </span>
+                    </FilterPill>
+                  ))}
+                </FilterGroup>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Content */}
