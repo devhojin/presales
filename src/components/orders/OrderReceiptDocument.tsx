@@ -52,6 +52,9 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
   free: '무료 주문',
 }
 
+const RECEIPT_SITE_URL = 'https://www.presales.co.kr'
+const ADMIN_DISPLAY_EMAIL = 'sales@presales.co.kr'
+
 function getProduct(item: ReceiptOrderItem): ReceiptProduct | null {
   return Array.isArray(item.products) ? item.products[0] ?? null : item.products
 }
@@ -97,6 +100,11 @@ function paymentMethodLabel(method: string | null | undefined): string {
   return PAYMENT_METHOD_LABEL[method] ?? method
 }
 
+function displayReceiptEmail(email: string | null | undefined): string | null {
+  if (!email) return null
+  return email === 'admin@amarans.co.kr' ? ADMIN_DISPLAY_EMAIL : email
+}
+
 function receiptNumber(order: ReceiptOrder): string {
   return order.order_number || `PS-${String(order.id).padStart(6, '0')}`
 }
@@ -134,6 +142,7 @@ export function OrderReceiptDocument({ order, profile, className = '' }: OrderRe
   const discountTotal = getDiscountTotal(order)
   const displayDate = order.paid_at || order.created_at
   const buyerName = profile?.company || profile?.name || '구매자'
+  const buyerEmail = displayReceiptEmail(profile?.email)
   const receiptId = receiptNumber(order)
 
   return (
@@ -155,16 +164,15 @@ export function OrderReceiptDocument({ order, profile, className = '' }: OrderRe
           <address className="not-italic text-[15px] leading-relaxed text-neutral-800">
             <p className="font-semibold text-neutral-950">PRESALES by AMARANS</p>
             <p>공공조달 제안서 마켓플레이스</p>
-            <p>대표 채호진</p>
             <p>help@presales.co.kr</p>
-            <p>https://presales-zeta.vercel.app</p>
+            <p>{RECEIPT_SITE_URL}</p>
           </address>
 
           <address className="not-italic text-[15px] leading-relaxed text-neutral-800">
             <p className="font-semibold text-neutral-950">Bill to</p>
             <p>{buyerName}</p>
             {profile?.name && profile.company && <p>{profile.name}</p>}
-            {profile?.email && <p>{profile.email}</p>}
+            {buyerEmail && <p>{buyerEmail}</p>}
             {profile?.phone && <p>{profile.phone}</p>}
           </address>
         </section>
@@ -299,6 +307,7 @@ export function buildReceiptPrintHtml(order: ReceiptOrder, profile?: ReceiptProf
   const subtotal = getSubtotal(order)
   const discountTotal = getDiscountTotal(order)
   const buyerName = profile?.company || profile?.name || '구매자'
+  const buyerEmail = displayReceiptEmail(profile?.email)
   const receiptId = receiptNumber(order)
   const rows = (items.length > 0 ? items : [{
     id: order.id,
@@ -385,15 +394,14 @@ export function buildReceiptPrintHtml(order: ReceiptOrder, profile?: ReceiptProf
       <div>
         <p class="label">PRESALES by AMARANS</p>
         <p>공공조달 제안서 마켓플레이스</p>
-        <p>대표 채호진</p>
         <p>help@presales.co.kr</p>
-        <p>https://presales-zeta.vercel.app</p>
+        <p>${RECEIPT_SITE_URL}</p>
       </div>
       <div>
         <p class="label">Bill to</p>
         <p>${escapeHtml(buyerName)}</p>
         ${profile?.name && profile.company ? `<p>${escapeHtml(profile.name)}</p>` : ''}
-        ${profile?.email ? `<p>${escapeHtml(profile.email)}</p>` : ''}
+        ${buyerEmail ? `<p>${escapeHtml(buyerEmail)}</p>` : ''}
         ${profile?.phone ? `<p>${escapeHtml(profile.phone)}</p>` : ''}
       </div>
     </section>
