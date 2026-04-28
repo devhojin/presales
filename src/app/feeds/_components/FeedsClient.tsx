@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import {
   Search, ExternalLink, Loader2, Rss, Clock, Newspaper, ArrowLeft,
@@ -259,7 +260,7 @@ export default function FeedsClient() {
   }, [userId, bookmarkedIds, addToast])
 
   const handleShare = useCallback((feed: FeedItem) => {
-    const url = feed.external_url || window.location.href
+    const url = `${window.location.origin}/feeds/${feed.id}`
     navigator.clipboard.writeText(url).then(() => {
       addToast('링크가 복사되었습니다', 'success')
     })
@@ -438,9 +439,14 @@ export default function FeedsClient() {
                 const isRead = readMap.has(feed.id)
                 const isBookmarked = bookmarkedIds.has(feed.id)
                 return (
-                  <button
+                  <Link
                     key={feed.id}
-                    onClick={() => handleSelect(feed.id)}
+                    href={`/feeds/${feed.id}`}
+                    onClick={(event) => {
+                      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                      event.preventDefault()
+                      handleSelect(feed.id)
+                    }}
                     className={`w-full text-left px-4 py-3.5 transition-colors cursor-pointer ${
                       isActive ? 'bg-primary/5 border-l-2 border-l-primary' : 'hover:bg-muted/50 border-l-2 border-l-transparent'
                     } ${!isRead && userId ? 'font-semibold' : ''}`}
@@ -461,7 +467,7 @@ export default function FeedsClient() {
                       <span>{new Date(feed.created_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })}</span>
                       <span>{feed.views.toLocaleString()} 조회</span>
                     </div>
-                  </button>
+                  </Link>
                 )
               })}
             </div>
@@ -607,8 +613,14 @@ function FeedDetail({
         )}
 
         {/* Source Link CTA */}
-        {feed.external_url && (
-          <div className="mt-8 pt-6 border-t border-border/50">
+        <div className="mt-8 flex flex-wrap gap-3 border-t border-border/50 pt-6">
+          <Link
+            href={`/feeds/${feed.id}`}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-secondary text-secondary-foreground text-sm font-semibold hover:bg-secondary/80 transition-all cursor-pointer"
+          >
+            상세 페이지
+          </Link>
+          {feed.external_url && (
             <a
               href={feed.external_url}
               target="_blank"
@@ -618,8 +630,8 @@ function FeedDetail({
               원문 보기
               <ExternalLink className="w-4 h-4" />
             </a>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   )

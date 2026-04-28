@@ -3,6 +3,19 @@ import { createServerClient } from "@supabase/ssr";
 import { SITE_URL } from "@/lib/constants";
 
 const BASE_URL = SITE_URL;
+const SITEMAP_BATCH_SIZE = 1000;
+
+type SitemapAnnouncement = {
+  id: string;
+  updated_at: string | null;
+  status: string | null;
+};
+
+type SitemapFeed = {
+  id: string;
+  updated_at: string | null;
+  created_at: string | null;
+};
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
@@ -21,9 +34,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseKey,
       { cookies: { getAll() { return []; } } }
     );
 
@@ -40,18 +54,49 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     }));
 
-    // 공개된 공고 상세 페이지
-    const { data: announcements } = await supabase
-      .from("announcements")
-      .select("id, updated_at")
-      .eq("is_published", true)
-      .eq("status", "active");
+    // 공개된 공고 상세 페이지: 마감 공고도 검색 진입점이 될 수 있으므로 sitemap에 포함
+    const announcements: SitemapAnnouncement[] = [];
+    for (let from = 0; ; from += SITEMAP_BATCH_SIZE) {
+      const { data, error } = await supabase
+        .from("announcements")
+        .select("id, updated_at, status")
+        .eq("is_published", true)
+        .order("updated_at", { ascending: false })
+        .range(from, from + SITEMAP_BATCH_SIZE - 1);
+
+      if (error) throw error;
+      announcements.push(...(data ?? []));
+      if (!data || data.length < SITEMAP_BATCH_SIZE) break;
+    }
 
     const announcementPages: MetadataRoute.Sitemap = (announcements ?? []).map((a) => ({
       url: `${BASE_URL}/announcements/${a.id}`,
       lastModified: a.updated_at ? new Date(a.updated_at) : new Date(),
-      changeFrequency: "daily" as const,
-      priority: 0.7,
+      changeFrequency: a.status === "active" ? "daily" as const : "weekly" as const,
+      priority: a.status === "active" ? 0.7 : 0.45,
+    }));
+
+    // 공개된 IT피드 상세 페이지
+    const feeds: SitemapFeed[] = [];
+    for (let from = 0; ; from += SITEMAP_BATCH_SIZE) {
+      const { data, error } = await supabase
+        .from("community_posts")
+        .select("id, updated_at, created_at")
+        .eq("is_published", true)
+        .eq("status", "published")
+        .order("created_at", { ascending: false })
+        .range(from, from + SITEMAP_BATCH_SIZE - 1);
+
+      if (error) throw error;
+      feeds.push(...(data ?? []));
+      if (!data || data.length < SITEMAP_BATCH_SIZE) break;
+    }
+
+    const feedPages: MetadataRoute.Sitemap = feeds.map((feed) => ({
+      url: `${BASE_URL}/feeds/${feed.id}`,
+      lastModified: feed.updated_at ? new Date(feed.updated_at) : feed.created_at ? new Date(feed.created_at) : new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.55,
     }));
 
     // 브리프 개별 페이지
@@ -68,7 +113,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
 
-    return [...staticPages, ...productPages, ...announcementPages, ...briefPages];
+    return [...staticPages, ...productPages, ...announcementPages, ...feedPages, ...briefPages];
   } catch {
     return staticPages;
   }

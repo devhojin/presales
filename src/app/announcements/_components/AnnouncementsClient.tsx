@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -557,9 +558,14 @@ export default function AnnouncementsClient() {
                 const isRead = readMap.has(ann.id)
                 const isBookmarked = bookmarkedIds.has(ann.id)
                 return (
-                  <button
+                  <Link
                     key={ann.id}
-                    onClick={() => handleSelect(ann.id)}
+                    href={`/announcements/${ann.id}`}
+                    onClick={(event) => {
+                      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                      event.preventDefault()
+                      handleSelect(ann.id)
+                    }}
                     className={`w-full text-left px-4 py-3.5 transition-colors cursor-pointer ${
                       isActive ? 'bg-primary/5 border-l-2 border-l-primary' : 'hover:bg-muted/50 border-l-2 border-l-transparent'
                     } ${!isRead && userId ? 'font-semibold' : ''}`}
@@ -579,7 +585,7 @@ export default function AnnouncementsClient() {
                     {ann.organization && (
                       <p className="text-xs text-muted-foreground truncate">{ann.organization}</p>
                     )}
-                  </button>
+                  </Link>
                 )
               })}
             </div>
@@ -768,6 +774,12 @@ function AnnouncementDetail({
 
         {/* CTA: Source URL */}
         <div className="flex flex-wrap gap-3 mb-8">
+          <Link
+            href={`/announcements/${ann.id}`}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-secondary text-secondary-foreground text-sm font-semibold hover:bg-secondary/80 transition-all cursor-pointer"
+          >
+            상세 페이지
+          </Link>
           {ann.source_url && (
             <a
               href={ann.source_url}
