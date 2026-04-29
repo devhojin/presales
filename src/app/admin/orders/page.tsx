@@ -74,7 +74,7 @@ interface Order {
   paid_at: string | null
   cancelled_at: string | null
   refund_reason: string | null
-  admin_memo: string | null
+  admin_memo: unknown
   created_at: string
   updated_at: string | null
   order_items: OrderItem[]
@@ -89,11 +89,25 @@ interface Order {
   card_memo: string | null
 }
 
-function parseMemos(raw: string | null): MemoEntry[] {
+function isMemoEntry(value: unknown): value is MemoEntry {
+  if (!value || typeof value !== 'object') return false
+  const record = value as Record<string, unknown>
+  return (
+    typeof record.text === 'string' &&
+    typeof record.author === 'string' &&
+    typeof record.created_at === 'string'
+  )
+}
+
+function parseMemos(raw: unknown): MemoEntry[] {
   if (!raw) return []
+  if (Array.isArray(raw)) return raw.filter(isMemoEntry)
+  if (typeof raw === 'object') return []
+  if (typeof raw !== 'string') return []
+
   try {
     const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed)) return parsed
+    if (Array.isArray(parsed)) return parsed.filter(isMemoEntry)
   } catch {
     // Legacy plain text memo → convert
     if (raw.trim()) return [{ text: raw, author: '관리자', created_at: new Date().toISOString() }]
