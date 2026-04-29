@@ -214,6 +214,7 @@ const allFileTypes = [
 ]
 
 type SortOrder = 'recommended' | 'price_asc' | 'price_desc' | 'newest'
+type DocumentKind = 'original' | 'copy'
 
 interface FilterState {
   cats: Set<number>
@@ -221,6 +222,7 @@ interface FilterState {
   query: string
   sort: SortOrder
   fileType: string | null
+  documentKind: DocumentKind | null
   priceRange: string | null
   page: number
 }
@@ -309,10 +311,12 @@ function parseURLFilters(searchParams: ReturnType<typeof useSearchParams>): Filt
   const sort: SortOrder = validSorts.includes(rawSort as SortOrder) ? (rawSort as SortOrder) : 'recommended'
   const rawFileType = searchParams.get('fileType')
   const fileType = rawFileType && ['PPT', 'PDF', 'XLS', 'DOC', 'HWP', 'ZIP'].includes(rawFileType) ? rawFileType : null
+  const rawDocumentKind = searchParams.get('documentKind')
+  const documentKind: DocumentKind | null = rawDocumentKind === 'original' || rawDocumentKind === 'copy' ? rawDocumentKind : null
   const rawPriceRange = searchParams.get('priceRange')
   const priceRange = rawPriceRange && ['free', 'under50k', '50k_100k', 'over100k'].includes(rawPriceRange) ? rawPriceRange : null
   const page = Math.max(1, Number(searchParams.get('page')) || 1)
-  return { cats, price, query, sort, fileType, priceRange, page }
+  return { cats, price, query, sort, fileType, documentKind, priceRange, page }
 }
 
 function filtersToURLParams(f: FilterState): string {
@@ -322,6 +326,7 @@ function filtersToURLParams(f: FilterState): string {
   if (f.query) params.set('q', f.query)
   if (f.sort !== 'recommended') params.set('sort', f.sort)
   if (f.fileType) params.set('fileType', f.fileType)
+  if (f.documentKind) params.set('documentKind', f.documentKind)
   if (f.priceRange) params.set('priceRange', f.priceRange)
   if (f.page > 1) params.set('page', String(f.page))
   return params.toString()
@@ -336,6 +341,7 @@ function filtersToAPIParams(f: FilterState): string {
   if (f.query) params.set('q', f.query)
   if (f.sort !== 'recommended') params.set('sort', f.sort)
   if (f.fileType) params.set('fileType', f.fileType)
+  if (f.documentKind) params.set('documentKind', f.documentKind)
   if (f.priceRange) params.set('priceRange', f.priceRange)
   return params.toString()
 }
@@ -351,6 +357,7 @@ export default function StoreClient() {
   const [selectedCategories, setSelectedCategories] = useState<Set<number>>(filtersRef.current.cats)
   const [selectedPriceType, setSelectedPriceType] = useState<string | null>(filtersRef.current.price)
   const [selectedFileType, setSelectedFileType] = useState<string | null>(filtersRef.current.fileType)
+  const [selectedDocumentKind, setSelectedDocumentKind] = useState<DocumentKind | null>(filtersRef.current.documentKind)
   const [selectedPriceRange, setSelectedPriceRange] = useState<string | null>(filtersRef.current.priceRange)
   const [searchQuery, setSearchQuery] = useState(filtersRef.current.query)
   const [sortOrder, setSortOrder] = useState<SortOrder>(filtersRef.current.sort)
@@ -401,6 +408,7 @@ export default function StoreClient() {
     setSearchQuery(next.query)
     setSortOrder(next.sort)
     setSelectedFileType(next.fileType)
+    setSelectedDocumentKind(next.documentKind)
     setSelectedPriceRange(next.priceRange)
     setCurrentPage(next.page)
 
@@ -488,6 +496,7 @@ export default function StoreClient() {
       query: '',
       sort: 'recommended',
       fileType: null,
+      documentKind: null,
       priceRange: null,
       page: 1,
       resetPage: false,
@@ -498,6 +507,7 @@ export default function StoreClient() {
     selectedCategories.size > 0 ||
     selectedPriceType !== null ||
     selectedFileType !== null ||
+    selectedDocumentKind !== null ||
     selectedPriceRange !== null ||
     searchQuery !== ''
   const detailFilterCount = (selectedFileType ? 1 : 0) + (selectedPriceRange ? 1 : 0)
@@ -520,28 +530,50 @@ export default function StoreClient() {
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,360px)] lg:items-start">
           <div className="space-y-3">
             {/* 카테고리 필터 */}
-            <div className="grid gap-2 sm:grid-cols-[72px_minmax(0,1fr)] sm:items-center">
-              <p className="text-xs font-semibold text-muted-foreground">문서 유형</p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => applyFilters({ cats: new Set() })}
-                  className={`px-4 py-2 min-h-[38px] rounded-full text-xs font-semibold border transition-all duration-300 cursor-pointer active:scale-[0.98] ${
-                    selectedCategories.size === 0 ? 'bg-primary text-primary-foreground border-primary' : 'border-border/50 hover:border-border hover:bg-muted'
-                  }`}
-                >
-                  전체
-                </button>
-                {categories.map((cat) => (
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_220px] xl:items-start">
+              <div className="grid gap-2 sm:grid-cols-[72px_minmax(0,1fr)] sm:items-center">
+                <p className="text-xs font-semibold text-muted-foreground">문서유형</p>
+                <div className="flex flex-wrap gap-2">
                   <button
-                    key={cat.id}
-                    onClick={() => toggleCategory(cat.id)}
+                    onClick={() => applyFilters({ cats: new Set() })}
                     className={`px-4 py-2 min-h-[38px] rounded-full text-xs font-semibold border transition-all duration-300 cursor-pointer active:scale-[0.98] ${
-                      selectedCategories.has(cat.id) ? 'bg-primary text-primary-foreground border-primary' : 'border-border/50 hover:border-border hover:bg-muted'
+                      selectedCategories.size === 0 ? 'bg-primary text-primary-foreground border-primary' : 'border-border/50 hover:border-border hover:bg-muted'
                     }`}
                   >
-                    {cat.name}
+                    전체
                   </button>
-                ))}
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => toggleCategory(cat.id)}
+                      className={`px-4 py-2 min-h-[38px] rounded-full text-xs font-semibold border transition-all duration-300 cursor-pointer active:scale-[0.98] ${
+                        selectedCategories.has(cat.id) ? 'bg-primary text-primary-foreground border-primary' : 'border-border/50 hover:border-border hover:bg-muted'
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-[72px_minmax(0,1fr)] sm:items-center xl:block">
+                <p className="text-xs font-semibold text-muted-foreground xl:mb-2">문서구분</p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { id: 'original' as const, label: '원본' },
+                    { id: 'copy' as const, label: '사본' },
+                  ].map((kind) => (
+                    <button
+                      key={kind.id}
+                      onClick={() => applyFilters({ documentKind: selectedDocumentKind === kind.id ? null : kind.id })}
+                      className={`px-4 py-2 min-h-[38px] rounded-full text-xs font-semibold border transition-all duration-300 cursor-pointer active:scale-[0.98] ${
+                        selectedDocumentKind === kind.id ? 'bg-primary text-primary-foreground border-primary' : 'border-border/50 hover:border-border hover:bg-muted'
+                      }`}
+                    >
+                      {kind.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -658,6 +690,7 @@ export default function StoreClient() {
               <>
                 {total}개 상품
                 {selectedFileType && <span className="ml-2 text-xs">· 파일형태: {selectedFileType}</span>}
+                {selectedDocumentKind && <span className="ml-2 text-xs">· 문서구분: {selectedDocumentKind === 'original' ? '원본' : '사본'}</span>}
                 {totalPages > 1 && <span className="ml-2 text-xs">· {currentPage}/{totalPages} 페이지</span>}
               </>
             )}

@@ -5,10 +5,11 @@ import { normalizeProductSearchTerm, productMatchesSearch } from '@/lib/product-
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 const SEARCH_FETCH_LIMIT = 1000
+type DiscountMatchProductId = Partial<Record<'source_product_id' | 'target_product_id', number>>
 
 /**
  * Public API: Get paginated published products
- * GET /api/products?page=1&limit=12&category=1,2&sort=recommended&q=keyword&fileType=PPT&priceRange=free
+ * GET /api/products?page=1&limit=12&category=1,2&sort=recommended&q=keyword&fileType=PPT&documentKind=original&priceRange=free
  */
 export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams
@@ -19,6 +20,7 @@ export async function GET(request: NextRequest) {
   const sort = sp.get('sort') || 'recommended'
   const q = sp.get('q') || ''
   const fileType = sp.get('fileType') || ''
+  const documentKind = sp.get('documentKind') || '' // original | copy
   const priceRange = sp.get('priceRange') || '' // free | under50k | 50k_100k | over100k
   const price = sp.get('price') || '' // free | paid (free/paid toggle, separate from priceRange)
   const hasSearch = normalizeProductSearchTerm(q).length > 0
@@ -32,6 +34,38 @@ export async function GET(request: NextRequest) {
     .from('products')
     .select('*', { count: 'exact' })
     .eq('is_published', true)
+
+  if (documentKind === 'original' || documentKind === 'copy') {
+    const idColumn = documentKind === 'original' ? 'target_product_id' : 'source_product_id'
+    const { data: matches, error: matchesError } = await supabase
+      .from('product_discount_matches')
+      .select(idColumn)
+      .eq('is_active', true)
+
+    if (matchesError) {
+      return NextResponse.json({ error: matchesError.message }, { status: 500 })
+    }
+
+    const productIds = Array.from(
+      new Set(
+        (matches ?? [])
+          .map((match: DiscountMatchProductId) => Number(match[idColumn]))
+          .filter((id) => Number.isInteger(id) && id > 0),
+      ),
+    )
+
+    if (productIds.length === 0) {
+      return NextResponse.json({
+        products: [],
+        total: 0,
+        page,
+        limit,
+        totalPages: 0,
+      })
+    }
+
+    query = query.in('id', productIds)
+  }
 
   // Category filter — products have category_ids (array) and category_id (single)
   // We use the @> (contains) operator for array overlap via Supabase .overlaps()
