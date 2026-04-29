@@ -10,7 +10,6 @@ import { grantRewardPoints, loadRewardSettings } from '@/lib/reward-points'
 type Body = {
   agreeTerms?: boolean
   agreePrivacy?: boolean
-  agreeOverseas?: boolean
   agreeAge?: boolean
   agreeMarketing?: boolean
   name?: string
@@ -57,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     const body = (await request.json().catch(() => ({}))) as Body
 
-    if (!body.agreeTerms || !body.agreePrivacy || !body.agreeOverseas || !body.agreeAge) {
+    if (!body.agreeTerms || !body.agreePrivacy || !body.agreeAge) {
       return NextResponse.json({ error: '필수 동의 항목이 누락되었습니다' }, { status: 400 })
     }
 

@@ -33,7 +33,7 @@ const personalDataRows = [
   {
     category: '회원가입·계정',
     items:
-      '이메일, 비밀번호 인증 정보, 이름, 회사명, 휴대전화번호, 약관·개인정보·국외 이전·마케팅 수신 동의 여부와 일시',
+      '이메일, 비밀번호 인증 정보, 이름, 회사명, 휴대전화번호, 약관·개인정보 처리방침 동의 여부와 일시, 국외 이전 안내 확인 시각, 마케팅 수신 동의 여부와 일시',
     method: '회원이 가입 화면에서 직접 입력하거나 동의합니다.',
   },
   {
@@ -134,13 +134,13 @@ const retentionRows = [
 
 const outsourcingRows = [
   {
-    company: 'Supabase Inc.',
+    company: '해외 데이터베이스·인증·파일 저장소 제공사',
     task: '회원 인증, 데이터베이스, 파일 저장소, 접근 권한 관리',
     data: '회원 정보, 주문·상담·채팅·리뷰 데이터, 업로드 파일',
   },
   {
-    company: 'Vercel Inc.',
-    task: '웹사이트 호스팅, 배포, 네트워크 전송, 서버 로그 관리',
+    company: '해외 웹 인프라·네트워크 제공사',
+    task: '웹사이트 호스팅, 네트워크 전송, 서버 로그 관리',
     data: '접속 로그, IP 주소, 사용자 에이전트, 페이지 요청 정보',
   },
   {
@@ -167,28 +167,28 @@ const outsourcingRows = [
 
 const overseasRows = [
   {
-    recipient: 'Supabase Inc.',
+    recipient: '해외 데이터베이스·인증·파일 저장소 제공사',
     country: '싱가포르 및 미국',
     items: '회원 정보, 주문·상담·채팅·리뷰 데이터, 업로드 파일',
     purpose: '인증, 데이터베이스, 파일 저장소 운영과 기술 지원',
-    period: '회원 탈퇴 또는 위탁계약 종료 시까지. 법령 보존 대상은 해당 기간',
+    period: '회원 탈퇴 시 계정 개인정보는 즉시 삭제 또는 익명화. 법령 보존 대상은 해당 기간 분리 보관 후 파기',
   },
   {
-    recipient: 'Vercel Inc.',
-    country: '미국 및 글로벌 엣지 리전',
+    recipient: '해외 웹 인프라·네트워크 제공사',
+    country: '미국 및 글로벌 리전',
     items: 'IP 주소, 사용자 에이전트, 접속 로그, 페이지 요청 정보',
-    purpose: '웹사이트 호스팅, 배포, 보안 로그 관리',
-    period: '서비스 제공 및 로그 보관 목적 달성 시까지',
+    purpose: '웹사이트 제공, 네트워크 전송, 장애 대응, 보안 로그 관리',
+    period: '서비스 제공, 장애 대응, 보안 목적 달성 시까지 보관 후 순차 파기',
   },
   {
-    recipient: 'Google LLC',
-    country: '미국',
+    recipient: '해외 웹 분석 서비스 제공사',
+    country: '미국 등 서비스 제공 리전',
     items: 'GA4 이벤트, 페이지 경로, 기기·브라우저 정보, 쿠키 식별자',
     purpose: '서비스 이용 통계 분석',
-    period: 'Google Analytics 설정 및 계약에 따른 보관기간',
+    period: '분석 목적 달성 또는 설정된 보관기간 만료 시까지',
   },
   {
-    recipient: 'Upstash Inc.',
+    recipient: '해외 요청 제한·보안 로그 서비스 제공사',
     country: '미국 및 선택 리전',
     items: 'IP 기반 제한 키, 요청 횟수, 제한 시각',
     purpose: '부정이용 방지와 요청 속도 제한',
@@ -400,9 +400,9 @@ export default function PrivacyPage() {
           <h2 className="text-base font-bold mb-3 border-b border-border pb-2">제8조 국외 이전</h2>
           <div className="space-y-4 text-muted-foreground">
             <p>
-              서비스는 글로벌 클라우드와 분석 도구를 사용하므로 개인정보가 국외로 이전될 수 있습니다.
-              회원가입 또는 서비스 이용 과정에서 국외 이전에 동의하지 않을 수 있으나, 이 경우 회원 인증,
-              데이터 저장, 결제, 분석 등 일부 기능 이용이 제한될 수 있습니다.
+              서비스 제공에 필요한 해외 클라우드, 해외 SaaS, 해외 고객지원 인프라 사용 과정에서
+              개인정보가 국외로 이전 또는 보관될 수 있습니다. 이는 회원 인증, 데이터 저장, 결제·상담
+              처리, 보안 로그 관리 등 계약 이행과 서비스 제공을 위해 필요한 처리위탁·보관입니다.
             </p>
             <div className="overflow-x-auto">
               <table className="w-full border border-border rounded-lg text-xs">

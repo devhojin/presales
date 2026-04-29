@@ -35,7 +35,7 @@ CREATE INDEX IF NOT EXISTS idx_profiles_terms_missing
 -- 4) 컬럼 설명
 COMMENT ON COLUMN profiles.terms_agreed_at    IS '이용약관 동의 시각 (NULL=미동의, OAuth 신규는 complete-signup 필요)';
 COMMENT ON COLUMN profiles.privacy_agreed_at  IS '개인정보처리방침 동의 시각';
-COMMENT ON COLUMN profiles.overseas_agreed_at IS '개인정보 국외이전 동의 시각 (Supabase 싱가포르·Vercel 미국)';
+COMMENT ON COLUMN profiles.overseas_agreed_at IS '개인정보 국외이전 안내 확인 시각';
 COMMENT ON COLUMN profiles.age_agreed_at      IS '만 14세 이상 확인 시각';
 COMMENT ON COLUMN profiles.deleted_at         IS '회원 탈퇴 soft-delete 시각 (NULL=정상, NOT NULL=익명화 완료)';
 COMMENT ON COLUMN profiles.deletion_reason    IS '탈퇴 사유 (선택)';

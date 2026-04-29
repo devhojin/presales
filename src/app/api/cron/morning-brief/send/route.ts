@@ -1,12 +1,12 @@
 /**
- * Vercel Cron: 매일 KST 07:00 (UTC 22:00 전날) 실행.
+ * 예약 작업: 매일 KST 07:00 (UTC 22:00 전날) 실행.
  * 1. 오늘자 briefs 가 ready 인지 확인
  * 2. news_items 에서 used_in_brief = briefId 인 것 모아서 카테고리별 정렬
  * 3. 활성 구독자 전체에게 메일플러그 SMTP 발송
  * 4. brief_sends 에 결과 기록
  * 5. briefs 상태 sent / failed
  *
- * vercel.json 의 schedule: "0 22 * * *"
+ * schedule: "0 22 * * *"
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { renderHtml, renderText } from '../../../../../../morning-brief/lib/render-brief'

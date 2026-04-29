@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
   let downloadUrl: string = file.file_url
 
   // file_url이 Supabase Storage URL인 경우 서명 URL로 변환 (60초 유효)
-  // Vercel 환경변수에 개행 문자가 섞여있을 수 있어 trim 필수
+  // 환경변수에 개행 문자가 섞여있을 수 있어 trim 필수
   const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').trim()
   const storagePublicPrefix = `${supabaseUrl}/storage/v1/object/public/`
   const storageSignedPrefix = `${supabaseUrl}/storage/v1/object/sign/`

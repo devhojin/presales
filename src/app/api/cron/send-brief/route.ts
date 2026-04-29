@@ -26,8 +26,7 @@ export async function GET(request: NextRequest) {
   )
 
   try {
-    // 2. 오늘 날짜 기준 최신 발행 브리프 1건 조회 (KST 기준 today = UTC yesterday)
-    //    Vercel Cron은 UTC 23:00에 실행되므로 KST 날짜 = UTC 날짜 + 1
+    // 2. 오늘 날짜 기준 최신 발행 브리프 1건 조회
     const nowUtc = new Date()
     const kstOffsetMs = 9 * 60 * 60 * 1000
     const kstDate = new Date(nowUtc.getTime() + kstOffsetMs)

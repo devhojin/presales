@@ -12,6 +12,13 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     locale: 'ko_KR',
     type: 'website',
+    images: [{ url: '/images/hero-proposal-workshop.webp', width: 1200, height: 630, alt: '프리세일즈 입찰 공고' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `공고 사업 | ${SITE_NAME}`,
+    description: '정부 지원사업 공고 정보를 한눈에 확인하세요.',
+    images: ['/images/hero-proposal-workshop.webp'],
   },
   alternates: {
     canonical: `${SITE_URL}/announcements`,

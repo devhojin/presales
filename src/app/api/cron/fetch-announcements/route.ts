@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 /**
  * Cron handler: Fetch announcements from K-Startup API
- * Called by Vercel CRON_SECRET
+ * Called by CRON_SECRET
  * Max duration: 60 seconds
  */
 export async function GET(request: NextRequest) {

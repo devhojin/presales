@@ -2,7 +2,7 @@
  * Rate Limiter — Upstash Redis(분산) + 인메모리 fallback
  *
  * - UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN 가 설정되면 Redis 사용
- *   (Vercel 멀티 인스턴스 환경에서 일관된 제한)
+ *   (멀티 인스턴스 환경에서 일관된 제한)
  * - env 없으면 인메모리로 fallback (개발/단일 인스턴스 호환성)
  */
 

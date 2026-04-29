@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { useToastStore } from '@/stores/toast-store'
 import { sanitizeRedirect } from '@/lib/safe-redirect'
+import { AgreementItem, PRIVACY_PREVIEW, TERMS_PREVIEW } from '@/components/auth/AgreementItem'
 
 export default function CompleteSignupPage() {
   const router = useRouter()
@@ -22,7 +23,6 @@ export default function CompleteSignupPage() {
 
   const [agreeTerms, setAgreeTerms] = useState(false)
   const [agreePrivacy, setAgreePrivacy] = useState(false)
-  const [agreeOverseas, setAgreeOverseas] = useState(false)
   const [agreeAge, setAgreeAge] = useState(false)
   const [agreeMarketing, setAgreeMarketing] = useState(false)
   const [error, setError] = useState('')
@@ -52,8 +52,8 @@ export default function CompleteSignupPage() {
     e.preventDefault()
     setError('')
 
-    if (!agreeTerms || !agreePrivacy || !agreeOverseas || !agreeAge) {
-      setError('필수 항목에 모두 동의해주세요 (이용약관·개인정보·국외이전·만14세 이상)')
+    if (!agreeTerms || !agreePrivacy || !agreeAge) {
+      setError('필수 항목에 모두 동의해주세요 (이용약관·개인정보·만14세 이상)')
       return
     }
     if (!name.trim()) {
@@ -69,7 +69,6 @@ export default function CompleteSignupPage() {
         body: JSON.stringify({
           agreeTerms,
           agreePrivacy,
-          agreeOverseas,
           agreeAge,
           agreeMarketing,
           name,
@@ -85,7 +84,7 @@ export default function CompleteSignupPage() {
       }
 
       if (json.couponIssued) {
-        addToast('환영합니다! 🎉 회원가입 축하 1만원 쿠폰이 발급되었습니다', 'success')
+        addToast('환영합니다! 회원가입 축하 1만원 쿠폰이 발급되었습니다', 'success')
       } else {
         addToast('가입이 완료되었습니다', 'success')
       }
@@ -172,12 +171,11 @@ export default function CompleteSignupPage() {
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={agreeTerms && agreePrivacy && agreeOverseas && agreeAge && agreeMarketing}
+                  checked={agreeTerms && agreePrivacy && agreeAge && agreeMarketing}
                   onChange={(e) => {
                     const checked = e.target.checked
                     setAgreeTerms(checked)
                     setAgreePrivacy(checked)
-                    setAgreeOverseas(checked)
                     setAgreeAge(checked)
                     setAgreeMarketing(checked)
                   }}
@@ -190,41 +188,28 @@ export default function CompleteSignupPage() {
               </label>
               <div className="border-t border-border/50" />
 
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={agreeTerms}
-                  onChange={(e) => setAgreeTerms(e.target.checked)}
-                  className="w-4 h-4 rounded border border-border cursor-pointer"
-                />
-                <span className="text-sm text-muted-foreground">
-                  <Link href="/terms" target="_blank" className="text-primary hover:text-primary/80 transition-colors">이용약관</Link>
-                  에 동의합니다 (필수)
-                </span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={agreePrivacy}
-                  onChange={(e) => setAgreePrivacy(e.target.checked)}
-                  className="w-4 h-4 rounded border border-border cursor-pointer"
-                />
-                <span className="text-sm text-muted-foreground">
-                  <Link href="/privacy" target="_blank" className="text-primary hover:text-primary/80 transition-colors">개인정보처리방침</Link>
-                  에 동의합니다 (필수)
-                </span>
-              </label>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={agreeOverseas}
-                  onChange={(e) => setAgreeOverseas(e.target.checked)}
-                  className="w-4 h-4 rounded border border-border cursor-pointer"
-                />
-                <span className="text-sm text-muted-foreground">
-                  개인정보의 국외 이전(Supabase 싱가포르·Vercel 미국)에 동의합니다 (필수)
-                </span>
-              </label>
+              <AgreementItem
+                checked={agreeTerms}
+                onCheckedChange={setAgreeTerms}
+                href="/terms"
+                label="이용약관"
+                preview={TERMS_PREVIEW}
+              />
+              <AgreementItem
+                checked={agreePrivacy}
+                onCheckedChange={setAgreePrivacy}
+                href="/privacy"
+                label="개인정보처리방침"
+                preview={PRIVACY_PREVIEW}
+              />
+              <div className="ml-7 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-relaxed text-blue-800">
+                서비스 제공을 위해 개인정보가 해외 클라우드 및 해외 SaaS에 이전·보관될 수 있습니다. 자세한
+                내용은{' '}
+                <Link href="/privacy#overseas" target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-4">
+                  개인정보처리방침 국외 이전
+                </Link>
+                에서 확인할 수 있습니다.
+              </div>
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"

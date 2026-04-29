@@ -705,17 +705,20 @@ export default function DiscountMatchesPage() {
       </div>
 
       {/* Add button */}
-      <div className="mb-6">
+      <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-center">
         <button
           onClick={() => {
             setEditingMatch(null)
             setIsModalOpen(true)
           }}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors font-medium"
+          className="flex w-fit items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary/90 transition-colors font-medium"
         >
           <Plus className="w-4 h-4" />
           새 매칭 추가
         </button>
+        <p className="max-w-3xl rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-relaxed text-blue-800">
+          매칭으로 소스와 타겟상품이 등록되면 사본과 원본으로 분류되어 프론트페이지에서 구분됩니다.
+        </p>
       </div>
 
       {/* Table */}

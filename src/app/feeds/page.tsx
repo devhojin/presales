@@ -12,6 +12,13 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     locale: 'ko_KR',
     type: 'website',
+    images: [{ url: '/images/hero-ai-readiness.webp', width: 1200, height: 630, alt: '프리세일즈 IT피드' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `IT피드 | ${SITE_NAME}`,
+    description: '스타트업, IT, 정책 뉴스를 매일 업데이트합니다.',
+    images: ['/images/hero-ai-readiness.webp'],
   },
   alternates: {
     canonical: `${SITE_URL}/feeds`,

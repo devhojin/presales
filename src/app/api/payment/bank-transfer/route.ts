@@ -12,7 +12,7 @@ import { reserveRewardPoints, rollbackRewardPoints } from '@/lib/reward-points'
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'help@amarans.co.kr'
 
 // 입금 계좌 정보 (환경변수 우선, 미설정 시 기본값)
-// Vercel → Settings → Environment Variables 에서 값 변경 가능
+// 운영 환경변수에서 값 변경 가능
 const BANK_ACCOUNT = {
   bank: process.env.BANK_NAME || '기업은행',
   account: process.env.BANK_ACCOUNT_NUMBER || '394-056559-01-013',

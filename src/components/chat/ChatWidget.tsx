@@ -64,6 +64,51 @@ function ChatFileMessage({ msg, isMe, guestId }: { msg: ChatMessage; isMe: boole
   )
 }
 
+function ChatAgentIcon() {
+  return (
+    <svg viewBox="0 0 44 44" aria-hidden="true" className="h-10 w-10">
+      <circle cx="22" cy="22" r="21" fill="currentColor" opacity="0" />
+      <path
+        d="M12.8 23.5c0-7.1 3.9-12.2 9.2-12.2s9.2 5.1 9.2 12.2"
+        fill="none"
+        stroke="white"
+        strokeWidth="3.4"
+        strokeLinecap="round"
+      />
+      <circle cx="22" cy="23.2" r="8.8" fill="#FFD4B5" />
+      <path
+        d="M13.7 22.4c.4-6.6 4.6-10.3 9.5-10.3 4.3 0 7.3 2.7 8.1 6.2-4.3.1-7.6-1.7-9.6-4.4-1.2 3.1-3.8 6-8 8.5Z"
+        fill="#26324A"
+      />
+      <circle cx="18.9" cy="24.3" r="1.1" fill="#26324A" />
+      <circle cx="25.1" cy="24.3" r="1.1" fill="#26324A" />
+      <path
+        d="M18.7 29.1c1.9 1.3 4.6 1.3 6.6 0"
+        fill="none"
+        stroke="#C27A63"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+      />
+      <path
+        d="M10.3 23.6c0-2.6 1.9-4.7 4.3-4.7h1v9.4h-1c-2.4 0-4.3-2.1-4.3-4.7Z"
+        fill="white"
+      />
+      <path
+        d="M33.7 23.6c0-2.6-1.9-4.7-4.3-4.7h-1v9.4h1c2.4 0 4.3-2.1 4.3-4.7Z"
+        fill="white"
+      />
+      <path
+        d="M29.3 28.2c-.6 3.2-3.3 5.1-7.1 5.1"
+        fill="none"
+        stroke="white"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+      <rect x="20.3" y="32" width="4" height="2.4" rx="1.2" fill="white" />
+    </svg>
+  )
+}
+
 const BLOCKED_EXTENSIONS = [
   '.exe', '.bat', '.cmd', '.com', '.msi', '.scr', '.pif',
   '.vbs', '.vbe', '.js', '.jse', '.ws', '.wsf', '.wsc', '.wsh',
@@ -115,7 +160,7 @@ async function uploadChatFile(
     }
   }
 
-  // 게스트 fallback — Vercel body size 한계로 사실상 ~4MB
+  // 게스트 fallback - 서버 요청 본문 크기 제한으로 사실상 약 4MB
   const formData = new FormData()
   formData.append('file', file)
   formData.append('room_id', roomId)
@@ -624,11 +669,11 @@ export function ChatWidget() {
         )}
         <button
           onClick={toggle}
-          className="w-14 h-14 bg-blue-700 hover:bg-blue-800 text-white rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-105 cursor-pointer"
+          className="w-14 h-14 bg-[#3f73f6] hover:bg-[#3367ed] text-[#3f73f6] rounded-full shadow-[0_10px_24px_rgba(37,99,235,0.34)] ring-1 ring-white/70 flex items-center justify-center transition-all hover:scale-105 active:scale-[0.98] cursor-pointer"
           title="채팅 문의"
           aria-label="채팅 문의"
         >
-          <MessageCircle className="w-6 h-6" />
+          <ChatAgentIcon />
         </button>
       </div>
     )
@@ -643,7 +688,7 @@ export function ChatWidget() {
           <p className="text-[11px] text-blue-100 truncate">
             {user ? '회원 상담' : '비회원 문의'}
             {roomStatus === 'closed' && ' · 종료됨'}
-            {roomId && ` · ID ${roomId.slice(0, 8)}`}
+            {user?.email ? ` · ${user.email}` : roomId ? ` · ID ${roomId.slice(0, 8)}` : ''}
           </p>
         </div>
         <button onClick={close} className="text-white/80 hover:text-white transition-colors cursor-pointer ml-2 shrink-0">

@@ -1,13 +1,13 @@
 /**
- * Vercel Cron: 매일 KST 06:50 (UTC 21:50 전날) 실행.
+ * 예약 작업: 매일 KST 06:50 (UTC 21:50 전날) 실행.
  * 1. Google News RSS 5카테고리 수집
  * 2. 4단계 dedup (cross-day 시드 + 해시 + 정규화 + 유사도)
  * 3. Claude Haiku semantic dedup
  * 4. news_items 에 저장
  * 5. briefs 에 오늘자 row 생성/업데이트 (status='ready')
  *
- * vercel.json 의 schedule: "50 21 * * *"
- * 인증: Authorization: Bearer ${MB_CRON_SECRET} (Vercel Cron 자동 부여)
+ * schedule: "50 21 * * *"
+ * 인증: Authorization: Bearer ${MB_CRON_SECRET}
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { collectByCategory } from '../../../../../../morning-brief/lib/collect-news'

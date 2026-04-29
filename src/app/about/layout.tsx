@@ -11,6 +11,7 @@ export const metadata: Metadata = {
     title: "회사소개 — PRESALES by AMARANS",
     description: "공공조달 현장 경험을 갖춘 팀이 만드는 제안서 마켓플레이스.",
     url: `${SITE_URL}/about`,
+    images: [{ url: '/images/hero-consultant-1.webp', width: 1200, height: 630, alt: '프리세일즈 회사소개' }],
   },
 };
 

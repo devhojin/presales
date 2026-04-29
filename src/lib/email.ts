@@ -3,7 +3,7 @@ import { SITE_URL } from './constants'
 
 // 사용자에게 표시할 "화이트라벨" 도메인 (presales.co.kr 고정)
 // 링크 href 는 SITE_URL 을 사용하되, 보이는 텍스트는 presales.co.kr 유지.
-// 도메인 연결 전 상태(Vercel preview 도메인) 에서도 동작하도록.
+// 도메인 연결 전 임시 도메인 상태에서도 동작하도록.
 function siteLinkHref(): string {
   return SITE_URL
 }

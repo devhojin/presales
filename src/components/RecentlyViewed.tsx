@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Clock, FileText, X } from 'lucide-react'
+import { ChevronDown, ChevronUp, Clock, FileText, X } from 'lucide-react'
 import { formatPrice } from '@/lib/types'
 
 const STORAGE_KEY = 'presales-recently-viewed'
@@ -42,11 +42,17 @@ export function RecentlyViewed() {
       {collapsed ? (
         <button
           onClick={() => setCollapsed(false)}
-          className="bg-white border border-slate-200 rounded-xl px-2.5 py-3.5 shadow-lg hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer flex flex-col items-center gap-1"
-          title="최근 본 상품 열기"
+          className="w-[220px] bg-white border border-slate-200 rounded-2xl shadow-[0_8px_30px_rgba(15,23,42,0.12)] hover:bg-slate-50 hover:border-slate-300 transition-colors cursor-pointer"
+          title="최근 본 상품 펼치기"
+          aria-label="최근 본 상품 펼치기"
         >
-          <Clock className="w-4 h-4 text-slate-700" />
-          <span className="text-xs text-slate-900 font-bold">{items.length}</span>
+          <div className="flex items-center justify-between px-3.5 py-3">
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-slate-700" />
+              <span className="text-xs font-bold text-slate-900">최근 본 상품</span>
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-700" />
+          </div>
         </button>
       ) : (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-[0_8px_30px_rgba(15,23,42,0.12)] w-[220px] overflow-hidden">
@@ -56,8 +62,13 @@ export function RecentlyViewed() {
               <Clock className="w-3.5 h-3.5 text-slate-700" />
               <span className="text-xs font-bold text-slate-900">최근 본 상품</span>
             </div>
-            <button onClick={() => setCollapsed(true)} className="w-6 h-6 rounded flex items-center justify-center hover:bg-slate-200 transition-colors cursor-pointer" aria-label="닫기">
-              <X className="w-3.5 h-3.5 text-slate-700" />
+            <button
+              onClick={() => setCollapsed(true)}
+              className="w-6 h-6 rounded flex items-center justify-center hover:bg-slate-200 transition-colors cursor-pointer"
+              aria-label="최근 본 상품 접기"
+              title="최근 본 상품 접기"
+            >
+              <ChevronUp className="w-3.5 h-3.5 text-slate-700" />
             </button>
           </div>
 

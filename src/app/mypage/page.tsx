@@ -665,26 +665,19 @@ export default function MyConsolePage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 pb-12">
-      {/* Row 1: Welcome Banner */}
-      <div className="rounded-2xl bg-gradient-to-r from-zinc-900 to-blue-950 text-white p-6 md:p-8 mt-6 mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-blue-300 text-sm font-medium mb-1">마이페이지</p>
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">
-              안녕하세요, {profile?.name || '회원'}님
-            </h1>
-            <div className="flex items-center gap-3 text-sm text-zinc-300">
-              {profile?.company && <span className="flex items-center gap-1"><Building className="w-3.5 h-3.5" />{profile.company}</span>}
-              <span>가입일: {profile ? formatDate(profile.created_at) : '-'}</span>
-            </div>
-          </div>
-          <button onClick={() => setOverlay('profile')} className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-sm font-medium transition-colors cursor-pointer">
-            <User className="w-4 h-4" /> 내 정보
-          </button>
+      <div className="mt-6 mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">마이페이지</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {profile?.email || profile?.name || '회원'} · 가입일 {profile ? formatDate(profile.created_at) : '-'}
+          </p>
         </div>
+        <button onClick={() => setOverlay('profile')} className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl border border-border text-sm font-medium hover:bg-muted transition-colors cursor-pointer">
+          <User className="w-4 h-4" /> 내 정보
+        </button>
       </div>
 
-      {/* Row 2: KPI Cards */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
         {/* 내 쿠폰 (맨 앞, 버튼) */}
         <button

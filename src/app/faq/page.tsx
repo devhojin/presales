@@ -15,6 +15,13 @@ export const metadata: Metadata = {
     title: '자주 묻는 질문 (FAQ) | 프리세일즈',
     description: '구매/결제, 다운로드, 상품, 컨설팅, 환불 등 자주 묻는 질문',
     url: `${SITE_URL}/faq`,
+    images: [{ url: '/images/hero-consultant-2.webp', width: 1200, height: 630, alt: '프리세일즈 고객지원' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '자주 묻는 질문 (FAQ) | 프리세일즈',
+    description: '구매/결제, 다운로드, 상품, 컨설팅, 환불 등 자주 묻는 질문',
+    images: ['/images/hero-consultant-2.webp'],
   },
 }
 

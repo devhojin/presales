@@ -12,6 +12,13 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     locale: 'ko_KR',
     type: 'website',
+    images: [{ url: '/images/hero-document-store.webp', width: 1200, height: 630, alt: '프리세일즈 문서 스토어' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `문서 스토어 | ${SITE_NAME}`,
+    description: '공공조달 입찰에 필요한 모든 문서 템플릿을 한 곳에서.',
+    images: ['/images/hero-document-store.webp'],
   },
   alternates: {
     canonical: `${SITE_URL}/store`,

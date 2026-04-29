@@ -11,11 +11,13 @@ export const metadata: Metadata = {
     title: '우리는 — 공공조달 제안서 마켓플레이스의 기준',
     description: '제안서 템플릿, 입찰 정보, IT피드, 전문가 컨설팅을 연결하는 PRESALES.',
     url: `${SITE_URL}/us`,
+    images: [{ url: '/images/hero-consultant-1.webp', width: 1200, height: 630, alt: '프리세일즈 우리는' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: '우리는 — PRESALES',
     description: '공공조달 제안 준비의 정보 격차를 줄이는 제안서 마켓플레이스.',
+    images: ['/images/hero-consultant-1.webp'],
   },
 }
 

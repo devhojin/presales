@@ -364,15 +364,15 @@ export default function AdminAnnouncementsPage() {
       {/* Fetch Progress Modal */}
       {fetchModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => { if (fetchDone) setFetchModal(false) }}>
-          <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 p-6" style={fetchModalStyle} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-card rounded-2xl shadow-xl max-w-md w-full mx-4 max-h-[calc(100dvh-2rem)] overflow-hidden flex flex-col" style={fetchModalStyle} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
               <h3 className="text-lg font-bold flex items-center gap-2 cursor-move select-none" onMouseDown={handleFetchModalMouseDown}>
                 {fetchDone ? <Megaphone className="w-5 h-5 text-primary" /> : <Loader2 className="w-5 h-5 animate-spin text-primary" />}
                 공고 수집 {fetchDone ? '완료' : '진행 중'}
               </h3>
               {fetchDone && <button onClick={() => setFetchModal(false)} className="text-muted-foreground hover:text-foreground cursor-pointer"><X className="w-5 h-5" /></button>}
             </div>
-            <div className="space-y-3">
+            <div className="space-y-3 overflow-y-auto px-6 pb-4">
               {fetchLogs.map((log, i) => (
                 <div key={i} className="bg-muted/50 rounded-xl p-3">
                   <div className="flex items-center justify-between mb-1.5">
@@ -399,7 +399,7 @@ export default function AdminAnnouncementsPage() {
               ))}
             </div>
             {fetchDone && (
-              <div className="mt-4 pt-3 border-t border-border/50">
+              <div className="border-t border-border/50 px-6 py-4 shrink-0 bg-card">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">총 신규</span>
                   <span className="font-bold text-primary">{fetchLogs.reduce((s, l) => s + l.inserted, 0)}건</span>
