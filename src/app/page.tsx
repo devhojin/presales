@@ -121,14 +121,14 @@ const heroFeaturePanels = [
     title: '검증된 제안서',
     caption: 'PPT, PDF, HWP 원본 파일',
     href: '/store',
-    image: '/images/hero-ai-readiness.webp',
+    image: '/images/hero-document-store.webp',
   },
   {
     label: '컨설팅',
     title: '입찰 전략 리뷰',
     caption: '공고 분석부터 발표 준비까지',
     href: '/consulting',
-    image: '/images/hero-proposal-workshop.webp',
+    image: '/images/hero-consulting-panel.webp',
   },
 ] as const
 
@@ -136,15 +136,15 @@ function ProductRailItem({ product, categoryNames }: { product: DbProduct; categ
   return (
     <Link
       href={`/store/${product.id}`}
-      className="presales-product-rail-card group inline-flex w-[280px] shrink-0 items-center gap-3 rounded-2xl border border-gray-200/80 bg-white/92 p-3 text-left shadow-[0_10px_28px_rgba(15,23,42,0.06)] backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_16px_36px_rgba(37,99,235,0.13)] active:scale-[0.99]"
+      className="presales-product-rail-card group inline-flex min-h-[132px] w-[340px] shrink-0 items-center gap-4 rounded-2xl border border-gray-200/80 bg-white/92 p-4 text-left shadow-[0_10px_28px_rgba(15,23,42,0.06)] backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_16px_36px_rgba(37,99,235,0.13)] active:scale-[0.99]"
     >
-      <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-xl bg-gray-100">
+      <div className="relative h-24 w-[120px] shrink-0 overflow-hidden rounded-xl bg-gray-100">
         {product.thumbnail_url ? (
           <Image
             src={product.thumbnail_url}
             alt={product.title}
             fill
-            sizes="80px"
+            sizes="120px"
             className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           />
         ) : (
@@ -160,8 +160,8 @@ function ProductRailItem({ product, categoryNames }: { product: DbProduct; categ
           </span>
           <span className="truncate text-[10px] font-medium text-gray-400">{categoryNames[0] || '문서'}</span>
         </div>
-        <p className="line-clamp-2 text-xs font-bold leading-snug text-gray-950 group-hover:text-blue-700">{product.title}</p>
-        <p className="mt-1 text-[11px] font-semibold text-blue-600">{product.is_free ? '무료 다운로드' : formatPrice(product.price)}</p>
+        <p className="line-clamp-3 text-sm font-bold leading-snug text-gray-950 group-hover:text-blue-700">{product.title}</p>
+        <p className="mt-2 text-xs font-semibold text-blue-600">{product.is_free ? '무료 다운로드' : formatPrice(product.price)}</p>
       </div>
     </Link>
   )
@@ -182,7 +182,7 @@ function ProductRail({
       <div className="mt-12 overflow-hidden rounded-[1.5rem] border border-gray-200 bg-white/70 p-4">
         <div className="flex gap-3">
           {Array.from({ length: 5 }).map((_, index) => (
-            <div key={index} className="h-[90px] w-[280px] shrink-0 animate-pulse rounded-2xl bg-gray-100" />
+            <div key={index} className="h-[132px] w-[340px] shrink-0 animate-pulse rounded-2xl bg-gray-100" />
           ))}
         </div>
       </div>
@@ -386,7 +386,7 @@ export default function Home() {
                     priority
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950/72 via-slate-950/10 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-5 md:p-7">
+                  <div className="presales-hero-main-copy absolute bottom-0 left-0 right-0 p-5 md:p-7">
                     <div className="mb-4 inline-flex rounded-full border border-white/15 bg-white/12 px-3 py-1 text-xs font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur">
                       AI readiness · 제안서 검토
                     </div>
