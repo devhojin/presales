@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
-import { createClient } from '@supabase/supabase-js'
 import { randomBytes } from 'crypto'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/client-ip'
+import { presalesServiceClient, subscribeViaMorningBrief } from '@/lib/morning-brief-platform'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
     // 가입 경로 소스 — 외부 사이트 릴레이가 'maru_ai_homepage' 등을 보낼 수 있도록 허용
     // 형식: 영문 소문자 / 숫자 / _ / - 만, 길이 ≤ 50
-    let source = 'web'
+    let source = 'presales'
     if (typeof rawSource === 'string' && rawSource.length > 0) {
       if (rawSource.length > 50 || !/^[a-z0-9_-]+$/.test(rawSource)) {
         return NextResponse.json({ ok: false, error: 'source 형식이 올바르지 않습니다' }, { status: 400 })
@@ -42,48 +42,66 @@ export async function POST(request: NextRequest) {
       source = rawSource
     }
 
-    const service = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false } },
-    )
+    const service = presalesServiceClient()
 
-    // 이미 존재하는지 확인
+    const lowerEmail = email.toLowerCase()
+    const { data: profile } = await service
+      .from('profiles')
+      .select('id')
+      .eq('email', lowerEmail)
+      .maybeSingle()
+
+    const central = await subscribeViaMorningBrief({
+      email: lowerEmail,
+      name: name || null,
+      sourceSite: 'presales',
+      sourceUserId: profile?.id ?? null,
+      sourceMemberState: profile?.id ? 'member' : 'guest',
+      briefTypeKey: 'public_procurement_daily',
+      metadata: {
+        source_route: '/brief',
+      },
+    })
+
+    if (!central.ok) {
+      return NextResponse.json({ ok: false, error: central.error || '모닝브리프 중앙 등록 실패' }, { status: 502 })
+    }
+
+    // 프리세일즈 로컬에는 "신청 기록"만 남긴다. 삭제/수신거부의 원본 상태는 morning-brief에서 관리한다.
     const { data: existing } = await service
       .from('brief_subscribers')
       .select('id, status')
-      .eq('email', email.toLowerCase())
+      .eq('email', lowerEmail)
       .maybeSingle()
 
     if (existing) {
-      if (existing.status === 'active') {
-        return NextResponse.json({ ok: true, already: true, message: '이미 구독 중입니다' })
-      }
-      // 재구독: status 되살리기
-      const { error: updErr } = await service
+      await service
         .from('brief_subscribers')
         .update({
-          status: 'active',
+          status: central.status || 'active',
           subscribed_at: new Date().toISOString(),
           unsubscribed_at: null,
           name: name || null,
+          source,
         })
         .eq('id', existing.id)
-      if (updErr) {
-        return NextResponse.json({ ok: false, error: updErr.message }, { status: 500 })
-      }
-      return NextResponse.json({ ok: true, resubscribed: true })
+      return NextResponse.json({
+        ok: true,
+        already: !central.created && !central.resubscribed,
+        resubscribed: central.resubscribed,
+        central,
+        message: central.message || '모닝브리프 신청 기록이 갱신되었습니다',
+      })
     }
 
-    // 신규 구독
     const token = randomBytes(16).toString('base64url')
     const { error: insErr } = await service
       .from('brief_subscribers')
       .insert({
-        email: email.toLowerCase(),
+        email: lowerEmail,
         name: name || null,
         token,
-        status: 'active',
+        status: central.status || 'active',
         source,
       })
 
@@ -91,7 +109,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ ok: false, error: insErr.message }, { status: 500 })
     }
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, central, message: central.message || '구독 신청 완료' })
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'unknown error'
     return NextResponse.json({ ok: false, error: msg }, { status: 500 })

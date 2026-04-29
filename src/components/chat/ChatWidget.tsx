@@ -359,6 +359,14 @@ export function ChatWidget() {
     setShowScrollBtn(false)
   }
 
+  const appendSentMessage = (message: ChatMessage | null | undefined) => {
+    if (!message?.id) return
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === message.id)) return prev
+      return [...prev, message]
+    })
+  }
+
   // 메시지 전송
   const sendMessage = async () => {
     const text = input.trim()
@@ -367,7 +375,7 @@ export function ChatWidget() {
     setInput('')
 
     try {
-      await fetch('/api/chat/messages', {
+      const res = await fetch('/api/chat/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -376,7 +384,12 @@ export function ChatWidget() {
           guest_id: guestId,
         }),
       })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || '전송 실패')
+      appendSentMessage(data.message as ChatMessage | undefined)
+      setError(null)
     } catch {
+      setInput(text)
       setError('전송에 실패했습니다')
     } finally {
       setSending(false)
@@ -410,7 +423,7 @@ export function ChatWidget() {
       }
 
       // 파일 메시지 전송
-      await fetch('/api/chat/messages', {
+      const res = await fetch('/api/chat/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -424,6 +437,10 @@ export function ChatWidget() {
           guest_id: guestId,
         }),
       })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || '전송 실패')
+      appendSentMessage(data.message as ChatMessage | undefined)
+      setError(null)
     } catch {
       setError('파일 업로드에 실패했습니다')
     } finally {
@@ -450,7 +467,7 @@ export function ChatWidget() {
         try {
           const uploadData = await uploadChatFile(file, roomId, guestId)
           if (uploadData) {
-            await fetch('/api/chat/messages', {
+            const res = await fetch('/api/chat/messages', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -464,6 +481,11 @@ export function ChatWidget() {
                 guest_id: guestId,
               }),
             })
+            const data = await res.json().catch(() => ({}))
+            if (res.ok) {
+              appendSentMessage(data.message as ChatMessage | undefined)
+              setError(null)
+            }
           }
         } catch { /* ignore */ }
         finally { setUploading(false) }
