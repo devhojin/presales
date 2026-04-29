@@ -392,8 +392,8 @@ export default function Home() {
                     </div>
                     <div className="flex items-end justify-between gap-4">
                       <div>
-                        <p className="text-2xl font-bold tracking-tight text-white md:text-3xl">공고를 읽고 문서로 바꾸는 시간</p>
-                        <p className="mt-2 max-w-[440px] text-sm leading-relaxed text-white/75">템플릿, 공고, IT피드, 모닝브리프가 연결된 입찰 준비 흐름입니다.</p>
+                        <p className="break-keep text-2xl font-bold tracking-tight text-white md:text-3xl">공고를 읽고 문서로 바꾸는 시간</p>
+                        <p className="mt-2 max-w-[440px] break-keep text-sm leading-relaxed text-white/75">템플릿, 공고, IT피드, 모닝브리프가 연결된 입찰 준비 흐름입니다.</p>
                       </div>
                       <Link href="/brief" className="hidden h-11 shrink-0 items-center rounded-full bg-white px-4 text-sm font-bold text-slate-950 transition-transform hover:-translate-y-0.5 md:inline-flex">
                         브리프 보기
@@ -406,6 +406,7 @@ export default function Home() {
                   <Link
                     key={panel.label}
                     href={panel.href}
+                    data-panel-index={index}
                     className={`presales-hero-strip group relative hidden overflow-hidden rounded-[1.75rem] bg-slate-900 shadow-[0_22px_70px_rgba(15,23,42,0.13)] transition-transform duration-500 hover:-translate-y-1 lg:block ${index === 1 ? 'presales-strip-late' : ''}`}
                   >
                     <Image
