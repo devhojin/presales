@@ -45,6 +45,11 @@ export const metadata: Metadata = {
     "공공조달 컨설팅",
   ],
   metadataBase: new URL(SITE_URL),
+  verification: {
+    other: {
+      "naver-site-verification": "facd5b3518a10279da05d4004efd0ee6ad841570",
+    },
+  },
   alternates: { canonical: SITE_URL },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 } },
   openGraph: {
