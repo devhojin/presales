@@ -1,3 +1,4 @@
+import { createServerClient } from '@supabase/ssr'
 import { CATEGORIES } from '../../morning-brief/lib/categories'
 import type { NewsItem } from '../../morning-brief/lib/dedup'
 import { renderHtml } from '../../morning-brief/lib/render-brief'
@@ -14,8 +15,32 @@ interface NewsItemRow {
   raw: { rss_pub_date?: string } | null
 }
 
+interface LegacyDailyBriefRow {
+  id: number
+  brief_date: string
+  slug: string
+  subject: string
+  email_html: string
+  total_news: number
+  total_announcements: number
+  created_at: string
+  sent_at: string | null
+}
+
 const BRIEF_SELECT = 'id, brief_date, subject, html_body, news_count, started_at, finished_at'
 const NEWS_SELECT = 'title, url, source_media, category, raw'
+
+function legacySupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  if (!url || !key) return null
+
+  return createServerClient(
+    url,
+    key,
+    { cookies: { getAll() { return [] } } },
+  )
+}
 
 function briefDateToKstDate(briefDate: string): Date {
   return new Date(`${briefDate}T00:00:00+09:00`)
@@ -80,6 +105,50 @@ async function hydratePublicBrief(sb: SupabaseClientLike, row: MorningBriefRow):
   }
 }
 
+function toLegacyPublicBrief(row: LegacyDailyBriefRow): PublicBrief {
+  return {
+    id: `legacy-${row.id}`,
+    brief_date: row.brief_date,
+    slug: row.slug,
+    subject: row.subject,
+    email_html: row.email_html,
+    total_news: row.total_news,
+    total_announcements: row.total_announcements,
+    created_at: row.created_at,
+    sent_at: row.sent_at,
+  }
+}
+
+async function listLegacyBriefs(limit: number): Promise<PublicBrief[]> {
+  const supabase = legacySupabase()
+  if (!supabase) return []
+
+  const { data, error } = await supabase
+    .from('daily_briefs')
+    .select('id, brief_date, slug, subject, email_html, total_news, total_announcements, created_at, sent_at')
+    .eq('is_published', true)
+    .order('brief_date', { ascending: false })
+    .limit(limit)
+
+  if (error) return []
+  return ((data ?? []) as LegacyDailyBriefRow[]).map(toLegacyPublicBrief)
+}
+
+async function getLegacyBriefBySlug(slug: string): Promise<PublicBrief | null> {
+  const supabase = legacySupabase()
+  if (!supabase) return null
+
+  const { data, error } = await supabase
+    .from('daily_briefs')
+    .select('id, brief_date, slug, subject, email_html, total_news, total_announcements, created_at, sent_at')
+    .eq('slug', slug)
+    .eq('is_published', true)
+    .maybeSingle()
+
+  if (error || !data) return null
+  return toLegacyPublicBrief(data as LegacyDailyBriefRow)
+}
+
 export async function listPublicMorningBriefs(limit = 365): Promise<PublicBrief[]> {
   const sb = morningBriefService()
   const { data, error } = await sb
@@ -91,12 +160,25 @@ export async function listPublicMorningBriefs(limit = 365): Promise<PublicBrief[
 
   if (error) throw error
 
-  return Promise.all(((data ?? []) as MorningBriefRow[]).map((row) => hydratePublicBrief(sb, row)))
+  const morningBriefs = await Promise.all(((data ?? []) as MorningBriefRow[]).map((row) => hydratePublicBrief(sb, row)))
+  const legacyBriefs = await listLegacyBriefs(limit)
+  const byDate = new Map<string, PublicBrief>()
+
+  for (const brief of morningBriefs) {
+    byDate.set(brief.brief_date, brief)
+  }
+  for (const brief of legacyBriefs) {
+    if (!byDate.has(brief.brief_date)) byDate.set(brief.brief_date, brief)
+  }
+
+  return Array.from(byDate.values())
+    .sort((a, b) => b.brief_date.localeCompare(a.brief_date))
+    .slice(0, limit)
 }
 
 export async function getPublicMorningBriefBySlug(slug: string): Promise<PublicBrief | null> {
   const briefDate = parseMorningBriefDateFromSlug(slug)
-  if (!briefDate) return null
+  if (!briefDate) return getLegacyBriefBySlug(slug)
 
   const sb = morningBriefService()
   const { data, error } = await sb
@@ -107,7 +189,7 @@ export async function getPublicMorningBriefBySlug(slug: string): Promise<PublicB
     .maybeSingle()
 
   if (error) throw error
-  if (!data) return null
+  if (!data) return getLegacyBriefBySlug(slug)
 
   return hydratePublicBrief(sb, data as MorningBriefRow)
 }

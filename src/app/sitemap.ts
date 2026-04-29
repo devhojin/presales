@@ -25,6 +25,13 @@ type SitemapMorningBrief = {
   finished_at: string | null;
 };
 
+type SitemapLegacyBrief = {
+  brief_date: string;
+  slug: string;
+  sent_at: string | null;
+  created_at: string;
+};
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: new Date(), changeFrequency: "weekly", priority: 1.0 },
@@ -109,6 +116,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     // 브리프 개별 페이지: 메일 발송과 같은 morning-brief 마스터 DB를 기준으로 노출
     let briefPages: MetadataRoute.Sitemap = [];
+    const morningBriefDates = new Set<string>();
     try {
       const mb = morningBriefService();
       const { data: briefs, error: briefError } = await mb
@@ -119,15 +127,34 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       if (briefError) throw briefError;
 
-      briefPages = ((briefs ?? []) as SitemapMorningBrief[]).map((b) => ({
-        url: `${BASE_URL}/brief/${morningBriefSlug(b.brief_date)}`,
-        lastModified: b.finished_at ? new Date(b.finished_at) : b.started_at ? new Date(b.started_at) : new Date(b.brief_date),
-        changeFrequency: "daily" as const,
-        priority: 0.7,
-      }));
+      briefPages = ((briefs ?? []) as SitemapMorningBrief[]).map((b) => {
+        morningBriefDates.add(b.brief_date);
+        return {
+          url: `${BASE_URL}/brief/${morningBriefSlug(b.brief_date)}`,
+          lastModified: b.finished_at ? new Date(b.finished_at) : b.started_at ? new Date(b.started_at) : new Date(b.brief_date),
+          changeFrequency: "daily" as const,
+          priority: 0.7,
+        };
+      });
     } catch {
       briefPages = [];
     }
+
+    const { data: legacyBriefs } = await supabase
+      .from("daily_briefs")
+      .select("brief_date, slug, sent_at, created_at")
+      .eq("is_published", true)
+      .order("brief_date", { ascending: false });
+
+    const legacyBriefPages: MetadataRoute.Sitemap = ((legacyBriefs ?? []) as SitemapLegacyBrief[])
+      .filter((b) => !morningBriefDates.has(b.brief_date))
+      .map((b) => ({
+        url: `${BASE_URL}/brief/${b.slug}`,
+        lastModified: b.sent_at ? new Date(b.sent_at) : new Date(b.created_at),
+        changeFrequency: "daily" as const,
+        priority: 0.7,
+      }));
+    briefPages = [...briefPages, ...legacyBriefPages];
 
     return [...staticPages, ...productPages, ...announcementPages, ...feedPages, ...briefPages];
   } catch {
