@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: `${SITE_URL}/cart`,
   },
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function CartLayout({ children }: { children: React.ReactNode }) {

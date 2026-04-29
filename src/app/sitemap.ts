@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { createServerClient } from "@supabase/ssr";
 import { SITE_URL } from "@/lib/constants";
 import { morningBriefSlug } from "@/lib/public-briefs";
+import { SEO_LANDING_PAGES, seoLandingUrl } from "@/lib/seo-landing-pages";
 import { morningBriefService } from "../../morning-brief/lib/supabase";
 
 const BASE_URL = SITE_URL;
@@ -47,6 +48,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/privacy`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.3 },
     { url: `${BASE_URL}/refund`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.3 },
   ];
+
+  const seoLandingPages: MetadataRoute.Sitemap = SEO_LANDING_PAGES.map((page) => ({
+    url: seoLandingUrl(page.slug),
+    lastModified: new Date("2026-04-29T00:00:00+09:00"),
+    changeFrequency: "monthly" as const,
+    priority: 0.72,
+  }));
 
   try {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -156,8 +164,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }));
     briefPages = [...briefPages, ...legacyBriefPages];
 
-    return [...staticPages, ...productPages, ...announcementPages, ...feedPages, ...briefPages];
+    return [...staticPages, ...seoLandingPages, ...productPages, ...announcementPages, ...feedPages, ...briefPages];
   } catch {
-    return staticPages;
+    return [...staticPages, ...seoLandingPages];
   }
 }

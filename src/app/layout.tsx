@@ -8,7 +8,7 @@ import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { ToastContainer } from "@/components/Toast";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 import { ExitIntentPopup } from "@/components/ExitIntentPopup";
-import { DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_ALT, SITE_URL } from "@/lib/constants";
+import { DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_ALT, SITE_NAME, SITE_URL } from "@/lib/constants";
 import { safeJsonLd } from "@/lib/json-ld";
 
 const geistSans = Geist({
@@ -100,6 +100,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${notoSansKR.variable} h-full antialiased`}
     >
       <head>
+        <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} RSS`} href={`${SITE_URL}/rss.xml`} />
         <GoogleAnalytics />
         <script
           type="application/ld+json"

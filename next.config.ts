@@ -97,6 +97,18 @@ const nextConfig: NextConfig = {
       { source: "/api/:path*", headers: noIndexHeaders },
     ];
   },
+  async redirects() {
+    return [
+      { source: "/gov", destination: "/announcements", permanent: true },
+      { source: "/gov/:path*", destination: "/announcements", permanent: true },
+      { source: "/notice", destination: "/feeds", permanent: true },
+      { source: "/notice/:path*", destination: "/feeds", permanent: true },
+      { source: "/23", destination: "/feeds", permanent: true },
+      { source: "/23/:path*", destination: "/feeds", permanent: true },
+      { source: "/:legacyId(\\d+)", destination: "/store", permanent: true },
+      { source: "/:legacyId(\\d+)/:path*", destination: "/store", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;
