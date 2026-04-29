@@ -2,7 +2,6 @@ import { type Metadata } from 'next'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { SITE_URL, SITE_NAME } from '@/lib/constants'
-import { formatPrice } from '@/lib/types'
 import { normalizeProductTags } from '@/lib/product-tags'
 import ProductDetailClient from './_components/ProductDetailClient'
 
@@ -25,7 +24,7 @@ async function getProduct(id: string) {
 
   const { data } = await supabase
     .from('products')
-    .select('id, title, description, price, original_price, is_free, thumbnail_url, format, tags')
+    .select('id, title, description, thumbnail_url, format, tags')
     .eq('id', Number(id))
     .eq('is_published', true)
     .single()
@@ -46,11 +45,10 @@ export async function generateMetadata(
   }
 
   const title = `${product.title} | ${SITE_NAME}`
-  const priceText = product.is_free ? '무료' : formatPrice(product.price)
   const productTags = normalizeProductTags(product.tags)
   const baseDescription = product.description
     ? product.description.slice(0, 120)
-    : `${product.title} — ${priceText} · 공공조달 제안서 템플릿`
+    : `${product.title} — 공공조달 제안서 템플릿`
   const tagContext = productTags.length > 0
     ? ` 관련 키워드: ${productTags.slice(0, 6).join(', ')}`
     : ''

@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import DOMPurify from 'dompurify'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
-import { type DbProduct, type DbCategory, formatPrice } from '@/lib/types'
+import { type DbProduct, type DbCategory } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
 import { Badge } from '@/components/ui/badge'
@@ -484,9 +484,6 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
     )
   }
 
-  const discount = product.original_price > product.price
-    ? Math.round((1 - product.price / product.original_price) * 100)
-    : 0
   const inCart = isInCart(product.id)
   const categoryNames = getCategoryNames(product)
   const overview = normalizeOverview(product.overview, product.description)
@@ -601,20 +598,6 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
             )}
           </div>
 
-          <div className="flex items-baseline gap-3 px-1">
-            {product.is_free ? (
-              <span className="text-4xl font-bold text-primary">무료</span>
-            ) : (
-              <>
-                <span className="text-4xl font-bold text-primary">{formatPrice(product.price)}</span>
-                {product.original_price > product.price && (
-                  <span className="text-xl text-muted-foreground line-through">{formatPrice(product.original_price)}</span>
-                )}
-                {discount > 0 && <Badge className="bg-red-500 text-white border-0 font-bold">-{discount}%</Badge>}
-              </>
-            )}
-          </div>
-
           {matchDiscount && (
             <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
               <p className="text-sm font-semibold text-blue-900 mb-1">
@@ -623,16 +606,14 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
               <p className="text-sm text-blue-800">
                 <span className="font-medium">{matchDiscount.sourceTitle}</span>을 이미 구매하셨으므로
               </p>
-              <p className="text-lg font-bold text-blue-900 mt-1">
-                {formatPrice(matchDiscount.discountAmount)} 할인 → 최종가 {formatPrice(Math.max(0, product.price - matchDiscount.discountAmount))}
-              </p>
+              <p className="text-sm font-semibold text-blue-900 mt-1">장바구니에서 구매 이력 할인이 자동 적용됩니다.</p>
             </div>
           )}
 
           {!product.is_free && (
             <div className="flex items-start gap-2 mt-3 p-3 rounded-lg bg-blue-50 border border-blue-100">
               <Lightbulb className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
-              <p className="text-xs text-blue-800">컨설팅 외주 대비 <span className="font-semibold">1/10 이하 비용</span>으로 동일한 품질의 출발점을 확보하세요.</p>
+              <p className="text-xs text-blue-800">검증된 제안서 구조와 산출물 흐름을 바탕으로 제안 준비 시간을 줄이세요.</p>
             </div>
           )}
 
@@ -753,7 +734,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           {/* PDF 상품 안내 */}
           {displayFormat.toLowerCase().includes('pdf') && !product.is_free && (
             <p className="text-xs text-blue-600 bg-blue-50 rounded-xl px-4 py-2.5 text-center leading-relaxed">
-              PDF 상품 구매 후 PPT 원본 구매 시 구매금액이 자동 차감됩니다
+              PDF 상품 구매 후 PPT 원본 구매 시 구매 이력 할인이 자동 적용됩니다
             </p>
           )}
 
@@ -1018,9 +999,6 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold text-sm line-clamp-2 tracking-tight">{p.title}</h3>
-                    <p className={`font-bold mt-2 ${p.is_free ? 'text-primary' : 'text-foreground'}`}>
-                      {p.is_free ? '무료' : formatPrice(p.price)}
-                    </p>
                   </div>
                 </div>
               </Link>
@@ -1037,8 +1015,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           pdfUrl={product.preview_pdf_url}
           previewPages={product.preview_clear_pages || Math.min(15, Math.max(3, Math.ceil((displayPages || 30) * 0.3)))}
           productTitle={product.title}
-          price={product.price}
-          purchaseLabel={inCart ? '장바구니로 이동' : `장바구니 담기 ${formatPrice(matchDiscount ? Math.max(0, product.price - matchDiscount.discountAmount) : product.price)}`}
+          purchaseLabel={inCart ? '장바구니로 이동' : '장바구니 담기'}
           onPurchaseClick={() => {
             setShowPdfPreview(false)
             if (inCart) {
@@ -1135,7 +1112,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
             </button>
           )}
           {displayFormat.toLowerCase().includes('pdf') && !product.is_free && (
-            <p className="text-[10px] text-blue-600 text-center mt-1">PDF 구매 후 PPT 원본 구매 시 금액 자동 차감</p>
+            <p className="text-[10px] text-blue-600 text-center mt-1">PDF 구매 후 PPT 원본 구매 시 구매 이력 할인 적용</p>
           )}
         </div>
       </div>

@@ -91,7 +91,7 @@ export default async function ProductLayout({
 
   const { data: product } = await supabase
     .from("products")
-    .select("title, description, thumbnail_url, price, original_price, is_free, review_avg, review_count, tags")
+    .select("title, description, thumbnail_url, review_avg, review_count, tags")
     .eq("id", id)
     .single();
 
@@ -113,13 +113,6 @@ export default async function ProductLayout({
             },
           ],
         }),
-        offers: {
-          "@type": "Offer",
-          priceCurrency: "KRW",
-          price: product.is_free ? 0 : product.price,
-          availability: "https://schema.org/InStock",
-          url: `${SITE_URL}/store/${id}`,
-        },
         ...(product.review_count > 0 && {
           aggregateRating: {
             "@type": "AggregateRating",

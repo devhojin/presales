@@ -49,8 +49,8 @@ const MAPS = [
   [28, "대형쇼핑몰사이트서비스정책서_통합본_1.1.pdf"],
 ];
 
-const PREVIEW_CLEAR_PAGES = 3;
-const PREVIEW_BLUR_PAGES = 5;
+const PREVIEW_CLEAR_PAGES = 30;
+const PREVIEW_BLUR_PAGES = 0;
 
 const fmtSz = (b) =>
   b < 1024

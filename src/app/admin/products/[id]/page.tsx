@@ -615,7 +615,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         description_html: form.description_html || null,
         youtube_id: form.youtube_id || null,
         preview_pdf_url: form.preview_pdf_url || null,
-        preview_clear_pages: Math.min(20, parseInt(form.preview_clear_pages) || 0),
+        preview_clear_pages: Math.min(30, parseInt(form.preview_clear_pages) || 0),
         preview_blur_pages: 0, // 시스템 자동 계산 (70% 선명 / 30% 블러)
         preview_note: form.preview_note || null,
         price: form.is_free ? 0 : form.price,
@@ -1409,13 +1409,13 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                   <input
                     type="number"
                     min="0"
-                    max="20"
+                    max="30"
                     value={form.preview_clear_pages}
-                    onChange={e => updateField('preview_clear_pages', String(Math.min(20, Math.max(0, parseInt(e.target.value) || 0))))}
+                    onChange={e => updateField('preview_clear_pages', String(Math.min(30, Math.max(0, parseInt(e.target.value) || 0))))}
                     placeholder="0 (자동)"
                     className={inputClass}
                   />
-                  <p className="text-xs text-muted-foreground mt-1">0이면 자동 계산. <span className="font-medium text-amber-600">최대 20장</span>. 70% 선명 / 30% 블러 자동 적용</p>
+                  <p className="text-xs text-muted-foreground mt-1">0이면 자동 계산. <span className="font-medium text-amber-600">최대 30장</span>. 70% 선명 / 30% 블러 자동 적용</p>
                 </div>
               </div>
               <div>

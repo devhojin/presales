@@ -208,8 +208,8 @@ async function main() {
         .from('products')
         .update({
           preview_pdf_url: directPdf.file_url,
-          preview_clear_pages: 3,
-          preview_blur_pages: 5,
+          preview_clear_pages: 30,
+          preview_blur_pages: 0,
         })
         .eq('id', product.id)
       if (error) throw error

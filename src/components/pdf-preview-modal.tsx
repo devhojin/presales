@@ -10,14 +10,8 @@ interface PdfPreviewModalProps {
   pdfUrl: string
   previewPages: number
   productTitle: string
-  price: number
   onPurchaseClick: () => void
   purchaseLabel?: string
-}
-
-function formatPrice(price: number) {
-  if (price === 0) return '무료'
-  return new Intl.NumberFormat('ko-KR').format(price) + '원'
 }
 
 export function PdfPreviewModal({
@@ -26,7 +20,6 @@ export function PdfPreviewModal({
   pdfUrl,
   previewPages,
   productTitle,
-  price,
   onPurchaseClick,
   purchaseLabel,
 }: PdfPreviewModalProps) {
@@ -36,8 +29,8 @@ export function PdfPreviewModal({
   const [error, setError] = useState('')
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  // 미리보기 전체 페이지 수 (최대 20)
-  const totalPreviewPages = Math.min(Math.max(previewPages, 1), 20)
+  // 미리보기 전체 페이지 수 (최대 30)
+  const totalPreviewPages = Math.min(Math.max(previewPages, 1), 30)
   // 70% 선명, 30% 블러
   const clearPages = Math.max(1, Math.ceil(totalPreviewPages * 0.7))
   const isBlurPage = currentPage > clearPages
@@ -211,7 +204,7 @@ export function PdfPreviewModal({
                         className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors cursor-pointer"
                       >
                         <ShoppingCart className="w-4 h-4" />
-                        {purchaseLabel || `구매하기 ${formatPrice(price)}`}
+                        {purchaseLabel || '구매하기'}
                       </button>
                     </div>
                   </div>
