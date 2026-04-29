@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import {
+  CircleHelp,
   ExternalLink,
   Loader2,
   Mail,
@@ -53,6 +54,12 @@ interface LocalRecord {
 const CENTRAL_ADMIN_URL =
   process.env.NEXT_PUBLIC_MORNING_BRIEF_ADMIN_URL || 'https://morning-brief.amarans.co.kr/admin'
 
+interface FlowStage {
+  code: 'received' | 'checking' | 'missing' | 'sendable' | 'unsubscribed' | 'deleted' | 'bounced' | 'unknown'
+  label: string
+  description: string
+}
+
 function formatKst(value: string | null | undefined): string {
   if (!value) return '-'
   const d = new Date(value)
@@ -69,27 +76,77 @@ function formatKst(value: string | null | undefined): string {
 
 function centralStatus(record: LocalRecord): string {
   const subscriber = record.central?.subscriber
-  if (!record.central) return '중앙 미연동'
-  if (!record.central.found || !subscriber) return '중앙 없음'
+  if (!record.central) return 'checking'
+  if (!record.central.found || !subscriber) return 'missing'
   const subscription = subscriber.brief_subscriptions?.[0]
   return subscription?.status || subscriber.status || 'unknown'
 }
 
-function statusLabel(status: string): string {
-  if (status === 'active') return '등록'
-  if (status === 'unsubscribed') return '수신거부'
-  if (status === 'deleted') return '삭제'
-  if (status === 'bounced') return '반송'
-  if (status === '중앙 미연동') return '중앙 미연동'
-  if (status === '중앙 없음') return '중앙 없음'
-  return status
+function localStage(): FlowStage {
+  return {
+    code: 'received',
+    label: '1. 신청 접수',
+    description: '프리세일즈에 신청 시각과 이메일 기록이 남아 있습니다.',
+  }
 }
 
-function badgeClass(status: string): string {
-  if (status === 'active') return 'bg-blue-50 text-blue-800 border-blue-200'
-  if (status === 'unsubscribed') return 'bg-zinc-100 text-zinc-700 border-zinc-200'
-  if (status === 'deleted') return 'bg-red-50 text-red-700 border-red-200'
-  if (status === 'bounced') return 'bg-amber-50 text-amber-800 border-amber-200'
+function centralStage(record: LocalRecord): FlowStage {
+  const status = centralStatus(record)
+  if (status === 'checking') {
+    return {
+      code: 'checking',
+      label: '2. 중앙 확인 대기',
+      description: '중앙 모닝브리프 API 주소 또는 비밀키가 설정되지 않아 상태를 확인하지 못했습니다. 구독자의 수신 상태가 아니라 연동 확인 단계입니다.',
+    }
+  }
+  if (status === 'missing') {
+    return {
+      code: 'missing',
+      label: '2. 중앙 등록 누락',
+      description: '프리세일즈 신청 기록은 있지만 중앙 모닝브리프에서 이 이메일을 찾지 못했습니다.',
+    }
+  }
+  if (status === 'active') {
+    return {
+      code: 'sendable',
+      label: '3. 발송 대상',
+      description: '중앙 모닝브리프에 등록되어 아침 7시 발송 대상입니다.',
+    }
+  }
+  if (status === 'unsubscribed') {
+    return {
+      code: 'unsubscribed',
+      label: '수신거부',
+      description: '중앙 모닝브리프에서 수신거부 처리되어 발송 대상에서 제외됩니다.',
+    }
+  }
+  if (status === 'deleted') {
+    return {
+      code: 'deleted',
+      label: '삭제 표시',
+      description: '중앙 모닝브리프에서 삭제 처리되어 발송 대상에서 제외됩니다.',
+    }
+  }
+  if (status === 'bounced') {
+    return {
+      code: 'bounced',
+      label: '발송 반송',
+      description: '메일 발송이 반송되어 확인이 필요한 상태입니다.',
+    }
+  }
+  return {
+    code: 'unknown',
+    label: '상태 확인 필요',
+    description: '중앙 모닝브리프가 알 수 없는 상태값을 반환했습니다.',
+  }
+}
+
+function badgeClass(stage: FlowStage['code']): string {
+  if (stage === 'received') return 'bg-emerald-50 text-emerald-800 border-emerald-200'
+  if (stage === 'sendable') return 'bg-blue-50 text-blue-800 border-blue-200'
+  if (stage === 'unsubscribed') return 'bg-zinc-100 text-zinc-700 border-zinc-200'
+  if (stage === 'deleted' || stage === 'missing') return 'bg-red-50 text-red-700 border-red-200'
+  if (stage === 'bounced' || stage === 'checking') return 'bg-amber-50 text-amber-800 border-amber-200'
   return 'bg-slate-50 text-slate-700 border-slate-200'
 }
 
@@ -137,7 +194,8 @@ export default function AdminMorningBriefPage() {
         record.email,
         record.name,
         record.source,
-        centralStatus(record),
+        centralStage(record).label,
+        centralStage(record).description,
         sourceMember(record),
       ].filter(Boolean).join(' ').toLowerCase()
       return hay.includes(q)
@@ -147,15 +205,15 @@ export default function AdminMorningBriefPage() {
   const counts = useMemo(() => {
     return records.reduce(
       (acc, record) => {
-        const status = centralStatus(record)
+        const stage = centralStage(record).code
         acc.total += 1
-        if (status === 'active') acc.active += 1
-        if (status === 'unsubscribed') acc.unsubscribed += 1
-        if (status === 'deleted') acc.deleted += 1
-        if (!record.central) acc.unlinked += 1
+        if (stage === 'sendable') acc.sendable += 1
+        if (stage === 'unsubscribed') acc.unsubscribed += 1
+        if (stage === 'deleted') acc.deleted += 1
+        if (stage === 'checking') acc.checking += 1
         return acc
       },
-      { total: 0, active: 0, unsubscribed: 0, deleted: 0, unlinked: 0 },
+      { total: 0, sendable: 0, unsubscribed: 0, deleted: 0, checking: 0 },
     )
   }, [records])
 
@@ -197,12 +255,25 @@ export default function AdminMorningBriefPage() {
         신청 당시의 기록과 중앙 상태 스냅샷을 보여줍니다.
       </div>
 
+      <div className="mb-6 rounded-xl border border-border/50 bg-card p-4 text-sm text-muted-foreground">
+        <div className="mb-3 flex items-center gap-2 font-semibold text-foreground">
+          <CircleHelp className="h-4 w-4" />
+          상태 단계 안내
+        </div>
+        <div className="grid gap-2 md:grid-cols-4">
+          <StepHelp title="1. 신청 접수" body="프리세일즈에 신청 기록이 저장된 단계입니다." />
+          <StepHelp title="2. 중앙 등록 확인" body="중앙 모닝브리프에 이메일이 등록됐는지 확인하는 단계입니다." />
+          <StepHelp title="3. 발송 대상" body="중앙에 활성 등록되어 아침 7시 발송 대상입니다." />
+          <StepHelp title="수신거부/삭제" body="중앙에서 발송 제외 처리된 상태입니다." />
+        </div>
+      </div>
+
       <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-5">
         <StatCard label="신청 기록" value={counts.total} />
-        <StatCard label="중앙 등록" value={counts.active} />
+        <StatCard label="발송 대상" value={counts.sendable} />
         <StatCard label="수신거부" value={counts.unsubscribed} />
         <StatCard label="삭제 표시" value={counts.deleted} />
-        <StatCard label="중앙 미연동" value={counts.unlinked} />
+        <StatCard label="중앙 확인 대기" value={counts.checking} />
       </div>
 
       <div className="mb-6 flex items-center gap-3 rounded-xl border border-border/50 bg-card p-4">
@@ -241,15 +312,16 @@ export default function AdminMorningBriefPage() {
                   <th className="px-4 py-3">신청 시각</th>
                   <th className="px-4 py-3">이메일</th>
                   <th className="px-4 py-3">이름</th>
-                  <th className="px-4 py-3">프리세일즈 기록</th>
-                  <th className="px-4 py-3">중앙 상태</th>
+                  <th className="px-4 py-3">신청 단계</th>
+                  <th className="px-4 py-3">중앙/발송 단계</th>
                   <th className="px-4 py-3">회원 여부</th>
                   <th className="px-4 py-3">출처</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {filtered.map((record) => {
-                  const status = centralStatus(record)
+                  const received = localStage()
+                  const stage = centralStage(record)
                   return (
                     <tr key={record.id} className="hover:bg-muted/20">
                       <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
@@ -258,14 +330,17 @@ export default function AdminMorningBriefPage() {
                       <td className="px-4 py-3 font-medium text-foreground">{record.email}</td>
                       <td className="px-4 py-3 text-muted-foreground">{record.name || '-'}</td>
                       <td className="px-4 py-3">
-                        <Badge variant="outline" className={badgeClass(record.status)}>
-                          {statusLabel(record.status)}
+                        <Badge variant="outline" className={badgeClass(received.code)} title={received.description}>
+                          {received.label}
                         </Badge>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant="outline" className={badgeClass(status)}>
-                          {statusLabel(status)}
-                        </Badge>
+                        <div className="flex max-w-[260px] flex-col gap-1">
+                          <Badge variant="outline" className={badgeClass(stage.code)} title={stage.description}>
+                            {stage.label}
+                          </Badge>
+                          <span className="text-xs leading-relaxed text-muted-foreground">{stage.description}</span>
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <span className="inline-flex items-center gap-1 text-muted-foreground">
@@ -282,6 +357,15 @@ export default function AdminMorningBriefPage() {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+function StepHelp({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="rounded-lg border border-border/50 bg-muted/20 p-3">
+      <p className="font-medium text-foreground">{title}</p>
+      <p className="mt-1 leading-relaxed">{body}</p>
     </div>
   )
 }
