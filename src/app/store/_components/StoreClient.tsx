@@ -504,7 +504,7 @@ export default function StoreClient() {
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 md:px-8">
-      <div className="py-8 md:py-12">
+      <div className="pt-5 pb-4 md:pt-7 md:pb-5">
         <div className="flex items-center gap-3 mb-3">
           <Store className="w-7 h-7 text-primary" />
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">문서 스토어</h1>
@@ -516,72 +516,99 @@ export default function StoreClient() {
       {/* 최근 본 상품 — 우측 날개 배너 */}
       <RecentlyViewed />
 
-      <div className="relative mb-8">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <input
-          type="text"
-          placeholder="템플릿 검색 (예: 기술제안서, IoT, 스마트시티...)"
-          value={searchQuery}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          className="w-full pl-12 pr-6 py-3 border border-border/50 rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-        />
-      </div>
+      <div className="mb-7 border-y border-border/50 py-4">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,360px)] lg:items-start">
+          <div className="space-y-3">
+            {/* 카테고리 필터 */}
+            <div className="grid gap-2 sm:grid-cols-[72px_minmax(0,1fr)] sm:items-center">
+              <p className="text-xs font-semibold text-muted-foreground">문서 유형</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => applyFilters({ cats: new Set() })}
+                  className={`px-4 py-2 min-h-[38px] rounded-full text-xs font-semibold border transition-all duration-300 cursor-pointer active:scale-[0.98] ${
+                    selectedCategories.size === 0 ? 'bg-primary text-primary-foreground border-primary' : 'border-border/50 hover:border-border hover:bg-muted'
+                  }`}
+                >
+                  전체
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => toggleCategory(cat.id)}
+                    className={`px-4 py-2 min-h-[38px] rounded-full text-xs font-semibold border transition-all duration-300 cursor-pointer active:scale-[0.98] ${
+                      selectedCategories.has(cat.id) ? 'bg-primary text-primary-foreground border-primary' : 'border-border/50 hover:border-border hover:bg-muted'
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-      <div className="space-y-4 mb-10">
-        {/* 카테고리 필터 */}
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => applyFilters({ cats: new Set() })}
-            className={`px-4 py-2 min-h-[40px] rounded-full text-xs font-semibold uppercase tracking-widest border transition-all duration-300 cursor-pointer ${
-              selectedCategories.size === 0 ? 'bg-primary text-primary-foreground border-primary' : 'border-border/50 hover:border-border hover:bg-muted'
-            }`}
-          >
-            전체
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => toggleCategory(cat.id)}
-              className={`px-4 py-2 min-h-[40px] rounded-full text-xs font-semibold uppercase tracking-widest border transition-all duration-300 cursor-pointer ${
-                selectedCategories.has(cat.id) ? 'bg-primary text-primary-foreground border-primary' : 'border-border/50 hover:border-border hover:bg-muted'
-              }`}
-            >
-              {cat.name}
-            </button>
-          ))}
+            {/* 무료/유료 필터 */}
+            <div className="grid gap-2 sm:grid-cols-[72px_minmax(0,1fr)] sm:items-center">
+              <p className="text-xs font-semibold text-muted-foreground">가격</p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => applyFilters({ price: null })}
+                  className={`px-4 py-2 min-h-[38px] rounded-full text-xs font-semibold border transition-all duration-300 cursor-pointer active:scale-[0.98] ${
+                    selectedPriceType === null ? 'bg-primary text-primary-foreground border-primary' : 'border-border/50 hover:border-border hover:bg-muted'
+                  }`}
+                >
+                  전체
+                </button>
+                {priceTypes.map((pt) => (
+                  <button
+                    key={pt.id}
+                    onClick={() => applyFilters({ price: pt.id })}
+                    className={`px-4 py-2 min-h-[38px] rounded-full text-xs font-semibold border transition-all duration-300 cursor-pointer active:scale-[0.98] ${
+                      selectedPriceType === pt.id ? pt.color : 'border-border/50 hover:border-border hover:bg-muted'
+                    }`}
+                  >
+                    {pt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 상세 필터 토글 */}
+            <div className="grid gap-2 sm:grid-cols-[72px_minmax(0,1fr)] sm:items-center">
+              <span className="hidden sm:block" aria-hidden="true" />
+              <button
+                onClick={() => setShowDetailFilter(!showDetailFilter)}
+                className="inline-flex w-fit items-center gap-1.5 px-4 py-2 min-h-[38px] rounded-full text-xs font-semibold border border-border/50 hover:border-border hover:bg-muted transition-all duration-300 cursor-pointer active:scale-[0.98]"
+              >
+                상세 필터
+                {detailFilterCount > 0 && (
+                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none">
+                    {detailFilterCount}
+                  </span>
+                )}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${showDetailFilter ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+          </div>
+
+          <div className="lg:pt-0.5">
+            <label htmlFor="store-search" className="mb-2 block text-xs font-semibold text-muted-foreground">
+              검색
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                id="store-search"
+                type="text"
+                placeholder="기술제안서, IoT, 스마트시티"
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 border border-border/50 rounded-xl bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              />
+            </div>
+          </div>
         </div>
-
-        {/* 무료/유료 필터 (항상 표시) */}
-        <div className="flex flex-wrap gap-2">
-          {priceTypes.map((pt) => (
-            <button
-              key={pt.id}
-              onClick={() => applyFilters({ price: selectedPriceType === pt.id ? null : pt.id })}
-              className={`px-4 py-2 min-h-[40px] rounded-full text-xs font-semibold uppercase tracking-widest border transition-all duration-300 cursor-pointer ${
-                selectedPriceType === pt.id ? pt.color : 'border-border/50 hover:border-border hover:bg-muted'
-              }`}
-            >
-              {pt.label}
-            </button>
-          ))}
-        </div>
-
-        {/* 상세 필터 토글 */}
-        <button
-          onClick={() => setShowDetailFilter(!showDetailFilter)}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-widest border border-border/50 hover:border-border hover:bg-muted transition-all duration-300 cursor-pointer"
-        >
-          상세 필터
-          {detailFilterCount > 0 && (
-            <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none">
-              {detailFilterCount}
-            </span>
-          )}
-          <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${showDetailFilter ? 'rotate-180' : ''}`} />
-        </button>
 
         {showDetailFilter && (
-          <div className="space-y-4 pl-4 border-l border-border/50">
+          <div className="mt-4 space-y-4 border-t border-border/50 pt-4">
             {/* 파일 형태 필터 */}
             <div className="flex flex-wrap gap-2">
               {allFileTypes.map((ft) => (
@@ -624,8 +651,8 @@ export default function StoreClient() {
         )}
       </div>
 
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-8">
+        <div className="flex flex-wrap items-center gap-3">
           <p className="text-sm text-muted-foreground">
             {loading ? '검색 중...' : (
               <>
@@ -650,7 +677,7 @@ export default function StoreClient() {
           title="정렬 기준"
           aria-label="정렬 기준"
           onChange={(e) => applyFilters({ sort: e.target.value as SortOrder })}
-          className="text-xs border border-border/50 rounded-xl px-4 py-2.5 bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-all"
+          className="w-full sm:w-auto text-xs border border-border/50 rounded-xl px-4 py-2.5 bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-all"
         >
           <option value="recommended">추천순</option>
           <option value="price_asc">가격 낮은순</option>
