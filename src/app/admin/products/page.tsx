@@ -87,7 +87,7 @@ type SortField = 'title' | 'category' | 'price' | 'is_free' | 'is_published' | '
 type SortDir = 'asc' | 'desc'
 
 const PAGE_SIZES = [20, 50, 100] as const
-const UPDATED_HIGHLIGHT_MS = 12 * 60 * 60 * 1000
+const UPDATED_HIGHLIGHT_MS = 48 * 60 * 60 * 1000
 const STATUS_FILTERS = ['all', 'published', 'unpublished'] as const
 const PRICE_FILTERS = ['all', 'paid', 'free'] as const
 const SORT_FIELDS = ['title', 'category', 'price', 'is_free', 'is_published', 'download_count', 'updated_at', 'created_at'] as const
@@ -673,8 +673,8 @@ function ProductRowCells({
 }) {
   const updatedAt = formatDateTimeParts(product.updated_at || product.created_at)
   const isUpdatedRecent = isRecentlyUpdated(product.updated_at, currentTimeMs)
-  const updatedDateClass = isUpdatedRecent ? 'text-blue-700 font-semibold' : 'text-muted-foreground'
-  const updatedTimeClass = isUpdatedRecent ? 'text-blue-600/80 font-medium' : 'text-muted-foreground/70'
+  const updatedDateClass = isUpdatedRecent ? 'text-blue-700 font-bold' : 'text-muted-foreground'
+  const updatedTimeClass = isUpdatedRecent ? 'text-blue-700 font-bold' : 'text-muted-foreground/70'
 
   return (
     <>
@@ -1541,7 +1541,7 @@ export default function AdminProducts() {
                     { field: 'is_free' as SortField, label: '구분', align: 'center', cls: 'w-20' },
                     { field: 'is_published' as SortField, label: '상태', align: 'center', cls: 'w-20' },
                     { field: 'download_count' as SortField, label: '다운로드', align: 'center', cls: 'w-20' },
-                    { field: 'updated_at' as SortField, label: '수정일', align: 'center', cls: 'w-28' },
+                    { field: 'updated_at' as SortField, label: '최근 48시간', align: 'center', cls: 'w-28' },
                   ].map(col => (
                     <th
                       key={col.field}
