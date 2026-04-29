@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { SITE_URL } from '@/lib/constants'
+import { DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_ALT, SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
   title: '모닝 브리프 — 매일 아침 입찰 시장 인사이트',
@@ -9,6 +9,13 @@ export const metadata: Metadata = {
     title: '모닝 브리프 — 매일 아침 입찰 시장 인사이트',
     description: '공공조달·스마트시티·AI/IoT 시장 동향과 신규/마감임박 공고 요약.',
     url: `${SITE_URL}/brief`,
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: DEFAULT_OG_IMAGE_ALT }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '모닝 브리프 — 매일 아침 입찰 시장 인사이트',
+    description: '공공조달·스마트시티·AI/IoT 시장 동향과 신규/마감임박 공고 요약.',
+    images: [DEFAULT_OG_IMAGE],
   },
 }
 

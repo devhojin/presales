@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { SITE_URL } from '@/lib/constants'
+import { DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_ALT, SITE_URL } from '@/lib/constants'
 import { safeJsonLd } from '@/lib/json-ld'
 import type { PublicBrief } from '@/lib/public-briefs'
 import { getPublicMorningBriefBySlug } from '@/lib/public-briefs-server'
@@ -47,11 +47,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       url: `${SITE_URL}/brief/${slug}`,
       type: 'article',
       publishedTime: brief.sent_at || brief.created_at,
+      images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: DEFAULT_OG_IMAGE_ALT }],
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title,
       description,
+      images: [DEFAULT_OG_IMAGE],
     },
     alternates: {
       canonical: `${SITE_URL}/brief/${slug}`,

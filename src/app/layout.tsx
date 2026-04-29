@@ -8,7 +8,7 @@ import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { ToastContainer } from "@/components/Toast";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 import { ExitIntentPopup } from "@/components/ExitIntentPopup";
-import { SITE_URL } from "@/lib/constants";
+import { DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_ALT, SITE_URL } from "@/lib/constants";
 import { safeJsonLd } from "@/lib/json-ld";
 
 const geistSans = Geist({
@@ -54,13 +54,13 @@ export const metadata: Metadata = {
     url: SITE_URL,
     siteName: "PRESALES by AMARANS",
     locale: "ko_KR",
-    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "PRESALES - 공공조달 제안서 마켓플레이스" }],
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: DEFAULT_OG_IMAGE_ALT }],
   },
   twitter: {
     card: "summary_large_image",
     title: "PRESALES - 공공조달 제안서 마켓플레이스",
     description: "공공조달 기술제안서, 입찰가이드, 구축자료 등 전문 문서 다운로드 플랫폼.",
-    images: ["/og-image.svg"],
+    images: [DEFAULT_OG_IMAGE],
   },
 };
 
