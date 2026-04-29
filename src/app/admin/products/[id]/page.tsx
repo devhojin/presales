@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { uploadFile } from '@/lib/storage-upload'
 import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { normalizeDocumentOrientationFormValue, serializeDocumentOrientation } from '@/lib/document-orientation'
-import { formatProductFileSize, getProductFileExtension, summarizeProductFiles } from '@/lib/product-file-metadata'
+import { formatProductFileSize, formatProductFileTypes, getProductFileExtension, sortProductFileTypes, summarizeProductFiles } from '@/lib/product-file-metadata'
 import { detectFilePageCountFromFile, detectProductFilesPageTotal } from '@/lib/product-file-page-count'
 import {
   ArrowLeft, Save, Eye, EyeOff, Trash2, Play, Plus, X,
@@ -526,6 +526,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           .order('created_at', { ascending: false })
         const files = (filesData || []) as ProductFile[]
         const fileSummary = summarizeProductFiles(files)
+        const savedFileTypes = Array.isArray(p.file_types) ? sortProductFileTypes(p.file_types) : []
+        const effectiveFileTypes = savedFileTypes.length > 0 ? savedFileTypes : fileSummary.fileTypes
         const hasPageCountCandidate = files.some((file) => {
           const extension = getProductFileExtension(file.file_name)
           return extension === 'PDF' || extension === 'PPTX' || extension === 'PPT'
@@ -546,7 +548,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           category_id: productCategoryIds.length > 0 ? String(productCategoryIds[0]) : '',
           category_ids: productCategoryIds,
           tier: p.tier || 'basic',
-          format: fileSummary.format || p.format || '',
+          format: formatProductFileTypes(effectiveFileTypes) || p.format || '',
           pages: detectedPageTotal !== null ? String(detectedPageTotal) : hasPageCountCandidate && p.pages ? String(p.pages) : '',
           file_size: fileSummary.fileSize || p.file_size || '',
           thumbnail_url: p.thumbnail_url || '',
@@ -556,7 +558,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           overview: overview.length > 0 ? overview : [''],
           features: features.length > 0 ? features : [''],
           specs: specs.length > 0 ? specs : [{ label: '', value: '' }],
-          file_types: fileSummary.fileTypes.length > 0 ? fileSummary.fileTypes : Array.isArray(p.file_types) ? p.file_types : [],
+          file_types: effectiveFileTypes,
           document_orientation: normalizeDocumentOrientationFormValue(p.document_orientation),
           badge_new: p.badge_new ?? false,
           badge_best: p.badge_best ?? false,
@@ -600,6 +602,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       const validCategoryIds = new Set(categories.map((category) => category.id))
       const selectedCategoryIds = getValidCategoryIds(form.category_ids, form.category_id, validCategoryIds)
       const fileSummary = summarizeProductFiles(productFiles)
+      const selectedFileTypes = sortProductFileTypes(form.file_types)
       const hasPageCountCandidate = productFiles.some((file) => {
         const extension = getProductFileExtension(file.file_name)
         return extension === 'PDF' || extension === 'PPTX' || extension === 'PPT'
@@ -620,7 +623,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         category_id: selectedCategoryIds[0] ?? null,
         category_ids: selectedCategoryIds,
         tier: form.tier,
-        format: fileSummary.format || form.format || null,
+        format: formatProductFileTypes(selectedFileTypes) || fileSummary.format || form.format || null,
         pages: pageValue,
         file_size: fileSummary.fileSize || form.file_size || null,
         thumbnail_url: form.thumbnail_url || null,
@@ -630,7 +633,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         overview: form.overview.filter(Boolean),
         features: form.features.filter(Boolean),
         specs: form.specs.filter(s => s.label || s.value),
-        file_types: fileSummary.fileTypes.length > 0 ? fileSummary.fileTypes : form.file_types,
+        file_types: selectedFileTypes,
         document_orientation: serializeDocumentOrientation(form.document_orientation),
         badge_new: form.badge_new,
         badge_best: form.badge_best,
@@ -1592,7 +1595,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                             const next = checked
                               ? form.file_types.filter(t => t !== ft)
                               : [...form.file_types, ft]
-                            updateField('file_types', next)
+                            const sortedNext = sortProductFileTypes(next)
+                            setForm(prev => ({
+                              ...prev,
+                              file_types: sortedNext,
+                              format: formatProductFileTypes(sortedNext),
+                            }))
                           }}
                           className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                         />

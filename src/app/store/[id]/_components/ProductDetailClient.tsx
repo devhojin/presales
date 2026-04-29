@@ -21,7 +21,7 @@ import * as gtag from '@/lib/gtag'
 import { SITE_URL } from '@/lib/constants'
 import { shareToKakao } from '@/lib/kakao-share'
 import { buildProductTagSearchHref } from '@/lib/product-tags'
-import { formatProductFileSize, normalizeProductFileSizeBytes, summarizeProductFiles } from '@/lib/product-file-metadata'
+import { formatProductFileSize, formatProductFileTypes, normalizeProductFileSizeBytes, summarizeProductFiles } from '@/lib/product-file-metadata'
 
 type TabId = 'info' | 'video' | 'review'
 
@@ -493,13 +493,12 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
   const featureItems = normalizeFeatures(product.features)
   const specItems = normalizeSpecs(product.specs)
   const fileSummary = summarizeProductFiles(productFiles)
-  const displayFormat = fileSummary.format || product.format || ''
+  const savedFileTypeItems = normalizeFileTypes(product.file_types, product.format)
+  const fileTypeItems = savedFileTypeItems.length > 0 ? savedFileTypeItems : fileSummary.fileTypes
+  const displayFormat = formatProductFileTypes(fileTypeItems) || fileSummary.format || product.format || ''
   const displayFileSize = fileSummary.fileSize || product.file_size || ''
   const hasPageCountCandidate = fileSummary.fileTypes.some((type) => type === 'PDF' || type === 'PPTX' || type === 'PPT')
   const displayPages = productFiles.length === 0 || hasPageCountCandidate ? product.pages : null
-  const fileTypeItems = fileSummary.fileTypes.length > 0
-    ? fileSummary.fileTypes
-    : normalizeFileTypes(product.file_types, product.format)
   const hasDetailContent =
     Boolean(overview.summary) ||
     overview.points.length > 0 ||

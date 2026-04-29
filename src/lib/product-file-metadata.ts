@@ -50,6 +50,22 @@ export function formatProductFileSize(bytes: number): string {
   return `${mb >= 10 ? Math.round(mb) : Number(mb.toFixed(1))}MB`
 }
 
+export function sortProductFileTypes(fileTypes: string[]): string[] {
+  const uniqueTypes = Array.from(new Set(fileTypes.map((type) => type.trim().toUpperCase()).filter(Boolean)))
+  return uniqueTypes.sort((a, b) => {
+    const aIndex = FILE_TYPE_ORDER.indexOf(a as typeof FILE_TYPE_ORDER[number])
+    const bIndex = FILE_TYPE_ORDER.indexOf(b as typeof FILE_TYPE_ORDER[number])
+    if (aIndex === -1 && bIndex === -1) return a.localeCompare(b)
+    if (aIndex === -1) return 1
+    if (bIndex === -1) return -1
+    return aIndex - bIndex
+  })
+}
+
+export function formatProductFileTypes(fileTypes: string[]): string {
+  return sortProductFileTypes(fileTypes).join(', ')
+}
+
 export function summarizeProductFiles(files: ProductFileMetadataInput[]) {
   const typeSet = new Set<string>()
   let totalBytes = 0
@@ -60,14 +76,7 @@ export function summarizeProductFiles(files: ProductFileMetadataInput[]) {
     totalBytes += normalizeProductFileSizeBytes(file.file_size)
   }
 
-  const fileTypes = Array.from(typeSet).sort((a, b) => {
-    const aIndex = FILE_TYPE_ORDER.indexOf(a as typeof FILE_TYPE_ORDER[number])
-    const bIndex = FILE_TYPE_ORDER.indexOf(b as typeof FILE_TYPE_ORDER[number])
-    if (aIndex === -1 && bIndex === -1) return a.localeCompare(b)
-    if (aIndex === -1) return 1
-    if (bIndex === -1) return -1
-    return aIndex - bIndex
-  })
+  const fileTypes = sortProductFileTypes(Array.from(typeSet))
 
   return {
     fileTypes,
