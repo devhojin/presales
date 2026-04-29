@@ -401,8 +401,12 @@ export default function PrivacyPage() {
           <div className="space-y-4 text-muted-foreground">
             <p>
               서비스 제공에 필요한 해외 클라우드, 해외 SaaS, 해외 고객지원 인프라 사용 과정에서
-              개인정보가 국외로 이전 또는 보관될 수 있습니다. 이는 회원 인증, 데이터 저장, 결제·상담
-              처리, 보안 로그 관리 등 계약 이행과 서비스 제공을 위해 필요한 처리위탁·보관입니다.
+              암호화된 개인정보가 국외로 이전 또는 보관될 수 있습니다. 이는 회원 인증, 데이터 저장,
+              결제·상담 처리, 보안 로그 관리 등 계약 이행과 서비스 제공을 위해 필요한 처리위탁·보관입니다.
+            </p>
+            <p>
+              국외 이전 데이터는 전송 구간 암호화와 저장소 암호화 등 보호조치를 적용해 저장됩니다.
+              비밀번호는 복호화할 수 없는 방식으로 암호화 또는 해시 처리됩니다.
             </p>
             <div className="overflow-x-auto">
               <table className="w-full border border-border rounded-lg text-xs">
