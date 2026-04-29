@@ -115,6 +115,99 @@ function FeaturedCard({ product, categoryNames }: { product: DbProduct; category
   )
 }
 
+const heroFeaturePanels = [
+  {
+    label: '문서 스토어',
+    title: '검증된 제안서',
+    caption: 'PPT, PDF, HWP 원본 파일',
+    href: '/store',
+    image: '/images/hero-ai-readiness.webp',
+  },
+  {
+    label: '컨설팅',
+    title: '입찰 전략 리뷰',
+    caption: '공고 분석부터 발표 준비까지',
+    href: '/consulting',
+    image: '/images/hero-proposal-workshop.webp',
+  },
+] as const
+
+function ProductRailItem({ product, categoryNames }: { product: DbProduct; categoryNames: string[] }) {
+  return (
+    <Link
+      href={`/store/${product.id}`}
+      className="presales-product-rail-card group inline-flex w-[280px] shrink-0 items-center gap-3 rounded-2xl border border-gray-200/80 bg-white/92 p-3 text-left shadow-[0_10px_28px_rgba(15,23,42,0.06)] backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_16px_36px_rgba(37,99,235,0.13)] active:scale-[0.99]"
+    >
+      <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-xl bg-gray-100">
+        {product.thumbnail_url ? (
+          <Image
+            src={product.thumbnail_url}
+            alt={product.title}
+            fill
+            sizes="80px"
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-slate-900">
+            <FileText className="h-5 w-5 text-white/60" />
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex items-center gap-1.5">
+          <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ${product.is_free ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-700'}`}>
+            {product.is_free ? '무료' : '유료'}
+          </span>
+          <span className="truncate text-[10px] font-medium text-gray-400">{categoryNames[0] || '문서'}</span>
+        </div>
+        <p className="line-clamp-2 text-xs font-bold leading-snug text-gray-950 group-hover:text-blue-700">{product.title}</p>
+        <p className="mt-1 text-[11px] font-semibold text-blue-600">{product.is_free ? '무료 다운로드' : formatPrice(product.price)}</p>
+      </div>
+    </Link>
+  )
+}
+
+function ProductRail({
+  products,
+  loading,
+  getCategoryNames,
+}: {
+  products: DbProduct[]
+  loading: boolean
+  getCategoryNames: (product: DbProduct) => string[]
+}) {
+  const railProducts = products.slice(0, 10)
+  if (loading || railProducts.length === 0) {
+    return (
+      <div className="mt-12 overflow-hidden rounded-[1.5rem] border border-gray-200 bg-white/70 p-4">
+        <div className="flex gap-3">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div key={index} className="h-[90px] w-[280px] shrink-0 animate-pulse rounded-2xl bg-gray-100" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  const rowA = [...railProducts, ...railProducts]
+  const rowB = [...railProducts.slice().reverse(), ...railProducts.slice().reverse()]
+
+  return (
+    <div className="presales-product-rail-wrap mt-12 space-y-3 overflow-hidden py-1">
+      <div className="presales-product-rail">
+        {rowA.map((product, index) => (
+          <ProductRailItem key={`rail-a-${product.id}-${index}`} product={product} categoryNames={getCategoryNames(product)} />
+        ))}
+      </div>
+      <div className="presales-product-rail presales-product-rail-reverse">
+        {rowB.map((product, index) => (
+          <ProductRailItem key={`rail-b-${product.id}-${index}`} product={product} categoryNames={getCategoryNames(product)} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
   const [products, setProducts] = useState<DbProduct[]>([])
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([])
@@ -233,143 +326,157 @@ export default function Home() {
 
   return (
     <div>
-      {/* Hero — Editorial Bento (portraits + blue accent stat card) */}
-      <section className="relative bg-gray-50 overflow-hidden">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-8 w-full py-16 md:py-24 lg:py-28">
-          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 lg:gap-16 items-center">
-            {/* Left: Copy */}
-            <div className="space-y-7">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-gray-200 text-[11px] font-semibold tracking-wide text-blue-700 uppercase">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+      {/* Hero — interactive proposal cockpit */}
+      <section className="relative overflow-hidden bg-[#F7F8FA]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(37,99,235,0.09),transparent_34%),linear-gradient(90deg,rgba(255,255,255,0.78),rgba(255,255,255,0))]" />
+        <div className="relative mx-auto w-full max-w-[1400px] px-4 py-14 md:px-8 md:py-20 lg:py-24">
+          <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[0.86fr_1.14fr] lg:gap-12">
+            <div className="relative z-[1] max-w-[620px] space-y-7">
+              <div className="presales-reveal inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/82 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-blue-700 shadow-[0_12px_34px_rgba(37,99,235,0.08)] backdrop-blur">
+                <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
                 공공조달 제안서 전문
               </div>
 
-              <h1 className="text-4xl md:text-5xl lg:text-[56px] font-extrabold tracking-tight leading-[1.08] text-gray-900">
+              <h1 className="presales-reveal presales-delay-1 text-4xl font-extrabold leading-[1.06] tracking-tight text-gray-950 md:text-5xl lg:text-[62px]">
                 낙찰받은 기업의<br />
-                제안서로{' '}
-                <span className="text-blue-600">당신의 성공</span>을<br />
-                설계합니다.
+                제안서를 기준으로<br />
+                <span className="text-blue-600">입찰 준비를 줄입니다.</span>
               </h1>
 
-              <p className="text-base md:text-lg text-gray-500 leading-relaxed max-w-[520px]">
-                나라장터·조달청 실제 낙찰 기업이 사용한 제안서를 그대로 받아보세요.
-                처음부터 다시 쓰지 않아도 됩니다.
+              <p className="presales-reveal presales-delay-2 max-w-[540px] text-base leading-relaxed text-gray-600 md:text-lg">
+                나라장터·조달청 제안 업무에 바로 쓰는 문서, 공고, 시장 이슈를 한 화면에서 확인하세요.
+                템플릿은 빠르게 찾고, 부족한 부분은 컨설팅으로 보완합니다.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="presales-reveal presales-delay-3 flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/store"
-                  className="inline-flex items-center justify-center h-12 px-7 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-all duration-300 active:scale-[0.98] shadow-lg shadow-blue-600/25"
+                  className="inline-flex h-12 items-center justify-center rounded-full bg-blue-600 px-7 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-blue-700 active:scale-[0.98]"
                 >
                   제안서 템플릿 보기
-                  <ArrowRight className="ml-2 w-4 h-4" />
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
                 <Link
                   href="/consulting"
-                  className="inline-flex items-center justify-center h-12 px-7 rounded-full bg-white border border-gray-200 text-gray-800 hover:border-blue-300 hover:text-blue-700 font-semibold text-sm transition-all duration-300"
+                  className="inline-flex h-12 items-center justify-center rounded-full border border-gray-200 bg-white px-7 text-sm font-semibold text-gray-900 transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-700 active:scale-[0.98]"
                 >
                   무료 상담 받기
                 </Link>
               </div>
 
-              {/* Hero Search */}
-              <div className="mt-6 max-w-[480px]">
+              <div className="presales-hero-search presales-reveal presales-delay-4 max-w-[500px]">
                 <form onSubmit={(e) => { e.preventDefault(); const q = (e.currentTarget.elements.namedItem('q') as HTMLInputElement).value; if (q.trim()) window.location.href = `/store?q=${encodeURIComponent(q.trim())}` }} className="relative">
-                  <input name="q" type="text" placeholder="어떤 제안서를 찾고 계세요? (예: IoT, 스마트시티)" className="w-full h-12 pl-5 pr-12 rounded-full bg-white border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all" />
-                  <button type="submit" className="absolute right-1.5 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center transition-colors">
-                    <Search className="w-4 h-4 text-white" />
+                  <input name="q" type="text" placeholder="예: IoT, 스마트시티, 기술제안서" className="h-12 w-full rounded-full border border-gray-200 bg-white/92 pl-5 pr-12 text-sm text-gray-950 shadow-[0_18px_50px_rgba(15,23,42,0.08)] outline-none backdrop-blur transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-100" />
+                  <button type="submit" className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-blue-600 transition-colors hover:bg-blue-700" aria-label="스토어 검색">
+                    <Search className="h-4 w-4 text-white" />
                   </button>
                 </form>
               </div>
             </div>
 
-            {/* Right: Bento — [Portrait 1] [Blue stat / White stat] [Portrait 2] */}
-            <div className="hidden lg:grid grid-cols-3 gap-3 h-[520px]">
-              {/* Portrait 1 — left, full height */}
-              <div className="relative row-span-2 rounded-2xl overflow-hidden bg-gradient-to-br from-gray-200 to-gray-100">
-                <Image
-                  src="/images/hero-consultant-1.webp"
-                  alt="공공조달 컨설턴트"
-                  fill
-                  sizes="(min-width: 1024px) 20vw, 33vw"
-                  className="object-cover"
-                  priority
-                />
-              </div>
-
-              {/* Blue primary stat */}
-              <div className="rounded-2xl bg-blue-600 text-white p-5 flex flex-col justify-between">
-                <p className="text-xs font-semibold uppercase tracking-wider text-blue-100">검증 템플릿</p>
-                <div>
-                  <p className="text-4xl font-extrabold tracking-tight leading-none">{stats?.productCount || 0}<span className="text-2xl">+</span></p>
-                  <p className="text-[11px] text-blue-100 mt-2 leading-snug">실제 낙찰 기록이 있는<br />제안서만 엄선</p>
+            <div className="presales-reveal presales-delay-2 relative">
+              <div className="presales-hero-stage grid min-h-[420px] grid-cols-1 gap-3 md:min-h-[520px] lg:grid-cols-[minmax(0,1.55fr)_0.46fr_0.46fr]">
+                <div className="presales-hero-main group relative min-h-[420px] overflow-hidden rounded-[1.75rem] bg-slate-900 shadow-[0_28px_80px_rgba(15,23,42,0.18)]">
+                  <Image
+                    src="/images/hero-ai-readiness.webp"
+                    alt="AI readiness 진단 화면을 보며 공공조달 제안서를 검토하는 컨설턴트"
+                    fill
+                    sizes="(min-width: 1024px) 52vw, 100vw"
+                    className="object-cover object-center transition-transform duration-[1400ms] group-hover:scale-[1.035]"
+                    priority
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/72 via-slate-950/10 to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-5 md:p-7">
+                    <div className="mb-4 inline-flex rounded-full border border-white/15 bg-white/12 px-3 py-1 text-xs font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] backdrop-blur">
+                      AI readiness · 제안서 검토
+                    </div>
+                    <div className="flex items-end justify-between gap-4">
+                      <div>
+                        <p className="text-2xl font-bold tracking-tight text-white md:text-3xl">공고를 읽고 문서로 바꾸는 시간</p>
+                        <p className="mt-2 max-w-[440px] text-sm leading-relaxed text-white/75">템플릿, 공고, IT피드, 모닝브리프가 연결된 입찰 준비 흐름입니다.</p>
+                      </div>
+                      <Link href="/brief" className="hidden h-11 shrink-0 items-center rounded-full bg-white px-4 text-sm font-bold text-slate-950 transition-transform hover:-translate-y-0.5 md:inline-flex">
+                        브리프 보기
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              {/* Portrait 2 — right, full height */}
-              <div className="relative row-span-2 rounded-2xl overflow-hidden bg-gradient-to-br from-gray-200 to-gray-100">
-                <Image
-                  src="/images/hero-consultant-2.webp"
-                  alt="공공조달 컨설턴트"
-                  fill
-                  sizes="(min-width: 1024px) 20vw, 33vw"
-                  className="object-cover"
-                  priority
-                />
-              </div>
+                {heroFeaturePanels.map((panel, index) => (
+                  <Link
+                    key={panel.label}
+                    href={panel.href}
+                    className={`presales-hero-strip group relative hidden overflow-hidden rounded-[1.75rem] bg-slate-900 shadow-[0_22px_70px_rgba(15,23,42,0.13)] transition-transform duration-500 hover:-translate-y-1 lg:block ${index === 1 ? 'presales-strip-late' : ''}`}
+                  >
+                    <Image
+                      src={panel.image}
+                      alt={`${panel.label} 이미지`}
+                      fill
+                      sizes="(min-width: 1024px) 18vw, 0vw"
+                      className="object-cover transition-transform duration-[1400ms] group-hover:scale-[1.06]"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/86 via-slate-950/20 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 p-4">
+                      <p className="presales-vertical-label text-3xl font-bold text-white/92">{panel.label}</p>
+                      <div className="mt-4 translate-y-2 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
+                        <p className="text-sm font-bold text-white">{panel.title}</p>
+                        <p className="mt-1 text-xs leading-snug text-white/70">{panel.caption}</p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
 
-              {/* White secondary stat */}
-              <div className="rounded-2xl bg-white border border-gray-200 p-5 flex flex-col justify-between">
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">전문 분야</p>
-                <div>
-                  <p className="text-4xl font-extrabold tracking-tight leading-none text-gray-900">6</p>
-                  <p className="text-[11px] text-gray-500 mt-2 leading-snug">기술제안·입찰가이드·<br />발표자료 등 6개 카테고리</p>
+                <div className="presales-floating-note absolute -right-2 top-7 hidden rounded-2xl border border-white/70 bg-white/84 p-4 shadow-[0_18px_54px_rgba(15,23,42,0.15)] backdrop-blur md:block">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Today</p>
+                  <p className="mt-1 text-2xl font-extrabold tracking-tight text-gray-950">{stats?.productCount || 0}+</p>
+                  <p className="text-xs text-gray-500">등록 문서</p>
                 </div>
-              </div>
-            </div>
 
-            {/* Mobile: 2 portraits side by side */}
-            <div className="grid grid-cols-2 gap-3 lg:hidden">
-              <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-200 to-gray-100">
-                <Image src="/images/hero-consultant-1.webp" alt="공공조달 컨설턴트" fill sizes="50vw" className="object-cover" priority />
-              </div>
-              <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-200 to-gray-100">
-                <Image src="/images/hero-consultant-2.webp" alt="공공조달 컨설턴트" fill sizes="50vw" className="object-cover" priority />
+                <div className="presales-floating-note presales-floating-note-slow absolute -left-5 top-10 hidden rounded-2xl border border-white/70 bg-white/86 p-4 shadow-[0_18px_54px_rgba(15,23,42,0.14)] backdrop-blur md:block">
+                  <p className="text-xs font-bold text-gray-950">공고 · 피드 · 브리프</p>
+                  <p className="mt-1 text-xs text-gray-500">매일 업데이트되는 제안 근거</p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Stats strip — below bento, full width */}
-          <div className="grid grid-cols-3 md:grid-cols-4 gap-6 md:gap-10 mt-14 md:mt-20 pt-10 border-t border-gray-200">
+          <ProductRail products={products} loading={loadingProducts} getCategoryNames={getCategoryNames} />
+
+          <div className="mt-14 grid grid-cols-3 gap-6 border-t border-gray-200 pt-10 md:grid-cols-4 md:gap-10">
             {[
               { value: `${stats?.productCount || 0}+`, label: '검증 템플릿' },
               { value: '6', label: '전문 분야' },
               { value: '100%', label: '원본 파일 제공' },
               { value: '5분', label: '결제 후 즉시 다운로드', hideOnMobile: true },
-            ].map((s) => (
-              <div key={s.label} className={s.hideOnMobile ? 'hidden md:block' : ''}>
-                <p className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900">{s.value}</p>
-                <p className="text-xs md:text-sm text-gray-500 mt-1.5">{s.label}</p>
+            ].map((s, index) => (
+              <div key={s.label} className={`${s.hideOnMobile ? 'hidden md:block' : ''} presales-reveal`} style={{ animationDelay: `${120 + index * 70}ms` }}>
+                <p className="text-3xl font-extrabold tracking-tight text-gray-950 md:text-4xl">{s.value}</p>
+                <p className="mt-1.5 text-xs text-gray-500 md:text-sm">{s.label}</p>
               </div>
             ))}
           </div>
 
-          {/* Category boxes */}
-          <div className="grid grid-cols-3 gap-4 mt-10">
-            {categoryCounts.map((cat) => (
-              <Link
-                key={cat.id}
-                href={`/store?category=${cat.id}`}
-                aria-label={`${cat.name} 카테고리 보기`}
-                className="group flex flex-col items-center justify-center p-6 rounded-2xl border border-gray-100 bg-white hover:border-blue-200 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-500 text-center"
-              >
-                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mb-3 group-hover:bg-blue-100 transition-colors duration-500">
-                  <FileText className="w-5 h-5 text-blue-600" />
-                </div>
-                <span className="font-semibold text-sm tracking-tight text-gray-900 group-hover:text-blue-600 transition-colors duration-300">{cat.name}</span>
-                <span className="text-xs text-gray-400 mt-1">{cat.count}개</span>
-              </Link>
-            ))}
+          <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-3">
+            {categoryCounts.map((cat, index) => {
+              const Icon = cat.icon || FileText
+              return (
+                <Link
+                  key={cat.id}
+                  href={`/store?category=${cat.id}`}
+                  aria-label={`${cat.name} 카테고리 보기`}
+                  className="presales-reveal group flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 text-left shadow-[0_8px_28px_rgba(15,23,42,0.035)] transition-all duration-500 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_14px_42px_rgba(37,99,235,0.1)]"
+                  style={{ animationDelay: `${180 + index * 55}ms` }}
+                >
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 transition-colors duration-500 group-hover:bg-blue-100">
+                    <Icon className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="block truncate text-sm font-bold tracking-tight text-gray-950 transition-colors duration-300 group-hover:text-blue-600">{cat.name}</span>
+                    <span className="mt-1 block text-xs text-gray-400">{cat.count}개 문서</span>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         </div>
       </section>

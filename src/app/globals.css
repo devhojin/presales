@@ -201,3 +201,137 @@ input[type="checkbox"], input[type="radio"], select, label[for],
     @apply font-sans;
   }
 }
+
+@keyframes presales-reveal-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes presales-soft-float {
+  0%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -8px, 0);
+  }
+}
+
+@keyframes presales-rail-left {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes presales-rail-right {
+  from {
+    transform: translate3d(-50%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.presales-reveal {
+  animation: presales-reveal-up 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.presales-delay-1 {
+  animation-delay: 90ms;
+}
+
+.presales-delay-2 {
+  animation-delay: 180ms;
+}
+
+.presales-delay-3 {
+  animation-delay: 270ms;
+}
+
+.presales-delay-4 {
+  animation-delay: 360ms;
+}
+
+.presales-hero-stage {
+  perspective: 1400px;
+}
+
+.presales-hero-main,
+.presales-hero-strip,
+.presales-hero-search,
+.presales-floating-note {
+  will-change: transform;
+}
+
+.presales-hero-main {
+  animation: presales-soft-float 8s ease-in-out infinite;
+}
+
+.presales-hero-strip {
+  animation: presales-soft-float 9.5s ease-in-out infinite;
+}
+
+.presales-strip-late {
+  animation-delay: 1.2s;
+}
+
+.presales-hero-search {
+  animation: presales-soft-float 7.5s ease-in-out infinite;
+  animation-delay: 1.8s;
+}
+
+.presales-floating-note {
+  animation: presales-soft-float 7s ease-in-out infinite;
+}
+
+.presales-floating-note-slow {
+  animation-duration: 9s;
+  animation-delay: 1.4s;
+}
+
+.presales-vertical-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  letter-spacing: 0;
+}
+
+.presales-product-rail-wrap {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.presales-product-rail {
+  display: flex;
+  width: max-content;
+  gap: 0.75rem;
+  animation: presales-rail-left 34s linear infinite;
+  will-change: transform;
+}
+
+.presales-product-rail-reverse {
+  animation-name: presales-rail-right;
+  animation-duration: 42s;
+}
+
+.presales-product-rail-wrap:hover .presales-product-rail {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .presales-reveal,
+  .presales-hero-main,
+  .presales-hero-strip,
+  .presales-hero-search,
+  .presales-floating-note,
+  .presales-product-rail {
+    animation: none !important;
+  }
+}
