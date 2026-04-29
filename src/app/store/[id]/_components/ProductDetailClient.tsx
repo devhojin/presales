@@ -21,6 +21,7 @@ import * as gtag from '@/lib/gtag'
 import { SITE_URL } from '@/lib/constants'
 import { shareToKakao } from '@/lib/kakao-share'
 import { buildProductTagSearchHref } from '@/lib/product-tags'
+import { formatProductFileSize, normalizeProductFileSizeBytes, summarizeProductFiles } from '@/lib/product-file-metadata'
 
 type TabId = 'info' | 'video' | 'review'
 
@@ -29,7 +30,7 @@ interface ProductFile {
   product_id: number
   file_name: string
   file_url: string
-  file_size: string | null
+  file_size: number | string | null
   created_at: string
 }
 
@@ -119,10 +120,7 @@ function normalizeFileTypes(value: unknown, format: string | null): string[] {
   const upper = format.toUpperCase()
   for (const type of ['PPTX', 'PPT', 'PDF', 'XLSX', 'XLS', 'DOCX', 'DOC', 'HWP', 'ZIP']) {
     if (upper.includes(type)) {
-      if (type === 'PPTX') found.add('PPT')
-      else if (type === 'XLSX') found.add('XLS')
-      else if (type === 'DOCX') found.add('DOC')
-      else found.add(type)
+      found.add(type)
     }
   }
   return Array.from(found)
@@ -378,7 +376,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
       const { url } = await res.json()
       window.open(url, '_blank')
       // GA4: download event
-      const ext = (product.format || 'file').toLowerCase()
+      const ext = (summarizeProductFiles(productFiles).format || product.format || 'file').toLowerCase()
       gtag.trackDownload(product.title, ext)
       // 로컬 다운로드 카운트 반영 (서버에서 실제 증가 처리됨)
       setProduct(prev => prev ? { ...prev, download_count: (prev.download_count || 0) + 1 } : prev)
@@ -494,7 +492,14 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
   const overview = normalizeOverview(product.overview, product.description)
   const featureItems = normalizeFeatures(product.features)
   const specItems = normalizeSpecs(product.specs)
-  const fileTypeItems = normalizeFileTypes(product.file_types, product.format)
+  const fileSummary = summarizeProductFiles(productFiles)
+  const displayFormat = fileSummary.format || product.format || ''
+  const displayFileSize = fileSummary.fileSize || product.file_size || ''
+  const hasPageCountCandidate = fileSummary.fileTypes.some((type) => type === 'PDF' || type === 'PPTX' || type === 'PPT')
+  const displayPages = productFiles.length === 0 || hasPageCountCandidate ? product.pages : null
+  const fileTypeItems = fileSummary.fileTypes.length > 0
+    ? fileSummary.fileTypes
+    : normalizeFileTypes(product.file_types, product.format)
   const hasDetailContent =
     Boolean(overview.summary) ||
     overview.points.length > 0 ||
@@ -545,12 +550,12 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
               <BookOpen className="w-4 h-4" />
               문서 미리보기
             </button>
-          ) : (product.preview_note || product.format) && (
+          ) : (product.preview_note || displayFormat) && (
             <div className="w-full bg-white border border-border/60 rounded-2xl py-3 px-4 text-center">
               <p className="text-sm text-muted-foreground">
                 {product.preview_note || (product.is_free ? '무료 다운로드 후 바로 사용 가능합니다' : '구매 후 원본 파일을 다운로드할 수 있습니다')}
               </p>
-              <p className="text-xs text-muted-foreground/60 mt-1">파일 형식: {product.format}</p>
+              {displayFormat && <p className="text-xs text-muted-foreground/60 mt-1">파일 형식: {displayFormat}</p>}
             </div>
           )}
 
@@ -635,22 +640,22 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           <Separator className="my-6" />
 
           <div className="space-y-2 text-sm divide-y divide-border/50">
-            {product.format && (
+            {displayFormat && (
               <div className="py-2 flex justify-between">
                 <p className="text-muted-foreground">파일 형식</p>
-                <p className="font-medium">{product.format}</p>
+                <p className="font-medium">{displayFormat}</p>
               </div>
             )}
-            {product.pages && (
+            {displayPages && (
               <div className="py-2 flex justify-between">
                 <p className="text-muted-foreground">페이지 수</p>
-                <p className="font-medium">{product.pages}p</p>
+                <p className="font-medium">{displayPages}p</p>
               </div>
             )}
-            {product.file_size && (
+            {displayFileSize && (
               <div className="py-2 flex justify-between">
                 <p className="text-muted-foreground">파일 크기</p>
-                <p className="font-medium">{product.file_size}</p>
+                <p className="font-medium">{displayFileSize}</p>
               </div>
             )}
             <div className="py-2 flex justify-between">
@@ -725,7 +730,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                     price: discountedPrice,
                     originalPrice: product.original_price > 0 ? product.original_price : product.price,
                     thumbnail: product.thumbnail_url || '',
-                    format: product.format || '',
+                    format: displayFormat,
                     ...(matchDiscount ? {
                       discountSourceProductId: matchDiscount.sourceProductId,
                       discountSourceTitle: matchDiscount.sourceTitle,
@@ -747,7 +752,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           </div>
 
           {/* PDF 상품 안내 */}
-          {product.format?.toLowerCase().includes('pdf') && !product.is_free && (
+          {displayFormat.toLowerCase().includes('pdf') && !product.is_free && (
             <p className="text-xs text-blue-600 bg-blue-50 rounded-xl px-4 py-2.5 text-center leading-relaxed">
               PDF 상품 구매 후 PPT 원본 구매 시 구매금액이 자동 차감됩니다
             </p>
@@ -762,7 +767,11 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                   <div className="flex items-center gap-2 min-w-0">
                     <FileDown className="w-4 h-4 text-muted-foreground shrink-0" />
                     <span className="text-sm truncate">{file.file_name}</span>
-                    {file.file_size && <span className="text-xs text-muted-foreground shrink-0">({file.file_size})</span>}
+                    {normalizeProductFileSizeBytes(file.file_size) > 0 && (
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        ({formatProductFileSize(normalizeProductFileSizeBytes(file.file_size))})
+                      </span>
+                    )}
                   </div>
                   <button
                     onClick={() => handleDownload(file.id)}
@@ -1027,7 +1036,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           isOpen={showPdfPreview}
           onClose={() => setShowPdfPreview(false)}
           pdfUrl={product.preview_pdf_url}
-          previewPages={product.preview_clear_pages || Math.min(15, Math.max(3, Math.ceil((product.pages || 30) * 0.3)))}
+          previewPages={product.preview_clear_pages || Math.min(15, Math.max(3, Math.ceil((displayPages || 30) * 0.3)))}
           productTitle={product.title}
           price={product.price}
           purchaseLabel={inCart ? '장바구니로 이동' : `장바구니 담기 ${formatPrice(matchDiscount ? Math.max(0, product.price - matchDiscount.discountAmount) : product.price)}`}
@@ -1045,7 +1054,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                 price: discountedPrice,
                 originalPrice: product.original_price > 0 ? product.original_price : product.price,
                 thumbnail: product.thumbnail_url || '',
-                format: product.format || '',
+                format: displayFormat,
                 ...(matchDiscount ? {
                   discountSourceProductId: matchDiscount.sourceProductId,
                   discountSourceTitle: matchDiscount.sourceTitle,
@@ -1107,7 +1116,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                   price: discountedPrice,
                   originalPrice: product.original_price > 0 ? product.original_price : product.price,
                   thumbnail: product.thumbnail_url || '',
-                  format: product.format || '',
+                  format: displayFormat,
                   ...(matchDiscount ? {
                     discountSourceProductId: matchDiscount.sourceProductId,
                     discountSourceTitle: matchDiscount.sourceTitle,
@@ -1126,7 +1135,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                 <><ShoppingCart className="w-4 h-4" /> {product.is_free ? '무료 받기' : `장바구니 담기`}</>}
             </button>
           )}
-          {product.format?.toLowerCase().includes('pdf') && !product.is_free && (
+          {displayFormat.toLowerCase().includes('pdf') && !product.is_free && (
             <p className="text-[10px] text-blue-600 text-center mt-1">PDF 구매 후 PPT 원본 구매 시 금액 자동 차감</p>
           )}
         </div>

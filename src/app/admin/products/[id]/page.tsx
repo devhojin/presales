@@ -6,6 +6,8 @@ import { createClient } from '@/lib/supabase'
 import { uploadFile } from '@/lib/storage-upload'
 import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { normalizeDocumentOrientationFormValue, serializeDocumentOrientation } from '@/lib/document-orientation'
+import { formatProductFileSize, getProductFileExtension, summarizeProductFiles } from '@/lib/product-file-metadata'
+import { detectFilePageCountFromFile, detectProductFilesPageTotal } from '@/lib/product-file-page-count'
 import {
   ArrowLeft, Save, Eye, EyeOff, Trash2, Play, Plus, X,
   ImageIcon, FileText, Tag, Upload, Loader2, Code, Monitor,
@@ -33,7 +35,7 @@ interface ProductFile {
   product_id: number
   file_name: string
   file_url: string
-  file_size: number
+  file_size: number | null
   created_at: string
 }
 
@@ -80,7 +82,7 @@ interface ProductForm {
 // Constants
 // ===========================
 
-const FILE_TYPE_OPTIONS = ['PPT', 'PDF', 'HWP', 'XLS', 'DOC'] as const
+const FILE_TYPE_OPTIONS = ['PDF', 'PPTX', 'PPT', 'XLSX', 'XLS', 'DOCX', 'DOC', 'HWP', 'ZIP'] as const
 
 const EMPTY_FORM: ProductForm = {
   title: '',
@@ -350,15 +352,62 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   }
 
   // Load product files
-  const loadProductFiles = async () => {
-    if (isNew) return
+  const loadProductFiles = async (): Promise<ProductFile[]> => {
+    if (isNew) return []
     const supabase = createClient()
     const { data } = await supabase
       .from('product_files')
       .select('*')
       .eq('product_id', Number(id))
       .order('created_at', { ascending: false })
-    setProductFiles(data || [])
+    const files = (data || []) as ProductFile[]
+    setProductFiles(files)
+    return files
+  }
+
+  const applyFileInfoFromFiles = async (
+    files: ProductFile[],
+    options: { persist?: boolean; pageTotal?: number | null; detectPages?: boolean } = {},
+  ) => {
+    const summary = summarizeProductFiles(files)
+    let pageValue: string | undefined
+
+    if (files.length === 0) {
+      pageValue = ''
+    } else if (typeof options.pageTotal === 'number' && options.pageTotal > 0) {
+      pageValue = String(options.pageTotal)
+    } else if (options.detectPages) {
+      const hasPageCountCandidate = files.some((file) => {
+        const extension = getProductFileExtension(file.file_name)
+        return extension === 'PDF' || extension === 'PPTX' || extension === 'PPT'
+      })
+      const detectedTotal = await detectProductFilesPageTotal(files)
+      if (detectedTotal !== null) pageValue = String(detectedTotal)
+      else if (!hasPageCountCandidate) pageValue = ''
+    }
+
+    setForm(prev => ({
+      ...prev,
+      format: summary.format,
+      file_size: summary.fileSize,
+      file_types: summary.fileTypes,
+      ...(pageValue !== undefined ? { pages: pageValue } : {}),
+    }))
+
+    if (options.persist && !isNew) {
+      const dbRow: Record<string, unknown> = {
+        format: summary.format || null,
+        file_size: summary.fileSize || null,
+        file_types: summary.fileTypes,
+      }
+      if (pageValue !== undefined) dbRow.pages = pageValue ? parseInt(pageValue, 10) : null
+
+      const { error } = await createClient()
+        .from('products')
+        .update(dbRow)
+        .eq('id', Number(id))
+      if (error) throw error
+    }
   }
 
   // Upload download file — TUS resumable (50GB 까지)
@@ -370,6 +419,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
     setFileUploading(true)
     setFileUploadProgress(0)
     try {
+      const uploadedPageCount = await detectFilePageCountFromFile(file)
       // Supabase Storage key 는 ASCII 만 허용 (TUS 는 특히 엄격)
       // 사용자가 보는 파일명(file_name) 은 DB 에 원본 한글로 보존, storage key 만 sanitize
       const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')) : ''
@@ -401,7 +451,12 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       if (insertError) throw insertError
 
       setFileUploadProgress(100)
-      await loadProductFiles()
+      const files = await loadProductFiles()
+      await applyFileInfoFromFiles(files, {
+        persist: true,
+        detectPages: true,
+        pageTotal: files.length === 1 ? uploadedPageCount : null,
+      })
       showToast('파일이 업로드되었습니다.')
     } catch (err) {
       showToast(`업로드 오류: ${formatErr(err)}`)
@@ -429,7 +484,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         .eq('id', file.id)
       if (error) throw error
       setDeleteConfirmFile(null)
-      await loadProductFiles()
+      const files = await loadProductFiles()
+      await applyFileInfoFromFiles(files, { persist: true, detectPages: true })
       showToast('파일이 삭제되었습니다.')
     } catch (err) {
       showToast(`삭제 오류: ${formatErr(err)}`)
@@ -439,10 +495,8 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
   }
 
   // Format file size
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  const formatFileSize = (bytes: number | null) => {
+    return formatProductFileSize(bytes || 0) || '-'
   }
 
   // Load data
@@ -465,6 +519,19 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         const overview = Array.isArray(p.overview) ? p.overview : []
         const features = Array.isArray(p.features) ? p.features : []
         const specs = Array.isArray(p.specs) ? p.specs : []
+        const { data: filesData } = await supabase
+          .from('product_files')
+          .select('*')
+          .eq('product_id', Number(id))
+          .order('created_at', { ascending: false })
+        const files = (filesData || []) as ProductFile[]
+        const fileSummary = summarizeProductFiles(files)
+        const hasPageCountCandidate = files.some((file) => {
+          const extension = getProductFileExtension(file.file_name)
+          return extension === 'PDF' || extension === 'PPTX' || extension === 'PPT'
+        })
+        const detectedPageTotal = p.pages ? null : await detectProductFilesPageTotal(files)
+
         setForm({
           title: p.title || '',
           description: p.description || '',
@@ -479,9 +546,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           category_id: productCategoryIds.length > 0 ? String(productCategoryIds[0]) : '',
           category_ids: productCategoryIds,
           tier: p.tier || 'basic',
-          format: p.format || '',
-          pages: p.pages ? String(p.pages) : '',
-          file_size: p.file_size || '',
+          format: fileSummary.format || p.format || '',
+          pages: detectedPageTotal !== null ? String(detectedPageTotal) : hasPageCountCandidate && p.pages ? String(p.pages) : '',
+          file_size: fileSummary.fileSize || p.file_size || '',
           thumbnail_url: p.thumbnail_url || '',
           tags: Array.isArray(p.tags) ? p.tags : [],
           is_published: p.is_published ?? false,
@@ -489,7 +556,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           overview: overview.length > 0 ? overview : [''],
           features: features.length > 0 ? features : [''],
           specs: specs.length > 0 ? specs : [{ label: '', value: '' }],
-          file_types: Array.isArray(p.file_types) ? p.file_types : [],
+          file_types: fileSummary.fileTypes.length > 0 ? fileSummary.fileTypes : Array.isArray(p.file_types) ? p.file_types : [],
           document_orientation: normalizeDocumentOrientationFormValue(p.document_orientation),
           badge_new: p.badge_new ?? false,
           badge_best: p.badge_best ?? false,
@@ -498,6 +565,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           related_product_ids: Array.isArray(p.related_product_ids) ? p.related_product_ids : [],
           preview_images: Array.isArray(p.preview_images) ? p.preview_images : [],
         })
+        setProductFiles(files)
         setDownloadCount(p.download_count || 0)
         setCreatedAt(p.created_at || '')
 
@@ -510,14 +578,6 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
             .in('id', rpIds)
           setRelatedProducts(rpData || [])
         }
-
-        // Load product files
-        const { data: filesData } = await supabase
-          .from('product_files')
-          .select('*')
-          .eq('product_id', Number(id))
-          .order('created_at', { ascending: false })
-        setProductFiles(filesData || [])
       }
       setLoading(false)
     }
@@ -539,6 +599,13 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
       const supabase = createClient()
       const validCategoryIds = new Set(categories.map((category) => category.id))
       const selectedCategoryIds = getValidCategoryIds(form.category_ids, form.category_id, validCategoryIds)
+      const fileSummary = summarizeProductFiles(productFiles)
+      const hasPageCountCandidate = productFiles.some((file) => {
+        const extension = getProductFileExtension(file.file_name)
+        return extension === 'PDF' || extension === 'PPTX' || extension === 'PPT'
+      })
+      const detectedPageTotal = await detectProductFilesPageTotal(productFiles)
+      const pageValue = detectedPageTotal ?? (hasPageCountCandidate && form.pages ? parseInt(form.pages, 10) : null)
       const dbRow: Record<string, unknown> = {
         title: form.title,
         description: form.description || null,
@@ -553,9 +620,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         category_id: selectedCategoryIds[0] ?? null,
         category_ids: selectedCategoryIds,
         tier: form.tier,
-        format: form.format || null,
-        pages: form.pages ? parseInt(form.pages) : null,
-        file_size: form.file_size || null,
+        format: fileSummary.format || form.format || null,
+        pages: pageValue,
+        file_size: fileSummary.fileSize || form.file_size || null,
         thumbnail_url: form.thumbnail_url || null,
         tags: form.tags,
         is_published: form.is_published,
@@ -563,7 +630,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
         overview: form.overview.filter(Boolean),
         features: form.features.filter(Boolean),
         specs: form.specs.filter(s => s.label || s.value),
-        file_types: form.file_types,
+        file_types: fileSummary.fileTypes.length > 0 ? fileSummary.fileTypes : form.file_types,
         document_orientation: serializeDocumentOrientation(form.document_orientation),
         badge_new: form.badge_new,
         badge_best: form.badge_best,
@@ -1824,9 +1891,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 <label className="text-xs text-muted-foreground mb-1 block">파일 형식</label>
                 <input
                   value={form.format}
-                  onChange={e => updateField('format', e.target.value)}
-                  placeholder="예: PPTX, HWP"
-                  className={inputClass}
+                  readOnly
+                  placeholder="등록 파일 기준 자동 계산"
+                  className={`${inputClass} bg-muted/40 text-muted-foreground`}
                 />
               </div>
               <div>
@@ -1834,7 +1901,7 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 <input
                   value={form.pages}
                   onChange={e => updateField('pages', e.target.value)}
-                  placeholder="예: 45"
+                  placeholder="PDF/PPTX 자동 감지, 필요 시 직접 입력"
                   className={inputClass}
                 />
               </div>
@@ -1842,9 +1909,9 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
                 <label className="text-xs text-muted-foreground mb-1 block">파일 크기</label>
                 <input
                   value={form.file_size}
-                  onChange={e => updateField('file_size', e.target.value)}
-                  placeholder="예: 18MB"
-                  className={inputClass}
+                  readOnly
+                  placeholder="등록 파일 합계 자동 계산"
+                  className={`${inputClass} bg-muted/40 text-muted-foreground`}
                 />
               </div>
             </div>
