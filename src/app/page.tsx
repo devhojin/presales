@@ -337,7 +337,7 @@ export default function Home() {
                 공공조달 제안서 전문
               </div>
 
-              <h1 className="presales-reveal presales-delay-1 text-4xl font-extrabold leading-[1.08] tracking-tight text-gray-950 md:text-[46px] lg:text-[50px] xl:text-[54px]">
+              <h1 className="presales-reveal presales-delay-1 break-keep text-[36px] font-extrabold leading-[1.12] tracking-tight text-gray-950 md:text-[42px] lg:text-[44px] xl:text-[46px]">
                 제안서 작성 시간을 줄이고,<br />
                 <span className="text-blue-600">수주 가능성에 집중하세요.</span>
               </h1>
