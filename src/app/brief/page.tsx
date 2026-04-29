@@ -118,6 +118,9 @@ export default function BriefPage() {
         <p className="text-muted-foreground">
           공공조달·스마트시티·창업지원·AI/IoT 관련 시장 동향과 신규 공고를 매일 아침 정리해서 보내드립니다.
         </p>
+        <p className="mt-3 text-sm font-semibold leading-relaxed text-red-600">
+          모닝브리프는 매일 아침 7시에 받아보시는 사항이며 아래와 같이 발송됩니다. 언제든지 수신거부 하실 수 있습니다.
+        </p>
       </div>
 
       {/* Subscribe banner */}
