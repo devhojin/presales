@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { createServerClient } from "@supabase/ssr";
 import { SITE_URL } from "@/lib/constants";
+import { morningBriefSlug } from "@/lib/public-briefs";
+import { morningBriefService } from "../../morning-brief/lib/supabase";
 
 const BASE_URL = SITE_URL;
 const SITEMAP_BATCH_SIZE = 1000;
@@ -15,6 +17,12 @@ type SitemapFeed = {
   id: string;
   updated_at: string | null;
   created_at: string | null;
+};
+
+type SitemapMorningBrief = {
+  brief_date: string;
+  started_at: string | null;
+  finished_at: string | null;
 };
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -99,19 +107,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.55,
     }));
 
-    // 브리프 개별 페이지
-    const { data: briefs } = await supabase
-      .from("daily_briefs")
-      .select("slug, sent_at, created_at")
-      .eq("is_published", true)
-      .order("brief_date", { ascending: false });
+    // 브리프 개별 페이지: 메일 발송과 같은 morning-brief 마스터 DB를 기준으로 노출
+    let briefPages: MetadataRoute.Sitemap = [];
+    try {
+      const mb = morningBriefService();
+      const { data: briefs, error: briefError } = await mb
+        .from("briefs")
+        .select("brief_date, started_at, finished_at")
+        .eq("status", "sent")
+        .not("html_body", "is", null)
+        .order("brief_date", { ascending: false });
 
-    const briefPages: MetadataRoute.Sitemap = (briefs ?? []).map((b) => ({
-      url: `${BASE_URL}/brief/${b.slug}`,
-      lastModified: b.sent_at ? new Date(b.sent_at) : new Date(b.created_at),
-      changeFrequency: "daily" as const,
-      priority: 0.7,
-    }));
+      if (briefError) throw briefError;
+
+      briefPages = ((briefs ?? []) as SitemapMorningBrief[]).map((b) => ({
+        url: `${BASE_URL}/brief/${morningBriefSlug(b.brief_date)}`,
+        lastModified: b.finished_at ? new Date(b.finished_at) : b.started_at ? new Date(b.started_at) : new Date(b.brief_date),
+        changeFrequency: "daily" as const,
+        priority: 0.7,
+      }));
+    } catch {
+      briefPages = [];
+    }
 
     return [...staticPages, ...productPages, ...announcementPages, ...feedPages, ...briefPages];
   } catch {

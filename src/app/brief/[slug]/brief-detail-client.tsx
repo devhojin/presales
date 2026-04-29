@@ -4,20 +4,9 @@ import { useMemo } from 'react'
 import { Mail, Calendar, Newspaper, ArrowLeft, Send } from 'lucide-react'
 import Link from 'next/link'
 import DOMPurify from 'dompurify'
+import type { PublicBrief } from '@/lib/public-briefs'
 
-interface BriefData {
-  id: number
-  brief_date: string
-  slug: string
-  subject: string
-  email_html: string
-  total_news: number
-  total_announcements: number
-  sent_at: string | null
-  created_at: string
-}
-
-export function BriefDetailClient({ brief, dateStr }: { brief: BriefData; dateStr: string }) {
+export function BriefDetailClient({ brief, dateStr }: { brief: PublicBrief; dateStr: string }) {
   const sanitized = useMemo(() => {
     if (typeof window === 'undefined') return ''
     return DOMPurify.sanitize(brief.email_html, {

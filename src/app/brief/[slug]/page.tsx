@@ -1,29 +1,50 @@
-import { createServerClient } from '@supabase/ssr'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { SITE_URL } from '@/lib/constants'
 import { safeJsonLd } from '@/lib/json-ld'
+import {
+  parseMorningBriefDateFromSlug,
+  toPublicBrief,
+  type MorningBriefRow,
+  type PublicBrief,
+} from '@/lib/public-briefs'
+import { morningBriefService } from '../../../../morning-brief/lib/supabase'
 import { BriefDetailClient } from './brief-detail-client'
 
 interface Props {
   params: Promise<{ slug: string }>
 }
 
-async function getBrief(slug: string) {
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    { cookies: { getAll() { return [] } } },
-  )
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
-  const { data } = await supabase
-    .from('daily_briefs')
-    .select('id, brief_date, slug, subject, email_html, total_news, total_announcements, sent_at, created_at')
-    .eq('slug', slug)
-    .eq('is_published', true)
-    .maybeSingle()
+async function getBrief(slug: string): Promise<PublicBrief | null> {
+  const briefDate = parseMorningBriefDateFromSlug(slug)
+  if (!briefDate) return null
 
-  return data
+  try {
+    const sb = morningBriefService()
+    const { data, error } = await sb
+      .from('briefs')
+      .select('id, brief_date, subject, html_body, news_count, started_at, finished_at')
+      .eq('brief_date', briefDate)
+      .eq('status', 'sent')
+      .not('html_body', 'is', null)
+      .maybeSingle()
+
+    if (error) throw error
+    if (!data) return null
+
+    return toPublicBrief(data as MorningBriefRow)
+  } catch {
+    return null
+  }
+}
+
+function briefDescription(brief: PublicBrief, dateStr: string): string {
+  return brief.total_announcements > 0
+    ? `${dateStr} 시장동향 브리프 — 뉴스 ${brief.total_news}건, 공고 ${brief.total_announcements}건`
+    : `${dateStr} 시장동향 브리프 — 뉴스 ${brief.total_news}건`
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -35,7 +56,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     year: 'numeric', month: 'long', day: 'numeric',
   })
   const title = `${brief.subject} | 모닝 브리프`
-  const description = `${dateStr} 시장동향 브리프 — 뉴스 ${brief.total_news}건, 공고 ${brief.total_announcements}건`
+  const description = briefDescription(brief, dateStr)
 
   return {
     title,
@@ -78,8 +99,8 @@ export default async function BriefSlugPage({ params }: Props) {
             '@type': 'Article',
             headline: brief.subject,
             datePublished: brief.sent_at || brief.created_at,
-            dateModified: brief.created_at,
-            description: `${dateStr} 시장동향 브리프 — 뉴스 ${brief.total_news}건, 공고 ${brief.total_announcements}건`,
+            dateModified: brief.sent_at || brief.created_at,
+            description: briefDescription(brief, dateStr),
             publisher: {
               '@type': 'Organization',
               name: 'PRESALES by AMARANS',

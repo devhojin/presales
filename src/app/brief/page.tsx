@@ -1,69 +1,72 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { createClient } from '@/lib/supabase'
 import {
   Mail, Loader2, Calendar, ArrowLeft, Newspaper, CheckCircle2, Send,
 } from 'lucide-react'
 import DOMPurify from 'dompurify'
 import { useToastStore } from '@/stores/toast-store'
+import type { PublicBrief } from '@/lib/public-briefs'
 
-interface DailyBrief {
-  id: number
-  brief_date: string
-  slug: string
-  subject: string
-  email_html: string
-  total_news: number
-  total_announcements: number
-  created_at: string
-  sent_at: string | null
-}
+type BriefsResponse =
+  | { ok: true; briefs: PublicBrief[] }
+  | { ok: false; error: string }
 
 export default function BriefPage() {
   const { addToast } = useToastStore()
-  const supabase = useMemo(() => createClient(), [])
 
-  const [briefs, setBriefs] = useState<DailyBrief[]>([])
+  const [briefs, setBriefs] = useState<PublicBrief[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const [showDetail, setShowDetail] = useState(false)
   const [subscribeEmail, setSubscribeEmail] = useState('')
   const [subscribing, setSubscribing] = useState(false)
   const [subscribeDone, setSubscribeDone] = useState(false)
 
   useEffect(() => {
+    let mounted = true
+
     async function load() {
       setLoading(true)
       try {
-        const { data, error } = await supabase
-          .from('daily_briefs')
-          .select('id, brief_date, slug, subject, email_html, total_news, total_announcements, created_at, sent_at')
-          .eq('is_published', true)
-          .order('brief_date', { ascending: false })
-          .limit(365)
-        if (error) throw error
-        const list = (data || []) as DailyBrief[]
-        setBriefs(list)
-        if (list.length > 0 && !selectedId) {
-          setSelectedId(list[0].id)
+        const res = await fetch('/api/briefs', { cache: 'no-store' })
+        const payload = (await res.json()) as BriefsResponse
+        if (!res.ok || !payload.ok) {
+          throw new Error(payload.ok ? '브리프 로드 실패' : payload.error)
         }
+
+        const list = payload.briefs
+        if (!mounted) return
+
+        setBriefs(list)
+        setSelectedId((current) => {
+          if (current && list.some((brief) => brief.id === current)) return current
+
+          const hashSlug = window.location.hash.replace(/^#/, '')
+          const hashBrief = hashSlug ? list.find((brief) => brief.slug === hashSlug) : null
+          return hashBrief?.id ?? list[0]?.id ?? null
+        })
       } catch (e) {
+        if (!mounted) return
         addToast(e instanceof Error ? e.message : '브리프 로드 실패', 'error')
       } finally {
-        setLoading(false)
+        if (mounted) setLoading(false)
       }
     }
+
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+
+    return () => {
+      mounted = false
+    }
+  }, [addToast])
 
   const selectedBrief = useMemo(
     () => briefs.find((b) => b.id === selectedId) || null,
     [briefs, selectedId],
   )
 
-  const handleSelect = useCallback((id: number) => {
+  const handleSelect = useCallback((id: string) => {
     setSelectedId(id)
     setShowDetail(true)
     // URL 해시 업데이트
@@ -102,11 +105,6 @@ export default function BriefPage() {
   const formatDate = (iso: string) => {
     const d = new Date(iso)
     return d.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })
-  }
-
-  const formatDateShort = (iso: string) => {
-    const d = new Date(iso)
-    return d.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
   }
 
   return (
@@ -249,7 +247,7 @@ export default function BriefPage() {
   )
 }
 
-function BriefDetail({ brief, onBack }: { brief: DailyBrief; onBack: () => void }) {
+function BriefDetail({ brief, onBack }: { brief: PublicBrief; onBack: () => void }) {
   const sanitized = useMemo(() => {
     if (typeof window === 'undefined') return ''
     return DOMPurify.sanitize(brief.email_html, {
