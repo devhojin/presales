@@ -18,6 +18,11 @@ export function renderHtml({ newsByCategory, subscriberToken, topicsLabel, date,
   const d = date ?? new Date()
   const dateStr = `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`
   const base = (unsubBaseUrl ?? 'https://presales.co.kr').replace(/\/+$/, '')
+  const unsubscribeLink = subscriberToken
+    ? `
+        &nbsp;·&nbsp;
+        <a href="${base}/brief/unsubscribe?token=${encodeURIComponent(subscriberToken)}" style="color:#9ca3af;text-decoration:underline;">수신거부</a>`
+    : ''
 
   const sections = Object.entries(newsByCategory)
     .filter(([, items]) => items.length > 0)
@@ -64,8 +69,7 @@ export function renderHtml({ newsByCategory, subscriberToken, topicsLabel, date,
     <div style="margin-top:32px;padding-top:20px;border-top:1px solid #e5e7eb;text-align:center;font-size:11px;color:#9ca3af;line-height:1.6;">
       <p style="margin:0 0 8px;">
         <a href="${base}/brief" style="color:#2563eb;text-decoration:none;font-weight:600;">지난 브리프 보기</a>
-        &nbsp;·&nbsp;
-        <a href="${base}/brief/unsubscribe?token=${encodeURIComponent(subscriberToken)}" style="color:#9ca3af;text-decoration:underline;">수신거부</a>
+        ${unsubscribeLink}
       </p>
       수집 키워드: ${escHtml(topicsLabel)}<br />
       아마란스 · help@presales.co.kr

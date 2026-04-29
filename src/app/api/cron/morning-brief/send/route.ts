@@ -77,6 +77,13 @@ export async function GET(req: NextRequest) {
 
   const subject = brief.subject || `오늘의 모닝 브리프 - ${briefDate}`
   const topicsLabel = Object.values(CATEGORIES).flat().slice(0, 5).join(' · ') + ' 외'
+  const publicHtml = renderHtml({
+    newsByCategory: byCategory,
+    subscriberToken: '',
+    topicsLabel,
+    date: new Date(briefDate),
+    unsubBaseUrl: process.env.NEXT_PUBLIC_SITE_URL || 'https://presales.co.kr',
+  })
   let sent = 0
   let failed = 0
   const sendsLog: { brief_id: string; subscriber_id: string; email: string; status: string; sent_at: string | null; error: string | null }[] = []
@@ -128,6 +135,9 @@ export async function GET(req: NextRequest) {
 
   await sb.from('briefs').update({
     status: failed > 0 && sent === 0 ? 'failed' : 'sent',
+    subject,
+    html_body: publicHtml,
+    news_count: newsCount,
     sent_count: sent,
     failed_count: failed,
     finished_at: new Date().toISOString(),

@@ -2,13 +2,8 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { SITE_URL } from '@/lib/constants'
 import { safeJsonLd } from '@/lib/json-ld'
-import {
-  parseMorningBriefDateFromSlug,
-  toPublicBrief,
-  type MorningBriefRow,
-  type PublicBrief,
-} from '@/lib/public-briefs'
-import { morningBriefService } from '../../../../morning-brief/lib/supabase'
+import type { PublicBrief } from '@/lib/public-briefs'
+import { getPublicMorningBriefBySlug } from '@/lib/public-briefs-server'
 import { BriefDetailClient } from './brief-detail-client'
 
 interface Props {
@@ -19,23 +14,8 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 async function getBrief(slug: string): Promise<PublicBrief | null> {
-  const briefDate = parseMorningBriefDateFromSlug(slug)
-  if (!briefDate) return null
-
   try {
-    const sb = morningBriefService()
-    const { data, error } = await sb
-      .from('briefs')
-      .select('id, brief_date, subject, html_body, news_count, started_at, finished_at')
-      .eq('brief_date', briefDate)
-      .eq('status', 'sent')
-      .not('html_body', 'is', null)
-      .maybeSingle()
-
-    if (error) throw error
-    if (!data) return null
-
-    return toPublicBrief(data as MorningBriefRow)
+    return await getPublicMorningBriefBySlug(slug)
   } catch {
     return null
   }

@@ -115,7 +115,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         .from("briefs")
         .select("brief_date, started_at, finished_at")
         .eq("status", "sent")
-        .not("html_body", "is", null)
         .order("brief_date", { ascending: false });
 
       if (briefError) throw briefError;

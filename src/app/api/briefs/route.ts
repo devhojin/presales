@@ -1,26 +1,12 @@
 import { NextResponse } from 'next/server'
-import { morningBriefService } from '../../../../morning-brief/lib/supabase'
-import { toPublicBrief, type MorningBriefRow } from '@/lib/public-briefs'
+import { listPublicMorningBriefs } from '@/lib/public-briefs-server'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    const sb = morningBriefService()
-    const { data, error } = await sb
-      .from('briefs')
-      .select('id, brief_date, subject, html_body, news_count, started_at, finished_at')
-      .eq('status', 'sent')
-      .not('html_body', 'is', null)
-      .order('brief_date', { ascending: false })
-      .limit(365)
-
-    if (error) {
-      throw error
-    }
-
-    const briefs = ((data ?? []) as MorningBriefRow[]).map(toPublicBrief)
+    const briefs = await listPublicMorningBriefs(365)
 
     return NextResponse.json(
       { ok: true, briefs },
