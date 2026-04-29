@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServiceClient, getAuthUser, isAdmin } from '@/lib/chat'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/client-ip'
+import { logger } from '@/lib/logger'
 import { headers } from 'next/headers'
 
 const SIGNED_URL_EXPIRES_SEC = 60 * 10 // 10분
@@ -62,12 +63,17 @@ export async function POST(request: NextRequest) {
       .createSignedUrl(path, SIGNED_URL_EXPIRES_SEC)
 
     if (error || !signed) {
-      return NextResponse.json({ error: error?.message || '서명 URL 생성 실패' }, { status: 500 })
+      logger.error('Storage signed URL 생성 실패', 'storage/signed-url', {
+        bucket,
+        error: error?.message || 'signed data missing',
+      })
+      return NextResponse.json({ error: '서명 URL 생성 실패' }, { status: 500 })
     }
 
     return NextResponse.json({ url: signed.signedUrl, expiresIn: SIGNED_URL_EXPIRES_SEC })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'unknown'
-    return NextResponse.json({ error: message }, { status: 500 })
+    logger.error('Storage signed URL API 오류', 'storage/signed-url', { error: message })
+    return NextResponse.json({ error: '서명 URL 생성 실패' }, { status: 500 })
   }
 }

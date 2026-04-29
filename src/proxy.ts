@@ -5,9 +5,67 @@ import { createServerClient } from '@supabase/ssr'
 // KISA 보안기준: 세션 타임아웃 30분
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000
 const ACTIVITY_COOKIE = 'ps_last_activity'
+const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
+
+function normalizeOrigin(value: string | null | undefined): string | null {
+  if (!value) return null
+  try {
+    return new URL(value).origin
+  } catch {
+    return null
+  }
+}
+
+function getRequestOrigin(req: NextRequest): string | null {
+  const host = req.headers.get('host')
+  if (!host) return null
+  const forwardedProto = req.headers.get('x-forwarded-proto')
+  const isLocal = host.startsWith('localhost') || host.startsWith('127.0.0.1')
+  const protocol = forwardedProto || (isLocal ? 'http' : 'https')
+  return normalizeOrigin(`${protocol}://${host}`)
+}
+
+function isTrustedOrigin(req: NextRequest): boolean {
+  const originHeader = req.headers.get('origin')
+  const fetchSite = req.headers.get('sec-fetch-site')
+
+  if (originHeader === 'null') return false
+  if (!originHeader) return fetchSite !== 'cross-site'
+
+  const origin = normalizeOrigin(originHeader)
+  if (!origin) return false
+
+  const allowed = new Set<string>()
+  const requestOrigin = getRequestOrigin(req)
+  const publicSiteOrigin = normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL)
+  const siteOrigin = normalizeOrigin(process.env.SITE_URL)
+
+  if (requestOrigin) allowed.add(requestOrigin)
+  if (publicSiteOrigin) allowed.add(publicSiteOrigin)
+  if (siteOrigin) allowed.add(siteOrigin)
+  allowed.add('https://presales.co.kr')
+  allowed.add('https://www.presales.co.kr')
+
+  if (process.env.NODE_ENV !== 'production') {
+    allowed.add('http://localhost:3000')
+    allowed.add('http://127.0.0.1:3000')
+  }
+
+  return allowed.has(origin)
+}
 
 export async function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname
+  const isApiPath = path.startsWith('/api/')
+
+  // KISA/OWASP: 쿠키 기반 상태 변경 API의 cross-site 요청 차단.
+  // 서버-서버 웹훅/크론은 Origin/Sec-Fetch-Site 헤더가 없으므로 통과된다.
+  if (isApiPath) {
+    if (UNSAFE_METHODS.has(req.method) && !isTrustedOrigin(req)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    return NextResponse.next()
+  }
 
   let supabaseResponse = NextResponse.next({ request: req })
 
@@ -138,6 +196,6 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 }

@@ -150,7 +150,6 @@ export async function POST(request: NextRequest) {
         logger.error(`Signed URL 생성 실패: ${signError.message}`, 'download')
         return NextResponse.json({
           error: '파일을 찾을 수 없습니다. 관리자에게 문의해주세요.',
-          detail: signError.message,
         }, { status: 404 })
       }
     }
@@ -170,7 +169,6 @@ export async function POST(request: NextRequest) {
         logger.error(`Signed URL 재서명 실패: ${signError.message}`, 'download')
         return NextResponse.json({
           error: '파일을 찾을 수 없습니다. 관리자에게 문의해주세요.',
-          detail: signError.message,
         }, { status: 404 })
       }
     }
