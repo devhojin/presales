@@ -7,7 +7,7 @@ import { confirmRewardPoints, grantPurchaseRewardForOrder, rollbackRewardPoints 
 
 // 토스페이먼츠 webhook: 가상계좌 입금 완료 등 결제 상태 변경 이벤트
 // 대시보드(https://dashboard.tosspayments.com/my/webhook) 에서
-// 이 URL 을 등록: https://presales-zeta.vercel.app/api/payment/webhook/toss
+// 이 URL 을 등록: https://presales.co.kr/api/payment/webhook/toss
 //
 // 이벤트 종류:
 //   - DEPOSIT_CALLBACK: 가상계좌 입금 완료 → status=DONE 으로 전환
