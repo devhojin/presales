@@ -3,6 +3,11 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { createClient } from '@/lib/supabase'
 import { formatPrice } from '@/lib/types'
+import type {
+  AdminAnalyticsDayStat,
+  AdminAnalyticsFunnel,
+  AdminAnalyticsSummary,
+} from '@/lib/admin-analytics'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Badge } from '@/components/ui/badge'
@@ -142,6 +147,14 @@ interface AdminMembersResponse {
 const PERIODS: Period[] = ['7일', '30일', '90일', '전체']
 const inflightDashboardLoads = new Map<Period, Promise<void>>()
 let inflightMemberRequest: Promise<AdminMemberSummary[]> | null = null
+const EMPTY_FUNNEL: AdminAnalyticsFunnel = {
+  visitors: 0,
+  storeViews: 0,
+  cartViews: 0,
+  checkoutViews: 0,
+  orders: 0,
+  completed: 0,
+}
 
 const statusLabels: Record<string, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
   pending: { label: '대기', variant: 'outline' },
@@ -207,6 +220,12 @@ function getPrevPeriodStart(period: Period): string | null {
   return d.toISOString()
 }
 
+function getAnalyticsDays(period: Period): 7 | 30 | 90 {
+  if (period === '7일') return 7
+  if (period === '30일') return 30
+  return 90
+}
+
 function calcChange(current: number, previous: number): number | null {
   if (previous === 0) return current > 0 ? null : 0
   return Math.round(((current - previous) / previous) * 100)
@@ -263,10 +282,21 @@ function ListSkeleton({ rows = 5 }: { rows?: number }) {
 }
 
 // ===========================
-// Revenue Bar Chart (Recharts)
+// Revenue / Traffic Charts (Recharts)
 // ===========================
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import {
+  Area,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ComposedChart,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
 function RevenueChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; dataKey: string }>; label?: string }) {
   if (!active || !payload || !payload.length) return null
@@ -364,6 +394,162 @@ function RevenueChart({ data, period }: { data: DailyRevenue[]; period: Period }
           />
         </BarChart>
       </ResponsiveContainer>
+    </div>
+  )
+}
+
+function VisitorChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean
+  payload?: Array<{ value: number; dataKey: string }>
+  label?: string
+}) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm shadow-lg">
+      <p className="mb-1.5 font-bold text-zinc-800">{String(label).replace(/-/g, '.')}</p>
+      {payload.map((item) => (
+        <div key={item.dataKey} className="flex items-center gap-2">
+          <span
+            className={`inline-block h-3 w-3 rounded-sm ${
+              item.dataKey === 'visitors' ? 'bg-blue-600' : 'bg-sky-200'
+            }`}
+          />
+          <span className="text-zinc-600">{item.dataKey === 'visitors' ? '방문자' : '페이지뷰'}</span>
+          <span className="ml-auto pl-4 font-semibold text-zinc-900">
+            {item.value.toLocaleString()}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function VisitorTrendChart({ data }: { data: AdminAnalyticsDayStat[] }) {
+  if (data.length === 0) {
+    return (
+      <div className="flex h-[340px] items-center justify-center text-sm text-[#8b8578]">
+        방문 데이터가 없습니다
+      </div>
+    )
+  }
+
+  const chartData = data.map((item) => ({
+    date: item.date,
+    pageViews: item.pageViews,
+    visitors: item.visitors,
+  }))
+
+  return (
+    <div>
+      <div className="mb-4 flex items-center gap-5 text-xs text-zinc-500">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded-sm bg-sky-200" />
+          페이지뷰
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded-sm bg-blue-600" />
+          방문자
+        </span>
+      </div>
+      <ResponsiveContainer width="100%" height={340}>
+        <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+          <defs>
+            <linearGradient id="dashboardVisitorPageViews" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#93c5fd" stopOpacity={0.48} />
+              <stop offset="95%" stopColor="#93c5fd" stopOpacity={0.05} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid stroke="#f0f0f0" vertical={false} />
+          <XAxis
+            dataKey="date"
+            tickFormatter={(value: string) => value.slice(5).replace('-', '/')}
+            tick={{ fontSize: 12, fill: '#999' }}
+            axisLine={{ stroke: '#e5e5e5' }}
+            tickLine={false}
+            dy={8}
+          />
+          <YAxis
+            tickFormatter={formatYAxis}
+            tick={{ fontSize: 12, fill: '#999' }}
+            axisLine={false}
+            tickLine={false}
+            width={50}
+          />
+          <Tooltip content={<VisitorChartTooltip />} cursor={{ stroke: '#e5e7eb' }} />
+          <Area
+            type="monotone"
+            dataKey="pageViews"
+            stroke="#93c5fd"
+            fill="url(#dashboardVisitorPageViews)"
+            strokeWidth={1.5}
+            name="페이지뷰"
+          />
+          <Line
+            type="monotone"
+            dataKey="visitors"
+            stroke="#2563eb"
+            strokeWidth={2.4}
+            dot={{ r: 3, fill: '#2563eb' }}
+            activeDot={{ r: 5 }}
+            name="방문자"
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+function ConversionFunnel({ data }: { data: AdminAnalyticsFunnel }) {
+  const steps = [
+    { label: '방문자', detail: 'page_views 세션', value: data.visitors, accent: '#2563eb' },
+    { label: '문서스토어/상품 조회', detail: '/store 접속 세션', value: data.storeViews, accent: '#4f46e5' },
+    { label: '장바구니 진입', detail: '/cart 접속 세션', value: data.cartViews, accent: '#0284c7' },
+    { label: '결제 진입', detail: '/checkout 접속 세션', value: data.checkoutViews, accent: '#f59e0b' },
+    { label: '주문 생성', detail: '취소/환불 제외 주문', value: data.orders, accent: '#ea580c' },
+    { label: '구매 완료', detail: 'paid/completed 주문', value: data.completed, accent: '#059669' },
+  ]
+  const max = Math.max(data.visitors, 1)
+
+  return (
+    <div className="grid gap-3 lg:grid-cols-6">
+      {steps.map((step, index) => {
+        const pct = Math.round((step.value / max) * 100)
+        const prevValue = index > 0 ? steps[index - 1].value : step.value
+        const stepRatio = index > 0 && prevValue > 0 ? Math.round((step.value / prevValue) * 100) : null
+
+        return (
+          <div
+            key={step.label}
+            className="relative overflow-hidden rounded-[18px] border border-[#e6e0d6] bg-[#fcfbf8] p-4"
+          >
+            <div
+              className="absolute inset-x-0 bottom-0 h-1"
+              style={{ backgroundColor: step.accent, opacity: 0.85 }}
+            />
+            <div className="mb-5 flex items-start justify-between gap-3">
+              <span
+                className="flex h-8 w-8 items-center justify-center rounded-[10px] font-mono text-xs font-bold text-white"
+                style={{ backgroundColor: step.accent }}
+              >
+                {index + 1}
+              </span>
+              <span className="font-mono text-[11px] font-semibold text-[#6b665c]">{pct}%</span>
+            </div>
+            <p className="text-sm font-semibold text-[#1a1814]">{step.label}</p>
+            <p className="mt-1 min-h-8 text-xs text-[#8b8578]">{step.detail}</p>
+            <p className="mt-4 font-mono text-[26px] font-bold tracking-[-0.04em] text-[#1a1814]">
+              {step.value.toLocaleString()}
+            </p>
+            {stepRatio !== null && (
+              <p className="mt-2 text-xs text-[#6b665c]">전 단계 대비 {stepRatio}%</p>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -574,6 +760,8 @@ export default function AdminDashboard() {
     reviews: null,
   })
   const [dailyRevenue, setDailyRevenue] = useState<DailyRevenue[]>([])
+  const [visitorTrend, setVisitorTrend] = useState<AdminAnalyticsDayStat[]>([])
+  const [dashboardFunnel, setDashboardFunnel] = useState<AdminAnalyticsFunnel>(EMPTY_FUNNEL)
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([])
   const [orderProfiles, setOrderProfiles] = useState<ProfileMap>({})
   const [topProducts, setTopProducts] = useState<TopProduct[]>([])
@@ -699,11 +887,25 @@ export default function AdminDashboard() {
 
     const periodStart = getPeriodStart(period)
     const prevPeriodStart = getPrevPeriodStart(period)
-    const days = period === '7일' ? 7 : period === '30일' ? 30 : 90
+    const days = getAnalyticsDays(period)
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
     const todayISO = todayStart.toISOString()
     const membersPromise = fetchAdminMembers()
+    const analyticsPromise = fetch(`/api/admin/analytics/summary?days=${days}`, {
+      cache: 'no-store',
+      credentials: 'same-origin',
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`통계 API 오류: ${response.status}`)
+        }
+        return (await response.json()) as AdminAnalyticsSummary
+      })
+      .catch((error) => {
+        console.error('[admin/dashboard] failed to load analytics summary', error)
+        return null
+      })
 
     // Build queries with optional date filter
     function applyPeriod<T extends DateFilteredQuery<T>>(q: T, col: string = 'created_at'): T {
@@ -732,6 +934,7 @@ export default function AdminDashboard() {
 
     const [
       allMembers,
+      analyticsSummary,
       productsCount,
       ordersCount,
       paidOrdersCount,
@@ -748,6 +951,7 @@ export default function AdminDashboard() {
       feedLogResult,
     ] = await Promise.all([
       membersPromise,
+      analyticsPromise,
       supabase.from('products').select('id', { count: 'exact', head: true }),
       applyPeriod(ordersQ),
       applyPeriod(paidOrdersQ),
@@ -949,6 +1153,22 @@ export default function AdminDashboard() {
       }
     } else {
       setDailyRevenue([])
+    }
+
+    if (analyticsSummary) {
+      setVisitorTrend(analyticsSummary.dailyStats)
+      setDashboardFunnel(analyticsSummary.funnelData)
+      if (period !== '전체') {
+        setDailyRevenue(
+          analyticsSummary.dailyStats.map((item) => ({
+            date: item.date,
+            revenue: item.revenue,
+          }))
+        )
+      }
+    } else {
+      setVisitorTrend([])
+      setDashboardFunnel(EMPTY_FUNNEL)
     }
 
     // Recent data
@@ -1340,7 +1560,7 @@ export default function AdminDashboard() {
               eyebrow="revenue stream"
               title="매출 추이"
               sub={period === '전체' ? '전체 기간 월별 · 결제 완료 기준' : `최근 ${period} · 결제 완료 기준`}
-              href="/admin/orders"
+              href="/admin/analytics"
             >
               {loading ? (
                 <div className="h-[340px] animate-pulse rounded-[18px] bg-[#f1ede6]" />
@@ -1353,48 +1573,32 @@ export default function AdminDashboard() {
               )}
             </DashboardPanel>
 
-            <div className="space-y-4">
-              <DashboardPanel eyebrow="collection" title="오늘 자동 수집 현황" sub="공고·IT피드 자동 수집 로그">
-                {loading ? (
-                  <ListSkeleton rows={4} />
-                ) : (
-                  <div className="space-y-3">
-                    {fetchStatus.annLogs.slice(0, 3).map((log, i) => (
-                      <div key={`ann-${i}`} className="flex items-center gap-3 rounded-[16px] border border-[#e6e0d6] bg-[#fcfbf8] px-4 py-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-[12px] border border-sky-200 bg-sky-50 text-sky-700">
-                          <Megaphone className="h-4 w-4" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-[#1a1814]">{log.source}</p>
-                          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[#8b8578]">
-                            {new Date(log.time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 수집
-                          </p>
-                        </div>
-                        <Badge className="border-sky-200 bg-sky-50 text-[11px] text-sky-700">{log.count}건</Badge>
-                      </div>
-                    ))}
-                    {fetchStatus.feedLogs.slice(0, 3).map((log, i) => (
-                      <div key={`feed-${i}`} className="flex items-center gap-3 rounded-[16px] border border-[#e6e0d6] bg-[#fcfbf8] px-4 py-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-[12px] border border-blue-200 bg-blue-50 text-blue-700">
-                          <Rss className="h-4 w-4" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-[#1a1814]">{log.source}</p>
-                          <p className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[#8b8578]">
-                            {new Date(log.time).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 수집
-                          </p>
-                        </div>
-                        <Badge className="border-blue-200 bg-blue-50 text-[11px] text-blue-700">{log.count}건</Badge>
-                      </div>
-                    ))}
-                    {fetchStatus.annLogs.length === 0 && fetchStatus.feedLogs.length === 0 && (
-                      <p className="py-4 text-center text-sm text-[#8b8578]">오늘 수집 내역이 없습니다</p>
-                    )}
-                  </div>
-                )}
-              </DashboardPanel>
-            </div>
+            <DashboardPanel
+              eyebrow="traffic"
+              title="방문자 추이"
+              sub={`${period === '전체' ? '최근 90일' : `최근 ${period}`} · 실제 page_views 기준`}
+              href="/admin/analytics"
+            >
+              {loading ? (
+                <div className="h-[340px] animate-pulse rounded-[18px] bg-[#f1ede6]" />
+              ) : (
+                <VisitorTrendChart data={visitorTrend} />
+              )}
+            </DashboardPanel>
           </div>
+
+          <DashboardPanel
+            eyebrow="conversion funnel"
+            title="전환 퍼널"
+            sub={`${period === '전체' ? '최근 90일' : `최근 ${period}`} · 방문자에서 구매 완료까지 실제 로그 기준`}
+            href="/admin/analytics"
+          >
+            {loading ? (
+              <div className="h-[180px] animate-pulse rounded-[18px] bg-[#f1ede6]" />
+            ) : (
+              <ConversionFunnel data={dashboardFunnel} />
+            )}
+          </DashboardPanel>
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(340px,1fr)]">
             <DashboardPanel eyebrow="recent orders" title="최근 주문" sub="최신 결제 트랜잭션" href="/admin/orders">

@@ -1,7 +1,11 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase'
+import type {
+  AdminAnalyticsDayStat,
+  AdminAnalyticsFunnel,
+  AdminAnalyticsSummary,
+} from '@/lib/admin-analytics'
 
 // ── helpers ──────────────────────────────────────────────────────────
 function fmt(d: Date) {
@@ -14,12 +18,6 @@ function isoDate(d: Date) {
   const kst = new Date(d.getTime() + 9 * 3600 * 1000)
   return kst.toISOString().slice(0, 10)
 }
-function kstDateKey(iso: string | null | undefined): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (isNaN(d.getTime())) return ''
-  return isoDate(d)
-}
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
 }
@@ -31,42 +29,11 @@ function addDays(d: Date, n: number) {
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
 
-interface DayStat {
-  date: string
-  pageViews: number
-  visitors: number
-  orders: number
-  revenue: number
-  signups: number
-  consulting: number
-  reviews: number
-}
+type DayStat = AdminAnalyticsDayStat
 
 interface ReferrerStat {
   referrer: string
   count: number
-}
-
-// ── Referrer normalizer ───────────────────────────────────────────────
-function extractSearchKeyword(raw: string | null | undefined): string | null {
-  if (!raw) return null
-  try {
-    const url = new URL(raw)
-    const host = url.hostname.replace(/^www\./, '')
-    // 구글·네이버·다음·빙
-    const params = ['q', 'query', 'wd', 'p']
-    for (const key of params) {
-      const v = url.searchParams.get(key)
-      if (v && v.trim()) return v.trim()
-    }
-    // naver의 경우 query 파라미터가 있는 경우만
-    if (host.includes('google') || host.includes('naver') || host.includes('daum') || host.includes('bing')) {
-      return null
-    }
-    return null
-  } catch {
-    return null
-  }
 }
 
 function pathLabel(p: string): string {
@@ -86,25 +53,6 @@ function pathLabel(p: string): string {
   if (p === '/auth/login') return '로그인'
   if (p === '/auth/signup') return '회원가입'
   return p
-}
-
-function normalizeReferrer(raw: string | null | undefined): string {
-  if (!raw || raw.trim() === '' || raw === 'direct') return '직접 유입'
-  try {
-    const url = new URL(raw)
-    const host = url.hostname.replace(/^www\./, '')
-    if (host.includes('google')) return 'Google'
-    if (host.includes('naver')) return 'Naver'
-    if (host.includes('daum') || host.includes('kakao')) return 'Kakao/Daum'
-    if (host.includes('facebook') || host.includes('fb.com')) return 'Facebook'
-    if (host.includes('instagram')) return 'Instagram'
-    if (host.includes('twitter') || host.includes('t.co')) return 'Twitter/X'
-    if (host.includes('youtube')) return 'YouTube'
-    if (host.includes('linkedin')) return 'LinkedIn'
-    return host
-  } catch {
-    return raw.length > 40 ? raw.slice(0, 40) + '…' : raw
-  }
 }
 
 // ── SVG line chart (shared) ───────────────────────────────────────────
@@ -232,9 +180,11 @@ export default function AnalyticsPage() {
   const [periodDays, setPeriodDays] = useState(7)
 
   // Funnel data
-  const [funnelData, setFunnelData] = useState({
+  const [funnelData, setFunnelData] = useState<AdminAnalyticsFunnel>({
     visitors: 0,
     storeViews: 0,
+    cartViews: 0,
+    checkoutViews: 0,
     orders: 0,
     completed: 0,
   })
@@ -253,173 +203,44 @@ export default function AnalyticsPage() {
   const [recentSignups, setRecentSignups] = useState<{ name: string | null; email: string | null; created_at: string }[]>([])
 
   const fetchAll = useCallback(async () => {
-    const supabase = createClient()
-    const today = startOfDay(new Date())
-    const sevenAgo = addDays(today, -(periodDays - 1))
-    const rangeStart = isoDate(sevenAgo)
-    const rangeEnd = isoDate(addDays(today, 1))
-
-    // page_views for the selected period (date-filtered — no more all-rows fetch)
-    const { data: pvRows } = await supabase
-      .from('page_views')
-      .select('created_at, session_id, path, referrer')
-      .gte('created_at', rangeStart)
-      .lt('created_at', rangeEnd)
-
-    // orders for the period
-    const { data: orderRows } = await supabase
-      .from('orders')
-      .select('created_at, total_amount, status')
-      .gte('created_at', rangeStart)
-      .lt('created_at', rangeEnd)
-
-    // profiles (signups)
-    const { data: profileRows } = await supabase
-      .from('profiles')
-      .select('created_at')
-      .gte('created_at', rangeStart)
-      .lt('created_at', rangeEnd)
-
-    // consulting_requests
-    const { data: consultingRows } = await supabase
-      .from('consulting_requests')
-      .select('created_at')
-      .gte('created_at', rangeStart)
-      .lt('created_at', rangeEnd)
-
-    // reviews
-    const { data: reviewRows } = await supabase
-      .from('reviews')
-      .select('created_at')
-      .gte('created_at', rangeStart)
-      .lt('created_at', rangeEnd)
-
-    // Build daily stats
-    const stats: DayStat[] = []
-    for (let i = 0; i < periodDays; i++) {
-      const d = addDays(sevenAgo, i)
-      const dateStr = isoDate(d)
-      const dayPvs = (pvRows || []).filter((r) => kstDateKey(r.created_at) === dateStr)
-      const daySessions = new Set(dayPvs.map((r) => r.session_id))
-      const dayOrders = (orderRows || []).filter(
-        (r) => kstDateKey(r.created_at) === dateStr && ['paid', 'completed'].includes(r.status)
-      )
-      const daySignups = (profileRows || []).filter((r) => kstDateKey(r.created_at) === dateStr)
-      const dayConsulting = (consultingRows || []).filter(
-        (r) => kstDateKey(r.created_at) === dateStr
-      )
-      const dayReviews = (reviewRows || []).filter((r) => kstDateKey(r.created_at) === dateStr)
-
-      stats.push({
-        date: dateStr,
-        pageViews: dayPvs.length,
-        visitors: daySessions.size,
-        orders: dayOrders.length,
-        revenue: dayOrders.reduce((s, o) => s + (o.total_amount || 0), 0),
-        signups: daySignups.length,
-        consulting: dayConsulting.length,
-        reviews: dayReviews.length,
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/admin/analytics/summary?days=${periodDays}`, {
+        cache: 'no-store',
+        credentials: 'same-origin',
       })
-    }
-    setDailyStats(stats)
-
-    // ── Funnel ───────────────────────────────────────────────────────
-    const allSessions = new Set((pvRows || []).map((r) => r.session_id))
-    const storeSessions = new Set(
-      (pvRows || []).filter((r) => r.path?.startsWith('/store/')).map((r) => r.session_id)
-    )
-    // 장바구니(주문 생성) = 취소/환불 제외한 유효 주문
-    const allOrders = (orderRows || []).filter(
-      (r) => !['cancelled', 'refunded', 'canceled'].includes(r.status)
-    ).length
-    const completedOrders = (orderRows || []).filter((r) =>
-      ['paid', 'completed'].includes(r.status)
-    ).length
-
-    setFunnelData({
-      visitors: allSessions.size,
-      storeViews: storeSessions.size,
-      orders: allOrders,
-      completed: completedOrders,
-    })
-
-    // ── Referrer analysis ─────────────────────────────────────────────
-    const refMap: Record<string, number> = {}
-    for (const row of pvRows || []) {
-      const key = normalizeReferrer(row.referrer)
-      refMap[key] = (refMap[key] || 0) + 1
-    }
-    const sorted = Object.entries(refMap)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 10)
-      .map(([referrer, count]) => ({ referrer, count }))
-    setReferrers(sorted)
-    setTotalRefs((pvRows || []).length)
-
-    // ── 많이 방문한 페이지 TOP 10 ──────────────────────────────────────
-    const pathMap: Record<string, number> = {}
-    for (const row of pvRows || []) {
-      if (!row.path) continue
-      pathMap[row.path] = (pathMap[row.path] || 0) + 1
-    }
-    const topPaths = Object.entries(pathMap)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 10)
-      .map(([path, count]) => ({ path, count }))
-    setTopPages(topPaths)
-
-    // ── 유입 검색어 TOP 10 ────────────────────────────────────────────
-    const kwMap: Record<string, number> = {}
-    for (const row of pvRows || []) {
-      const kw = extractSearchKeyword(row.referrer)
-      if (!kw) continue
-      kwMap[kw] = (kwMap[kw] || 0) + 1
-    }
-    const topKw = Object.entries(kwMap)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 10)
-      .map(([keyword, count]) => ({ keyword, count }))
-    setKeywords(topKw)
-
-    // ── 최근 가입자 5명 (컨텐츠 반응) ─────────────────────────────────
-    const { data: signupList } = await supabase
-      .from('profiles')
-      .select('name, email, created_at')
-      .order('created_at', { ascending: false })
-      .limit(5)
-    setRecentSignups(signupList || [])
-
-    // ── Monthly/Yearly — fetch ALL page_views (count only per month) ──
-    // Still need all-time data for the monthly table; we fetch only session_id + created_at
-    const { data: allPv } = await supabase
-      .from('page_views')
-      .select('created_at, session_id')
-      .order('created_at', { ascending: true })
-
-    const monthly: Record<string, Record<number, { pv: number; uv: number }>> = {}
-    const sessionsByMonth: Record<string, Record<number, Set<string>>> = {}
-
-    for (const row of allPv || []) {
-      const d = new Date(row.created_at)
-      const y = String(d.getFullYear())
-      const m = d.getMonth() + 1
-      if (!monthly[y]) monthly[y] = {}
-      if (!monthly[y][m]) monthly[y][m] = { pv: 0, uv: 0 }
-      monthly[y][m].pv += 1
-
-      if (!sessionsByMonth[y]) sessionsByMonth[y] = {}
-      if (!sessionsByMonth[y][m]) sessionsByMonth[y][m] = new Set()
-      sessionsByMonth[y][m].add(row.session_id)
-    }
-    for (const y of Object.keys(sessionsByMonth)) {
-      for (const m of Object.keys(sessionsByMonth[y])) {
-        if (!monthly[y]) monthly[y] = {}
-        if (!monthly[y][+m]) monthly[y][+m] = { pv: 0, uv: 0 }
-        monthly[y][+m].uv = sessionsByMonth[y][+m].size
+      if (!response.ok) {
+        throw new Error(`통계 API 오류: ${response.status}`)
       }
+      const summary = (await response.json()) as AdminAnalyticsSummary
+      setDailyStats(summary.dailyStats)
+      setMonthlyData(summary.monthlyData)
+      setFunnelData(summary.funnelData)
+      setReferrers(summary.referrers)
+      setTotalRefs(summary.totalRefs)
+      setTopPages(summary.topPages)
+      setKeywords(summary.keywords)
+      setRecentSignups(summary.recentSignups)
+    } catch (error) {
+      console.error('[admin/analytics] failed to load summary', error)
+      setDailyStats([])
+      setMonthlyData({})
+      setFunnelData({
+        visitors: 0,
+        storeViews: 0,
+        cartViews: 0,
+        checkoutViews: 0,
+        orders: 0,
+        completed: 0,
+      })
+      setReferrers([])
+      setTotalRefs(0)
+      setTopPages([])
+      setKeywords([])
+      setRecentSignups([])
+    } finally {
+      setLoading(false)
     }
-    setMonthlyData(monthly)
-    setLoading(false)
   }, [periodDays])
 
   useEffect(() => {
@@ -494,8 +315,10 @@ export default function AnalyticsPage() {
   // ── Funnel bars ───────────────────────────────────────────────────────
   const funnelSteps = [
     { label: '방문자 수', value: funnelData.visitors, color: 'bg-primary' },
-    { label: '상품 조회 (/store/)', value: funnelData.storeViews, color: 'bg-indigo-500' },
-    { label: '장바구니 (주문 생성)', value: funnelData.orders, color: 'bg-amber-500' },
+    { label: '문서스토어/상품 조회', value: funnelData.storeViews, color: 'bg-indigo-500' },
+    { label: '장바구니 진입', value: funnelData.cartViews, color: 'bg-sky-500' },
+    { label: '결제 진입', value: funnelData.checkoutViews, color: 'bg-amber-500' },
+    { label: '주문 생성', value: funnelData.orders, color: 'bg-orange-500' },
     { label: '구매 완료', value: funnelData.completed, color: 'bg-blue-500' },
   ]
   const funnelMax = Math.max(funnelData.visitors, 1)
