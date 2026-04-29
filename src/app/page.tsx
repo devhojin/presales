@@ -338,14 +338,12 @@ export default function Home() {
               </div>
 
               <h1 className="presales-reveal presales-delay-1 text-4xl font-extrabold leading-[1.06] tracking-tight text-gray-950 md:text-5xl lg:text-[62px]">
-                낙찰받은 기업의<br />
-                제안서를 기준으로<br />
-                <span className="text-blue-600">입찰 준비를 줄입니다.</span>
+                제안서 작성 시간을 줄이고,<br />
+                <span className="text-blue-600">수주 가능성에 집중하세요.</span>
               </h1>
 
               <p className="presales-reveal presales-delay-2 max-w-[540px] text-base leading-relaxed text-gray-600 md:text-lg">
-                나라장터·조달청 제안 업무에 바로 쓰는 문서, 공고, 시장 이슈를 한 화면에서 확인하세요.
-                템플릿은 빠르게 찾고, 부족한 부분은 컨설팅으로 보완합니다.
+                검증된 제안서 구조와 입찰 자료로 공고 분석부터 초안 작성까지 빠르게 시작하세요.
               </p>
 
               <div className="presales-reveal presales-delay-3 flex flex-col gap-3 sm:flex-row">
