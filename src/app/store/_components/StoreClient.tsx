@@ -13,7 +13,7 @@ import { type DbProduct, type DbCategory, formatPrice, priceTypes } from '@/lib/
 import { RecentlyViewed } from '@/components/RecentlyViewed'
 import { normalizeProductSearchTerm } from '@/lib/product-tags'
 
-const LIMIT = 12
+const LIMIT = 20
 
 const fileTypeColors: Record<string, string> = {
   PPT: 'bg-orange-500 text-white',

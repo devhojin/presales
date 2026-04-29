@@ -545,7 +545,7 @@ export default function AnnouncementsClient() {
       ) : (
         <div className="flex gap-4 mb-12 items-start">
           {/* LEFT: List Panel (자연 높이, 페이지 스크롤) */}
-          <div className={`${showDetail ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[38%] border border-border/50 rounded-2xl overflow-hidden bg-card`}>
+          <div className={`${showDetail ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[40%] border border-border/50 rounded-2xl overflow-hidden bg-card`}>
             <div className="px-4 py-3 border-b border-border/50 bg-muted/30">
               <p className="text-xs text-muted-foreground font-medium">
                 {userId ? `${filteredAnnouncements.length}개 표시 / 전체 ${total.toLocaleString()}개` : `전체 ${total.toLocaleString()}개 공고`}
@@ -566,11 +566,11 @@ export default function AnnouncementsClient() {
                       event.preventDefault()
                       handleSelect(ann.id)
                     }}
-                    className={`w-full text-left px-4 py-3.5 transition-colors cursor-pointer ${
-                      isActive ? 'bg-primary/5 border-l-2 border-l-primary' : 'hover:bg-muted/50 border-l-2 border-l-transparent'
+                    className={`block w-full min-w-0 text-left border-l-[3px] px-4 py-3.5 transition-colors cursor-pointer ${
+                      isActive ? 'bg-primary/5 border-l-primary' : 'hover:bg-muted/50 border-l-transparent'
                     } ${!isRead && userId ? 'font-semibold' : ''}`}
                   >
-                    <div className="flex items-start justify-between gap-2 mb-1">
+                    <div className="flex min-w-0 items-start justify-between gap-2 mb-1">
                       <Badge className={`text-[10px] font-semibold border shrink-0 ${getStatusBadgeClass(ann.status, ann.end_date)}`}>
                         {getStatusLabel(ann.status, ann.end_date)}
                       </Badge>

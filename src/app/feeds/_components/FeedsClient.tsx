@@ -427,7 +427,7 @@ export default function FeedsClient() {
       ) : (
         <div className="flex gap-4 mb-12 items-start">
           {/* LEFT: List (자연 높이, 페이지 스크롤) */}
-          <div className={`${showDetail ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[38%] border border-border/50 rounded-2xl overflow-hidden bg-card`}>
+          <div className={`${showDetail ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[40%] border border-border/50 rounded-2xl overflow-hidden bg-card`}>
             <div className="px-4 py-3 border-b border-border/50 bg-muted/30">
               <p className="text-xs text-muted-foreground font-medium">
                 {userId ? `${filteredFeeds.length}개 표시 / 전체 ${total.toLocaleString()}개` : `전체 ${total.toLocaleString()}개 피드`}
@@ -447,15 +447,15 @@ export default function FeedsClient() {
                       event.preventDefault()
                       handleSelect(feed.id)
                     }}
-                    className={`w-full text-left px-4 py-3.5 transition-colors cursor-pointer ${
-                      isActive ? 'bg-primary/5 border-l-2 border-l-primary' : 'hover:bg-muted/50 border-l-2 border-l-transparent'
+                    className={`block w-full min-w-0 text-left border-l-[3px] px-4 py-3.5 transition-colors cursor-pointer ${
+                      isActive ? 'bg-primary/5 border-l-primary' : 'hover:bg-muted/50 border-l-transparent'
                     } ${!isRead && userId ? 'font-semibold' : ''}`}
                   >
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${getCategoryColor(feed.category)}`}>
+                    <div className="flex min-w-0 flex-wrap items-center gap-2 mb-1.5">
+                      <span className={`inline-flex max-w-full px-2 py-0.5 rounded-full text-[10px] font-semibold ${getCategoryColor(feed.category)}`}>
                         {getCategoryLabel(feed.category)}
                       </span>
-                      <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold ${getSourceBadgeStyle(feed.source)}`}>
+                      <span className={`inline-flex max-w-full px-1.5 py-0.5 rounded text-[10px] font-semibold ${getSourceBadgeStyle(feed.source)}`}>
                         {getSourceName(feed.source)}
                       </span>
                       {isBookmarked && <Star className="w-3 h-3 text-amber-500 fill-amber-500 ml-auto shrink-0" />}

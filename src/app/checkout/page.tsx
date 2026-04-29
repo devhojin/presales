@@ -6,7 +6,7 @@ import { useCartStore } from '@/stores/cart-store'
 import { createClient } from '@/lib/supabase'
 import { useToastStore } from '@/stores/toast-store'
 import { loadTossPayments, TossPaymentsWidgets } from '@tosspayments/tosspayments-sdk'
-import { ArrowLeft, ShieldCheck, Loader2, CreditCard, Building2, MessageCircle, ChevronDown, Upload, Check, Coins } from 'lucide-react'
+import { ArrowLeft, ShieldCheck, Loader2, CreditCard, Building2, MessageCircle, Upload, Check, Coins, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import {
   clampRewardUseAmount,
@@ -42,7 +42,7 @@ export default function CheckoutPage() {
   const currentUserIdRef = useRef<string | null>(null)
 
   // 세금계산서/추가정보
-  const [showExtraInfo, setShowExtraInfo] = useState(false)
+  const [taxInvoiceRequested, setTaxInvoiceRequested] = useState(false)
   const [taxContactInfo, setTaxContactInfo] = useState('')
   const [businessCertUrl, setBusinessCertUrl] = useState<string | null>(null)
   const [businessCertName, setBusinessCertName] = useState<string | null>(null)
@@ -58,6 +58,7 @@ export default function CheckoutPage() {
       const raw = sessionStorage.getItem('presales-tax-info')
       if (raw) {
         const data = JSON.parse(raw)
+        setTaxInvoiceRequested(Boolean(data.tax_invoice_requested || data.tax_contact_info || data.business_cert_path))
         setTaxContactInfo(data.tax_contact_info || '')
         setBusinessCertUrl(data.business_cert_url || null)
         setBusinessCertName(data.business_cert_name || null)
@@ -72,6 +73,7 @@ export default function CheckoutPage() {
   const saveTaxInfo = useCallback(() => {
     const data = {
       tax_contact_info: taxContactInfo,
+      tax_invoice_requested: taxInvoiceRequested,
       business_cert_url: businessCertUrl,
       business_cert_name: businessCertName,
       business_cert_path: businessCertPath,
@@ -79,11 +81,58 @@ export default function CheckoutPage() {
       card_memo: cardMemo,
     }
     sessionStorage.setItem('presales-tax-info', JSON.stringify(data))
-  }, [taxContactInfo, businessCertUrl, businessCertName, businessCertPath, depositMemo, cardMemo])
+  }, [taxContactInfo, taxInvoiceRequested, businessCertUrl, businessCertName, businessCertPath, depositMemo, cardMemo])
 
   useEffect(() => {
     saveTaxInfo()
   }, [saveTaxInfo])
+
+  function getAdditionalInfoPayload(method: PaymentMethod) {
+    const wantsTaxInvoice = method === 'bank_transfer' && taxInvoiceRequested
+    return {
+      tax_contact_info: wantsTaxInvoice ? taxContactInfo.trim() : null,
+      business_cert_url: wantsTaxInvoice ? businessCertPath : null,
+      business_cert_name: wantsTaxInvoice ? businessCertName : null,
+      deposit_memo: method === 'bank_transfer' ? depositMemo.trim() || null : null,
+      card_memo: method === 'card' ? cardMemo.trim() || null : null,
+    }
+  }
+
+  function validateAdditionalInfo(method: PaymentMethod) {
+    if (method === 'card' && taxInvoiceRequested) {
+      addToast('신용카드 결제는 세금계산서가 발행되지 않습니다. 세금계산서가 필요하면 무통장 입금을 선택해주세요.', 'error')
+      return false
+    }
+    if (method === 'bank_transfer' && taxInvoiceRequested) {
+      if (!taxContactInfo.trim()) {
+        addToast('세금계산서 담당자 성명, 전화번호, 이메일 주소를 입력해주세요.', 'error')
+        return false
+      }
+      if (!businessCertPath) {
+        addToast('세금계산서 발행을 위해 사업자등록증을 업로드해주세요.', 'error')
+        return false
+      }
+    }
+    return true
+  }
+
+  async function persistAdditionalInfo(method: PaymentMethod) {
+    if (!dbOrderId) return true
+    if (!validateAdditionalInfo(method)) return false
+
+    const supabase = createClient()
+    let query = supabase
+      .from('orders')
+      .update(getAdditionalInfoPayload(method))
+      .eq('id', dbOrderId)
+    if (currentUserIdRef.current) query = query.eq('user_id', currentUserIdRef.current)
+    const { error } = await query
+    if (error) {
+      addToast(`추가정보 저장 실패: ${error.message}`, 'error')
+      return false
+    }
+    return true
+  }
 
   async function handleCertUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -438,6 +487,7 @@ export default function CheckoutPage() {
         // 세금계산서/추가정보 (cart 에서 sessionStorage 에 저장됨)
         let taxInfo: {
           tax_contact_info?: string
+          tax_invoice_requested?: boolean
           business_cert_url?: string | null
           business_cert_name?: string | null
           business_cert_path?: string | null
@@ -449,15 +499,16 @@ export default function CheckoutPage() {
           if (raw) taxInfo = JSON.parse(raw)
         } catch { /* noop */ }
 
+        const wantsTaxInvoice = Boolean(taxInfo.tax_invoice_requested)
         const orderUpdateFields = {
           total_amount: expectedTotalAmount,
           coupon_id: appliedCouponInfo?.id ?? null,
           coupon_code: appliedCouponInfo?.code ?? null,
           coupon_discount: appliedCouponInfo?.coupon_discount ?? 0,
           reward_discount: appliedRewardDiscount,
-          tax_contact_info: taxInfo.tax_contact_info || null,
-          business_cert_url: taxInfo.business_cert_path || null,
-          business_cert_name: taxInfo.business_cert_name || null,
+          tax_contact_info: wantsTaxInvoice ? taxInfo.tax_contact_info || null : null,
+          business_cert_url: wantsTaxInvoice ? taxInfo.business_cert_path || null : null,
+          business_cert_name: wantsTaxInvoice ? taxInfo.business_cert_name || null : null,
           deposit_memo: taxInfo.deposit_memo || null,
           card_memo: taxInfo.card_memo || null,
         }
@@ -608,6 +659,7 @@ export default function CheckoutPage() {
       return
     }
     if (!widgetsRef.current || !orderId) return
+    if (!(await persistAdditionalInfo('card'))) return
 
     setPaying(true)
     try {
@@ -661,6 +713,7 @@ export default function CheckoutPage() {
 
   async function handleBankTransferPayment() {
     if (!dbOrderId) return
+    if (!(await persistAdditionalInfo('bank_transfer'))) return
 
     setPaying(true)
     try {
@@ -704,6 +757,7 @@ export default function CheckoutPage() {
 
   async function handleRewardOnlyPayment() {
     if (!dbOrderId) return
+    if (!(await persistAdditionalInfo('card'))) return
 
     setPaying(true)
     try {
@@ -821,15 +875,37 @@ export default function CheckoutPage() {
 
       {/* 추가정보 (세금계산서 / 메모) */}
       {!isChatPayment && (
-        <div className="mb-6 border border-border/50 rounded-xl overflow-hidden">
-          <button onClick={() => setShowExtraInfo(!showExtraInfo)} className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors cursor-pointer">
-            <span className="text-sm font-medium">세금계산서 / 추가정보</span>
-            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${showExtraInfo ? 'rotate-180' : ''}`} />
-          </button>
-          {showExtraInfo && (
-            <div className="px-4 pb-4 space-y-4 border-t border-border/50">
-              {/* 세금계산서 담당자 정보 */}
-              <div className="pt-4">
+        <section className="mb-6 rounded-2xl border border-border/50 bg-card p-5">
+          <div className="mb-5">
+            <h2 className="text-lg font-bold text-foreground">추가정보 입력</h2>
+            <div className="mt-4 border-l-4 border-primary bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+              아래 내용 해당 시 확인 바랍니다
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <label className="flex items-center gap-2 rounded-xl border border-border/60 bg-background px-4 py-3 text-sm font-semibold text-foreground">
+              <input
+                type="checkbox"
+                checked={taxInvoiceRequested}
+                onChange={(event) => setTaxInvoiceRequested(event.target.checked)}
+                className="h-4 w-4 rounded border-border text-primary cursor-pointer"
+              />
+              세금계산서 발행 필요
+              {selectedMethod === 'card' && (
+                <span className="ml-auto text-xs font-medium text-muted-foreground">카드 결제 시 선택 불가</span>
+              )}
+            </label>
+
+            {selectedMethod === 'card' && (
+              <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <p>신용카드 결제의 경우 세금계산서가 발행되지 않습니다. 매출전표를 활용하시면 됩니다.</p>
+              </div>
+            )}
+
+            {/* 세금계산서 담당자 정보 */}
+            <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   세금계산서 필요 시 아래 내용 입력 필수
                 </label>
@@ -837,9 +913,10 @@ export default function CheckoutPage() {
                 <textarea
                   value={taxContactInfo}
                   onChange={(e) => setTaxContactInfo(e.target.value)}
-                  placeholder="예) 홍길동 / 010-1234-5678 / hong@example.com"
+                  disabled={!taxInvoiceRequested || selectedMethod === 'card'}
+                  placeholder="내용을 입력해주세요."
                   rows={3}
-                  className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all resize-none"
+                  className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all resize-none disabled:bg-muted/40 disabled:text-muted-foreground"
                 />
               </div>
 
@@ -848,7 +925,7 @@ export default function CheckoutPage() {
                 <label className="block text-sm font-medium text-foreground mb-1">
                   세금계산서 필요 시 사업자등록증 업로드 필수
                 </label>
-                <p className="text-[11px] text-muted-foreground mb-2">PDF, JPG, PNG 형식 · 10MB 이하</p>
+                <p className="text-[11px] text-muted-foreground mb-2">사업자등록증 업로드 해주세요. PDF, JPG, PNG 형식 · 10MB 이하</p>
 
                 <input
                   ref={certInputRef}
@@ -881,7 +958,7 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => certInputRef.current?.click()}
-                    disabled={uploadingCert}
+                    disabled={uploadingCert || !taxInvoiceRequested || selectedMethod === 'card'}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer disabled:opacity-50"
                   >
                     {uploadingCert ? (
@@ -900,6 +977,7 @@ export default function CheckoutPage() {
               </div>
 
               {/* 무통장 입금 메모 */}
+              {selectedMethod === 'bank_transfer' && (
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   무통장 입금 후 빠른 확인을 원하시면 &apos;우측 하단 채널톡&apos; 문의 부탁드립니다.
@@ -912,11 +990,13 @@ export default function CheckoutPage() {
                   className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
               </div>
+              )}
 
               {/* 카드 결제 메모 */}
+              {selectedMethod === 'card' && (
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
-                  신용카드 결제의 경우 세금계산서 발행되지 않습니다. 매출전표를 활용하시면 됩니다.
+                  카드 결제 메모
                 </label>
                 <input
                   type="text"
@@ -926,9 +1006,9 @@ export default function CheckoutPage() {
                   className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all"
                 />
               </div>
+              )}
             </div>
-          )}
-        </div>
+        </section>
       )}
 
       {/* 결제 수단 선택 (채팅 결제는 카드 결제만 지원) */}
@@ -977,7 +1057,7 @@ export default function CheckoutPage() {
           <ul className="space-y-1 text-xs text-blue-800">
             <li>• 주문 완료 후 안내 이메일로 계좌 정보가 발송됩니다</li>
             <li>• 입금 확인 후 영업일 기준 1~2일 내 파일 이용이 가능합니다</li>
-            <li>• 세금계산서 발행이 필요하신 경우 장바구니에서 사업자등록증을 업로드해 주세요</li>
+            <li>• 세금계산서 발행이 필요하신 경우 위 추가정보에서 담당자 정보와 사업자등록증을 등록해 주세요</li>
           </ul>
         </div>
       )}

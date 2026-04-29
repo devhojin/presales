@@ -151,6 +151,7 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
   virtual_account: '가상계좌',
   phone: '휴대폰결제',
   free: '무료',
+  admin_grant: '관리자 지급',
 }
 
 // ===========================
@@ -177,6 +178,19 @@ function formatDateTime(date: string) {
 
 function formatWon(amount: number) {
   return amount.toLocaleString('ko-KR') + '원'
+}
+
+function hasTaxInvoiceRequest(order: Pick<Order, 'payment_method' | 'tax_contact_info' | 'business_cert_url'>) {
+  return order.payment_method !== 'card' && Boolean(order.tax_contact_info || order.business_cert_url)
+}
+
+function TaxInvoiceBadge({ order }: { order: Pick<Order, 'payment_method' | 'tax_contact_info' | 'business_cert_url'> }) {
+  if (!hasTaxInvoiceRequest(order)) return null
+  return (
+    <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+      세금계산서 발행 필요
+    </span>
+  )
 }
 
 // ===========================
@@ -767,7 +781,10 @@ function OrderDetailModal({
           {/* 세금계산서/추가 정보 */}
           {(order.tax_contact_info || order.business_cert_url || order.deposit_memo || order.card_memo || order.coupon_code) && (
             <div>
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">세금계산서 / 추가 정보</h3>
+              <div className="mb-3 flex items-center gap-2">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">세금계산서 / 추가 정보</h3>
+                <TaxInvoiceBadge order={order} />
+              </div>
               <div className="bg-muted rounded-xl p-4 space-y-4">
                 {order.coupon_code && (
                   <div>
@@ -1227,6 +1244,7 @@ export default function AdminOrders() {
   const [orders, setOrders] = useState<Order[]>([])
   const [downloadLogs, setDownloadLogs] = useState<DownloadLogEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
@@ -1265,45 +1283,68 @@ export default function AdminOrders() {
   }, [])
 
   async function loadData() {
-    const supabase = createClient()
+    setLoading(true)
+    setLoadError(null)
+    try {
+      const supabase = createClient()
 
-    // Fetch orders + items (no FK join for profiles)
-    const ordersResult = await supabase
-      .from('orders')
-      .select(
-        `id, order_number, user_id, status, total_amount, payment_method, payment_key, paid_at, cancelled_at, refund_reason, admin_memo, created_at, updated_at,
-         coupon_code, coupon_discount, reward_discount, tax_contact_info, business_cert_url, business_cert_name, deposit_memo, card_memo,
-         order_items ( id, order_id, product_id, price, products ( title, thumbnail_url ) )`
-      )
-      .order('created_at', { ascending: false })
-      .limit(10000)
+      // Fetch orders + items (no FK join for profiles)
+      const ordersResult = await supabase
+        .from('orders')
+        .select(
+          `id, order_number, user_id, status, total_amount, payment_method, payment_key, paid_at, cancelled_at, refund_reason, admin_memo, created_at, updated_at,
+           coupon_code, coupon_discount, reward_discount, tax_contact_info, business_cert_url, business_cert_name, deposit_memo, card_memo,
+           order_items ( id, order_id, product_id, price, products ( title, thumbnail_url ) )`
+        )
+        .order('created_at', { ascending: false })
+        .limit(10000)
 
-    const orderList = (ordersResult.data as unknown as Order[]) || []
+      if (ordersResult.error) throw ordersResult.error
 
-    // Fetch profiles separately by user_ids
-    const userIds = [...new Set(orderList.map(o => o.user_id).filter(Boolean))]
-    if (userIds.length > 0) {
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('id, email, name, phone, company, role, created_at')
-        .in('id', userIds)
-      if (profilesData) {
-        const profileMap = new Map(profilesData.map(p => [p.id, p]))
-        orderList.forEach(o => {
-          o.profiles = (profileMap.get(o.user_id) as Profile | undefined) || null
-        })
+      const orderList: Order[] = ((ordersResult.data as unknown as Order[]) || []).map((order): Order => ({
+        ...order,
+        order_number: order.order_number || `ORDER-${order.id}`,
+        status: order.status || 'pending',
+        total_amount: Number(order.total_amount || 0),
+        order_items: Array.isArray(order.order_items) ? order.order_items : [],
+        profiles: null,
+      }))
+
+      // Fetch profiles separately by user_ids
+      const userIds = [...new Set(orderList.map(o => o.user_id).filter(Boolean))]
+      if (userIds.length > 0) {
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, email, name, phone, company, role, created_at')
+          .in('id', userIds)
+        if (profilesError) throw profilesError
+        if (profilesData) {
+          const profileMap = new Map(profilesData.map(p => [p.id, p]))
+          orderList.forEach(o => {
+            o.profiles = (profileMap.get(o.user_id) as Profile | undefined) || null
+          })
+        }
       }
+
+      const logsResult = await supabase
+        .from('download_logs')
+        .select('*')
+        .order('downloaded_at', { ascending: false })
+        .limit(20000)
+
+      if (logsResult.error) throw logsResult.error
+
+      setOrders(orderList)
+      setDownloadLogs((logsResult.data as DownloadLogEntry[]) || [])
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '주문 목록을 불러오지 못했습니다.'
+      console.error('[admin/orders] load failed', error)
+      setOrders([])
+      setDownloadLogs([])
+      setLoadError(message)
+    } finally {
+      setLoading(false)
     }
-
-    const logsResult = await supabase
-      .from('download_logs')
-      .select('*')
-      .order('downloaded_at', { ascending: false })
-      .limit(20000)
-
-    setOrders(orderList)
-    setDownloadLogs((logsResult.data as DownloadLogEntry[]) || [])
-    setLoading(false)
   }
 
   useEffect(() => {
@@ -1424,7 +1465,7 @@ export default function AdminOrders() {
       const q = search.trim().toLowerCase()
       result = result.filter(
         (o) =>
-          o.order_number.toLowerCase().includes(q) ||
+          (o.order_number || '').toLowerCase().includes(q) ||
           (o.profiles?.name || '').toLowerCase().includes(q) ||
           (o.profiles?.email || '').toLowerCase().includes(q) ||
           (o.order_items || []).some((item) =>
@@ -1722,6 +1763,21 @@ export default function AdminOrders() {
                       </div>
                     </td>
                   </tr>
+                ) : loadError ? (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-16 text-center">
+                      <XCircle className="w-10 h-10 text-red-200 mx-auto mb-3" />
+                      <p className="text-sm font-semibold text-foreground mb-1">주문 목록을 불러오지 못했습니다</p>
+                      <p className="text-xs text-muted-foreground mb-4">{loadError}</p>
+                      <button
+                        type="button"
+                        onClick={() => void loadData()}
+                        className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 cursor-pointer"
+                      >
+                        다시 시도
+                      </button>
+                    </td>
+                  </tr>
                 ) : paged.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-6 py-16 text-center">
@@ -1813,6 +1869,9 @@ export default function AdminOrders() {
                         {/* 결제 정보 */}
                         <td className="px-4 py-4 align-top min-w-[160px]">
                           <StatusBadge status={order.status} />
+                          <div className="mt-1">
+                            <TaxInvoiceBadge order={order} />
+                          </div>
                           <div className="mt-2 space-y-0.5">
                             <div className="flex justify-between text-xs text-muted-foreground">
                               <span>상품 금액</span>
