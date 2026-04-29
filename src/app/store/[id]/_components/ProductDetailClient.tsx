@@ -655,11 +655,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
             )}
             <div className="py-2 flex justify-between">
               <p className="text-muted-foreground">카테고리</p>
-                <p className="font-medium">{categoryNames.join(', ') || '-'}</p>
-            </div>
-            <div className="py-2 flex justify-between">
-              <p className="text-muted-foreground">다운로드</p>
-              <p className="font-medium">{product.download_count}회</p>
+              <p className="font-medium">{categoryNames.join(', ') || '-'}</p>
             </div>
           </div>
 
