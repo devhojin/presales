@@ -9,7 +9,7 @@ import { normalizeDocumentOrientationFormValue, serializeDocumentOrientation } f
 import {
   ArrowLeft, Save, Eye, EyeOff, Trash2, Play, Plus, X,
   ImageIcon, FileText, Tag, Upload, Loader2, Code, Monitor,
-  FileType, User, Check, Download, AlertCircle
+  FileType, User, Check, Download, AlertCircle, ExternalLink
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import dynamic from 'next/dynamic'
@@ -805,6 +805,18 @@ export default function EditProductPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {!isNew && (
+            <a
+              href={`/store/${id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 border border-border hover:bg-muted text-foreground text-sm font-medium rounded-xl transition-colors"
+              aria-label="새 창에서 상품 보기"
+            >
+              <ExternalLink className="w-4 h-4" />
+              상품 보기
+            </a>
+          )}
           {!isNew && (
             <button
               onClick={handleDelete}
