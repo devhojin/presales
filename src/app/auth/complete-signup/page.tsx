@@ -115,7 +115,7 @@ export default function CompleteSignupPage() {
               <span className="text-white text-sm font-bold">PS</span>
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">회원가입 마무리</h1>
+              <h1 className="text-2xl font-bold tracking-tight">회원가입</h1>
               <p className="text-muted-foreground text-sm mt-2">
                 약관 동의와 기본 정보 입력 후 서비스를 시작할 수 있습니다
               </p>

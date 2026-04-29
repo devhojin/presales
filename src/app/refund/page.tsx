@@ -4,7 +4,7 @@ import { SITE_URL } from '@/lib/constants'
 
 export const metadata: Metadata = {
   title: '환불정책 | PRESALES by AMARANS',
-  description: 'PRESALES 환불정책 — 디지털 콘텐츠 환불 규정 및 컨설팅 취소 정책',
+  description: 'PRESALES 환불정책 — 디지털 콘텐츠 환불 규정',
   alternates: {
     canonical: `${SITE_URL}/refund`,
   },
@@ -14,7 +14,6 @@ const sections = [
   { id: 'digital', title: '디지털 콘텐츠 환불 정책' },
   { id: 'error', title: '파일 손상/오류 처리' },
   { id: 'before-download', title: '미다운로드 취소 정책' },
-  { id: 'consulting', title: '컨설팅 서비스 취소/환불' },
   { id: 'process', title: '환불 신청 절차' },
 ]
 
@@ -63,23 +62,11 @@ export default function RefundPage() {
                 </tr>
                 <tr className="border-b border-amber-100">
                   <td className="py-2 font-medium">파일 손상/열기 오류</td>
-                  <td className="py-2 text-green-700 font-semibold">동일 상품 교환 또는 전액 환불</td>
+                  <td className="py-2 text-green-700 font-semibold">동일 상품 교환</td>
                 </tr>
                 <tr className="border-b border-amber-100">
                   <td className="py-2 font-medium">미다운로드 상태 7일 이내</td>
-                  <td className="py-2 text-green-700 font-semibold">전액 환불</td>
-                </tr>
-                <tr className="border-b border-amber-100">
-                  <td className="py-2 font-medium">컨설팅 — 7일 전 취소</td>
-                  <td className="py-2 text-green-700 font-semibold">전액 환불</td>
-                </tr>
-                <tr className="border-b border-amber-100">
-                  <td className="py-2 font-medium">컨설팅 — 3~7일 전 취소</td>
-                  <td className="py-2 text-yellow-700 font-semibold">50% 환불</td>
-                </tr>
-                <tr>
-                  <td className="py-2 font-medium">컨설팅 — 3일 이내 취소</td>
-                  <td className="py-2 text-red-700 font-semibold">환불 불가</td>
+                  <td className="py-2 text-green-700 font-semibold">미다운로드 확인 후 전액 환불</td>
                 </tr>
               </tbody>
             </table>
@@ -110,7 +97,7 @@ export default function RefundPage() {
         <section id="error">
           <h2 className="text-base font-bold mb-3 border-b border-border pb-2">파일 손상/오류 처리</h2>
           <div className="space-y-3 text-muted-foreground">
-            <p>다음과 같은 파일 하자가 확인된 경우 교환 또는 환불이 가능합니다.</p>
+            <p>다음과 같은 파일 하자가 확인된 경우 동일 상품 교환으로 처리합니다.</p>
             <ul className="list-disc list-inside space-y-2">
               <li>다운로드된 파일이 손상되어 열리지 않는 경우</li>
               <li>구매한 상품과 다른 파일이 제공된 경우</li>
@@ -120,7 +107,7 @@ export default function RefundPage() {
               <p className="font-semibold text-blue-700 mb-1">신청 방법</p>
               <p className="text-blue-700 text-xs">
                 이메일(help@presales.co.kr)로 주문번호, 상품명, 오류 상황을 첨부하여 문의하시면
-                영업일 기준 1일 이내 처리됩니다. 동일 상품 재제공 또는 전액 환불 중 선택 가능합니다.
+                영업일 기준 1일 이내 확인 후 동일 상품 교환으로 처리됩니다.
               </p>
             </div>
           </div>
@@ -130,48 +117,12 @@ export default function RefundPage() {
         <section id="before-download">
           <h2 className="text-base font-bold mb-3 border-b border-border pb-2">미다운로드 취소 정책</h2>
           <div className="space-y-3 text-muted-foreground">
-            <p>결제 후 다운로드를 하지 않은 상태라면 7일 이내에 전액 환불이 가능합니다.</p>
+            <p>결제 후 다운로드를 하지 않은 상태라면 7일 이내에 미다운로드 확인 후 전액 환불이 가능합니다.</p>
             <ul className="list-disc list-inside space-y-2">
               <li>환불 신청 기한: 결제일로부터 7일 이내</li>
               <li>다운로드 여부는 서버 로그를 통해 확인합니다.</li>
-              <li>단순 변심에 의한 취소도 미다운로드 상태라면 7일 이내 환불 가능합니다.</li>
+              <li>단순 변심에 의한 취소도 미다운로드 상태라면 7일 이내 미다운로드 확인 후 전액 환불 가능합니다.</li>
               <li>결제 취소는 영업일 기준 3~5일 이내 카드사/결제수단에 따라 처리됩니다.</li>
-            </ul>
-          </div>
-        </section>
-
-        {/* 컨설팅 서비스 */}
-        <section id="consulting">
-          <h2 className="text-base font-bold mb-3 border-b border-border pb-2">컨설팅 서비스 취소/환불</h2>
-          <div className="space-y-4 text-muted-foreground">
-            <p>컨설팅 서비스는 전문가의 시간을 예약하는 서비스로, 취소 시점에 따라 환불 규정이 다릅니다.</p>
-            <div className="overflow-x-auto">
-              <table className="w-full border border-border rounded-lg text-xs">
-                <thead className="bg-muted">
-                  <tr>
-                    <th className="px-4 py-2 text-left font-semibold border-b border-border">취소 시점</th>
-                    <th className="px-4 py-2 text-left font-semibold border-b border-border">환불 금액</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-border">
-                    <td className="px-4 py-2">서비스 제공 7일 전까지</td>
-                    <td className="px-4 py-2 text-green-700 font-semibold">결제 금액의 100%</td>
-                  </tr>
-                  <tr className="border-b border-border">
-                    <td className="px-4 py-2">서비스 제공 3~7일 전</td>
-                    <td className="px-4 py-2 text-yellow-700 font-semibold">결제 금액의 50%</td>
-                  </tr>
-                  <tr>
-                    <td className="px-4 py-2">서비스 제공 3일 이내</td>
-                    <td className="px-4 py-2 text-red-700 font-semibold">환불 불가</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <ul className="list-disc list-inside space-y-2">
-              <li>회사의 귀책 사유로 서비스가 취소된 경우 전액 환불됩니다.</li>
-              <li>일정 변경은 서비스 제공 48시간 전까지 가능합니다.</li>
             </ul>
           </div>
         </section>
