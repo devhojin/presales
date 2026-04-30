@@ -17,6 +17,7 @@ import type { NewsItem } from '../../../../../../morning-brief/lib/dedup'
 
 export const maxDuration = 300
 export const runtime = 'nodejs'
+export const preferredRegion = 'icn1'
 
 function authorized(req: NextRequest): boolean {
   const got = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
