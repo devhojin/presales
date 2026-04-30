@@ -6,6 +6,7 @@ import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/client-ip'
 import { SITE_URL } from '@/lib/constants'
+import { escapeHtml } from '@/lib/html-escape'
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '본인 이메일로만 요청 가능합니다' }, { status: 403 })
     }
 
-    const displayName = name || '회원'
+    const displayName = escapeHtml(name || '회원')
 
     const bodyHtml = `
       <h2 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">프리세일즈에 오신 것을 환영합니다!</h2>

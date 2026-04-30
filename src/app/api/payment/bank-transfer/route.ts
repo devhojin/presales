@@ -8,8 +8,7 @@ import { SITE_URL } from '@/lib/constants'
 import { escapeHtml } from '@/lib/html-escape'
 import { recomputeExpectedAmount } from '@/lib/payment-recompute'
 import { reserveRewardPoints, rollbackRewardPoints } from '@/lib/reward-points'
-
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'help@amarans.co.kr'
+import { ADMIN_ALERT_EMAIL } from '@/lib/admin-email'
 
 // 입금 계좌 정보 (환경변수 우선, 미설정 시 기본값)
 // 운영 환경변수에서 값 변경 가능
@@ -372,7 +371,7 @@ export async function POST(request: NextRequest) {
         `
 
         await sendEmail(
-          ADMIN_EMAIL,
+          ADMIN_ALERT_EMAIL,
           `[프리세일즈 관리자] 무통장 입금 대기 - ${order.order_number} (${formatKRW(order.total_amount)})`,
           buildEmailHtml('무통장 입금 주문', adminBody),
         )

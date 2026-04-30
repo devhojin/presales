@@ -8,8 +8,7 @@ import { checkRateLimitAsync } from '@/lib/rate-limit'
 import { escapeHtml } from '@/lib/html-escape'
 import { getClientIp } from '@/lib/client-ip'
 import { SITE_URL } from '@/lib/constants'
-
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'help@amarans.co.kr'
+import { ADMIN_ALERT_EMAIL } from '@/lib/admin-email'
 
 function formatKRW(amount: number) {
   return new Intl.NumberFormat('ko-KR').format(amount) + '원'
@@ -136,6 +135,15 @@ export async function POST(request: NextRequest) {
     }
 
     const items = (order.order_items as unknown as { id: string; price: number; products: { title: string } | null }[]) || []
+    const paymentLabel = order.status === 'pending_transfer'
+      ? '입금대기'
+      : order.payment_method === 'free'
+      ? '무료 주문'
+      : order.payment_method === 'bank_transfer'
+        ? '무통장입금'
+        : order.payment_method === 'reward'
+          ? '적립금 결제'
+          : '결제완료'
 
     // ===========================
     // 주문자에게 주문 확인 이메일
@@ -175,7 +183,7 @@ export async function POST(request: NextRequest) {
           <tr>
             <td style="font-size:13px;color:#64748b;">결제 상태</td>
             <td style="font-size:13px;color:#334155;text-align:right;">
-              <span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600;">결제완료</span>
+              <span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:600;">${paymentLabel}</span>
             </td>
           </tr>
         </table>
@@ -224,7 +232,7 @@ export async function POST(request: NextRequest) {
     // ===========================
     const adminBody = `
       <h2 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">새 주문이 접수되었습니다</h2>
-      <p style="margin:0 0 32px;font-size:14px;color:#64748b;">새로운 결제 완료 주문을 확인하세요.</p>
+      <p style="margin:0 0 32px;font-size:14px;color:#64748b;">새로운 주문을 확인하세요. 유료·무료 주문 모두 이 알림으로 전달됩니다.</p>
 
       <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;margin-bottom:24px;">
         <table width="100%" cellpadding="0" cellspacing="0">
@@ -266,8 +274,8 @@ export async function POST(request: NextRequest) {
     `
 
     await sendEmail(
-      ADMIN_EMAIL,
-      `[프리세일즈 관리자] 새 주문 - ${order.order_number} (${formatKRW(order.total_amount)})`,
+      ADMIN_ALERT_EMAIL,
+      `[프리세일즈 관리자] 주문 접수 - ${order.order_number} (${formatKRW(order.total_amount)})`,
       buildEmailHtml('새 주문 알림', adminBody),
     )
 

@@ -5,6 +5,13 @@ import { createClient } from '@/lib/supabase'
 import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { Badge } from '@/components/ui/badge'
 import {
+  getVisibleOrderMemos,
+  isOrderAdminUnread,
+  markOrderMemoRead,
+  stringifyOrderMemosForSave,
+  type OrderMemoEntry,
+} from '@/lib/admin-read-state'
+import {
   Search,
   X,
   User,
@@ -57,11 +64,7 @@ interface OrderItem {
   products: Product | null
 }
 
-interface MemoEntry {
-  text: string
-  author: string
-  created_at: string
-}
+type MemoEntry = OrderMemoEntry
 
 interface Order {
   id: number
@@ -100,19 +103,7 @@ function isMemoEntry(value: unknown): value is MemoEntry {
 }
 
 function parseMemos(raw: unknown): MemoEntry[] {
-  if (!raw) return []
-  if (Array.isArray(raw)) return raw.filter(isMemoEntry)
-  if (typeof raw === 'object') return []
-  if (typeof raw !== 'string') return []
-
-  try {
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed)) return parsed.filter(isMemoEntry)
-  } catch {
-    // Legacy plain text memo → convert
-    if (raw.trim()) return [{ text: raw, author: '관리자', created_at: new Date().toISOString() }]
-  }
-  return []
+  return getVisibleOrderMemos(raw).filter(isMemoEntry)
 }
 
 function stringifyMemos(memos: MemoEntry[]): string {
@@ -140,10 +131,11 @@ interface ConsultingRequest {
 // Constants
 // ===========================
 
-type StatusFilter = 'all' | 'pending' | 'pending_transfer' | 'paid' | 'cancelled' | 'refunded'
+type StatusFilter = 'all' | 'unread' | 'pending' | 'pending_transfer' | 'paid' | 'cancelled' | 'refunded'
 
 const STATUS_TABS: { key: StatusFilter; label: string }[] = [
   { key: 'all', label: '전체' },
+  { key: 'unread', label: '미확인' },
   { key: 'pending', label: '결제대기' },
   { key: 'pending_transfer', label: '입금대기' },
   { key: 'paid', label: '결제완료' },
@@ -1404,14 +1396,59 @@ export default function AdminOrders() {
 
   // Memo save handler
   const handleMemoSave = useCallback(async (orderId: number, memo: string) => {
+    const currentMemo = orders.find((order) => order.id === orderId)?.admin_memo ?? null
+    const memoEntries = parseMemos(memo)
+    const nextMemo = stringifyOrderMemosForSave(memoEntries, currentMemo)
     const supabase = createClient()
-    const { error } = await supabase.from('orders').update({ admin_memo: memo, updated_at: new Date().toISOString() }).eq('id', orderId)
+    const { error } = await supabase.from('orders').update({ admin_memo: nextMemo, updated_at: new Date().toISOString() }).eq('id', orderId)
     if (error) { setToast(`메모 저장 실패: ${error.message}`); return }
     setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, admin_memo: memo } : o))
+      prev.map((o) => (o.id === orderId ? { ...o, admin_memo: nextMemo } : o))
     )
+    setSelectedOrder((prev) => (prev && prev.id === orderId ? { ...prev, admin_memo: nextMemo } : prev))
     setToast('메모가 저장되었습니다')
+  }, [orders])
+
+  const handleMarkOrdersRead = useCallback(async (ids: number[], options?: { silent?: boolean }) => {
+    if (ids.length === 0) return
+    const res = await fetch('/api/admin/orders/read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderIds: ids }),
+    })
+    const payload = (await res.json().catch(() => null)) as
+      | { success?: boolean; readAt?: string; orderIds?: number[]; error?: string }
+      | null
+
+    if (!res.ok || !payload?.success || !payload.readAt) {
+      setToast(`읽음 처리 실패: ${payload?.error ?? '알 수 없는 오류'}`)
+      return
+    }
+
+    const updatedIds = new Set(payload.orderIds || ids)
+    setOrders((prev) =>
+      prev.map((order) =>
+        updatedIds.has(order.id)
+          ? { ...order, admin_memo: markOrderMemoRead(order.admin_memo, payload.readAt!) }
+          : order,
+      ),
+    )
+    setSelectedOrder((prev) =>
+      prev && updatedIds.has(prev.id)
+        ? { ...prev, admin_memo: markOrderMemoRead(prev.admin_memo, payload.readAt!) }
+        : prev,
+    )
+    if (!options?.silent) setSelectedIds(new Set())
+    window.dispatchEvent(new Event('admin-badges-refresh'))
+    if (!options?.silent) setToast(`${updatedIds.size}건을 읽음 처리했습니다`)
   }, [])
+
+  const openOrder = useCallback((order: Order) => {
+    setSelectedOrder(order)
+    if (isOrderAdminUnread(order)) {
+      void handleMarkOrdersRead([order.id], { silent: true })
+    }
+  }, [handleMarkOrdersRead])
 
   // Bulk status change
   const handleBulkStatusChange = useCallback(async (status: string) => {
@@ -1469,7 +1506,9 @@ export default function AdminOrders() {
     let result = orders
 
     // Status filter
-    if (statusFilter !== 'all') {
+    if (statusFilter === 'unread') {
+      result = result.filter(isOrderAdminUnread)
+    } else if (statusFilter !== 'all') {
       result = result.filter((o) => o.status === statusFilter)
     }
 
@@ -1503,8 +1542,9 @@ export default function AdminOrders() {
 
   // Status counts
   const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: orders.length, pending: 0, pending_transfer: 0, paid: 0, cancelled: 0, refunded: 0 }
+    const counts: Record<string, number> = { all: orders.length, unread: 0, pending: 0, pending_transfer: 0, paid: 0, cancelled: 0, refunded: 0 }
     for (const o of orders) {
+      if (isOrderAdminUnread(o)) counts.unread++
       if (counts[o.status] !== undefined) counts[o.status]++
     }
     return counts
@@ -1712,6 +1752,14 @@ export default function AdminOrders() {
                 )}
               </div>
 
+              <button
+                onClick={() => handleMarkOrdersRead(Array.from(selectedIds))}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary bg-white border border-primary/20 rounded-xl hover:bg-primary/10 transition-colors cursor-pointer"
+              >
+                <CheckCircle className="w-3 h-3" />
+                읽음 처리
+              </button>
+
               {/* Excel download */}
               <button
                 onClick={handleExcelDownload}
@@ -1815,8 +1863,9 @@ export default function AdminOrders() {
                   paged.map((order) => {
                     const profile = order.profiles
                     const dlCount = getOrderDownloadCount(order)
+                    const unread = isOrderAdminUnread(order)
                     return (
-                      <tr key={order.id} className="hover:bg-primary/8/30 transition-colors">
+                      <tr key={order.id} className={`hover:bg-primary/8/30 transition-colors ${unread ? 'bg-blue-50/70' : ''}`}>
                         {/* Checkbox */}
                         <td className="px-4 py-4 align-top">
                           <input
@@ -1830,11 +1879,16 @@ export default function AdminOrders() {
                         {/* 주문정보 */}
                         <td className="px-4 py-4 align-top min-w-[220px]">
                           <button
-                            onClick={() => setSelectedOrder(order)}
+                            onClick={() => openOrder(order)}
                             className="text-sm font-mono text-primary hover:text-primary hover:underline mb-1 cursor-pointer text-left"
                           >
                             {order.order_number}
                           </button>
+                          {unread && (
+                            <span className="ml-2 inline-flex items-center rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white align-middle">
+                              미확인
+                            </span>
+                          )}
                           <p className="text-xs text-muted-foreground mb-2">{formatDateTime(order.created_at)}</p>
                           <div className="flex items-center gap-2">
                             <button

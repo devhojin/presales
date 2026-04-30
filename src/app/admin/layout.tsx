@@ -68,32 +68,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const supabase = createClient()
     async function loadBadges() {
       try {
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-        const todayIso = today.toISOString()
-
-        const [annRes, feedRes, chatRes, consultRes] = await Promise.all([
-          // 오늘 등록된 공고
-          supabase.from('announcements').select('id', { count: 'exact', head: true })
-            .eq('is_published', true).gte('created_at', todayIso),
-          // 오늘 등록된 피드
-          supabase.from('community_posts').select('id', { count: 'exact', head: true })
-            .eq('is_published', true).gte('created_at', todayIso),
-          // 관리자 미읽은 채팅
-          supabase.from('chat_rooms').select('admin_unread_count')
-            .eq('hidden_by_admin', false).not('last_message', 'is', null).gt('admin_unread_count', 0),
-          // pending 컨설팅
-          supabase.from('consulting_requests').select('id', { count: 'exact', head: true })
-            .eq('status', 'pending'),
-        ])
-
-        const chatUnread = (chatRes.data || []).reduce((sum, r) => sum + (r.admin_unread_count || 0), 0)
+        const res = await fetch('/api/admin/sidebar-badges', {
+          cache: 'no-store',
+          credentials: 'same-origin',
+        })
+        if (!res.ok) throw new Error(`badge API ${res.status}`)
+        const data = await res.json() as {
+          announcementsToday?: number
+          feedsToday?: number
+          chatUnread?: number
+          consultingPending?: number
+          unreadOrders?: number
+          unreadMembers?: number
+        }
 
         setBadges({
-          '/admin/announcements': annRes.count || 0,
-          '/admin/feeds': feedRes.count || 0,
-          '/admin/chat': chatUnread,
-          '/admin/consulting': consultRes.count || 0,
+          '/admin/orders': data.unreadOrders || 0,
+          '/admin/members': data.unreadMembers || 0,
+          '/admin/announcements': data.announcementsToday || 0,
+          '/admin/feeds': data.feedsToday || 0,
+          '/admin/chat': data.chatUnread || 0,
+          '/admin/consulting': data.consultingPending || 0,
         })
       } catch (e) {
         console.error('badge load error', e)
@@ -113,11 +108,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         refreshBadges,
       )
       .subscribe()
+    const orderChannel = supabase
+      .channel('admin-sidebar-order-badges')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        refreshBadges,
+      )
+      .subscribe()
+    const memberChannel = supabase
+      .channel('admin-sidebar-member-badges')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        refreshBadges,
+      )
+      .subscribe()
 
     return () => {
       clearInterval(interval)
       window.removeEventListener('admin-badges-refresh', refreshBadges)
       supabase.removeChannel(chatChannel)
+      supabase.removeChannel(orderChannel)
+      supabase.removeChannel(memberChannel)
     }
   }, [ready])
 
@@ -175,7 +188,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           const badgeCount = badges[item.href] || 0
           const isChat = item.href === '/admin/chat'
           const isConsulting = item.href === '/admin/consulting'
-          const isRedBadge = isChat || isConsulting
+          const isOpsAlert = item.href === '/admin/orders' || item.href === '/admin/members'
+          const isRedBadge = isChat || isConsulting || isOpsAlert
           return (
             <Link
               key={item.href}

@@ -9,8 +9,16 @@ import {
   rollbackRewardPoints,
 } from '@/lib/reward-points'
 import { recomputeExpectedAmount } from '@/lib/payment-recompute'
+import { sendEmail, buildEmailHtml } from '@/lib/email'
+import { ADMIN_ALERT_EMAIL } from '@/lib/admin-email'
+import { escapeHtml } from '@/lib/html-escape'
+import { SITE_URL } from '@/lib/constants'
 
 const ALLOWED_STATUS = new Set(['paid', 'cancelled', 'refunded'])
+
+function formatKRW(amount: number) {
+  return new Intl.NumberFormat('ko-KR').format(amount) + '원'
+}
 
 export async function PATCH(
   request: NextRequest,
@@ -198,6 +206,64 @@ export async function PATCH(
           orderId,
           error: message,
         })
+      }
+
+      if (beforeStatus === 'pending_transfer') {
+        try {
+          const { data: mailOrder } = await supabase
+            .from('orders')
+            .select('id, order_number, user_id, total_amount, deposit_memo')
+            .eq('id', orderId)
+            .maybeSingle()
+          const { data: profile } = mailOrder?.user_id
+            ? await supabase
+                .from('profiles')
+                .select('name, email')
+                .eq('id', mailOrder.user_id)
+                .maybeSingle()
+            : { data: null }
+          const orderNumber = mailOrder?.order_number || String(orderId)
+          const adminBody = `
+            <h2 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">무통장 입금이 승인되었습니다</h2>
+            <p style="margin:0 0 32px;font-size:14px;color:#64748b;">관리자 승인으로 주문 다운로드 권한이 열렸습니다.</p>
+
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;margin-bottom:24px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="font-size:13px;color:#64748b;padding-bottom:8px;">주문번호</td>
+                  <td style="font-size:13px;font-weight:600;color:#1e40af;text-align:right;padding-bottom:8px;">${escapeHtml(orderNumber)}</td>
+                </tr>
+                <tr>
+                  <td style="font-size:13px;color:#64748b;padding-bottom:8px;">주문자</td>
+                  <td style="font-size:13px;color:#334155;text-align:right;padding-bottom:8px;">${escapeHtml(profile?.name || '-')} (${escapeHtml(profile?.email || '-')})</td>
+                </tr>
+                <tr>
+                  <td style="font-size:13px;color:#64748b;padding-bottom:8px;">입금자명</td>
+                  <td style="font-size:13px;color:#334155;text-align:right;padding-bottom:8px;">${escapeHtml(mailOrder?.deposit_memo || orderNumber)}</td>
+                </tr>
+                <tr>
+                  <td style="font-size:13px;color:#64748b;">승인금액</td>
+                  <td style="font-size:15px;font-weight:700;color:#1e40af;text-align:right;">${formatKRW(Number(mailOrder?.total_amount || 0))}</td>
+                </tr>
+              </table>
+            </div>
+
+            <a href="${SITE_URL}/admin/orders" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;">
+              관리자 주문 확인
+            </a>
+          `
+          await sendEmail(
+            ADMIN_ALERT_EMAIL,
+            `[프리세일즈 관리자] 입금 승인 완료 - ${orderNumber}`,
+            buildEmailHtml('입금 승인 완료', adminBody),
+          )
+        } catch (approvalMailErr) {
+          const message = approvalMailErr instanceof Error ? approvalMailErr.message : '알 수 없는 오류'
+          logger.error('관리자 입금 승인 알림 발송 실패(무시)', 'admin/orders/status', {
+            orderId,
+            error: message,
+          })
+        }
       }
     }
 

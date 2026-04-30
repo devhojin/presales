@@ -144,6 +144,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '주문 상품 등록에 실패했습니다' }, { status: 500 })
     }
 
+    try {
+      const internalSecret = process.env.CRON_SECRET
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+      if (internalSecret) {
+        headers['X-Internal-Secret'] = internalSecret
+      } else {
+        headers.Cookie = request.headers.get('cookie') || ''
+      }
+      await fetch(`${request.nextUrl.origin}/api/email/order-confirm`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ orderId: order.id }),
+      })
+    } catch (emailErr) {
+      const message = emailErr instanceof Error ? emailErr.message : '알 수 없는 오류'
+      logger.error('무료 주문 확인 이메일 발송 실패(무시)', 'orders/free', { orderId: order.id, error: message })
+    }
+
     return NextResponse.json({
       success: true,
       orderId: order.id,

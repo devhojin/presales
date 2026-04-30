@@ -6,6 +6,13 @@ import { createClient } from '@/lib/supabase'
 import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { Badge } from '@/components/ui/badge'
 import {
+  getVisibleMemberMemos,
+  isMemberAdminUnread,
+  markMemberMemoRead,
+  stringifyMemberMemosForSave,
+  type MemberMemoEntry,
+} from '@/lib/admin-read-state'
+import {
   Search,
   X,
   User,
@@ -30,19 +37,14 @@ import {
   AlertTriangle,
   Coins,
   PlusCircle,
+  CheckCircle,
 } from 'lucide-react'
 
 // ===========================
 // Types
 // ===========================
 
-interface MemoEntry {
-  content: string
-  created_at: string
-  admin_name: string
-  type?: string
-  amount?: number
-}
+type MemoEntry = MemberMemoEntry
 
 interface Profile {
   id: string
@@ -59,17 +61,7 @@ interface Profile {
 }
 
 function parseMemberMemos(raw: string | null): MemoEntry[] {
-  if (!raw) return []
-  try {
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed)) return parsed as MemoEntry[]
-  } catch {
-    // Legacy plain text → wrap
-    if (raw.trim()) {
-      return [{ content: raw.trim(), created_at: new Date().toISOString(), admin_name: '관리자' }]
-    }
-  }
-  return []
+  return getVisibleMemberMemos(raw)
 }
 
 function stringifyMemberMemos(memos: MemoEntry[]): string {
@@ -1386,7 +1378,7 @@ function MemberDetailModal({
 // Main Page
 // ===========================
 
-type FilterTab = 'all' | 'user' | 'admin' | 'deleted'
+type FilterTab = 'all' | 'new' | 'user' | 'admin' | 'deleted'
 
 export default function AdminMembers() {
   const [members, setMembers] = useState<Profile[]>([])
@@ -1457,13 +1449,57 @@ export default function AdminMembers() {
   }
 
   async function handleMemoSave(id: string, memo: string) {
+    const currentMemo = members.find((member) => member.id === id)?.admin_memo ?? null
+    const nextMemo = stringifyMemberMemosForSave(parseMemberMemos(memo), currentMemo)
     const supabase = createClient()
-    const { error } = await supabase.from('profiles').update({ admin_memo: memo }).eq('id', id)
+    const { error } = await supabase.from('profiles').update({ admin_memo: nextMemo }).eq('id', id)
     if (error) {
       alert(`메모 저장 실패: ${error.message}`)
       return
     }
-    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, admin_memo: memo } : m)))
+    setMembers((prev) => prev.map((m) => (m.id === id ? { ...m, admin_memo: nextMemo } : m)))
+    setSelectedMember((prev) => (prev && prev.id === id ? { ...prev, admin_memo: nextMemo } : prev))
+  }
+
+  async function handleMarkMembersRead(ids: string[], options?: { silent?: boolean }) {
+    if (ids.length === 0) return
+    const res = await fetch('/api/admin/members/read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ memberIds: ids }),
+    })
+    const payload = (await res.json().catch(() => null)) as
+      | { success?: boolean; readAt?: string; memberIds?: string[]; error?: string }
+      | null
+
+    if (!res.ok || !payload?.success || !payload.readAt) {
+      alert(`읽음 처리 실패: ${payload?.error ?? '알 수 없는 오류'}`)
+      return
+    }
+
+    const updatedIds = new Set(payload.memberIds || ids)
+    setMembers((prev) =>
+      prev.map((member) =>
+        updatedIds.has(member.id)
+          ? { ...member, admin_memo: markMemberMemoRead(member.admin_memo, payload.readAt!) }
+          : member,
+      ),
+    )
+    setSelectedMember((prev) =>
+      prev && updatedIds.has(prev.id)
+        ? { ...prev, admin_memo: markMemberMemoRead(prev.admin_memo, payload.readAt!) }
+        : prev,
+    )
+    if (!options?.silent) setSelectedIds(new Set())
+    window.dispatchEvent(new Event('admin-badges-refresh'))
+  }
+
+  function openMember(member: Profile, tab: ModalTab = 'info') {
+    setSelectedMemberTab(tab)
+    setSelectedMember(member)
+    if (isMemberAdminUnread(member)) {
+      void handleMarkMembersRead([member.id], { silent: true })
+    }
   }
 
   async function handleDelete(id: string) {
@@ -1499,6 +1535,7 @@ export default function AdminMembers() {
     let result = filterTab === 'deleted'
       ? members.filter(isDeleted)
       : members.filter((m) => !isDeleted(m))
+    if (filterTab === 'new') result = result.filter(isMemberAdminUnread)
     if (filterTab === 'user') result = result.filter((m) => m.role !== 'admin')
     if (filterTab === 'admin') result = result.filter((m) => m.role === 'admin')
     if (search.trim()) {
@@ -1527,6 +1564,7 @@ export default function AdminMembers() {
   const totalCount = activeMembers.length
   const adminCount = activeMembers.filter((m) => m.role === 'admin').length
   const userCount = totalCount - adminCount
+  const newCount = activeMembers.filter(isMemberAdminUnread).length
   const deletedCount = members.length - activeMembers.length
 
   // Selection
@@ -1560,6 +1598,7 @@ export default function AdminMembers() {
 
   const sidebarGroups: { key: FilterTab; label: string; count: number; icon: React.ReactNode }[] = [
     { key: 'all', label: '전체 사용자', count: totalCount, icon: <Users className="w-4 h-4" /> },
+    { key: 'new', label: '신규회원', count: newCount, icon: <PlusCircle className="w-4 h-4" /> },
     { key: 'user', label: '일반회원', count: userCount, icon: <User className="w-4 h-4" /> },
     { key: 'admin', label: '관리자', count: adminCount, icon: <Shield className="w-4 h-4" /> },
     { key: 'deleted', label: '탈퇴 회원', count: deletedCount, icon: <AlertTriangle className="w-4 h-4" /> },
@@ -1679,16 +1718,25 @@ export default function AdminMembers() {
               <span className="text-sm font-medium text-primary">
                 선택 {selectedIds.size}명
               </span>
-              <button
-                onClick={() => {
-                  const selectedMembers = members.filter((m) => selectedIds.has(m.id))
-                  exportCSV(selectedMembers, statsMap)
-                }}
-                className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-xl hover:bg-blue-200 transition-colors"
-              >
-                <FileDown className="w-3.5 h-3.5" />
-                내보내기 (CSV)
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleMarkMembersRead(Array.from(selectedIds))}
+                  className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary bg-white border border-primary/20 rounded-xl hover:bg-primary/10 transition-colors"
+                >
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  읽음 처리
+                </button>
+                <button
+                  onClick={() => {
+                    const selectedMembers = members.filter((m) => selectedIds.has(m.id))
+                    exportCSV(selectedMembers, statsMap)
+                  }}
+                  className="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary bg-primary/10 rounded-xl hover:bg-blue-200 transition-colors"
+                >
+                  <FileDown className="w-3.5 h-3.5" />
+                  내보내기 (CSV)
+                </button>
+              </div>
             </div>
           )}
 
@@ -1768,10 +1816,11 @@ export default function AdminMembers() {
                   ) : (
                     paged.map((m) => {
                       const stats = statsMap.get(m.id)
+                      const unread = isMemberAdminUnread(m)
                       return (
                         <tr
                           key={m.id}
-                          className="hover:bg-primary/8/40 transition-colors group"
+                          className={`hover:bg-primary/8/40 transition-colors group ${unread ? 'bg-blue-50/70' : ''}`}
                         >
                           {/* Checkbox */}
                           <td className="px-4 py-3">
@@ -1788,14 +1837,21 @@ export default function AdminMembers() {
                           {/* 이름 */}
                           <td className="px-4 py-3">
                             <button
-                              onClick={() => setSelectedMember(m)}
+                              onClick={() => openMember(m)}
                               className="cursor-pointer flex items-center gap-2.5 text-left"
                             >
                               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-muted-foreground text-xs font-semibold flex-shrink-0">
                                 {(m.name || '?')[0]}
                               </div>
-                              <span className="text-sm font-medium text-foreground hover:text-primary transition-colors">
-                                {m.name || '-'}
+                              <span>
+                                <span className="text-sm font-medium text-foreground hover:text-primary transition-colors">
+                                  {m.name || '-'}
+                                </span>
+                                {unread && (
+                                  <span className="ml-2 inline-flex items-center rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                                    신규
+                                  </span>
+                                )}
                               </span>
                             </button>
                           </td>
@@ -1834,7 +1890,7 @@ export default function AdminMembers() {
                           <td className="px-4 py-3 hidden md:table-cell">
                             {(stats?.order_count ?? 0) > 0 ? (
                               <button
-                                onClick={(e) => { e.stopPropagation(); setSelectedMemberTab('orders'); setSelectedMember(m) }}
+                                onClick={(e) => { e.stopPropagation(); openMember(m, 'orders') }}
                                 className="cursor-pointer text-sm hover:text-primary transition-colors text-left"
                               >
                                 <span className="text-foreground font-medium">{stats?.order_count ?? 0}회</span>
@@ -1849,7 +1905,7 @@ export default function AdminMembers() {
                           <td className="px-4 py-3 text-sm hidden lg:table-cell">
                             {(stats?.review_count ?? 0) > 0 ? (
                               <button
-                                onClick={(e) => { e.stopPropagation(); setSelectedMemberTab('reviews'); setSelectedMember(m) }}
+                                onClick={(e) => { e.stopPropagation(); openMember(m, 'reviews') }}
                                 className="cursor-pointer text-primary font-medium hover:underline"
                               >
                                 {stats?.review_count ?? 0}

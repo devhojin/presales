@@ -6,6 +6,10 @@ import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/client-ip'
 import { grantRewardPoints, loadRewardSettings } from '@/lib/reward-points'
+import { sendEmail, buildEmailHtml } from '@/lib/email'
+import { ADMIN_ALERT_EMAIL } from '@/lib/admin-email'
+import { escapeHtml } from '@/lib/html-escape'
+import { SITE_URL } from '@/lib/constants'
 
 type Body = {
   agreeTerms?: boolean
@@ -198,7 +202,7 @@ export async function POST(request: NextRequest) {
     if (emailAddr) {
       try {
         const origin = new URL(request.url).origin
-        await fetch(`${origin}/api/email/welcome`, {
+        const welcomeRes = await fetch(`${origin}/api/email/welcome`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -206,10 +210,53 @@ export async function POST(request: NextRequest) {
           },
           body: JSON.stringify({ email: emailAddr, name: name || '회원' }),
         })
-        welcomeSent = true
+        welcomeSent = welcomeRes.ok
       } catch (e) {
         logger.warn('complete-signup welcome 메일 발송 실패', 'auth/complete-signup', { error: (e as Error).message })
       }
+    }
+
+    try {
+      const adminBody = `
+        <h2 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">신규 회원이 가입했습니다</h2>
+        <p style="margin:0 0 32px;font-size:14px;color:#64748b;">프리세일즈 회원가입 완료 알림입니다.</p>
+
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;margin-bottom:24px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="font-size:13px;color:#64748b;padding-bottom:8px;">이메일</td>
+              <td style="font-size:13px;font-weight:600;color:#1e40af;text-align:right;padding-bottom:8px;">${escapeHtml(email)}</td>
+            </tr>
+            <tr>
+              <td style="font-size:13px;color:#64748b;padding-bottom:8px;">이름</td>
+              <td style="font-size:13px;color:#334155;text-align:right;padding-bottom:8px;">${escapeHtml(name || '-')}</td>
+            </tr>
+            <tr>
+              <td style="font-size:13px;color:#64748b;padding-bottom:8px;">회사</td>
+              <td style="font-size:13px;color:#334155;text-align:right;padding-bottom:8px;">${escapeHtml(company || '-')}</td>
+            </tr>
+            <tr>
+              <td style="font-size:13px;color:#64748b;padding-bottom:8px;">연락처</td>
+              <td style="font-size:13px;color:#334155;text-align:right;padding-bottom:8px;">${escapeHtml(phone || '-')}</td>
+            </tr>
+            <tr>
+              <td style="font-size:13px;color:#64748b;">마케팅 수신</td>
+              <td style="font-size:13px;color:#334155;text-align:right;">${body.agreeMarketing ? '동의' : '미동의'}</td>
+            </tr>
+          </table>
+        </div>
+
+        <a href="${SITE_URL}/admin/members" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;">
+          관리자 회원 확인
+        </a>
+      `
+      await sendEmail(
+        ADMIN_ALERT_EMAIL,
+        `[프리세일즈 관리자] 신규 회원가입 - ${email}`,
+        buildEmailHtml('신규 회원가입', adminBody),
+      )
+    } catch (e) {
+      logger.warn('complete-signup 관리자 신규회원 메일 발송 실패', 'auth/complete-signup', { error: (e as Error).message })
     }
 
     return NextResponse.json({ success: true, couponIssued, welcomeSent })
