@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { type DbProduct, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
-import { FileText, Download, Globe, Handshake, ArrowRight, ShoppingCart, Check, Star, Quote, ChevronRight, Search, BookOpen, Presentation, Briefcase, TrendingUp, Wrench } from 'lucide-react'
+import { FileText, Download, Globe, Handshake, ArrowRight, ShoppingCart, Check, Star, Quote, ChevronRight, Search, BookOpen, Presentation, Briefcase, TrendingUp, Wrench, AlertTriangle } from 'lucide-react'
 
 interface StatsData {
   productCount: number
@@ -326,6 +326,19 @@ export default function Home() {
 
   return (
     <div>
+      <div className="border-y border-amber-200 bg-amber-50 text-amber-950">
+        <div className="mx-auto flex max-w-[1400px] items-center gap-3 overflow-hidden px-4 py-2 md:px-8">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+            <AlertTriangle className="h-4 w-4" />
+          </div>
+          <div className="presales-payment-ticker flex min-w-0 flex-1 gap-10 whitespace-nowrap text-sm font-semibold">
+            <span>PG 연결 오류로 현재 카드결제는 이용할 수 없습니다. 무통장입금만 가능합니다.</span>
+            <span aria-hidden="true">무통장 입금 후 관리자가 승인하면 마이페이지에서 다운로드가 열립니다.</span>
+            <span aria-hidden="true">PG 연결 오류로 현재 카드결제는 이용할 수 없습니다. 무통장입금만 가능합니다.</span>
+          </div>
+        </div>
+      </div>
+
       {/* Hero — interactive proposal cockpit */}
       <section className="relative overflow-hidden bg-[#F7F8FA]">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(37,99,235,0.09),transparent_34%),linear-gradient(90deg,rgba(255,255,255,0.78),rgba(255,255,255,0))]" />

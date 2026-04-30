@@ -913,11 +913,11 @@ function OrderDetailModal({
               {(order.status === 'pending' || order.status === 'pending_transfer') && (
                 <>
                   <button
-                    onClick={() => setConfirmAction({ status: 'paid', label: '결제확인', color: 'bg-green-600 hover:bg-green-700' })}
+                    onClick={() => setConfirmAction({ status: 'paid', label: order.status === 'pending_transfer' || order.payment_method === 'bank_transfer' ? '입금 승인' : '결제확인', color: 'bg-green-600 hover:bg-green-700' })}
                     className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-green-600 rounded-xl hover:bg-green-700 transition-colors cursor-pointer"
                   >
                     <CheckCircle className="w-3.5 h-3.5" />
-                    결제확인
+                    {order.status === 'pending_transfer' || order.payment_method === 'bank_transfer' ? '입금 승인' : '결제확인'}
                   </button>
                   <button
                     onClick={() => setConfirmAction({ status: 'cancelled', label: '취소', color: 'bg-gray-600 hover:bg-gray-700' })}
@@ -1278,6 +1278,8 @@ export default function AdminOrders() {
   const [selectedMember, setSelectedMember] = useState<Profile | null>(null)
   const [purchaseHistoryProduct, setPurchaseHistoryProduct] = useState<{ id: string; title: string } | null>(null)
   const [downloadHistoryOrder, setDownloadHistoryOrder] = useState<Order | null>(null)
+  const [listConfirmAction, setListConfirmAction] = useState<{ orderId: number; status: string; label: string; message: string; color: string } | null>(null)
+  const [listActionLoading, setListActionLoading] = useState(false)
 
   // Toast
   const [toast, setToast] = useState<string | null>(null)
@@ -1391,6 +1393,14 @@ export default function AdminOrders() {
     setSelectedOrder((prev) => (prev && prev.id === orderId ? { ...prev, ...updates } as Order : prev))
     setToast('주문 상태가 변경되었습니다')
   }, [])
+
+  const handleListStatusConfirm = useCallback(async () => {
+    if (!listConfirmAction) return
+    setListActionLoading(true)
+    await handleStatusChange(listConfirmAction.orderId, listConfirmAction.status)
+    setListActionLoading(false)
+    setListConfirmAction(null)
+  }, [handleStatusChange, listConfirmAction])
 
   // Memo save handler
   const handleMemoSave = useCallback(async (orderId: number, memo: string) => {
@@ -1905,6 +1915,22 @@ export default function AdminOrders() {
                           <p className="text-[11px] text-muted-foreground mt-1">
                             {PAYMENT_METHOD_LABEL[order.payment_method || ''] || order.payment_method || '-'}
                           </p>
+                          {order.status === 'pending_transfer' && (
+                            <button
+                              type="button"
+                              onClick={() => setListConfirmAction({
+                                orderId: order.id,
+                                status: 'paid',
+                                label: '입금 승인',
+                                message: `${order.order_number} 주문의 입금을 확인하고 다운로드 권한을 열겠습니까?`,
+                                color: 'bg-green-600 hover:bg-green-700',
+                              })}
+                              className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-green-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-green-700 cursor-pointer"
+                            >
+                              <CheckCircle className="h-3.5 w-3.5" />
+                              입금 승인
+                            </button>
+                          )}
                         </td>
 
                         {/* 다운로드 */}
@@ -2064,6 +2090,18 @@ export default function AdminOrders() {
         <DownloadHistoryModal
           order={downloadHistoryOrder}
           onClose={() => setDownloadHistoryOrder(null)}
+        />
+      )}
+
+      {listConfirmAction && (
+        <ConfirmModal
+          title="입금 승인"
+          message={listConfirmAction.message}
+          confirmLabel={listConfirmAction.label}
+          confirmColor={listConfirmAction.color}
+          onConfirm={handleListStatusConfirm}
+          onCancel={() => setListConfirmAction(null)}
+          loading={listActionLoading}
         />
       )}
 

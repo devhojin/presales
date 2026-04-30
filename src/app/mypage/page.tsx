@@ -131,6 +131,7 @@ type BookmarkModalItem =
 
 const statusMap: Record<string, { label: string; class: string }> = {
   pending: { label: '대기', class: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
+  pending_transfer: { label: '입금승인대기', class: 'bg-orange-50 text-orange-700 border-orange-200' },
   paid: { label: '결제완료', class: 'bg-blue-50 text-blue-800 border-blue-200' },
   completed: { label: '완료', class: 'bg-blue-50 text-blue-800 border-blue-200' },
   cancelled: { label: '취소', class: 'bg-red-50 text-red-700 border-red-200' },

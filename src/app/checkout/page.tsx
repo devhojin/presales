@@ -15,6 +15,7 @@ import {
 } from '@/lib/reward-points'
 
 const CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY!
+const CARD_PAYMENTS_DISABLED = true
 
 type PaymentMethod = 'card' | 'bank_transfer'
 
@@ -35,7 +36,7 @@ export default function CheckoutPage() {
   const [orderId, setOrderId] = useState<string | null>(null)
   const [dbOrderId, setDbOrderId] = useState<number | null>(null)
   const [paying, setPaying] = useState(false)
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('card')
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('bank_transfer')
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null)
   // 토스 가상계좌/현금영수증 SMS/이메일 발송에 필요
   const customerRef = useRef<{ name?: string; email?: string; phone?: string }>({})
@@ -211,6 +212,12 @@ export default function CheckoutPage() {
           return
         }
         currentUserIdRef.current = user.id
+
+        if (CARD_PAYMENTS_DISABLED) {
+          addToast('현재 PG 연결 오류로 카드결제를 이용할 수 없습니다. 상담 결제는 채널톡으로 문의해주세요.', 'error')
+          setLoading(false)
+          return
+        }
 
         // 채팅 결제: pending 주문 생성 (order_items 없음)
         const { data: order, error: orderError } = await supabase
@@ -547,7 +554,7 @@ export default function CheckoutPage() {
               user_id: user.id,
               ...orderUpdateFields,
               status: 'pending',
-              payment_method: 'card',
+              payment_method: CARD_PAYMENTS_DISABLED ? 'bank_transfer' : 'card',
             })
             .select('id')
             .single()
@@ -610,6 +617,12 @@ export default function CheckoutPage() {
           return
         }
 
+        if (CARD_PAYMENTS_DISABLED) {
+          setReady(true)
+          setLoading(false)
+          return
+        }
+
         // 3. 토스 위젯 초기화
         const tossPayments = await loadTossPayments(CLIENT_KEY)
         const widgets = tossPayments.widgets({ customerKey: user.id })
@@ -654,6 +667,11 @@ export default function CheckoutPage() {
   }, [])
 
   async function handleCardPayment() {
+    if (CARD_PAYMENTS_DISABLED) {
+      addToast('현재 PG 연결 오류로 카드결제를 이용할 수 없습니다. 무통장 입금을 선택해주세요.', 'error')
+      setSelectedMethod('bank_transfer')
+      return
+    }
     if (finalAmount <= 0) {
       await handleRewardOnlyPayment()
       return
@@ -816,6 +834,13 @@ export default function CheckoutPage() {
 
       <h1 className="text-2xl font-bold mb-8">결제하기</h1>
 
+      <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+        <p>
+          현재 PG 연결 오류로 카드결제는 이용할 수 없습니다. 무통장 입금 신청 후 관리자가 입금을 승인하면 다운로드가 가능합니다.
+        </p>
+      </div>
+
       {/* 주문 요약 */}
       <div className="bg-muted/30 rounded-xl p-5 mb-6 space-y-3">
         {isChatPayment ? (
@@ -900,7 +925,7 @@ export default function CheckoutPage() {
             {selectedMethod === 'card' && (
               <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <p>신용카드 결제의 경우 세금계산서가 발행되지 않습니다. 매출전표를 활용하시면 됩니다.</p>
+                <p>{CARD_PAYMENTS_DISABLED ? '현재 PG 연결 오류로 카드결제를 이용할 수 없습니다.' : '신용카드 결제의 경우 세금계산서가 발행되지 않습니다. 매출전표를 활용하시면 됩니다.'}</p>
               </div>
             )}
 
@@ -1018,17 +1043,25 @@ export default function CheckoutPage() {
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() => setSelectedMethod('card')}
+              onClick={() => {
+                if (CARD_PAYMENTS_DISABLED) {
+                  addToast('현재 카드결제는 이용할 수 없습니다. 무통장 입금을 이용해주세요.', 'error')
+                  return
+                }
+                setSelectedMethod('card')
+              }}
+              disabled={CARD_PAYMENTS_DISABLED}
               className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-colors cursor-pointer text-left ${
                 selectedMethod === 'card'
                   ? 'border-primary bg-primary/5'
                   : 'border-border hover:border-primary/40'
+              } ${CARD_PAYMENTS_DISABLED ? 'cursor-not-allowed opacity-55 hover:border-border' : ''
               }`}
             >
               <CreditCard className={`w-5 h-5 shrink-0 ${selectedMethod === 'card' ? 'text-primary' : 'text-muted-foreground'}`} />
               <div>
                 <p className={`text-sm font-semibold ${selectedMethod === 'card' ? 'text-primary' : 'text-foreground'}`}>카드·가상계좌·간편결제</p>
-                <p className="text-[11px] text-muted-foreground">가상계좌 선택 시 현금영수증 자동 발급</p>
+                <p className="text-[11px] text-muted-foreground">{CARD_PAYMENTS_DISABLED ? 'PG 연결 오류로 일시 중지' : '가상계좌 선택 시 현금영수증 자동 발급'}</p>
               </div>
             </button>
             <button
@@ -1056,14 +1089,14 @@ export default function CheckoutPage() {
           <p className="text-sm font-semibold text-blue-900 mb-2">무통장 입금 안내</p>
           <ul className="space-y-1 text-xs text-blue-800">
             <li>• 주문 완료 후 안내 이메일로 계좌 정보가 발송됩니다</li>
-            <li>• 입금 확인 후 영업일 기준 1~2일 내 파일 이용이 가능합니다</li>
+            <li>• 입금 확인 후 관리자가 승인하면 마이페이지에서 다운로드가 가능합니다</li>
             <li>• 세금계산서 발행이 필요하신 경우 위 추가정보에서 담당자 정보와 사업자등록증을 등록해 주세요</li>
           </ul>
         </div>
       )}
 
       {/* 토스 결제 위젯 (카드 선택 시 또는 채팅 결제 시 표시) */}
-      {(isChatPayment || selectedMethod === 'card') && finalAmount > 0 && (
+      {!CARD_PAYMENTS_DISABLED && (isChatPayment || selectedMethod === 'card') && finalAmount > 0 && (
         <>
           {loading && (
             <div className="flex items-center justify-center py-20 text-muted-foreground">

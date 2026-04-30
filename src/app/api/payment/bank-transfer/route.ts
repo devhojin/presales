@@ -244,7 +244,7 @@ export async function POST(request: NextRequest) {
         // 고객 이메일
         const customerBody = `
           <h2 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">무통장 입금 안내</h2>
-          <p style="margin:0 0 32px;font-size:14px;color:#64748b;">${safeCustomerName}님, 아래 계좌로 입금해 주시면 주문이 완료됩니다.</p>
+          <p style="margin:0 0 32px;font-size:14px;color:#64748b;">${safeCustomerName}님, 아래 계좌로 입금해 주시면 관리자 승인 후 다운로드가 가능합니다.</p>
 
           <div style="background:#eff6ff;border:2px solid #bfdbfe;border-radius:8px;padding:24px;margin-bottom:24px;">
             <h3 style="margin:0 0 16px;font-size:16px;font-weight:700;color:#1e40af;">입금 계좌 정보</h3>
@@ -310,7 +310,7 @@ export async function POST(request: NextRequest) {
 
           <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:24px;">
             <p style="margin:0;font-size:13px;color:#15803d;">
-              입금 확인 후 <strong>나의콘솔 &gt; 주문내역</strong>에서 문서를 다운로드하실 수 있습니다. 입금 확인에는 영업일 기준 1~2일이 소요될 수 있습니다.
+              관리자가 입금 확인 후 승인하면 <strong>나의콘솔 &gt; 주문내역</strong>에서 문서를 다운로드하실 수 있습니다.
             </p>
           </div>
 
@@ -330,7 +330,7 @@ export async function POST(request: NextRequest) {
         // 관리자 알림
         const adminBody = `
           <h2 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#0f172a;">무통장 입금 주문 접수</h2>
-          <p style="margin:0 0 32px;font-size:14px;color:#64748b;">입금 확인 후 주문 상태를 '결제완료'로 변경해 주세요.</p>
+          <p style="margin:0 0 32px;font-size:14px;color:#64748b;">입금 확인 후 관리자 주문 목록에서 '입금 승인'을 눌러 다운로드 권한을 열어주세요.</p>
 
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:20px;margin-bottom:24px;">
             <table width="100%" cellpadding="0" cellspacing="0">

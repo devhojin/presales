@@ -48,7 +48,7 @@ function BankTransferContent() {
         </div>
         <h1 className="text-2xl font-bold text-foreground mb-2">무통장 입금 신청 완료</h1>
         <p className="text-sm text-muted-foreground">
-          아래 계좌로 입금해 주시면 확인 후 파일 이용이 가능합니다
+          아래 계좌로 입금해 주시면 관리자 승인 후 파일 이용이 가능합니다
         </p>
       </div>
 
@@ -106,8 +106,8 @@ function BankTransferContent() {
         <p className="text-xs font-semibold text-yellow-800 mb-2">입금 시 유의사항</p>
         <ul className="space-y-1 text-xs text-yellow-700">
           <li>• 입금자명에 <strong>{orderNumber}</strong>을 기재해 주시면 빠른 확인이 가능합니다</li>
-          <li>• 입금 확인 안내 이메일이 발송됩니다</li>
-          <li>• 입금 확인에는 영업일 기준 1~2일이 소요될 수 있습니다</li>
+          <li>• 관리자가 입금 확인 후 승인하면 다운로드 권한이 열립니다</li>
+          <li>• 승인 완료 후 주문 확인 이메일이 발송됩니다</li>
           <li>• 입금 후 빠른 확인은 우측 하단 채널톡으로 문의해 주세요</li>
         </ul>
       </div>
