@@ -12,10 +12,6 @@
     {
       "path": "/api/cron/morning-brief/collect",
       "schedule": "50 21 * * *"
-    },
-    {
-      "path": "/api/cron/morning-brief/send",
-      "schedule": "0 22 * * *"
     }
   ]
 }
