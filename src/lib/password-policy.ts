@@ -1,8 +1,8 @@
 /**
  * KISA 보안인증 기준 비밀번호 정책
- * - 8자 이상 + 3종 조합 (영대문자, 영소문자, 숫자, 특수문자 중 3종)
- * - 또는 10자 이상 + 2종 조합
+ * - Supabase Auth 운영 정책에 맞춰 10자 이상 + 2종 조합
  * - 반복 문자 금지
+ * - 알려진 약한 패턴 금지
  * - 이메일과 동일한 비밀번호 금지
  */
 
@@ -15,6 +15,16 @@ export interface PasswordCheck {
 }
 
 const SPECIAL_CHARS = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/
+const WEAK_PASSWORD_PATTERNS = [
+  'password',
+  'passw0rd',
+  'qwerty',
+  'admin',
+  'test',
+  'welcome',
+  'letmein',
+  'iloveyou',
+]
 
 function hasUpperCase(s: string) { return /[A-Z]/.test(s) }
 function hasLowerCase(s: string) { return /[a-z]/.test(s) }
@@ -37,6 +47,11 @@ function hasRepeating(s: string): boolean {
   return false
 }
 
+function hasKnownWeakPattern(s: string): boolean {
+  const normalized = s.toLowerCase()
+  return WEAK_PASSWORD_PATTERNS.some((pattern) => normalized.includes(pattern))
+}
+
 export function validatePassword(password: string, email?: string): PasswordCheck {
   const errors: string[] = []
 
@@ -44,19 +59,21 @@ export function validatePassword(password: string, email?: string): PasswordChec
     return { valid: false, score: 0, label: '', color: 'bg-gray-200', errors: ['비밀번호를 입력해주세요.'] }
   }
 
-  if (password.length < 8) {
-    errors.push('최소 8자 이상이어야 합니다.')
+  if (password.length < 10) {
+    errors.push('최소 10자 이상이어야 합니다.')
   }
 
   const types = countTypes(password)
-  if (password.length < 10 && types < 3) {
-    errors.push('8자 이상은 영대문자·영소문자·숫자·특수문자 중 3종 이상 조합이 필요합니다.')
-  } else if (password.length >= 10 && types < 2) {
+  if (types < 2) {
     errors.push('10자 이상은 2종 이상 조합이 필요합니다.')
   }
 
   if (hasRepeating(password)) {
     errors.push('같은 문자 3회 이상 반복은 사용할 수 없습니다.')
+  }
+
+  if (hasKnownWeakPattern(password)) {
+    errors.push('Test, password, admin처럼 흔하거나 추측하기 쉬운 단어는 사용할 수 없습니다.')
   }
 
   if (email) {
