@@ -9,6 +9,7 @@ import { escapeHtml } from '@/lib/html-escape'
 import { recomputeExpectedAmount } from '@/lib/payment-recompute'
 import { reserveRewardPoints, rollbackRewardPoints } from '@/lib/reward-points'
 import { ADMIN_ALERT_EMAIL } from '@/lib/admin-email'
+import { buildOrderItemRows, type OrderEmailItem } from '@/lib/order-email'
 
 // 입금 계좌 정보 (환경변수 우선, 미설정 시 기본값)
 // 운영 환경변수에서 값 변경 가능
@@ -92,6 +93,7 @@ export async function POST(request: NextRequest) {
         deposit_memo,
         order_items (
           id,
+          product_id,
           price,
           products ( title )
         )
@@ -215,24 +217,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '주문 상태 변경에 실패했습니다' }, { status: 500 })
     }
 
-    const items = order.order_items as unknown as { id: string; price: number; products: { title: string } | null }[]
+    const items = order.order_items as unknown as OrderEmailItem[]
 
     // 5. 입금 안내 이메일 발송 (실패해도 API는 성공 반환)
     if (profile?.email) {
       try {
-        const itemRows = items
-          .map(
-            (item) => `
-            <tr>
-              <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#334155;">
-                ${escapeHtml(item.products?.title || '(상품명 없음)')}
-              </td>
-              <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#334155;text-align:right;white-space:nowrap;">
-                ${formatKRW(item.price)}
-              </td>
-            </tr>`,
-          )
-          .join('')
+        const itemRows = buildOrderItemRows(items, formatKRW)
 
         const depositMemo = order.deposit_memo || order.order_number
         const safeDepositMemo = escapeHtml(depositMemo)

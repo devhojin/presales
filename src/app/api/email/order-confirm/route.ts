@@ -9,6 +9,7 @@ import { escapeHtml } from '@/lib/html-escape'
 import { getClientIp } from '@/lib/client-ip'
 import { SITE_URL } from '@/lib/constants'
 import { ADMIN_ALERT_EMAIL } from '@/lib/admin-email'
+import { buildOrderItemRows, type OrderEmailItem } from '@/lib/order-email'
 
 function formatKRW(amount: number) {
   return new Intl.NumberFormat('ko-KR').format(amount) + '원'
@@ -100,6 +101,7 @@ export async function POST(request: NextRequest) {
         created_at,
         order_items (
           id,
+          product_id,
           price,
           products ( title )
         )
@@ -134,7 +136,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '주문자 이메일이 없습니다.' }, { status: 400 })
     }
 
-    const items = (order.order_items as unknown as { id: string; price: number; products: { title: string } | null }[]) || []
+    const items = (order.order_items as unknown as OrderEmailItem[]) || []
     const paymentLabel = order.status === 'pending_transfer'
       ? '입금대기'
       : order.payment_method === 'free'
@@ -148,19 +150,7 @@ export async function POST(request: NextRequest) {
     // ===========================
     // 주문자에게 주문 확인 이메일
     // ===========================
-    const itemRows = items
-      .map(
-        (item) => `
-        <tr>
-          <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#334155;">
-            ${escapeHtml(item.products?.title) || '(상품명 없음)'}
-          </td>
-          <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#334155;text-align:right;white-space:nowrap;">
-            ${formatKRW(item.price)}
-          </td>
-        </tr>`,
-      )
-      .join('')
+    const itemRows = buildOrderItemRows(items, formatKRW)
 
     const safeOrderNumber = escapeHtml(order.order_number)
     const safeCustomerName = escapeHtml(profile.name) || '고객'
