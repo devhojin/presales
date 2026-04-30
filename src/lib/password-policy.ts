@@ -2,7 +2,7 @@
  * KISA 보안인증 기준 비밀번호 정책
  * - 8자 이상 + 3종 조합 (영대문자, 영소문자, 숫자, 특수문자 중 3종)
  * - 또는 10자 이상 + 2종 조합
- * - 연속/반복 문자 금지
+ * - 반복 문자 금지
  * - 이메일과 동일한 비밀번호 금지
  */
 
@@ -30,18 +30,6 @@ function countTypes(s: string): number {
   return count
 }
 
-function hasSequential(s: string): boolean {
-  const lower = s.toLowerCase()
-  for (let i = 0; i < lower.length - 2; i++) {
-    const c1 = lower.charCodeAt(i)
-    const c2 = lower.charCodeAt(i + 1)
-    const c3 = lower.charCodeAt(i + 2)
-    if (c2 === c1 + 1 && c3 === c2 + 1) return true
-    if (c2 === c1 - 1 && c3 === c2 - 1) return true
-  }
-  return false
-}
-
 function hasRepeating(s: string): boolean {
   for (let i = 0; i < s.length - 2; i++) {
     if (s[i] === s[i + 1] && s[i + 1] === s[i + 2]) return true
@@ -65,10 +53,6 @@ export function validatePassword(password: string, email?: string): PasswordChec
     errors.push('8자 이상은 영대문자·영소문자·숫자·특수문자 중 3종 이상 조합이 필요합니다.')
   } else if (password.length >= 10 && types < 2) {
     errors.push('10자 이상은 2종 이상 조합이 필요합니다.')
-  }
-
-  if (hasSequential(password)) {
-    errors.push('연속된 문자/숫자(abc, 123 등)는 사용할 수 없습니다.')
   }
 
   if (hasRepeating(password)) {

@@ -690,7 +690,7 @@ function MemberInfoEdit({ member, onUpdated }: { member: Profile; onUpdated?: (u
         </div>
         <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <p className="text-xs text-muted-foreground">
-            8자 이상 3종 조합 또는 10자 이상 2종 조합, 연속/반복 문자는 제한됩니다.
+            8자 이상 3종 조합 또는 10자 이상 2종 조합, 같은 문자 3회 반복은 제한됩니다.
           </p>
           <button
             type="button"
