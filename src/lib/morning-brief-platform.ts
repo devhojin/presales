@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import { subscribeEmail } from '../../morning-brief/lib/subscribe'
+import { subscribeEmail, unsubscribeByToken } from '../../morning-brief/lib/subscribe'
 
 type SourceMemberState = 'member' | 'guest' | 'unknown'
 
@@ -22,6 +22,14 @@ export interface MorningBriefSubscribeResult {
   status?: string
   created?: boolean
   resubscribed?: boolean
+  mode: 'central-api' | 'legacy-supabase'
+}
+
+export interface MorningBriefUnsubscribeResult {
+  ok: boolean
+  email?: string
+  already?: boolean
+  error?: string
   mode: 'central-api' | 'legacy-supabase'
 }
 
@@ -75,6 +83,35 @@ export async function subscribeViaMorningBrief(input: MorningBriefSubscribeInput
     status: 'active',
     mode: 'legacy-supabase',
   }
+}
+
+export async function unsubscribeViaMorningBrief(token: string): Promise<MorningBriefUnsubscribeResult> {
+  const central = apiUrl()
+  if (central) {
+    try {
+      const res = await fetch(`${central}/api/unsubscribe?token=${encodeURIComponent(token)}`, {
+        cache: 'no-store',
+      })
+      const json = await res.json().catch(() => ({})) as Omit<MorningBriefUnsubscribeResult, 'mode'>
+      return {
+        ...json,
+        ok: res.ok && json.ok !== false,
+        mode: 'central-api',
+      }
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : 'central unsubscribe failed',
+        mode: 'central-api',
+      }
+    }
+  }
+
+  const fallback = await unsubscribeByToken(token)
+  if (!fallback.ok) {
+    return { ok: false, error: fallback.error, mode: 'legacy-supabase' }
+  }
+  return { ok: true, email: fallback.email, mode: 'legacy-supabase' }
 }
 
 export async function fetchCentralBriefStatus(email: string): Promise<Record<string, unknown> | null> {

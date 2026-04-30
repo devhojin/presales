@@ -35,7 +35,7 @@ export interface SendOptions {
 }
 
 export async function sendBriefMail(opts: SendOptions): Promise<{ messageId: string }> {
-  const fromName = process.env.MAIL_FROM_NAME ?? '프리세일즈'
+  const fromName = process.env.MORNING_BRIEF_FROM_NAME ?? '모닝브리프'
   const smtpUser = process.env.SMTP_USER ?? process.env.MAILPLUG_USER
   const fromEmail = process.env.MORNING_BRIEF_FROM_EMAIL ?? smtpUser ?? process.env.MAIL_FROM_EMAIL ?? 'help@amarans.co.kr'
   const replyToEmail = process.env.MAIL_FROM_EMAIL && process.env.MAIL_FROM_EMAIL !== fromEmail

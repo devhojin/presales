@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
+import { presalesServiceClient, unsubscribeViaMorningBrief } from '@/lib/morning-brief-platform'
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,12 +8,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ ok: false, error: '토큰이 필요합니다' }, { status: 400 })
     }
 
-    const service = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      { auth: { persistSession: false } },
-    )
+    const central = await unsubscribeViaMorningBrief(token)
+    if (central.ok) {
+      return NextResponse.json({
+        ok: true,
+        already: central.already,
+        email: central.email,
+        mode: central.mode,
+      })
+    }
 
+    const service = presalesServiceClient()
+
+    // 예전 프리세일즈 메일에 포함된 로컬 토큰은 계속 수신거부할 수 있게 둔다.
     const { data: sub } = await service
       .from('brief_subscribers')
       .select('id, email, status')
