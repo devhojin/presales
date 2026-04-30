@@ -17,7 +17,6 @@ import { morningBriefService } from '../../../../../../morning-brief/lib/supabas
 
 export const maxDuration = 300 // 5분 (수집 + AI dedup 시간 여유)
 export const runtime = 'nodejs'
-export const preferredRegion = 'icn1'
 
 function authorized(req: NextRequest): boolean {
   const got = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
