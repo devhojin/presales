@@ -8,10 +8,6 @@
     {
       "path": "/api/cron/fetch-feeds",
       "schedule": "30 23 * * *"
-    },
-    {
-      "path": "/api/cron/morning-brief/collect",
-      "schedule": "50 21 * * *"
     }
   ]
 }
