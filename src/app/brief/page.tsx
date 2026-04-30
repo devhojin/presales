@@ -119,7 +119,7 @@ export default function BriefPage() {
           공공조달·스마트시티·창업지원·AI/IoT 관련 시장 동향과 신규 공고를 매일 아침 정리해서 보내드립니다.
         </p>
         <p className="mt-3 text-sm font-semibold leading-relaxed text-red-600">
-          모닝브리프는 매일 아침 7시에 받아보시는 사항이며 아래와 같이 발송됩니다. 언제든지 수신거부 하실 수 있습니다.
+          모닝브리프는 매일 아침 7시에 받아보시는 사항이며 아래와 같이 발송됩니다. 언제든지 수신거부 하실 수 있습니다. (광고메일 보내지 않습니다)
         </p>
       </div>
 
@@ -177,7 +177,7 @@ export default function BriefPage() {
       ) : (
         <div className="flex gap-4 mb-12 items-start">
           {/* LEFT: 브리프 리스트 (자연 높이, 페이지 스크롤) */}
-          <div className={`${showDetail ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[38%] border border-border/50 rounded-2xl overflow-hidden bg-card`}>
+          <div className={`${showDetail ? 'hidden md:flex' : 'flex'} flex-col w-full md:w-[24%] md:min-w-[260px] border border-border/50 rounded-2xl overflow-hidden bg-card`}>
             <div className="px-4 py-3 border-b border-border/50 bg-muted/30">
               <p className="text-xs text-muted-foreground font-medium">{briefs.length}개 브리프 · 최신순</p>
             </div>
