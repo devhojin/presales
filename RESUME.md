@@ -1,5 +1,58 @@
 # 🔄 이어가기
 
+## 2026-04-29 세션 인계 요약
+
+**다음 세션 시작 시 먼저 할 일**
+
+1. `git pull --ff-only`
+2. `AGENTS.md` 확인
+3. `RESUME.md`의 이 2026-04-29 섹션 확인
+4. `git status --short`로 작업트리 확인
+
+**현재 Git 기준**
+
+- 최신 원격 브랜치: `origin/master`
+- 최신 배포 확인 커밋: `37bbed4 fix: preserve legacy brief archive`
+- 직전 관련 커밋:
+  - `51ec577 fix: render public briefs from morning news`
+  - `428f175 fix: align public morning brief source`
+
+### 방금 완료한 작업: 모닝브리프 사이트/메일 불일치 수정
+
+- 사용자 신고: 2026-04-29 오전 Gmail로 받은 모닝브리프는 `오늘의 모닝 브리프 - 2026-04-29`인데, 사이트 `/brief`는 2026-04-27까지만 보였음.
+- 원인: 메일 발송은 새 `morning-brief` 마스터 DB(`briefs`, `news_items`)를 사용하고, 공개 사이트 `/brief`는 예전 `daily_briefs`를 보고 있었음.
+- 조치:
+  - `/api/briefs` 추가.
+  - `/brief` 공개 화면이 `morning-brief` 마스터 DB를 우선 조회하도록 변경.
+  - `/brief/[slug]` SEO 상세 페이지도 같은 소스를 사용하도록 변경.
+  - 이미 발송된 브리프 중 `html_body`가 없는 경우 `news_items`에서 공개용 HTML을 재구성.
+  - 향후 `/api/cron/morning-brief/send` 발송 시 `briefs.html_body`, `subject`, `news_count`를 저장하도록 보정.
+  - 기존 4월 27일 이전 아카이브는 `daily_briefs`에서 날짜 중복 없이 이어 붙이도록 유지.
+  - sitemap도 새 브리프와 기존 아카이브를 모두 포함.
+
+### 검증 완료
+
+- `npm run lint`: 오류 0개, 기존 경고 84개.
+- `npm run build`: 성공.
+- GitHub/Vercel Production 배포 성공 확인:
+  - 최신 배포 SHA `37bbed4be2bd9d4c4daaea892e89f6081c3d790a`.
+- 운영 검증:
+  - `https://presales-zeta.vercel.app/api/briefs` 응답:
+    - `ok: true`
+    - `count: 16`
+    - 첫 항목 `brief_date: 2026-04-29`
+    - `subject: 오늘의 모닝 브리프 - 2026-04-29`
+    - `total_news: 30`
+  - `/brief` 화면에서 `오늘의 모닝 브리프 - 2026-04-29` 표시 확인.
+  - Playwright Chrome screenshot 검증 파일: `/tmp/presales-brief-verify-final.png`.
+  - sitemap에 `/brief/morning-brief-2026-04-29` 포함 확인.
+
+### 다음 세션 주의사항
+
+- 로컬 `.env.local`에는 `MORNING_BRIEF_*` 환경변수가 없어서 로컬에서 morning-brief DB 직접 조회는 안 됨. 운영 Vercel 환경에는 값이 있어 운영 API로 검증 가능.
+- `morning-brief/lib/render-brief.ts`는 구독자 토큰이 없으면 공개 페이지에서 수신거부 링크를 숨기도록 바뀌었음.
+- 이 섹션은 세션 인계용 문서 변경입니다. 별도 요청 전에는 docs-only 커밋/푸시로 배포를 다시 트리거하지 말 것.
+
 ## 2026-04-28 최신 세션 인계 요약
 
 **다음 세션 시작 시 먼저 할 일**
@@ -296,3 +349,67 @@ npm install @tosspayments/payment-sdk
 - 🟢 GitHub PAT / Supabase PAT MCP 재활성화
 
 자세한 내용은 후속 세션에서 별도 작업 기록 문서로 남긴다.
+
+---
+
+## 2026-04-30 세션 인계 요약
+
+### 최근 완료 작업
+
+- 관리자 대시보드 통계 정리 완료.
+- 최종 커밋/푸시: `47958dd feat: add real admin analytics dashboard`
+- 바로 이전 관련 커밋:
+  - `b2ede98 style: reduce homepage hero headline further`
+  - `e1e7f91 style: adjust homepage hero headline size`
+  - `86191ab copy: update homepage hero messaging`
+  - `63c4bc0 feat: add store document kind filter`
+
+### 관리자 통계 변경 내용
+
+- 새 관리자 전용 API 추가: `src/app/api/admin/analytics/summary/route.ts`
+  - 비로그인: `401`
+  - 비관리자: `403`
+  - 관리자만 `page_views`, `orders`, `profiles`, `consulting_requests`, `reviews` 기반 통계 조회 가능
+- 공통 집계 헬퍼 추가: `src/lib/admin-analytics.ts`
+  - KST 기준 7/30/90일 집계
+  - 방문자: `page_views.session_id` 기준
+  - 매출/구매완료: `orders.status in ('paid', 'completed')` 기준
+  - 전환 퍼널: 방문자 → 문서스토어/상품 조회 → 장바구니 진입 → 결제 진입 → 주문 생성 → 구매 완료
+  - `/store` 자체 경로도 상품/스토어 조회로 포함하도록 보정
+- `/admin/analytics`는 브라우저에서 직접 여러 테이블을 조회하던 구조를 제거하고, 위 API 응답을 사용하도록 변경.
+- `/admin` 대시보드에 아래 배치 반영:
+  - 좌측: 매출 추이
+  - 우측: 방문자 추이
+  - 아래: 전환 퍼널
+
+### 검증 완료
+
+- `npm run lint -- --quiet` 통과
+- `npm run build` 통과
+- 로컬 `next start -- --hostname 127.0.0.1 --port 3102` 확인
+  - `/admin` 비로그인 접근 시 `/auth/login?redirect=%2Fadmin` 리다이렉트
+  - `/api/admin/analytics/summary?days=7` 비로그인 접근 시 `401 {"error":"로그인이 필요합니다"}`
+- `.vercel/` 없음 확인
+
+### 현재 워크트리 주의
+
+- `RESUME.md`는 인계 기록 때문에 수정 상태일 수 있음.
+- 이 파일 변경은 작업 인계 목적이며, 코드 배포 커밋에는 포함하지 않았음.
+- 코드 변경은 `47958dd`에 커밋/푸시 완료됨.
+
+### 다음 세션에서 우선 확인할 것
+
+1. `git pull`
+2. `AGENTS.md` 확인
+3. `RESUME.md`의 이 `2026-04-30 세션 인계 요약` 확인
+4. `git log --oneline -3`로 `47958dd`가 있는지 확인
+5. 사용자가 "배포됐나/반영됐나"를 물으면 `AGENTS.md`의 배포 불일치 진단 순서에 따라 Vercel Current deployment 커밋 확인부터 진행
+
+### 다음 세션 시작 프롬프트 추천
+
+```text
+프리세일즈 이어가자.
+/Users/hojin/project/presales에서 git pull 하고 AGENTS.md, RESUME.md의 2026-04-30 세션 인계 요약을 먼저 읽어줘.
+마지막 완료 커밋은 47958dd feat: add real admin analytics dashboard 야.
+RESUME.md는 인계 기록 때문에 미커밋 변경이 있을 수 있으니 임의로 되돌리지 말고, 현재 상태와 다음 작업 가능 상태를 파악해줘.
+```
