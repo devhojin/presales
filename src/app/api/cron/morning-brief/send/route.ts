@@ -21,16 +21,9 @@ export const runtime = 'nodejs'
 type SupabaseClientLike = ReturnType<typeof morningBriefService>
 
 interface Recipient {
-  subscriptionId: string
   subscriberId: string
   email: string
   token: string
-  sendCount: number
-}
-
-function nestedOne<T>(value: T | T[] | null | undefined): T | null {
-  if (Array.isArray(value)) return value[0] ?? null
-  return value ?? null
 }
 
 function authorized(req: NextRequest): boolean {
@@ -48,65 +41,23 @@ function todayKst(): string {
   return kst.toISOString().slice(0, 10)
 }
 
-async function getDefaultBriefTypeId(sb: SupabaseClientLike): Promise<string | null> {
+async function loadRecipients(sb: SupabaseClientLike): Promise<Recipient[]> {
   const { data, error } = await sb
-    .from('brief_types')
-    .select('id')
-    .eq('key', 'public_procurement_daily')
-    .maybeSingle()
-
-  if (error) throw error
-  return (data?.id as string | undefined) ?? null
-}
-
-async function loadRecipients(sb: SupabaseClientLike, briefTypeId: string): Promise<Recipient[]> {
-  const { data, error } = await sb
-    .from('brief_subscriptions')
-    .select(`
-      id,
-      subscriber_id,
-      deleted_at,
-      subscribers!inner(id, email, token, status, send_count, deleted_at)
-    `)
-    .eq('brief_type_id', briefTypeId)
+    .from('subscribers')
+    .select('id, email, token')
     .eq('status', 'active')
-    .is('deleted_at', null)
-    .eq('subscribers.status', 'active')
-    .is('subscribers.deleted_at', null)
 
   if (error) throw error
 
   return ((data ?? []) as Array<{
     id: string
-    subscriber_id: string
-    deleted_at: string | null
-    subscribers: {
-      id: string
-      email: string
-      token: string | null
-      status: string
-      send_count: number | null
-      deleted_at: string | null
-    } | Array<{
-      id: string
-      email: string
-      token: string | null
-      status: string
-      send_count: number | null
-      deleted_at: string | null
-    }> | null
-  }>).flatMap((row) => {
-    const subscriber = nestedOne(row.subscribers)
-    if (!subscriber || row.deleted_at || subscriber.status !== 'active' || subscriber.deleted_at) return []
-
-    return [{
-      subscriptionId: row.id,
-      subscriberId: subscriber.id,
-      email: subscriber.email,
-      token: subscriber.token || '',
-      sendCount: subscriber.send_count || 0,
-    }]
-  })
+    email: string
+    token: string | null
+  }>).map((row) => ({
+    subscriberId: row.id,
+    email: row.email,
+    token: row.token || '',
+  }))
 }
 
 export async function GET(req: NextRequest) {
@@ -114,17 +65,9 @@ export async function GET(req: NextRequest) {
 
   const sb = morningBriefService()
   const briefDate = req.nextUrl.searchParams.get('date') || todayKst()
-  const briefTypeId = await getDefaultBriefTypeId(sb)
-  if (!briefTypeId) {
-    return NextResponse.json({ ok: false, error: 'default brief type not found' }, { status: 500 })
-  }
 
   const { data: brief, error: bErr } = await sb
-    .from('briefs')
-    .select('id, status, subject, brief_type_id')
-    .eq('brief_type_id', briefTypeId)
-    .eq('brief_date', briefDate)
-    .maybeSingle()
+    .from('briefs').select('id, status, subject').eq('brief_date', briefDate).maybeSingle()
   if (bErr) return NextResponse.json({ ok: false, error: bErr.message }, { status: 500 })
   if (!brief) return NextResponse.json({ ok: false, error: `brief for ${briefDate} not found — collect-news 먼저 실행` }, { status: 404 })
   if (brief.status === 'sent') return NextResponse.json({ ok: true, already_sent: true, brief_id: brief.id })
@@ -149,11 +92,11 @@ export async function GET(req: NextRequest) {
   }
   const newsCount = (items ?? []).length
 
-  // 중앙 관리자에서 활성 상태인 구독권만 발송한다.
-  // 구형 subscribers 전체 발송 fallback은 관리자 삭제/수신거부 상태를 우회할 수 있어 사용하지 않는다.
+  // 현재 운영 DB의 모닝브리프 관리자 원본인 subscribers 활성 목록만 사용한다.
+  // 구형 /api/cron/send-brief 의 brief_subscribers 발송 경로는 no-op 처리했다.
   let recipients: Recipient[]
   try {
-    recipients = await loadRecipients(sb, briefTypeId)
+    recipients = await loadRecipients(sb)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'recipient query failed'
     return NextResponse.json({ ok: false, error: message }, { status: 500 })
@@ -179,7 +122,6 @@ export async function GET(req: NextRequest) {
   const sendsLog: {
     brief_id: string
     subscriber_id: string
-    brief_subscription_id: string
     email: string
     status: string
     sent_at: string | null
@@ -202,7 +144,7 @@ export async function GET(req: NextRequest) {
       await sendBriefMail({ to: r.email, subject, html, text })
       sent++
       sendsLog.push({
-        brief_id: brief.id, subscriber_id: r.subscriberId, brief_subscription_id: r.subscriptionId, email: r.email,
+        brief_id: brief.id, subscriber_id: r.subscriberId, email: r.email,
         status: 'sent', sent_at: new Date().toISOString(), error: null,
       })
     } catch (e) {
@@ -210,7 +152,7 @@ export async function GET(req: NextRequest) {
       failed++
       failureReasons.set(message, (failureReasons.get(message) ?? 0) + 1)
       sendsLog.push({
-        brief_id: brief.id, subscriber_id: r.subscriberId, brief_subscription_id: r.subscriptionId, email: r.email,
+        brief_id: brief.id, subscriber_id: r.subscriberId, email: r.email,
         status: 'failed', sent_at: null, error: message,
       })
     }

@@ -15,13 +15,12 @@ export interface SaveResult {
 export async function saveNewsBatch(
   byCategory: Record<string, NewsItem[]>,
   briefId: string | null,
-  briefTypeId: string | null = null,
 ): Promise<SaveResult> {
   const sb = morningBriefService()
   const rows: {
     url: string; url_hash: string; title: string; source_media: string | null;
     category: string; domain: string | null; pub_date: string | null;
-    raw: object; used_in_brief: string | null; brief_type_id: string | null;
+    raw: object; used_in_brief: string | null;
   }[] = []
 
   for (const [category, items] of Object.entries(byCategory)) {
@@ -40,7 +39,6 @@ export async function saveNewsBatch(
         pub_date: null, // 원본은 RFC822, 파싱 정확도 떨어져 일단 null
         raw: { rss_pub_date: it.date ?? null, all_domains: domains },
         used_in_brief: briefId,
-        brief_type_id: briefTypeId,
       })
     }
   }

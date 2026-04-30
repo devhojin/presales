@@ -107,11 +107,19 @@ export async function unsubscribeViaMorningBrief(token: string): Promise<Morning
     }
   }
 
-  const fallback = await unsubscribeByToken(token)
-  if (!fallback.ok) {
-    return { ok: false, error: fallback.error, mode: 'legacy-supabase' }
+  try {
+    const fallback = await unsubscribeByToken(token)
+    if (!fallback.ok) {
+      return { ok: false, error: fallback.error, mode: 'legacy-supabase' }
+    }
+    return { ok: true, email: fallback.email, mode: 'legacy-supabase' }
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'legacy unsubscribe failed',
+      mode: 'legacy-supabase',
+    }
   }
-  return { ok: true, email: fallback.email, mode: 'legacy-supabase' }
 }
 
 export async function fetchCentralBriefStatus(email: string): Promise<Record<string, unknown> | null> {

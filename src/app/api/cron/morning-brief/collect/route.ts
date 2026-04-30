@@ -35,33 +35,17 @@ function todayKst(): string {
   return kst.toISOString().slice(0, 10)
 }
 
-async function getDefaultBriefTypeId(sb: ReturnType<typeof morningBriefService>): Promise<string | null> {
-  const { data, error } = await sb
-    .from('brief_types')
-    .select('id')
-    .eq('key', 'public_procurement_daily')
-    .maybeSingle()
-
-  if (error) throw error
-  return (data?.id as string | undefined) ?? null
-}
-
 export async function GET(req: NextRequest) {
   if (!authorized(req)) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
 
   const sb = morningBriefService()
   const briefDate = todayKst()
   const startedAt = new Date().toISOString()
-  const briefTypeId = await getDefaultBriefTypeId(sb)
-  if (!briefTypeId) {
-    return NextResponse.json({ ok: false, error: 'default brief type not found' }, { status: 500 })
-  }
 
   // 1. briefs row 확보
   const { data: existing } = await sb
     .from('briefs')
     .select('id, status')
-    .eq('brief_type_id', briefTypeId)
     .eq('brief_date', briefDate)
     .maybeSingle()
   let briefId: string
@@ -70,7 +54,7 @@ export async function GET(req: NextRequest) {
     await sb.from('briefs').update({ status: 'collecting', started_at: startedAt, error: null }).eq('id', briefId)
   } else {
     const { data, error } = await sb.from('briefs').insert({
-      brief_type_id: briefTypeId, brief_date: briefDate, status: 'collecting', started_at: startedAt,
+      brief_date: briefDate, status: 'collecting', started_at: startedAt,
     }).select('id').single()
     if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
     briefId = data.id
@@ -87,7 +71,7 @@ export async function GET(req: NextRequest) {
     const newsCount = Object.values(finalByCategory).reduce((n, arr) => n + arr.length, 0)
 
     // 4. 아카이브 저장
-    const saved = await saveNewsBatch(finalByCategory, briefId, briefTypeId)
+    const saved = await saveNewsBatch(finalByCategory, briefId)
 
     // 5. briefs 업데이트 — html/subject 는 send 단계에서
     const subject = `오늘의 모닝 브리프 - ${briefDate.replace(/-/g, '. ')}`
