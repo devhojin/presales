@@ -33,7 +33,8 @@ MORNING_BRIEF_SOURCE=presales
 
 # 발송용 (presales 프로젝트만 필요, Cron Route 안에서)
 MORNING_BRIEF_SUPABASE_SERVICE_KEY=eyJhbGciOi...
-MB_CRON_SECRET=<random-string>
+MB_CRON_SECRET=<random-string> # 전용 키를 쓰는 경우
+# 또는 Vercel Cron 기본 헤더용 CRON_SECRET 사용
 ANTHROPIC_API_KEY=<claude-haiku용>
 MAILPLUG_HOST=smtp.mailplug.co.kr
 MAILPLUG_PORT=465
@@ -49,7 +50,7 @@ npx tsx morning-brief/scripts/upload-docs.ts
 
 # 수동 수집/발송 (Vercel 배포 후)
 curl -X POST https://presales-zeta.vercel.app/api/cron/morning-brief/collect \
-  -H "Authorization: Bearer $MB_CRON_SECRET"
+  -H "Authorization: Bearer ${MB_CRON_SECRET:-$CRON_SECRET}"
 curl -X POST https://presales-zeta.vercel.app/api/cron/morning-brief/send \
-  -H "Authorization: Bearer $MB_CRON_SECRET"
+  -H "Authorization: Bearer ${MB_CRON_SECRET:-$CRON_SECRET}"
 ```

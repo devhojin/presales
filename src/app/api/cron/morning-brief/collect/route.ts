@@ -7,7 +7,7 @@
  * 5. briefs 에 오늘자 row 생성/업데이트 (status='ready')
  *
  * schedule: "50 21 * * *"
- * 인증: Authorization: Bearer ${MB_CRON_SECRET}
+ * 인증: Authorization: Bearer ${MB_CRON_SECRET || CRON_SECRET}
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { collectByCategory } from '../../../../../../morning-brief/lib/collect-news'
@@ -19,11 +19,13 @@ export const maxDuration = 300 // 5분 (수집 + AI dedup 시간 여유)
 export const runtime = 'nodejs'
 
 function authorized(req: NextRequest): boolean {
-  // MB_CRON_SECRET — 모닝브리프 전용. 기존 presales의 CRON_SECRET 과 분리.
-  const expected = process.env.MB_CRON_SECRET
-  if (!expected) return false
   const got = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
-  return got === expected
+  if (!got) return false
+
+  const allowedSecrets = [process.env.MB_CRON_SECRET, process.env.CRON_SECRET]
+    .filter((secret): secret is string => Boolean(secret))
+
+  return allowedSecrets.includes(got)
 }
 
 function todayKst(): string {

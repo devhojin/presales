@@ -19,10 +19,13 @@ export const maxDuration = 300
 export const runtime = 'nodejs'
 
 function authorized(req: NextRequest): boolean {
-  // MB_CRON_SECRET — 모닝브리프 전용. 기존 presales의 CRON_SECRET 과 분리.
-  const expected = process.env.MB_CRON_SECRET
-  if (!expected) return false
-  return req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') === expected
+  const got = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '')
+  if (!got) return false
+
+  const allowedSecrets = [process.env.MB_CRON_SECRET, process.env.CRON_SECRET]
+    .filter((secret): secret is string => Boolean(secret))
+
+  return allowedSecrets.includes(got)
 }
 
 function todayKst(): string {

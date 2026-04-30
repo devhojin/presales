@@ -96,7 +96,7 @@
 
 > Vercel Cron은 UTC 기준. KST 07:00 = UTC 22:00 (전날). KST 06:50 = UTC 21:50 (전날).
 
-라우트는 `process.env.MB_CRON_SECRET`을 헤더(`Authorization: Bearer ...`)로 검증해서 외부 호출을 차단.
+라우트는 `process.env.MB_CRON_SECRET` 또는 Vercel Cron 기본 헤더용 `process.env.CRON_SECRET`을 헤더(`Authorization: Bearer ...`)로 검증해서 외부 호출을 차단.
 
 ## 6. 자매 경계
 

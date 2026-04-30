@@ -36,7 +36,7 @@
 
 ```
 1. Vercel 대시보드 → Project → Settings → Cron Jobs 활성 확인
-2. MB_CRON_SECRET 환경변수 일치 확인
+2. `MB_CRON_SECRET` 또는 `CRON_SECRET` 환경변수 일치 확인
 3. /api/cron/morning-brief/collect 직접 GET (Authorization 헤더와 함께) → 200 확인
 ```
 
@@ -45,11 +45,11 @@
 ```bash
 # 1. 오늘 날짜 수집 다시 실행 (collect route 는 현재 KST 오늘 기준)
 curl -X POST "https://presales-zeta.vercel.app/api/cron/morning-brief/collect" \
-  -H "Authorization: Bearer $MB_CRON_SECRET"
+  -H "Authorization: Bearer ${MB_CRON_SECRET:-$CRON_SECRET}"
 
 # 2. 특정 날짜 발송
 curl -X POST "https://presales-zeta.vercel.app/api/cron/morning-brief/send?date=2026-04-26" \
-  -H "Authorization: Bearer $MB_CRON_SECRET"
+  -H "Authorization: Bearer ${MB_CRON_SECRET:-$CRON_SECRET}"
 ```
 
 ## 백업
