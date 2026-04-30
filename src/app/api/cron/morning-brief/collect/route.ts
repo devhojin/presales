@@ -14,6 +14,8 @@ import { collectByCategory } from '../../../../../../morning-brief/lib/collect-n
 import { aiSemanticDedup } from '../../../../../../morning-brief/lib/dedup-claude'
 import { saveNewsBatch } from '../../../../../../morning-brief/lib/archive'
 import { morningBriefService } from '../../../../../../morning-brief/lib/supabase'
+import { renderHtml } from '../../../../../../morning-brief/lib/render-brief'
+import { CATEGORIES } from '../../../../../../morning-brief/lib/categories'
 
 export const maxDuration = 300 // 5분 (수집 + AI dedup 시간 여유)
 export const runtime = 'nodejs'
@@ -41,6 +43,8 @@ export async function GET(req: NextRequest) {
   const sb = morningBriefService()
   const briefDate = todayKst()
   const startedAt = new Date().toISOString()
+  const force = req.nextUrl.searchParams.get('force') === '1'
+  const publishOnly = req.nextUrl.searchParams.get('publish_only') === '1'
 
   // 1. briefs row 확보
   const { data: existing } = await sb
@@ -50,6 +54,15 @@ export async function GET(req: NextRequest) {
     .maybeSingle()
   let briefId: string
   if (existing) {
+    if (existing.status === 'sent' && !force) {
+      return NextResponse.json({
+        ok: true,
+        skipped: true,
+        already_sent: true,
+        brief_date: briefDate,
+        brief_id: existing.id,
+      })
+    }
     briefId = existing.id
     await sb.from('briefs').update({ status: 'collecting', started_at: startedAt, error: null }).eq('id', briefId)
   } else {
@@ -62,7 +75,7 @@ export async function GET(req: NextRequest) {
 
   try {
     // 2. 수집 + 1·2단계 dedup
-    const collected = await collectByCategory()
+    const collected = await collectByCategory({ excludeBriefId: briefId })
     const totalAfterBasic = Object.values(collected.byCategory).reduce((n, arr) => n + arr.length, 0)
 
     // 3. AI semantic dedup
@@ -70,21 +83,38 @@ export async function GET(req: NextRequest) {
     const finalByCategory = aiResult.byCategory
     const newsCount = Object.values(finalByCategory).reduce((n, arr) => n + arr.length, 0)
 
+    if (existing && force) {
+      await sb.from('news_items').update({ used_in_brief: null }).eq('used_in_brief', briefId)
+    }
+
     // 4. 아카이브 저장
-    const saved = await saveNewsBatch(finalByCategory, briefId)
+    const saved = await saveNewsBatch(finalByCategory, briefId, { replaceExisting: Boolean(existing && force) })
 
     // 5. briefs 업데이트 — html/subject 는 send 단계에서
     const subject = `오늘의 모닝 브리프 - ${briefDate.replace(/-/g, '. ')}`
-    await sb.from('briefs').update({
+    const updates: Record<string, unknown> = {
       status: 'ready',
       news_count: newsCount,
       subject,
-    }).eq('id', briefId)
+    }
+    if (publishOnly) {
+      updates.status = 'sent'
+      updates.html_body = renderHtml({
+        newsByCategory: finalByCategory,
+        subscriberToken: '',
+        topicsLabel: Object.values(CATEGORIES).flat().slice(0, 5).join(' · ') + ' 외',
+        date: new Date(`${briefDate}T00:00:00+09:00`),
+        unsubBaseUrl: process.env.NEXT_PUBLIC_SITE_URL || 'https://presales.co.kr',
+      })
+      updates.finished_at = new Date().toISOString()
+    }
+    await sb.from('briefs').update(updates).eq('id', briefId)
 
     return NextResponse.json({
       ok: true,
       brief_date: briefDate,
       brief_id: briefId,
+      status: updates.status,
       stats: {
         fetched: collected.totalFetched,
         seed_recent: collected.seedSize,

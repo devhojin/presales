@@ -15,6 +15,7 @@ export interface SaveResult {
 export async function saveNewsBatch(
   byCategory: Record<string, NewsItem[]>,
   briefId: string | null,
+  options: { replaceExisting?: boolean } = {},
 ): Promise<SaveResult> {
   const sb = morningBriefService()
   const rows: {
@@ -52,7 +53,9 @@ export async function saveNewsBatch(
     const chunk = rows.slice(i, i + 100)
     const { data, error } = await sb
       .from('news_items')
-      .upsert(chunk, { onConflict: 'url_hash', ignoreDuplicates: true })
+      .upsert(chunk, options.replaceExisting
+        ? { onConflict: 'url_hash' }
+        : { onConflict: 'url_hash', ignoreDuplicates: true })
       .select('id')
     if (error) {
       console.warn('[archive] insert error:', error.message)

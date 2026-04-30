@@ -45,16 +45,19 @@ async function fetchTopic(topic: string, limit: number): Promise<NewsItem[]> {
 }
 
 /** 최근 N일 news_items 에서 title 만 가져와 cross-day dedup 시드로 사용. */
-async function loadRecentTitles(): Promise<string[]> {
+async function loadRecentTitles(excludeBriefId?: string): Promise<string[]> {
   const sb = morningBriefService()
   const since = new Date(Date.now() - CROSS_DAY_DEDUP_DAYS * 24 * 60 * 60 * 1000).toISOString()
   const { data, error } = await sb
     .from('news_items')
-    .select('title')
+    .select('title, used_in_brief')
     .gte('collected_at', since)
     .limit(2000)
   if (error || !data) return []
-  return data.map((r) => r.title as string).filter(Boolean)
+  return data
+    .filter((r) => !excludeBriefId || r.used_in_brief !== excludeBriefId)
+    .map((r) => r.title as string)
+    .filter(Boolean)
 }
 
 export interface CollectResult {
@@ -64,8 +67,8 @@ export interface CollectResult {
 }
 
 /** 카테고리별 수집 + 1·2단계 dedup. AI dedup 은 호출자 측에서. */
-export async function collectByCategory(): Promise<CollectResult> {
-  const recent = await loadRecentTitles()
+export async function collectByCategory(options: { excludeBriefId?: string } = {}): Promise<CollectResult> {
+  const recent = await loadRecentTitles(options.excludeBriefId)
   const seed = buildSeed(recent)
 
   const result: Record<string, NewsItem[]> = {}
