@@ -4,12 +4,13 @@ import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
-import { Mail, Lock, User, Building, Phone, Eye, EyeOff, ShieldCheck } from 'lucide-react'
+import { Mail, Lock, User, Building, Phone, Eye, EyeOff } from 'lucide-react'
 import { validatePassword } from '@/lib/password-policy'
 import { useToastStore } from '@/stores/toast-store'
 import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { buildOAuthCallbackUrl } from '@/lib/oauth'
 import { AgreementItem, PRIVACY_PREVIEW, TERMS_PREVIEW } from '@/components/auth/AgreementItem'
+import { PasswordRequirementList } from '@/components/auth/PasswordRequirementList'
 
 interface PublicRewardSettings {
   enabled: boolean
@@ -287,7 +288,7 @@ function SignupForm() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
-                  placeholder="영대/소문자, 숫자, 특수문자 조합 8자 이상"
+                  placeholder="10자 이상, 영문·숫자·특수문자 포함"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   className="w-full h-11 pl-11 pr-11 border border-border rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-colors"
@@ -301,29 +302,28 @@ function SignupForm() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              {form.password && (
-                <div className="mt-2 space-y-1.5">
-                  <div className="flex gap-1">
-                    {[0, 1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className={`h-1.5 flex-1 rounded-full transition-colors ${
-                          i <= passwordCheck.score ? passwordCheck.color : 'bg-gray-200'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className={`text-xs font-medium ${passwordCheck.valid ? 'text-green-600' : 'text-gray-500'}`}>
-                      {passwordCheck.valid && <ShieldCheck className="w-3 h-3 inline mr-1" />}
-                      {passwordCheck.label}
-                    </span>
-                    {!passwordCheck.valid && passwordCheck.errors[0] && (
-                      <span className="text-xs text-red-500">{passwordCheck.errors[0]}</span>
-                    )}
-                  </div>
-                </div>
-              )}
+              <div className="mt-2 space-y-1.5">
+                {form.password && (
+                  <>
+                    <div className="flex gap-1">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className={`h-1.5 flex-1 rounded-full transition-colors ${
+                            i <= passwordCheck.score ? passwordCheck.color : 'bg-gray-200'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs font-medium ${passwordCheck.valid ? 'text-green-600' : 'text-gray-500'}`}>
+                        {passwordCheck.label}
+                      </span>
+                    </div>
+                  </>
+                )}
+                <PasswordRequirementList password={form.password} email={form.email} />
+              </div>
             </div>
 
             <div>

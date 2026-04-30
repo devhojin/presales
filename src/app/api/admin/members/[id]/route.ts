@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { validatePassword } from '@/lib/password-policy'
+import { getPasswordAuthErrorMessage, validatePassword } from '@/lib/password-policy'
 
 interface DynamicUpdateClient {
   from(table: string): {
@@ -67,27 +67,12 @@ const MEMBER_REFERENCE_UPDATES: Array<{ table: string; column: string }> = [
 ]
 
 function parseAuthErrorMessage(raw: string): string {
-  const knownWeakPasswordMessage = '너무 흔하거나 추측하기 쉬운 비밀번호입니다. Test, password, admin 같은 단어와 단순한 숫자 패턴을 피해서 다시 설정해주세요.'
-  const minLengthPasswordMessage = '비밀번호는 최소 10자 이상이어야 합니다.'
-
   try {
     const parsed = JSON.parse(raw) as { msg?: string; message?: string; error?: string }
     const message = parsed.msg || parsed.message || parsed.error || raw
-    if (message.includes('known to be weak') || message.includes('easy to guess')) {
-      return knownWeakPasswordMessage
-    }
-    if (message.includes('at least 10 characters')) {
-      return minLengthPasswordMessage
-    }
-    return message
+    return getPasswordAuthErrorMessage(message)
   } catch {
-    if (raw.includes('known to be weak') || raw.includes('easy to guess')) {
-      return knownWeakPasswordMessage
-    }
-    if (raw.includes('at least 10 characters')) {
-      return minLengthPasswordMessage
-    }
-    return raw
+    return getPasswordAuthErrorMessage(raw)
   }
 }
 

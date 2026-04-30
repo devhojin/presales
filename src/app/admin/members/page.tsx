@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { Badge } from '@/components/ui/badge'
 import { validatePassword } from '@/lib/password-policy'
+import { PasswordRequirementList } from '@/components/auth/PasswordRequirementList'
 import {
   getVisibleMemberMemos,
   isMemberAdminUnread,
@@ -688,9 +689,12 @@ function MemberInfoEdit({ member, onUpdated }: { member: Profile; onUpdated?: (u
             className="text-sm bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-primary"
           />
         </div>
+        {passwordForm.password && (
+          <PasswordRequirementList password={passwordForm.password} email={form.email || member.email} />
+        )}
         <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <p className="text-xs text-muted-foreground">
-            10자 이상 2종 이상 조합, 같은 문자 3회 반복과 흔한 단어는 제한됩니다.
+            10자 이상, 영문·숫자·특수문자 포함, 흔한 단어는 제한됩니다.
           </p>
           <button
             type="button"

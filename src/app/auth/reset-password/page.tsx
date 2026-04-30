@@ -4,9 +4,10 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
-import { Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react'
-import { validatePassword } from '@/lib/password-policy'
+import { Lock, Eye, EyeOff } from 'lucide-react'
+import { getPasswordAuthErrorMessage, validatePassword } from '@/lib/password-policy'
 import { useToastStore } from '@/stores/toast-store'
+import { PasswordRequirementList } from '@/components/auth/PasswordRequirementList'
 
 function ResetPasswordForm() {
   const router = useRouter()
@@ -60,7 +61,7 @@ function ResetPasswordForm() {
     const { error: updateError } = await supabase.auth.updateUser({ password })
 
     if (updateError) {
-      setError(updateError.message)
+      setError(getPasswordAuthErrorMessage(updateError.message))
       setLoading(false)
       return
     }
@@ -128,7 +129,7 @@ function ResetPasswordForm() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
-                  placeholder="영대/소문자, 숫자, 특수문자 조합 8자 이상"
+                  placeholder="10자 이상, 영문·숫자·특수문자 포함"
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError('') }}
                   className="w-full h-11 pl-11 pr-11 border border-border rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-colors"
@@ -143,29 +144,28 @@ function ResetPasswordForm() {
                 </button>
               </div>
 
-              {password && (
-                <div className="mt-2 space-y-1.5">
-                  <div className="flex gap-1">
-                    {[0, 1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className={`h-1.5 flex-1 rounded-full transition-colors ${
-                          i <= passwordCheck.score ? passwordCheck.color : 'bg-gray-200'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className={`text-xs font-medium ${passwordCheck.valid ? 'text-green-600' : 'text-gray-500'}`}>
-                      {passwordCheck.valid && <ShieldCheck className="w-3 h-3 inline mr-1" />}
-                      {passwordCheck.label}
-                    </span>
-                    {!passwordCheck.valid && passwordCheck.errors[0] && (
-                      <span className="text-xs text-red-500">{passwordCheck.errors[0]}</span>
-                    )}
-                  </div>
-                </div>
-              )}
+              <div className="mt-2 space-y-1.5">
+                {password && (
+                  <>
+                    <div className="flex gap-1">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className={`h-1.5 flex-1 rounded-full transition-colors ${
+                            i <= passwordCheck.score ? passwordCheck.color : 'bg-gray-200'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs font-medium ${passwordCheck.valid ? 'text-green-600' : 'text-gray-500'}`}>
+                        {passwordCheck.label}
+                      </span>
+                    </div>
+                  </>
+                )}
+                <PasswordRequirementList password={password} />
+              </div>
             </div>
 
             <div>

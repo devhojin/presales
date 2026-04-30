@@ -1,6 +1,6 @@
 /**
  * KISA 보안인증 기준 비밀번호 정책
- * - Supabase Auth 운영 정책에 맞춰 10자 이상 + 2종 조합
+ * - Supabase Auth 운영 정책에 맞춰 10자 이상 + 영문/숫자/특수문자 조합
  * - 반복 문자 금지
  * - 알려진 약한 패턴 금지
  * - 이메일과 동일한 비밀번호 금지
@@ -12,6 +12,12 @@ export interface PasswordCheck {
   label: string
   color: string
   errors: string[]
+}
+
+export interface PasswordRequirement {
+  id: string
+  label: string
+  met: boolean
 }
 
 const SPECIAL_CHARS = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/
@@ -52,6 +58,38 @@ function hasKnownWeakPattern(s: string): boolean {
   return WEAK_PASSWORD_PATTERNS.some((pattern) => normalized.includes(pattern))
 }
 
+export function getPasswordAuthErrorMessage(raw: string): string {
+  if (raw.includes('known to be weak') || raw.includes('easy to guess')) {
+    return '너무 흔하거나 추측하기 쉬운 비밀번호입니다. Test, password, admin 같은 단어와 단순한 숫자 패턴을 피해서 다시 설정해주세요.'
+  }
+  if (raw.includes('at least 10 characters')) {
+    return '비밀번호는 최소 10자 이상이어야 합니다.'
+  }
+  return raw
+}
+
+export function getPasswordRequirements(password: string, email?: string): PasswordRequirement[] {
+  const emailLocal = email?.split('@')[0]?.toLowerCase() || ''
+  const requirements: PasswordRequirement[] = [
+    { id: 'length', label: '10자 이상', met: password.length >= 10 },
+    { id: 'letter', label: '영문 포함', met: hasUpperCase(password) || hasLowerCase(password) },
+    { id: 'digit', label: '숫자 포함', met: hasDigit(password) },
+    { id: 'special', label: '특수문자 포함 (!@#$%^&*)', met: hasSpecial(password) },
+    { id: 'repeat', label: '같은 문자 3회 반복 금지', met: !hasRepeating(password) },
+    { id: 'weak', label: 'Test, password, admin 같은 흔한 단어 제외', met: !hasKnownWeakPattern(password) },
+  ]
+
+  if (emailLocal) {
+    requirements.push({
+      id: 'email',
+      label: '이메일 아이디 포함 금지',
+      met: !password.toLowerCase().includes(emailLocal),
+    })
+  }
+
+  return requirements
+}
+
 export function validatePassword(password: string, email?: string): PasswordCheck {
   const errors: string[] = []
 
@@ -64,8 +102,16 @@ export function validatePassword(password: string, email?: string): PasswordChec
   }
 
   const types = countTypes(password)
-  if (types < 2) {
-    errors.push('10자 이상은 2종 이상 조합이 필요합니다.')
+  if (!hasUpperCase(password) && !hasLowerCase(password)) {
+    errors.push('영문을 1자 이상 포함해야 합니다.')
+  }
+
+  if (!hasDigit(password)) {
+    errors.push('숫자를 1자 이상 포함해야 합니다.')
+  }
+
+  if (!hasSpecial(password)) {
+    errors.push('특수문자를 1자 이상 포함해야 합니다. 예: !@#$%^&*')
   }
 
   if (hasRepeating(password)) {
@@ -86,7 +132,7 @@ export function validatePassword(password: string, email?: string): PasswordChec
   const valid = errors.length === 0
 
   let score = 0
-  if (password.length >= 8) score++
+  if (password.length >= 10) score++
   if (password.length >= 12) score++
   if (types >= 3) score++
   if (types >= 4 && password.length >= 12) score++
