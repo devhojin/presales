@@ -2105,7 +2105,7 @@ export default function AdminMembers() {
           onMemoSave={handleMemoSave}
           defaultTab={selectedMemberTab}
           onMemberUpdated={(updated) => {
-            setMembers((prev) => prev.map((m) => m.id === updated.id ? updated : m))
+            setMembers((prev) => prev.map((m) => (m.id === selectedMember.id || m.id === updated.id) ? updated : m))
             setSelectedMember(updated)
           }}
         />

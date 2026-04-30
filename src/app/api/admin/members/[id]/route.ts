@@ -4,6 +4,163 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { validatePassword } from '@/lib/password-policy'
 
+interface DynamicUpdateClient {
+  from(table: string): {
+    update(values: Record<string, unknown>): {
+      eq(column: string, value: string): Promise<{ error: { message: string } | null }>
+    }
+    delete(): {
+      eq(column: string, value: string): Promise<{ error: { message: string } | null }>
+    }
+  }
+}
+
+interface RepairAuthClient {
+  auth: {
+    admin: {
+      createUser(attributes: {
+        email: string
+        password: string
+        email_confirm: boolean
+        user_metadata: { name: string }
+      }): Promise<{
+        data: { user: { id: string; email?: string } | null }
+        error: { message: string } | null
+      }>
+      deleteUser(userId: string, shouldSoftDelete?: boolean): Promise<{ error: { message: string } | null }>
+    }
+  }
+}
+
+type RepairClient = DynamicUpdateClient & RepairAuthClient
+
+interface ProfileSnapshot {
+  email: string | null
+  name: string | null
+  phone: string | null
+  company: string | null
+  role: string | null
+  admin_memo: string | null
+  reward_balance: number | null
+  created_at: string | null
+  deleted_at: string | null
+}
+
+const MEMBER_REFERENCE_UPDATES: Array<{ table: string; column: string }> = [
+  { table: 'orders', column: 'user_id' },
+  { table: 'download_logs', column: 'user_id' },
+  { table: 'reviews', column: 'user_id' },
+  { table: 'review_helpful', column: 'user_id' },
+  { table: 'consulting_requests', column: 'user_id' },
+  { table: 'cart_items', column: 'user_id' },
+  { table: 'coupon_uses', column: 'user_id' },
+  { table: 'user_coupons', column: 'user_id' },
+  { table: 'reward_point_ledger', column: 'user_id' },
+  { table: 'announcement_bookmarks', column: 'user_id' },
+  { table: 'announcement_reads', column: 'user_id' },
+  { table: 'feed_bookmarks', column: 'user_id' },
+  { table: 'feed_reads', column: 'user_id' },
+  { table: 'chat_rooms', column: 'user_id' },
+  { table: 'chat_payment_requests', column: 'user_id' },
+  { table: 'chat_messages', column: 'sender_id' },
+  { table: 'community_posts', column: 'created_by' },
+]
+
+function parseAuthErrorMessage(raw: string): string {
+  try {
+    const parsed = JSON.parse(raw) as { msg?: string; message?: string; error?: string }
+    return parsed.msg || parsed.message || parsed.error || raw
+  } catch {
+    return raw
+  }
+}
+
+function isMissingAuthUserLoadFailure(raw: string): boolean {
+  return parseAuthErrorMessage(raw).includes('Database error loading user')
+}
+
+async function moveMemberReferences(
+  service: DynamicUpdateClient,
+  oldUserId: string,
+  newUserId: string,
+) {
+  for (const ref of MEMBER_REFERENCE_UPDATES) {
+    const { error } = await service
+      .from(ref.table)
+      .update({ [ref.column]: newUserId })
+      .eq(ref.column, oldUserId)
+
+    if (error) {
+      throw new Error(`${ref.table}.${ref.column}: ${error.message}`)
+    }
+  }
+}
+
+async function repairMissingAuthUser(
+  service: RepairClient,
+  oldUserId: string,
+  target: ProfileSnapshot,
+  email: string,
+  password: string,
+): Promise<{ ok: true; userId: string } | { ok: false; error: string }> {
+  const { data: created, error: createError } = await service.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { name: target.name || email.split('@')[0] },
+  })
+
+  const newUserId = created.user?.id
+  if (createError || !newUserId) {
+    return {
+      ok: false,
+      error: createError?.message || 'Auth 계정 생성에 실패했습니다',
+    }
+  }
+
+  let referencesStarted = false
+  try {
+    const { error: profileCopyError } = await service
+      .from('profiles')
+      .update({
+        email,
+        name: target.name,
+        phone: target.phone,
+        company: target.company,
+        role: target.role || 'user',
+        admin_memo: target.admin_memo,
+        reward_balance: target.reward_balance ?? 0,
+        created_at: target.created_at,
+        login_failed_count: 0,
+        login_locked_until: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', newUserId)
+
+    if (profileCopyError) throw new Error(`profiles.${newUserId}: ${profileCopyError.message}`)
+
+    referencesStarted = true
+    await moveMemberReferences(service, oldUserId, newUserId)
+
+    const { error: oldProfileDeleteError } = await service
+      .from('profiles')
+      .delete()
+      .eq('id', oldUserId)
+
+    if (oldProfileDeleteError) throw new Error(`profiles.${oldUserId}: ${oldProfileDeleteError.message}`)
+
+    return { ok: true, userId: newUserId }
+  } catch (err) {
+    if (!referencesStarted) {
+      await service.auth.admin.deleteUser(newUserId, false).catch(() => {})
+    }
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : '회원 Auth 복구 중 오류가 발생했습니다',
+    }
+  }
+}
+
 /**
  * PATCH /api/admin/members/[id]
  * 관리자가 회원 정보를 수정 (이름, 이메일, 전화번호, 회사, 비밀번호)
@@ -43,7 +200,7 @@ export async function PATCH(
   // 관리자가 실수로 탈퇴 row 의 익명화된 email 을 실제 이메일로 되돌리면 탈퇴 우회됨
   const { data: target } = await service
     .from('profiles')
-    .select('deleted_at, email')
+    .select('deleted_at, email, name, phone, company, role, admin_memo, reward_balance, created_at')
     .eq('id', id)
     .maybeSingle()
   if (!target) {
@@ -101,6 +258,7 @@ export async function PATCH(
     if (password !== undefined) {
       authUpdate.password = password
     }
+    let effectiveMemberId = id
     if (Object.keys(authUpdate).length > 0) {
       const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/admin/users/${id}`
       const res = await fetch(url, {
@@ -114,7 +272,25 @@ export async function PATCH(
       })
       if (!res.ok) {
         const err = await res.text()
-        return NextResponse.json({ error: `회원 인증정보 변경 실패: ${err}` }, { status: 500 })
+        if (password !== undefined && isMissingAuthUserLoadFailure(err)) {
+          const repaired = await repairMissingAuthUser(
+            service as unknown as RepairClient,
+            id,
+            target as ProfileSnapshot,
+            email || target.email || '',
+            password,
+          )
+          if (!repaired.ok) {
+            return NextResponse.json({
+              error: `회원 Auth 계정 복구 실패: ${repaired.error}`,
+            }, { status: 500 })
+          }
+          effectiveMemberId = repaired.userId
+        } else {
+          return NextResponse.json({
+            error: `회원 인증정보 변경 실패: ${parseAuthErrorMessage(err)}`,
+          }, { status: 500 })
+        }
       }
     }
 
@@ -133,7 +309,7 @@ export async function PATCH(
       const { error: profErr } = await service
         .from('profiles')
         .update(profileUpdate)
-        .eq('id', id)
+        .eq('id', effectiveMemberId)
       if (profErr) {
         return NextResponse.json({ error: `프로필 수정 실패: ${profErr.message}` }, { status: 500 })
       }
@@ -143,7 +319,7 @@ export async function PATCH(
     const { data: updated } = await service
       .from('profiles')
       .select('id, email, name, phone, company, role, admin_memo, reward_balance, created_at')
-      .eq('id', id)
+      .eq('id', effectiveMemberId)
       .single()
 
     return NextResponse.json({ data: updated })
