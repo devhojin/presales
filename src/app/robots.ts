@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/constants";
 
+const NAVER_SITE_URL = "http://www.presales.co.kr";
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
@@ -10,7 +12,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/admin", "/api", "/auth/callback"],
       },
     ],
-    sitemap: `${SITE_URL}/sitemap.xml`,
-    host: SITE_URL,
+    sitemap: [`${SITE_URL}/sitemap.xml`, `${NAVER_SITE_URL}/naver-sitemap.xml`],
   };
 }
