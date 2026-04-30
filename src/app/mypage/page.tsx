@@ -500,6 +500,9 @@ export default function MyConsolePage() {
     cancel: '취소',
     admin_adjust: '관리자 조정',
   }[type] || type)
+  const rewardLedgerLabel = (item: RewardLedgerItem) => (
+    item.type === 'admin_adjust' ? '관리자 지급 적립금' : item.memo || rewardTypeLabel(item.type)
+  )
 
   // ===========================
   // Loading
@@ -997,7 +1000,7 @@ export default function MyConsolePage() {
                 {rewardLedger.slice(0, 5).map(item => (
                   <div key={item.id} className="flex items-start justify-between gap-3 rounded-lg bg-muted/40 px-3 py-2">
                     <div className="min-w-0">
-                      <p className="text-xs font-medium text-foreground">{item.memo || rewardTypeLabel(item.type)}</p>
+                      <p className="text-xs font-medium text-foreground">{rewardLedgerLabel(item)}</p>
                       <p className="mt-0.5 text-[11px] text-muted-foreground">{formatDate(item.created_at)} · 잔액 {formatPrice(item.balance_after)}</p>
                     </div>
                     <span className={`shrink-0 text-xs font-semibold ${item.amount > 0 ? 'text-blue-700' : 'text-red-600'}`}>

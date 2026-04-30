@@ -119,7 +119,7 @@ export async function PATCH(
     // 4. 업데이트된 프로필 반환
     const { data: updated } = await service
       .from('profiles')
-      .select('id, email, name, phone, company, role, admin_memo, created_at')
+      .select('id, email, name, phone, company, role, admin_memo, reward_balance, created_at')
       .eq('id', id)
       .single()
 

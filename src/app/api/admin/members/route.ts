@@ -51,7 +51,7 @@ export async function GET() {
   const [{ data: membersData, error: membersError }, { data: statsData, error: statsError }] = await Promise.all([
     service
       .from('profiles')
-      .select('id, email, name, phone, company, role, admin_memo, created_at')
+      .select('id, email, name, phone, company, role, admin_memo, reward_balance, created_at')
       .order('created_at', { ascending: false })
       .limit(MEMBER_LIST_LIMIT),
     service

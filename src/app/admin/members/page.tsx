@@ -28,6 +28,8 @@ import {
   FileDown,
   Star,
   AlertTriangle,
+  Coins,
+  PlusCircle,
 } from 'lucide-react'
 
 // ===========================
@@ -38,6 +40,8 @@ interface MemoEntry {
   content: string
   created_at: string
   admin_name: string
+  type?: string
+  amount?: number
 }
 
 interface Profile {
@@ -48,6 +52,7 @@ interface Profile {
   company: string | null
   role: string
   admin_memo: string | null
+  reward_balance?: number | null
   created_at: string
   deleted_at?: string | null
   deletion_reason?: string | null
@@ -110,6 +115,16 @@ interface ConsultingRequest {
   package_type: string
   message: string
   status: string
+  created_at: string
+}
+
+interface RewardLedgerItem {
+  id: number
+  amount: number
+  balance_after: number
+  type: string
+  status: string
+  memo: string | null
   created_at: string
 }
 
@@ -620,6 +635,239 @@ function MemberInfoEdit({ member, onUpdated }: { member: Profile; onUpdated?: (u
   )
 }
 
+function rewardLedgerLabel(type: string, memo: string | null) {
+  if (type === 'admin_adjust') return memo || '관리자 지급 적립금'
+  return memo || ({
+    signup: '회원가입',
+    review: '후기 작성',
+    purchase: '구매 적립',
+    use: '주문 사용',
+    refund: '환불 복원',
+    cancel: '취소',
+  }[type] || type)
+}
+
+function MemberRewardPanel({ member, onUpdated }: { member: Profile; onUpdated?: (updated: Profile) => void }) {
+  const [balance, setBalance] = useState(Math.max(0, Number(member.reward_balance ?? 0)))
+  const [ledger, setLedger] = useState<RewardLedgerItem[]>([])
+  const [grantMemos, setGrantMemos] = useState<MemoEntry[]>([])
+  const [amount, setAmount] = useState('')
+  const [memo, setMemo] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  const applySnapshot = useCallback((data: {
+    balance?: number
+    ledger?: RewardLedgerItem[]
+    grantMemos?: MemoEntry[]
+    adminMemo?: string | null
+  }, notifyParent = false) => {
+    if (typeof data.balance === 'number') {
+      setBalance(Math.max(0, data.balance))
+      if (notifyParent) {
+        onUpdated?.({
+          ...member,
+          reward_balance: Math.max(0, data.balance),
+          admin_memo: data.adminMemo ?? member.admin_memo,
+        })
+      }
+    }
+    if (Array.isArray(data.ledger)) setLedger(data.ledger)
+    if (Array.isArray(data.grantMemos)) setGrantMemos(data.grantMemos)
+  }, [member, onUpdated])
+
+  useEffect(() => {
+    let active = true
+    setBalance(Math.max(0, Number(member.reward_balance ?? 0)))
+    setLoading(true)
+    setMessage(null)
+    fetch(`/api/admin/members/${member.id}/rewards`, { cache: 'no-store', credentials: 'same-origin' })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error(data?.error || '적립금 정보를 불러오지 못했습니다')
+        return data as {
+          balance: number
+          ledger: RewardLedgerItem[]
+          grantMemos: MemoEntry[]
+          adminMemo?: string | null
+        }
+      })
+      .then((data) => {
+        if (active) applySnapshot(data)
+      })
+      .catch((err: unknown) => {
+        if (active) {
+          setMessage({ type: 'error', text: err instanceof Error ? err.message : '적립금 정보를 불러오지 못했습니다' })
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [member.id, member.reward_balance, applySnapshot])
+
+  const handleGrant = async () => {
+    const cleanAmount = Math.floor(Number(amount))
+    const cleanMemo = memo.trim()
+    setMessage(null)
+
+    if (!Number.isSafeInteger(cleanAmount) || cleanAmount <= 0) {
+      setMessage({ type: 'error', text: '지급액은 1원 이상의 정수로 입력해주세요.' })
+      return
+    }
+    if (cleanMemo.length < 2) {
+      setMessage({ type: 'error', text: '관리자 메모를 2자 이상 입력해주세요.' })
+      return
+    }
+
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/admin/members/${member.id}/rewards`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({ amount: cleanAmount, memo: cleanMemo }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data?.error || '적립금 지급에 실패했습니다')
+      applySnapshot({
+        ...(data as {
+        balance: number
+        ledger: RewardLedgerItem[]
+        grantMemos: MemoEntry[]
+        adminMemo?: string | null
+        }),
+      }, true)
+      setAmount('')
+      setMemo('')
+      setMessage({
+        type: data?.warning ? 'error' : 'success',
+        text: data?.warning || `${formatWon(cleanAmount)} 적립금을 지급했습니다.`,
+      })
+    } catch (err: unknown) {
+      setMessage({ type: 'error', text: err instanceof Error ? err.message : '적립금 지급에 실패했습니다' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div>
+      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+        적립금 관리
+      </h3>
+      <div className="rounded-xl bg-muted p-4 space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-white border border-border flex items-center justify-center">
+              <Coins className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">현재 보유 적립금</p>
+              <p className="text-lg font-bold text-primary">{formatWon(balance)}</p>
+            </div>
+          </div>
+          {loading && <span className="text-xs text-muted-foreground">내역 확인 중...</span>}
+        </div>
+
+        <div className="rounded-xl border border-border bg-white p-3 space-y-3">
+          <div className="grid gap-3 sm:grid-cols-[180px_1fr]">
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">지급액</label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min={1}
+                  step={100}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="w-full h-10 rounded-xl border border-border px-3 pr-10 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  placeholder="예: 3000"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-muted-foreground">원</span>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">관리자 전용 메모</label>
+              <textarea
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                maxLength={500}
+                rows={2}
+                placeholder="지급 사유를 입력하세요. 고객에게는 노출되지 않습니다."
+                className="w-full rounded-xl border border-border px-3 py-2 text-sm resize-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-muted-foreground"
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] text-muted-foreground">사유 메모는 이 회원의 관리자 메모에 지급 이력으로 보관됩니다.</p>
+            <button
+              type="button"
+              onClick={handleGrant}
+              disabled={saving || !amount || !memo.trim()}
+              className="cursor-pointer inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              {saving ? '지급 중...' : '적립금 지급'}
+            </button>
+          </div>
+          {message && (
+            <p className={`text-xs ${message.type === 'success' ? 'text-green-700' : 'text-red-600'}`}>
+              {message.text}
+            </p>
+          )}
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-2">
+          <div className="rounded-xl border border-border bg-white p-3">
+            <p className="text-xs font-semibold text-foreground mb-2">최근 적립금 원장</p>
+            {ledger.length === 0 ? (
+              <p className="py-4 text-center text-xs text-muted-foreground">적립금 내역이 없습니다</p>
+            ) : (
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {ledger.slice(0, 5).map((item) => (
+                  <div key={item.id} className="flex items-start justify-between gap-2 rounded-lg bg-muted/50 px-2.5 py-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-foreground truncate">{rewardLedgerLabel(item.type, item.memo)}</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">{formatDate(item.created_at)} · 잔액 {formatWon(item.balance_after)}</p>
+                    </div>
+                    <span className={`shrink-0 text-xs font-semibold ${item.amount > 0 ? 'text-blue-700' : 'text-red-600'}`}>
+                      {item.amount > 0 ? '+' : '-'}{formatWon(Math.abs(item.amount))}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-border bg-white p-3">
+            <p className="text-xs font-semibold text-foreground mb-2">관리자 지급 사유</p>
+            {grantMemos.length === 0 ? (
+              <p className="py-4 text-center text-xs text-muted-foreground">관리자 지급 메모가 없습니다</p>
+            ) : (
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {grantMemos.slice(0, 5).map((entry, idx) => (
+                  <div key={`${entry.created_at}-${idx}`} className="rounded-lg bg-blue-50 px-2.5 py-2">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-[11px] font-semibold text-blue-900">{entry.admin_name}</span>
+                      <span className="text-[10px] text-blue-700">{formatDateTime(entry.created_at)}</span>
+                    </div>
+                    <p className="text-xs leading-relaxed text-blue-900 whitespace-pre-wrap">{entry.content}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function MemberDetailModal({
   member,
   onClose,
@@ -838,6 +1086,15 @@ function MemberDetailModal({
             <div className="space-y-6">
               <MemberInfoEdit member={member} onUpdated={(updated) => onMemberUpdated?.(updated)} />
 
+              <MemberRewardPanel
+                member={member}
+                onUpdated={(updated) => {
+                  if (updated.admin_memo !== undefined) {
+                    setMemos(parseMemberMemos(updated.admin_memo))
+                  }
+                  onMemberUpdated?.(updated)
+                }}
+              />
 
               {/* 권한 변경 */}
               <div>
