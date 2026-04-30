@@ -331,38 +331,38 @@ export default function Home() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(37,99,235,0.09),transparent_34%),linear-gradient(90deg,rgba(255,255,255,0.78),rgba(255,255,255,0))]" />
         <div className="relative mx-auto w-full max-w-[1400px] px-4 py-14 md:px-8 md:py-20 lg:py-24">
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[0.86fr_1.14fr] lg:gap-12">
-            <div className="relative z-[1] max-w-[620px] space-y-7">
+            <div className="relative z-[1] min-w-0 w-full max-w-[620px] space-y-7">
               <div className="presales-reveal inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/82 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-blue-700 shadow-[0_12px_34px_rgba(37,99,235,0.08)] backdrop-blur">
                 <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
                 공공조달 제안서 전문
               </div>
 
-              <h1 className="presales-reveal presales-delay-1 break-keep text-[36px] font-extrabold leading-[1.12] tracking-tight text-gray-950 md:text-[42px] lg:text-[44px] xl:text-[46px]">
+              <h1 className="presales-reveal presales-delay-1 break-keep text-[30px] font-extrabold leading-[1.12] tracking-tight text-gray-950 sm:text-[36px] md:text-[42px] lg:text-[44px] xl:text-[46px]">
                 제안서 작성 시간을 줄이고,<br />
                 <span className="text-blue-600">수주 가능성에 집중하세요.</span>
               </h1>
 
-              <p className="presales-reveal presales-delay-2 max-w-[540px] text-base leading-relaxed text-gray-600 md:text-lg">
+              <p className="presales-reveal presales-delay-2 max-w-full text-base leading-relaxed text-gray-600 md:max-w-[540px] md:text-lg">
                 검증된 제안서 구조와 입찰 자료로 공고 분석부터 초안 작성까지 빠르게 시작하세요.
               </p>
 
-              <div className="presales-reveal presales-delay-3 flex flex-col gap-3 sm:flex-row">
+              <div className="presales-reveal presales-delay-3 flex w-full max-w-[500px] flex-col gap-3 sm:flex-row">
                 <Link
                   href="/store"
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-blue-600 px-7 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-blue-700 active:scale-[0.98]"
+                  className="inline-flex h-12 w-full items-center justify-center rounded-full bg-blue-600 px-7 text-sm font-semibold text-white shadow-lg shadow-blue-600/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-blue-700 active:scale-[0.98] sm:w-auto"
                 >
                   제안서 템플릿 보기
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
                 <Link
                   href="/consulting"
-                  className="inline-flex h-12 items-center justify-center rounded-full border border-gray-200 bg-white px-7 text-sm font-semibold text-gray-900 transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-700 active:scale-[0.98]"
+                  className="inline-flex h-12 w-full items-center justify-center rounded-full border border-gray-200 bg-white px-7 text-sm font-semibold text-gray-900 transition-all duration-300 hover:-translate-y-0.5 hover:border-blue-300 hover:text-blue-700 active:scale-[0.98] sm:w-auto"
                 >
                   무료 상담 받기
                 </Link>
               </div>
 
-              <div className="presales-hero-search presales-reveal presales-delay-4 max-w-[500px]">
+              <div className="presales-hero-search presales-reveal presales-delay-4 w-full max-w-[500px]">
                 <form onSubmit={(e) => { e.preventDefault(); const q = (e.currentTarget.elements.namedItem('q') as HTMLInputElement).value; if (q.trim()) window.location.href = `/store?q=${encodeURIComponent(q.trim())}` }} className="relative">
                   <input name="q" type="text" placeholder="예: IoT, 스마트시티, 기술제안서" className="h-12 w-full rounded-full border border-gray-200 bg-white/92 pl-5 pr-12 text-sm text-gray-950 shadow-[0_18px_50px_rgba(15,23,42,0.08)] outline-none backdrop-blur transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-100" />
                   <button type="submit" className="absolute right-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-blue-600 transition-colors hover:bg-blue-700" aria-label="스토어 검색">
@@ -486,8 +486,8 @@ export default function Home() {
           <div className="mb-12 md:mb-16 max-w-2xl">
             <p className="text-xs font-semibold text-blue-600 uppercase tracking-widest mb-3">왜 프리세일즈</p>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900 leading-tight">
-              낙찰 기록이 있는 제안서,<br />
-              한 페이지에서 전부.
+              전문가들이 고민하여 수주한 제안서,<br />
+              문서 스토어에서 만나보세요.
             </h2>
           </div>
 
