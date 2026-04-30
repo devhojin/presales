@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase'
 import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { Badge } from '@/components/ui/badge'
+import { validatePassword } from '@/lib/password-policy'
 import {
   getVisibleMemberMemos,
   isMemberAdminUnread,
@@ -38,6 +39,7 @@ import {
   Coins,
   PlusCircle,
   CheckCircle,
+  KeyRound,
 } from 'lucide-react'
 
 // ===========================
@@ -557,6 +559,9 @@ function MemberInfoEdit({ member, onUpdated }: { member: Profile; onUpdated?: (u
   const [form, setForm] = useState({ name: member.name || '', email: member.email, phone: member.phone || '', company: member.company || '' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [passwordForm, setPasswordForm] = useState({ password: '', passwordConfirm: '' })
+  const [passwordSaving, setPasswordSaving] = useState(false)
+  const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const handleSave = async () => {
     setSaving(true)
@@ -573,6 +578,43 @@ function MemberInfoEdit({ member, onUpdated }: { member: Profile; onUpdated?: (u
       onUpdated?.(data.data as Profile)
     } catch { setError('네트워크 오류') }
     finally { setSaving(false) }
+  }
+
+  const handlePasswordSave = async () => {
+    setPasswordSaving(true)
+    setPasswordMessage(null)
+
+    const result = validatePassword(passwordForm.password, form.email || member.email)
+    if (!result.valid) {
+      setPasswordMessage({ type: 'error', text: result.errors[0] || '비밀번호가 보안 기준을 충족하지 않습니다' })
+      setPasswordSaving(false)
+      return
+    }
+    if (passwordForm.password !== passwordForm.passwordConfirm) {
+      setPasswordMessage({ type: 'error', text: '비밀번호 확인이 일치하지 않습니다' })
+      setPasswordSaving(false)
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/admin/members/${member.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: passwordForm.password }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setPasswordMessage({ type: 'error', text: data.error || '비밀번호 변경 실패' })
+        return
+      }
+      setPasswordForm({ password: '', passwordConfirm: '' })
+      setPasswordMessage({ type: 'success', text: '비밀번호를 변경했습니다' })
+      onUpdated?.(data.data as Profile)
+    } catch {
+      setPasswordMessage({ type: 'error', text: '네트워크 오류' })
+    } finally {
+      setPasswordSaving(false)
+    }
   }
 
   return (
@@ -622,6 +664,48 @@ function MemberInfoEdit({ member, onUpdated }: { member: Profile; onUpdated?: (u
           </>
         )}
         <InfoRow icon={<Calendar className="w-4 h-4" />} label="가입일" value={formatDateTime(member.created_at)} />
+      </div>
+      <div className="mt-4 rounded-xl border border-border bg-white p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <KeyRound className="w-4 h-4 text-muted-foreground" />
+          <h4 className="text-sm font-semibold text-foreground">비밀번호 변경</h4>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input
+            type="password"
+            value={passwordForm.password}
+            onChange={(e) => setPasswordForm((prev) => ({ ...prev, password: e.target.value }))}
+            placeholder="새 비밀번호"
+            autoComplete="new-password"
+            className="text-sm bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-primary"
+          />
+          <input
+            type="password"
+            value={passwordForm.passwordConfirm}
+            onChange={(e) => setPasswordForm((prev) => ({ ...prev, passwordConfirm: e.target.value }))}
+            placeholder="새 비밀번호 확인"
+            autoComplete="new-password"
+            className="text-sm bg-white border border-border rounded-lg px-3 py-2 focus:outline-none focus:border-primary"
+          />
+        </div>
+        <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            8자 이상 3종 조합 또는 10자 이상 2종 조합, 연속/반복 문자는 제한됩니다.
+          </p>
+          <button
+            type="button"
+            onClick={handlePasswordSave}
+            disabled={passwordSaving || !passwordForm.password || !passwordForm.passwordConfirm}
+            className="cursor-pointer rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
+          >
+            {passwordSaving ? '변경중...' : '비밀번호 변경'}
+          </button>
+        </div>
+        {passwordMessage && (
+          <p className={`mt-2 text-xs ${passwordMessage.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+            {passwordMessage.text}
+          </p>
+        )}
       </div>
     </div>
   )

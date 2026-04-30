@@ -1707,19 +1707,31 @@ export default function AdminOrders() {
               </div>
             </div>
 
-            {/* Page size */}
-            <select
-              value={pageSize}
-              onChange={(e) => {
-                setPageSize(Number(e.target.value))
-                setCurrentPage(1)
-              }}
-              className="border border-border rounded-xl px-3 py-2 text-sm text-foreground bg-white focus:outline-none focus:border-primary cursor-pointer"
-            >
-              <option value={20}>20개</option>
-              <option value={50}>50개</option>
-              <option value={100}>100개</option>
-            </select>
+            <div className="flex items-center gap-2">
+              {selectedIds.size === 0 && filtered.length > 0 && !loading && (
+                <button
+                  onClick={handleExcelDownload}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-muted-foreground bg-white border border-border rounded-xl hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <Download className="w-3 h-3" />
+                  엑셀 다운로드
+                </button>
+              )}
+
+              {/* Page size */}
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value))
+                  setCurrentPage(1)
+                }}
+                className="border border-border rounded-xl px-3 py-2 text-sm text-foreground bg-white focus:outline-none focus:border-primary cursor-pointer"
+              >
+                <option value={20}>20개</option>
+                <option value={50}>50개</option>
+                <option value={100}>100개</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -1778,19 +1790,6 @@ export default function AdminOrders() {
                 선택 해제
               </button>
             </div>
-          </div>
-        )}
-
-        {/* Excel download button when no selection */}
-        {selectedIds.size === 0 && filtered.length > 0 && !loading && (
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={handleExcelDownload}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-muted-foreground bg-white border border-border rounded-xl hover:bg-muted transition-colors cursor-pointer"
-            >
-              <Download className="w-3 h-3" />
-              엑셀 다운로드
-            </button>
           </div>
         )}
 
@@ -1952,6 +1951,12 @@ export default function AdminOrders() {
                           </div>
                           <div className="mt-2 space-y-0.5">
                             <div className="flex justify-between text-xs text-muted-foreground">
+                              <span>결제방식</span>
+                              <span className="font-medium text-foreground">
+                                {PAYMENT_METHOD_LABEL[order.payment_method || ''] || order.payment_method || '-'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between text-xs text-muted-foreground">
                               <span>상품 금액</span>
                               <span>{formatWon(order.order_items?.reduce((sum, i) => sum + i.price, 0) || 0)}</span>
                             </div>
@@ -1966,9 +1971,6 @@ export default function AdminOrders() {
                               <span>{formatWon(order.total_amount)}</span>
                             </div>
                           </div>
-                          <p className="text-[11px] text-muted-foreground mt-1">
-                            {PAYMENT_METHOD_LABEL[order.payment_method || ''] || order.payment_method || '-'}
-                          </p>
                           {order.status === 'pending_transfer' && (
                             <button
                               type="button"

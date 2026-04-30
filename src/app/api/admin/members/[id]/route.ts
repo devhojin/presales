@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { validatePassword } from '@/lib/password-policy'
 
 /**
  * PATCH /api/admin/members/[id]
- * 관리자가 회원 정보를 수정 (이름, 이메일, 전화번호, 회사)
- * 이메일 변경 시 auth.users 도 함께 업데이트
+ * 관리자가 회원 정보를 수정 (이름, 이메일, 전화번호, 회사, 비밀번호)
+ * 이메일/비밀번호 변경 시 auth.users 도 함께 업데이트
  */
 export async function PATCH(
   request: NextRequest,
@@ -42,7 +43,7 @@ export async function PATCH(
   // 관리자가 실수로 탈퇴 row 의 익명화된 email 을 실제 이메일로 되돌리면 탈퇴 우회됨
   const { data: target } = await service
     .from('profiles')
-    .select('deleted_at')
+    .select('deleted_at, email')
     .eq('id', id)
     .maybeSingle()
   if (!target) {
@@ -56,11 +57,12 @@ export async function PATCH(
 
   try {
     const body = await request.json()
-    const { name, email, phone, company } = body as {
+    const { name, email, phone, company, password } = body as {
       name?: string
       email?: string
       phone?: string
       company?: string
+      password?: string
     }
 
     // 간단한 포맷 검증 (admin 페이지지만 방어적으로)
@@ -79,10 +81,27 @@ export async function PATCH(
     if (company !== undefined && (typeof company !== 'string' || company.length > 200)) {
       return NextResponse.json({ error: '회사명은 200자 이하여야 합니다' }, { status: 400 })
     }
+    if (password !== undefined) {
+      if (typeof password !== 'string' || password.length > 128) {
+        return NextResponse.json({ error: '비밀번호 형식이 올바르지 않습니다' }, { status: 400 })
+      }
+      const result = validatePassword(password, email || target.email || undefined)
+      if (!result.valid) {
+        return NextResponse.json({ error: result.errors[0] || '비밀번호가 보안 기준을 충족하지 않습니다' }, { status: 400 })
+      }
+    }
 
-    // 2. 이메일 변경 시 auth.users 를 먼저 업데이트 — profiles 와 divergence 방지.
+    // 2. 이메일/비밀번호 변경 시 auth.users 를 먼저 업데이트 — profiles 와 divergence 방지.
     //    auth.users 가 unique/포맷 제약 때문에 실패하면 profiles 는 건드리지 않는다.
+    const authUpdate: Record<string, string | boolean> = {}
     if (email !== undefined && email) {
+      authUpdate.email = email
+      authUpdate.email_confirm = true
+    }
+    if (password !== undefined) {
+      authUpdate.password = password
+    }
+    if (Object.keys(authUpdate).length > 0) {
       const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/admin/users/${id}`
       const res = await fetch(url, {
         method: 'PUT',
@@ -91,20 +110,24 @@ export async function PATCH(
           'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, email_confirm: true }),
+        body: JSON.stringify(authUpdate),
       })
       if (!res.ok) {
         const err = await res.text()
-        return NextResponse.json({ error: `이메일 변경 실패: ${err}` }, { status: 500 })
+        return NextResponse.json({ error: `회원 인증정보 변경 실패: ${err}` }, { status: 500 })
       }
     }
 
     // 3. profiles 업데이트
-    const profileUpdate: Record<string, string | null> = {}
+    const profileUpdate: Record<string, string | number | null> = {}
     if (name !== undefined) profileUpdate.name = name || null
     if (phone !== undefined) profileUpdate.phone = phone || null
     if (company !== undefined) profileUpdate.company = company || null
     if (email !== undefined) profileUpdate.email = email
+    if (password !== undefined) {
+      profileUpdate.login_failed_count = 0
+      profileUpdate.login_locked_until = null
+    }
 
     if (Object.keys(profileUpdate).length > 0) {
       const { error: profErr } = await service
