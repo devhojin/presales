@@ -8,8 +8,9 @@ let _transporter: Transporter | null = null
 
 function getTransporter(): Transporter {
   if (_transporter) return _transporter
-  const configuredHost = process.env.SMTP_HOST ?? process.env.MAILPLUG_HOST ?? 'smtp.mailplug.co.kr'
-  const host = configuredHost === 'mail.mailplug.co.kr' ? 'smtp.mailplug.co.kr' : configuredHost
+  const configuredHost = (process.env.SMTP_HOST ?? process.env.MAILPLUG_HOST ?? 'smtp.mailplug.co.kr').trim()
+  const normalizedHost = configuredHost.toLowerCase()
+  const host = normalizedHost === 'mail.mailplug.co.kr' ? 'smtp.mailplug.co.kr' : configuredHost
   const port = Number(process.env.SMTP_PORT ?? process.env.MAILPLUG_PORT ?? 465)
   const user = process.env.SMTP_USER ?? process.env.MAILPLUG_USER
   const pass = process.env.SMTP_PASS ?? process.env.MAILPLUG_PASS
