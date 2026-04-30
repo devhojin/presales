@@ -7,7 +7,7 @@ import { ReviewStars } from './ReviewStars'
 import { ReviewForm } from './ReviewForm'
 import { ImageLightbox } from './ImageLightbox'
 import { ConfirmModal } from './ConfirmModal'
-import { Star, ThumbsUp, PenLine, ChevronLeft, ChevronRight, ShieldCheck, Pencil, Trash2 } from 'lucide-react'
+import { Star, ThumbsUp, PenLine, ChevronLeft, ChevronRight, ShieldCheck, Pencil, Trash2, Coins } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
 
 type SortOption = 'latest' | 'rating_high' | 'rating_low' | 'helpful'
@@ -16,7 +16,16 @@ interface ProductReviewsProps {
   productId: number
 }
 
+interface PublicRewardSettings {
+  enabled: boolean
+  reviewBonus: number
+}
+
 const REVIEWS_PER_PAGE = 10
+
+function formatWon(amount: number) {
+  return `${new Intl.NumberFormat('ko-KR').format(amount)}원`
+}
 
 export function ProductReviews({ productId }: ProductReviewsProps) {
   const [reviews, setReviews] = useState<DbReview[]>([])
@@ -35,6 +44,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
   const [lightboxImages, setLightboxImages] = useState<string[] | null>(null)
   const [lightboxIndex, setLightboxIndex] = useState(0)
   const [deleteTarget, setDeleteTarget] = useState<DbReview | null>(null)
+  const [reviewRewardAmount, setReviewRewardAmount] = useState(0)
 
   // Load user
   useEffect(() => {
@@ -44,22 +54,53 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
     })
   }, [])
 
+  useEffect(() => {
+    let active = true
+    fetch('/api/rewards/settings', { cache: 'no-store' })
+      .then(async (res) => {
+        if (!res.ok) return null
+        return (await res.json()) as Partial<PublicRewardSettings>
+      })
+      .then((data) => {
+        if (!active || !data || data.enabled === false) return
+        const amount = Number(data.reviewBonus ?? 0)
+        setReviewRewardAmount(Number.isFinite(amount) ? Math.max(0, Math.floor(amount)) : 0)
+      })
+      .catch(() => {
+        if (active) setReviewRewardAmount(0)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
   // Check purchase status and existing review
   useEffect(() => {
     if (!user) return
     const supabase = createClient()
 
-    // Check if user has a paid order containing this product
-    supabase
-      .from('order_items')
-      .select('id, orders!inner(user_id, status)')
-      .eq('product_id', productId)
-      .eq('orders.user_id', user.id)
-      .in('orders.status', ['paid', 'completed'])
-      .limit(1)
-      .then(({ data }) => {
-        setHasPurchased((data?.length ?? 0) > 0)
-      })
+    // Check if user has bought the product or downloaded the free file.
+    Promise.all([
+      supabase
+        .from('order_items')
+        .select('id, orders!inner(user_id, status)')
+        .eq('product_id', productId)
+        .eq('orders.user_id', user.id)
+        .in('orders.status', ['paid', 'completed'])
+        .limit(1),
+      supabase
+        .from('download_logs')
+        .select('id')
+        .eq('product_id', productId)
+        .eq('user_id', user.id)
+        .limit(1),
+    ]).then(([orderResult, downloadResult]) => {
+      setHasPurchased(
+        (orderResult.data?.length ?? 0) > 0 ||
+        (downloadResult.data?.length ?? 0) > 0,
+      )
+    })
 
     // Check if user already wrote a review
     supabase
@@ -298,6 +339,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
           productId={productId}
           userId={user?.id || ''}
           existingReview={editingReview}
+          rewardAmount={reviewRewardAmount}
           onSuccess={handleFormSuccess}
           onCancel={() => {
             setShowForm(false)
@@ -307,19 +349,27 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
       ) : (
         <div className="mb-6">
           {user && hasPurchased && !userReview && (
-            <button
-              onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
-            >
-              <PenLine className="w-4 h-4" />
-              리뷰 작성
-            </button>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <button
+                onClick={() => setShowForm(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+              >
+                <PenLine className="w-4 h-4" />
+                글쓰기
+              </button>
+              {reviewRewardAmount > 0 && (
+                <p className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-700">
+                  <Coins className="h-4 w-4" />
+                  후기 등록 시 {formatWon(reviewRewardAmount)} 적립
+                </p>
+              )}
+            </div>
           )}
           {!user && (
             <p className="text-sm text-muted-foreground">리뷰를 작성하려면 로그인이 필요합니다.</p>
           )}
           {user && !hasPurchased && !userReview && (
-            <p className="text-sm text-muted-foreground">구매 후 리뷰를 작성할 수 있습니다.</p>
+            <p className="text-sm text-muted-foreground">무료 다운로드 또는 구매 후 글쓰기가 가능합니다.</p>
           )}
         </div>
       )}

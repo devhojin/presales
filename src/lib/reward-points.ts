@@ -196,7 +196,7 @@ export async function grantPurchaseRewardForOrder(
 ): Promise<RewardRpcResult> {
   const { data: order, error } = await supabase
     .from('orders')
-    .select('id, user_id, total_amount, reward_discount, order_items(price, original_price)')
+    .select('id, user_id, total_amount')
     .eq('id', orderId)
     .maybeSingle()
 
@@ -209,15 +209,7 @@ export async function grantPurchaseRewardForOrder(
     return { ok: true, skipped: true, reason: 'purchase_reward_disabled' }
   }
 
-  const items = ((order as {
-    order_items?: Array<{ price: number; original_price: number | null }> | null
-  }).order_items ?? [])
-  const beforeDiscountBase = items.reduce((sum, item) => {
-    const original = Math.max(Number(item.original_price ?? 0), Number(item.price ?? 0))
-    return sum + original
-  }, 0)
-  const afterDiscountBase = Number((order as { total_amount: number }).total_amount ?? 0)
-  const base = settings.accrualBase === 'before_discount' ? beforeDiscountBase : afterDiscountBase
+  const base = Number((order as { total_amount: number }).total_amount ?? 0)
   const amount = calculatePurchaseReward(base, settings)
 
   return grantRewardPoints(supabase, {

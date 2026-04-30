@@ -184,6 +184,7 @@ export default function CartPage() {
     if (price === 0) return '무료'
     return new Intl.NumberFormat('ko-KR').format(price) + '원'
   }
+  const formatRewardAmount = (amount: number) => `${Math.max(0, amount).toLocaleString('ko-KR')}원`
 
   function getCouponDiscount() {
     if (!appliedCoupon) return 0
@@ -593,7 +594,7 @@ export default function CartPage() {
                   <div>
                     <p className="text-sm font-semibold text-blue-950">적립금</p>
                     <p className="mt-0.5 text-xs text-blue-700">
-                      보유 {formatPrice(rewardBalance)} · 1회 최대 {formatPrice(rewardSettings.useLimitPerOrder)}
+                      보유 {formatRewardAmount(rewardBalance)} · 1회 최대 {formatRewardAmount(rewardSettings.useLimitPerOrder)}
                     </p>
                   </div>
                   {rewardDiscount > 0 && (

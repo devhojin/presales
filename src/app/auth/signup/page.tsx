@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
@@ -10,6 +10,15 @@ import { useToastStore } from '@/stores/toast-store'
 import { getAuthErrorMessage } from '@/lib/auth-errors'
 import { buildOAuthCallbackUrl } from '@/lib/oauth'
 import { AgreementItem, PRIVACY_PREVIEW, TERMS_PREVIEW } from '@/components/auth/AgreementItem'
+
+interface PublicRewardSettings {
+  enabled: boolean
+  signupBonus: number
+}
+
+function formatWon(amount: number) {
+  return `${new Intl.NumberFormat('ko-KR').format(amount)}원`
+}
 
 // Tailwind safelist: bg-red-500 bg-orange-500 bg-yellow-500 bg-blue-500 bg-green-500
 function SignupForm() {
@@ -25,6 +34,7 @@ function SignupForm() {
   const [agreeAge, setAgreeAge] = useState(false)
   const [agreeMarketing, setAgreeMarketing] = useState(false) // 선택
   const [termsError, setTermsError] = useState('')
+  const [signupRewardAmount, setSignupRewardAmount] = useState(0)
   const [form, setForm] = useState({
     email: '',
     password: '',
@@ -35,6 +45,27 @@ function SignupForm() {
   })
 
   const passwordCheck = validatePassword(form.password, form.email)
+
+  useEffect(() => {
+    let active = true
+    fetch('/api/rewards/settings', { cache: 'no-store' })
+      .then(async (res) => {
+        if (!res.ok) return null
+        return (await res.json()) as Partial<PublicRewardSettings>
+      })
+      .then((data) => {
+        if (!active || !data || data.enabled === false) return
+        const amount = Number(data.signupBonus ?? 0)
+        setSignupRewardAmount(Number.isFinite(amount) ? Math.max(0, Math.floor(amount)) : 0)
+      })
+      .catch(() => {
+        if (active) setSignupRewardAmount(0)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   function formatPhoneNumber(value: string) {
     const nums = value.replace(/\D/g, '').slice(0, 11)
@@ -175,6 +206,17 @@ function SignupForm() {
               <p className="text-muted-foreground text-sm mt-2">프리세일즈와 함께 공공조달을 시작하세요</p>
             </div>
           </div>
+
+          {signupRewardAmount > 0 && (
+            <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-left">
+              <p className="text-sm font-semibold text-blue-900">
+                회원가입 완료 시 {formatWon(signupRewardAmount)} 적립금 지급
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-blue-700">
+                가입 후 장바구니 결제 단계에서 쿠폰과 함께 사용할 수 있습니다.
+              </p>
+            </div>
+          )}
 
           {/* Google OAuth */}
           <div className="space-y-4">

@@ -8,6 +8,15 @@ import { useToastStore } from '@/stores/toast-store'
 import { sanitizeRedirect } from '@/lib/safe-redirect'
 import { AgreementItem, PRIVACY_PREVIEW, TERMS_PREVIEW } from '@/components/auth/AgreementItem'
 
+interface PublicRewardSettings {
+  enabled: boolean
+  signupBonus: number
+}
+
+function formatWon(amount: number) {
+  return `${new Intl.NumberFormat('ko-KR').format(amount)}원`
+}
+
 export default function CompleteSignupPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -26,6 +35,7 @@ export default function CompleteSignupPage() {
   const [agreeAge, setAgreeAge] = useState(false)
   const [agreeMarketing, setAgreeMarketing] = useState(false)
   const [error, setError] = useState('')
+  const [signupRewardAmount, setSignupRewardAmount] = useState(0)
 
   useEffect(() => {
     const supabase = createClient()
@@ -40,6 +50,27 @@ export default function CompleteSignupPage() {
       setReady(true)
     })
   }, [router])
+
+  useEffect(() => {
+    let active = true
+    fetch('/api/rewards/settings', { cache: 'no-store' })
+      .then(async (res) => {
+        if (!res.ok) return null
+        return (await res.json()) as Partial<PublicRewardSettings>
+      })
+      .then((data) => {
+        if (!active || !data || data.enabled === false) return
+        const amount = Number(data.signupBonus ?? 0)
+        setSignupRewardAmount(Number.isFinite(amount) ? Math.max(0, Math.floor(amount)) : 0)
+      })
+      .catch(() => {
+        if (active) setSignupRewardAmount(0)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   function formatPhoneNumber(value: string) {
     const nums = value.replace(/\D/g, '').slice(0, 11)
@@ -125,6 +156,17 @@ export default function CompleteSignupPage() {
               )}
             </div>
           </div>
+
+          {signupRewardAmount > 0 && (
+            <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-left">
+              <p className="text-sm font-semibold text-blue-900">
+                가입 완료 시 {formatWon(signupRewardAmount)} 적립금 지급
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-blue-700">
+                약관 동의와 기본 정보 입력이 끝나면 현재 적립금 정책에 따라 지급됩니다.
+              </p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {error && (

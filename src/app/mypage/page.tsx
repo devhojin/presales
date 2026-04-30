@@ -66,12 +66,21 @@ interface PurchasedProduct {
   is_free: boolean
 }
 
+interface DownloadLogProduct {
+  id?: number | null
+  title: string
+  thumbnail_url?: string | null
+  format?: string | null
+  file_size?: string | null
+  is_free?: boolean | null
+}
+
 interface DownloadLog {
   id: number
   product_id: number
   file_name: string
   downloaded_at: string
-  products?: { title: string } | { title: string }[] | null
+  products?: DownloadLogProduct | DownloadLogProduct[] | null
 }
 
 interface ActivityItem {
@@ -245,7 +254,7 @@ export default function MyConsolePage() {
       ] = await Promise.all([
         supabase.from('profiles').select('name, email, phone, company, reward_balance, role, created_at').eq('id', user.id).single(),
         supabase.from('orders').select('id, order_number, total_amount, status, created_at, paid_at, payment_method, cash_receipt_url, refund_reason, coupon_discount, reward_discount, order_items(id, price, original_price, discount_amount, discount_reason, discount_source_product_id, products(id, title, price))').eq('user_id', user.id).order('created_at', { ascending: false }),
-        supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(title)').eq('user_id', user.id).order('downloaded_at', { ascending: false }),
+        supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(id, title, thumbnail_url, format, file_size, is_free)').eq('user_id', user.id).order('downloaded_at', { ascending: false }),
         supabase.from('announcement_bookmarks').select('announcement_id').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('feed_bookmarks').select('post_id').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('reward_point_ledger').select('id, amount, balance_after, type, status, memo, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
@@ -266,6 +275,20 @@ export default function MyConsolePage() {
             if (prod) productsMap.set(prod.id, prod as PurchasedProduct)
           }
         }
+      }
+      for (const log of (logsData || []) as DownloadLog[]) {
+        const prod = Array.isArray(log.products) ? log.products[0] : log.products
+        if (!prod) continue
+        const productId = Number(prod.id ?? log.product_id)
+        if (!Number.isInteger(productId) || productId <= 0) continue
+        productsMap.set(productId, {
+          id: productId,
+          title: prod.title,
+          thumbnail_url: prod.thumbnail_url ?? null,
+          format: prod.format ?? null,
+          file_size: prod.file_size ?? null,
+          is_free: Boolean(prod.is_free),
+        })
       }
       setPurchasedProducts(Array.from(productsMap.values()))
 
@@ -372,8 +395,26 @@ export default function MyConsolePage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { data: newLogs } = await supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(title)').eq('user_id', user.id).order('downloaded_at', { ascending: false })
+    const { data: newLogs } = await supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(id, title, thumbnail_url, format, file_size, is_free)').eq('user_id', user.id).order('downloaded_at', { ascending: false })
     setDownloadLogs((newLogs || []) as DownloadLog[])
+    setPurchasedProducts((prev) => {
+      const productsMap = new Map(prev.map((product) => [product.id, product]))
+      for (const log of (newLogs || []) as DownloadLog[]) {
+        const prod = Array.isArray(log.products) ? log.products[0] : log.products
+        if (!prod) continue
+        const downloadedProductId = Number(prod.id ?? log.product_id)
+        if (!Number.isInteger(downloadedProductId) || downloadedProductId <= 0) continue
+        productsMap.set(downloadedProductId, {
+          id: downloadedProductId,
+          title: prod.title,
+          thumbnail_url: prod.thumbnail_url ?? null,
+          format: prod.format ?? null,
+          file_size: prod.file_size ?? null,
+          is_free: Boolean(prod.is_free),
+        })
+      }
+      return Array.from(productsMap.values())
+    })
   }
 
   async function handleRefundRequest(orderId: number, reason: string) {
@@ -748,14 +789,23 @@ export default function MyConsolePage() {
                       <p className="text-xs text-muted-foreground">{item.format || '문서'}{item.file_size ? ` · ${item.file_size}` : ''}</p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleProductDownload(item.id, item.title)}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors cursor-pointer shrink-0 ml-3 flex items-center gap-1.5"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    다운로드
-                  </button>
+                  <div className="ml-3 flex shrink-0 items-center gap-2">
+                    <Link
+                      href={`/store/${item.id}?tab=review`}
+                      className="flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      후기작성
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => handleProductDownload(item.id, item.title)}
+                      className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      다운로드
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -836,7 +886,16 @@ export default function MyConsolePage() {
                                     <p className="text-sm font-medium">{formatPrice(item.price)}</p>
                                   </div>
                                   {(order.status === 'paid' || order.status === 'completed') && prod && (
-                                    <button type="button" onClick={e => { e.stopPropagation(); handleProductDownload(prod.id, prod.title) }} className="px-3 py-1 rounded-lg bg-blue-700 text-white text-xs font-medium hover:bg-blue-800 flex items-center gap-1 cursor-pointer"><Download className="w-3 h-3" />다운로드</button>
+                                    <>
+                                      <Link
+                                        href={`/store/${prod.id}?tab=review`}
+                                        onClick={e => e.stopPropagation()}
+                                        className="flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                                      >
+                                        <Pencil className="w-3 h-3" />후기작성
+                                      </Link>
+                                      <button type="button" onClick={e => { e.stopPropagation(); handleProductDownload(prod.id, prod.title) }} className="px-3 py-1 rounded-lg bg-blue-700 text-white text-xs font-medium hover:bg-blue-800 flex items-center gap-1 cursor-pointer"><Download className="w-3 h-3" />다운로드</button>
+                                    </>
                                   )}
                                 </div>
                               </div>

@@ -10,11 +10,16 @@ interface ReviewFormProps {
   productId: number
   userId: string
   existingReview?: DbReview | null
+  rewardAmount?: number
   onSuccess: () => void
   onCancel: () => void
 }
 
-export function ReviewForm({ productId, userId, existingReview, onSuccess, onCancel }: ReviewFormProps) {
+function formatWon(amount: number) {
+  return `${new Intl.NumberFormat('ko-KR').format(amount)}원`
+}
+
+export function ReviewForm({ productId, userId, existingReview, rewardAmount = 0, onSuccess, onCancel }: ReviewFormProps) {
   const [rating, setRating] = useState(existingReview?.rating || 0)
   const [title, setTitle] = useState(existingReview?.title || '')
   const [content, setContent] = useState(existingReview?.content || '')
@@ -89,8 +94,8 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
     setSubmitting(true)
     const supabase = createClient()
 
-    // 구매 인증 확인 + 작성자 프로필 조회 (reviewer_name 스냅샷용)
-    const [{ data: orderData }, { data: productData }, { data: profileData }] = await Promise.all([
+    // 구매/무료 다운로드 인증 확인 + 작성자 프로필 조회 (reviewer_name 스냅샷용)
+    const [{ data: orderData }, { data: downloadData }, { data: profileData }] = await Promise.all([
       supabase
         .from('order_items')
         .select('id, order_id, orders!inner(user_id, status)')
@@ -99,10 +104,11 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
         .in('orders.status', ['completed', 'paid'])
         .limit(1),
       supabase
-        .from('products')
-        .select('is_free')
-        .eq('id', productId)
-        .single(),
+        .from('download_logs')
+        .select('id')
+        .eq('product_id', productId)
+        .eq('user_id', userId)
+        .limit(1),
       supabase
         .from('profiles')
         .select('name, email')
@@ -111,7 +117,13 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
     ])
 
     const isVerifiedPurchase =
-      (orderData && orderData.length > 0) || (productData?.is_free === true)
+      (orderData && orderData.length > 0) || (downloadData && downloadData.length > 0)
+
+    if (!existingReview && !isVerifiedPurchase) {
+      setError('무료 다운로드 또는 구매 후 리뷰를 작성할 수 있습니다.')
+      setSubmitting(false)
+      return
+    }
 
     // INSERT/UPDATE 페이로드 분리 — RLS가 본인 수정 시 product_id/is_verified_purchase/
     // is_published/admin_reply/reviewer_name/reviewer_email 위조를 차단한다.
@@ -195,6 +207,17 @@ export function ReviewForm({ productId, userId, existingReview, onSuccess, onCan
       <h3 className="font-semibold text-lg mb-4">
         {existingReview ? '리뷰 수정' : '리뷰 작성'}
       </h3>
+
+      {!existingReview && rewardAmount > 0 && (
+        <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+          <p className="font-semibold text-blue-900">
+            리뷰 등록 완료 시 {formatWon(rewardAmount)} 적립금 지급
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-blue-700">
+            무료 다운로드 또는 구매 이력이 확인된 상품 후기 1건에 한해 지급됩니다.
+          </p>
+        </div>
+      )}
 
       {/* Star Rating */}
       <div className="mb-4">

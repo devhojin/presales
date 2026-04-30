@@ -203,6 +203,11 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
   const { addItem: addRecentlyViewed } = useRecentlyViewed()
 
   useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get('tab')
+    if (tab === 'review') setActiveTab('review')
+  }, [])
+
+  useEffect(() => {
     async function load() {
       const supabase = createClient()
       const [{ data }, { data: catData }] = await Promise.all([

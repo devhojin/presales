@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { createClient } from '@/lib/supabase'
 import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { Badge } from '@/components/ui/badge'
@@ -441,19 +442,60 @@ function RowActionsMenu({
   onDelete: () => void
 }) {
   const [open, setOpen] = useState(false)
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
   const ref = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  const updatePosition = useCallback(() => {
+    const button = buttonRef.current
+    if (!button) return
+    const rect = button.getBoundingClientRect()
+    const menuWidth = 144
+    const menuHeight = 88
+    const gutter = 8
+    const left = Math.min(
+      window.innerWidth - menuWidth - gutter,
+      Math.max(gutter, rect.right - menuWidth),
+    )
+    const shouldOpenUp = rect.bottom + menuHeight + gutter > window.innerHeight
+    const top = shouldOpenUp
+      ? Math.max(gutter, rect.top - menuHeight - 6)
+      : rect.bottom + 6
+    setPosition({ top, left })
+  }, [])
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      const clickedInsideRoot = ref.current?.contains(target) ?? false
+      const clickedInsideMenu = menuRef.current?.contains(target) ?? false
+      if (
+        !clickedInsideRoot &&
+        !clickedInsideMenu
+      ) {
+        setOpen(false)
+      }
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
+  useEffect(() => {
+    if (!open) return
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [open, updatePosition])
+
   return (
     <div ref={ref} className="relative">
       <button
+        ref={buttonRef}
         onClick={(e) => {
           e.stopPropagation()
           setOpen((p) => !p)
@@ -462,8 +504,12 @@ function RowActionsMenu({
       >
         <MoreHorizontal className="w-4 h-4" />
       </button>
-      {open && (
-        <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-border py-1 w-36 z-30">
+      {open && position && createPortal(
+        <div
+          ref={menuRef}
+          className="fixed bg-white rounded-xl shadow-lg border border-border py-1 w-36 z-[100]"
+          style={{ top: position.top, left: position.left }}
+        >
           <button
             onClick={(e) => {
               e.stopPropagation()
@@ -486,7 +532,8 @@ function RowActionsMenu({
             <Trash2 className="w-3.5 h-3.5" />
             삭제
           </button>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )

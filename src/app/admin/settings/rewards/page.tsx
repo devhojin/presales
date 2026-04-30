@@ -8,7 +8,7 @@ import {
   DEFAULT_REWARD_SETTINGS,
   normalizeRewardSettings,
 } from '@/lib/reward-points'
-import type { RewardAccrualBase, RewardSettings } from '@/lib/reward-points'
+import type { RewardSettings } from '@/lib/reward-points'
 
 const REWARD_SETTING_KEYS = [
   'reward.enabled',
@@ -24,10 +24,38 @@ function toSettingsMap(settings: RewardSettings): Record<string, string> {
     'reward.enabled': String(settings.enabled),
     'reward.signup_bonus': String(settings.signupBonus),
     'reward.review_bonus': String(settings.reviewBonus),
-    'reward.accrual_base': settings.accrualBase,
+    'reward.accrual_base': 'after_discount',
     'reward.purchase_rate_percent': String(settings.purchaseRatePercent),
     'reward.use_limit_per_order': String(settings.useLimitPerOrder),
   }
+}
+
+function UnitInput({
+  value,
+  onChange,
+  unit,
+  step,
+}: {
+  value: number
+  onChange: (value: string) => void
+  unit: '원' | '%'
+  step: number
+}) {
+  return (
+    <div className="relative flex-1">
+      <input
+        type="number"
+        min={0}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-9 w-full rounded-xl border border-border px-3 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+      />
+      <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">
+        {unit}
+      </span>
+    </div>
+  )
 }
 
 export default function RewardSettingsPage() {
@@ -158,35 +186,32 @@ export default function RewardSettingsPage() {
             </div>
             <div className="flex flex-col gap-2 px-6 py-4 sm:flex-row sm:items-center">
               <label className="w-48 shrink-0 text-sm font-medium text-foreground">신규회원 지급액</label>
-              <input
-                type="number"
-                min={0}
-                step={100}
+              <UnitInput
                 value={settings.signupBonus}
-                onChange={(e) => updateNumber('signupBonus', e.target.value)}
-                className="h-9 flex-1 rounded-xl border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                onChange={(value) => updateNumber('signupBonus', value)}
+                unit="원"
+                step={100}
               />
             </div>
             <div className="flex flex-col gap-2 px-6 py-4 sm:flex-row sm:items-center">
               <label className="w-48 shrink-0 text-sm font-medium text-foreground">후기 작성 지급액</label>
-              <input
-                type="number"
-                min={0}
-                step={100}
+              <UnitInput
                 value={settings.reviewBonus}
-                onChange={(e) => updateNumber('reviewBonus', e.target.value)}
-                className="h-9 flex-1 rounded-xl border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                onChange={(value) => updateNumber('reviewBonus', value)}
+                unit="원"
+                step={100}
               />
             </div>
             <div className="flex flex-col gap-2 px-6 py-4 sm:flex-row sm:items-center">
-              <label className="w-48 shrink-0 text-sm font-medium text-foreground">구매 적립률</label>
-              <input
-                type="number"
-                min={0}
-                step={1}
+              <div className="w-48 shrink-0">
+                <label className="text-sm font-medium text-foreground">구매 적립률</label>
+                <p className="mt-1 text-xs text-muted-foreground">최종 결제금액 기준</p>
+              </div>
+              <UnitInput
                 value={settings.purchaseRatePercent}
-                onChange={(e) => updateNumber('purchaseRatePercent', e.target.value)}
-                className="h-9 flex-1 rounded-xl border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                onChange={(value) => updateNumber('purchaseRatePercent', value)}
+                unit="%"
+                step={1}
               />
             </div>
           </div>
@@ -199,35 +224,20 @@ export default function RewardSettingsPage() {
           <div className="space-y-4 px-6 py-4">
             <div>
               <p className="text-sm font-medium text-foreground">구매 적립 계산 기준</p>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                {[
-                  { value: 'before_discount' as RewardAccrualBase, label: '할인 전 금액' },
-                  { value: 'after_discount' as RewardAccrualBase, label: '할인 후 실결제금액' },
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setSettings((prev) => ({ ...prev, accrualBase: option.value }))}
-                    className={`rounded-xl border px-4 py-3 text-left text-sm font-medium cursor-pointer ${
-                      settings.accrualBase === option.value
-                        ? 'border-primary bg-primary/8 text-primary'
-                        : 'border-border bg-white text-foreground hover:bg-muted'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+              <div className="mt-3 rounded-xl border border-primary/20 bg-primary/8 px-4 py-3">
+                <p className="text-sm font-semibold text-primary">최종 결제금액 기준</p>
+                <p className="mt-1 text-xs leading-relaxed text-blue-700">
+                  상품 할인, 쿠폰, 적립금 사용을 모두 반영한 실제 결제금액에 구매 적립률을 적용합니다.
+                </p>
               </div>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <label className="w-48 shrink-0 text-sm font-medium text-foreground">1회 사용 한도</label>
-              <input
-                type="number"
-                min={0}
-                step={100}
+              <UnitInput
                 value={settings.useLimitPerOrder}
-                onChange={(e) => updateNumber('useLimitPerOrder', e.target.value)}
-                className="h-9 flex-1 rounded-xl border border-border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                onChange={(value) => updateNumber('useLimitPerOrder', value)}
+                unit="원"
+                step={100}
               />
             </div>
           </div>
