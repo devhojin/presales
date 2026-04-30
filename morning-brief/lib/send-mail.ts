@@ -8,10 +8,11 @@ let _transporter: Transporter | null = null
 
 function getTransporter(): Transporter {
   if (_transporter) return _transporter
-  const host = process.env.SMTP_HOST ?? 'smtp.mailplug.co.kr'
-  const port = Number(process.env.SMTP_PORT ?? 465)
-  const user = process.env.SMTP_USER
-  const pass = process.env.SMTP_PASS
+  const configuredHost = process.env.SMTP_HOST ?? process.env.MAILPLUG_HOST ?? 'smtp.mailplug.co.kr'
+  const host = configuredHost === 'mail.mailplug.co.kr' ? 'smtp.mailplug.co.kr' : configuredHost
+  const port = Number(process.env.SMTP_PORT ?? process.env.MAILPLUG_PORT ?? 465)
+  const user = process.env.SMTP_USER ?? process.env.MAILPLUG_USER
+  const pass = process.env.SMTP_PASS ?? process.env.MAILPLUG_PASS
   if (!user || !pass) throw new Error('SMTP_USER / SMTP_PASS 환경변수 누락')
   _transporter = nodemailer.createTransport({
     host,
