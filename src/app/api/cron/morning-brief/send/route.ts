@@ -89,6 +89,7 @@ export async function GET(req: NextRequest) {
   })
   let sent = 0
   let failed = 0
+  const failureReasons = new Map<string, number>()
   const sendsLog: { brief_id: string; subscriber_id: string; email: string; status: string; sent_at: string | null; error: string | null }[] = []
 
   for (const r of recipients) {
@@ -111,12 +112,19 @@ export async function GET(req: NextRequest) {
         status: 'sent', sent_at: new Date().toISOString(), error: null,
       })
     } catch (e) {
+      const message = e instanceof Error ? e.message : 'unknown'
       failed++
+      failureReasons.set(message, (failureReasons.get(message) ?? 0) + 1)
       sendsLog.push({
         brief_id: brief.id, subscriber_id: r.id as string, email: r.email as string,
-        status: 'failed', sent_at: null, error: e instanceof Error ? e.message : 'unknown',
+        status: 'failed', sent_at: null, error: message,
       })
     }
+  }
+
+  const failureSummary = Array.from(failureReasons, ([message, count]) => ({ message, count }))
+  if (failureSummary.length > 0) {
+    console.error('[morning-brief/send] delivery failures', failureSummary)
   }
 
   // brief_sends 기록 (upsert: brief_id+subscriber_id unique)
@@ -154,6 +162,7 @@ export async function GET(req: NextRequest) {
     recipient_count: recipients.length,
     sent,
     failed,
+    failure_reasons: failureSummary,
   })
 }
 
