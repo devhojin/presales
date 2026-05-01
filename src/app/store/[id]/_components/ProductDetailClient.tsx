@@ -360,7 +360,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
       setLoading(false)
     }
     load()
-  }, [id])
+  }, [id, addRecentlyViewed])
 
   const canDownload = hasPurchased // 무료든 유료든 로그인+조건 충족 시 true
 
@@ -500,7 +500,9 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
   const displayFormat = formatProductFileTypes(fileTypeItems) || fileSummary.format || product.format || ''
   const displayFileSize = fileSummary.fileSize || product.file_size || ''
   const hasPageCountCandidate = fileSummary.fileTypes.some((type) => type === 'PDF' || type === 'PPTX' || type === 'PPT')
-  const displayPages = productFiles.length === 0 || hasPageCountCandidate ? product.pages : null
+  const displayPages = product.pages && (product.preview_pdf_url || productFiles.length === 0 || hasPageCountCandidate)
+    ? product.pages
+    : null
   const hasDetailContent =
     Boolean(overview.summary) ||
     overview.points.length > 0 ||
@@ -634,7 +636,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
             {displayPages && (
               <div className="py-2 flex justify-between">
                 <p className="text-muted-foreground">페이지 수</p>
-                <p className="font-medium">{displayPages}p</p>
+                <p className="font-medium">{product.preview_pdf_url ? `PDF 기준 ${displayPages}p` : `${displayPages}p`}</p>
               </div>
             )}
             {displayFileSize && (
@@ -918,6 +920,12 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                             </span>
                           ))}
                         </div>
+                        {displayPages && (
+                          <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                            <span className="font-medium text-slate-950">페이지 수</span>
+                            <span className="ml-2">{product.preview_pdf_url ? `PDF 미리보기 기준 ${displayPages}p` : `${displayPages}p`}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
