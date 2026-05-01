@@ -52,20 +52,10 @@ const FOOTER_GROUPS = [
   },
 ]
 
-const digitsOnly = (value: string) => value.replace(/\D/g, '')
-
-const getBusinessInfoUrl = (businessNumber: string) => {
-  const digits = digitsOnly(businessNumber)
-  return digits.length === 10
-    ? `https://www.ftc.go.kr/bizCommPop.do?wrkr_no=${digits}`
-    : 'https://www.ftc.go.kr/www/selectBizCommList.do?key=253'
-}
+const BUSINESS_INFO_URL = '/business-info'
 
 export function Footer() {
   const [s, setS] = useState(FALLBACK)
-  const businessNumberDigits = digitsOnly(s.business_number)
-  const canOpenBusinessInfo = businessNumberDigits.length === 10
-  const businessInfoUrl = getBusinessInfoUrl(s.business_number)
 
   useEffect(() => {
     const supabase = createClient()
@@ -84,14 +74,9 @@ export function Footer() {
   }, [])
 
   const openBusinessInfo = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (!canOpenBusinessInfo) {
-      event.preventDefault()
-      return
-    }
-
     event.preventDefault()
     const popup = window.open(
-      businessInfoUrl,
+      BUSINESS_INFO_URL,
       'presales-business-info',
       'width=820,height=920,scrollbars=yes,resizable=yes'
     )
@@ -197,19 +182,17 @@ export function Footer() {
                 <p className="text-[11px] font-semibold text-muted-foreground">사업자등록번호</p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <span className="text-sm font-medium text-foreground">{s.business_number || '-'}</span>
-                  {canOpenBusinessInfo && (
-                    <a
-                      href={businessInfoUrl}
-                      onClick={openBusinessInfo}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex h-7 items-center gap-1 rounded-full border border-border bg-[#F7F7F4] px-2.5 text-[11px] font-semibold text-foreground hover:border-primary/40 hover:text-primary transition-colors"
-                      aria-label="공정거래위원회 사업자정보확인 새창 열기"
-                    >
-                      사업자정보확인
-                      <ArrowUpRight className="h-3 w-3" />
-                    </a>
-                  )}
+                  <a
+                    href={BUSINESS_INFO_URL}
+                    onClick={openBusinessInfo}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex h-7 items-center gap-1 rounded-full border border-border bg-[#F7F7F4] px-2.5 text-[11px] font-semibold text-foreground hover:border-primary/40 hover:text-primary transition-colors"
+                    aria-label="사업자정보확인 새창 열기"
+                  >
+                    사업자정보확인
+                    <ArrowUpRight className="h-3 w-3" />
+                  </a>
                 </div>
               </div>
               <div className="px-4 py-4">
