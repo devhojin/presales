@@ -2,7 +2,7 @@
 
 import { type MouseEvent } from 'react'
 import Link from 'next/link'
-import { ArrowUpRight, Mail, MapPin, Phone } from 'lucide-react'
+import { ArrowUpRight, Mail, MapPin } from 'lucide-react'
 import { BUSINESS_INFO } from '@/lib/business-info'
 
 const FOOTER_GROUPS = [
@@ -99,26 +99,6 @@ export function Footer() {
                 나라장터, 조달청 입찰에 최적화된 기술제안서, 가격제안서,
                 발표PT 템플릿과 전문가 컨설팅을 제공합니다.
               </p>
-              <div className="mt-6 rounded-2xl bg-white/70 ring-1 ring-border/70 p-4">
-                <p className="text-xs font-semibold text-foreground">고객센터</p>
-                <div className="mt-3 flex flex-col gap-2 text-xs text-muted-foreground">
-                  <a href={`mailto:${BUSINESS_INFO.email}`} className="inline-flex items-center gap-2 hover:text-foreground">
-                    <Mail className="h-3.5 w-3.5" />
-                    {BUSINESS_INFO.email}
-                  </a>
-                  <a href={`tel:${BUSINESS_INFO.phone.replace(/[^0-9+]/g, '')}`} className="inline-flex items-center gap-2 hover:text-foreground">
-                    <Phone className="h-3.5 w-3.5" />
-                    {BUSINESS_INFO.phone} ({BUSINESS_INFO.supportHours})
-                  </a>
-                  <span className="inline-flex items-start gap-2">
-                    <span className="mt-0.5 text-[10px] font-bold text-muted-foreground">계좌</span>
-                    <span>{BUSINESS_INFO.bankAccount}</span>
-                  </span>
-                  <span className="text-[11px] leading-relaxed text-muted-foreground/90">
-                    문서 구매, 다운로드, 입금 확인, 컨설팅 문의는 이메일 또는 채팅으로 접수됩니다.
-                  </span>
-                </div>
-              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
@@ -205,6 +185,13 @@ export function Footer() {
                 <p className="text-[11px] font-semibold text-muted-foreground">입금계좌</p>
                 <p className="mt-1 text-sm font-medium text-foreground">{BUSINESS_INFO.bankAccount}</p>
               </div>
+            </div>
+
+            <div className="border-t border-border/70 px-4 py-4">
+              <p className="text-[11px] font-semibold text-muted-foreground">문의 안내</p>
+              <p className="mt-1 text-sm leading-6 text-foreground">
+                문서 구매, 다운로드, 입금 확인, 컨설팅 문의는 이메일 또는 채팅으로 접수됩니다.
+              </p>
             </div>
           </div>
 
