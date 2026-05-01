@@ -1,3 +1,5 @@
+import { BUSINESS_INFO } from '@/lib/business-info'
+
 type BusinessInfoCell = {
   label: string
   value: string
@@ -6,43 +8,42 @@ type BusinessInfoCell = {
 
 const BUSINESS_ROWS: BusinessInfoCell[][] = [
   [
-    { label: '통신판매번호', value: '2023-수원권선-0773' },
-    { label: '사업자등록번호', value: '682-53-00808' },
+    { label: '통신판매번호', value: BUSINESS_INFO.commerceNumber },
+    { label: '사업자등록번호', value: BUSINESS_INFO.businessNumber },
   ],
   [
     { label: '운영상태', value: '통신판매업신고' },
     { label: '법인여부', value: '개인' },
   ],
   [
-    { label: '상호', value: '아마란스', colspan: 3 },
+    { label: '상호', value: BUSINESS_INFO.companyName, colspan: 3 },
   ],
   [
-    { label: '대표자명', value: '채호진' },
-    { label: '대표 전화번호', value: '010-3124-****' },
+    { label: '대표자명', value: BUSINESS_INFO.ceoName },
+    { label: '대표 전화번호', value: BUSINESS_INFO.phone },
   ],
   [
     { label: '판매방식', value: '인터넷' },
     { label: '취급품목', value: '기타' },
   ],
   [
-    { label: '전자우편(E-mail)', value: 'hoj******@gmail.com' },
-    { label: '신고일자', value: '20230410' },
+    { label: '전자우편(E-mail)', value: BUSINESS_INFO.email },
+    { label: '신고일자', value: BUSINESS_INFO.reportDate },
   ],
   [
-    { label: '사업장소재지', value: '경기도 수원시 권선구 금곡동 ****', colspan: 3 },
+    { label: '사업장소재지', value: BUSINESS_INFO.address, colspan: 3 },
   ],
   [
-    {
-      label: '사업장소재지(도로명)',
-      value: '경기도 수원시 권선구 금곡로***번길 **-**, 이노인큐 수원창업보육센터 내 *층 ***-**호 (금곡동)',
-      colspan: 3,
-    },
+    { label: '사업장소재지(도로명)', value: BUSINESS_INFO.address, colspan: 3 },
   ],
   [
-    { label: '인터넷도메인', value: 'www.presales.co.kr', colspan: 3 },
+    { label: '인터넷도메인', value: BUSINESS_INFO.internetDomain, colspan: 3 },
   ],
   [
-    { label: '호스트서버소재지', value: '서울특별시 강남구 논현로 508, GS강남타워 12층 (역삼동)', colspan: 3 },
+    { label: '출판사 신고번호', value: BUSINESS_INFO.publisherNumber, colspan: 3 },
+  ],
+  [
+    { label: '호스트서버소재지', value: BUSINESS_INFO.hostServerAddress, colspan: 3 },
   ],
   [
     { label: '통신판매업 신고기관명', value: '경기도 수원시 권선구', colspan: 3 },
@@ -114,11 +115,9 @@ const html = `<!doctype html>
     <section class="notice" aria-label="사업자 정보 안내">
       <div class="notice-box">
         <p>
-          본자료는 전자상거래시장에서 소비자가 정확한 사업자 정보를 가지고 안전한 거래를 할 수 있도록
-          전국 시,군,구에 신고된 <strong>통신판매업자의</strong> 신원정보를
-          <a href="https://www.ftc.go.kr" target="_blank" rel="noopener noreferrer">전자상거래소비자보호법 제12조4항</a>에 따라 제공하는 정보입니다.
-          사업자 정보에 대한 궁금한 사항이나 사업자의 신원정보가 정보공개 내용과 불일치할 경우에는 사업자 정보검색시 확인되는
-          해당 <strong>신고기관(지방자치단체)</strong>에 문의하여 주시기 바랍니다.
+          본 자료는 프리세일즈 이용자가 사업자 정보를 확인할 수 있도록 제공하는 안내입니다.
+          통신판매업 정보 정정에는 시간이 걸릴 수 있어 인터넷도메인은 현재 운영 도메인
+          <strong>${BUSINESS_INFO.internetDomain}</strong> 기준으로 안내합니다.
         </p>
         <p>
           일부 사업자의 경우, 부가가치세법상 사업자 폐업 신고는 하였으나 전자상거래법상 통신판매업 폐업 신고는 하지 않은 사례가 있을 수 있습니다.

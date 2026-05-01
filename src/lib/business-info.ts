@@ -1,0 +1,16 @@
+export const BUSINESS_INFO = {
+  serviceName: 'PRESALES',
+  companyName: '아마란스',
+  businessNumber: '682-53-00808',
+  commerceNumber: '제2023-수원권선-0773호',
+  publisherNumber: '제 2023-000074호',
+  ceoName: '채호진',
+  address: '경기도 광명시 소하로 190, 12층 비1216-50(소하동, 광명G타워)',
+  phone: '010-9940-7909',
+  supportHours: '11:00 ~ 16:00, 주말 / 공휴일 휴무',
+  email: 'help@presales.co.kr',
+  bankAccount: '카카오뱅크, 아마란스, 3333-26-7731937',
+  internetDomain: 'www.presales.co.kr',
+  hostServerAddress: '서울특별시 강남구 논현로 508, GS강남타워 12층 (역삼동)',
+  reportDate: '20230410',
+} as const
