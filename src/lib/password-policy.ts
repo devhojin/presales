@@ -1,6 +1,6 @@
 /**
  * KISA 보안인증 기준 비밀번호 정책
- * - Supabase Auth 운영 정책에 맞춰 10자 이상 + 영문/숫자/특수문자 조합
+ * - Supabase Auth 운영 정책에 맞춰 10자 이상 + 영문 대/소문자/숫자/특수문자 조합
  * - 반복 문자 금지
  * - 알려진 약한 패턴 금지
  * - 이메일과 동일한 비밀번호 금지
@@ -59,6 +59,9 @@ function hasKnownWeakPattern(s: string): boolean {
 }
 
 export function getPasswordAuthErrorMessage(raw: string): string {
+  if (raw.includes('should contain at least one character of each')) {
+    return '비밀번호는 영문 소문자, 영문 대문자, 숫자, 특수문자를 각각 1자 이상 포함해야 합니다.'
+  }
   if (raw.includes('known to be weak') || raw.includes('easy to guess')) {
     return '너무 흔하거나 추측하기 쉬운 비밀번호입니다. Test, password, admin 같은 단어와 단순한 숫자 패턴을 피해서 다시 설정해주세요.'
   }
@@ -72,7 +75,8 @@ export function getPasswordRequirements(password: string, email?: string): Passw
   const emailLocal = email?.split('@')[0]?.toLowerCase() || ''
   const requirements: PasswordRequirement[] = [
     { id: 'length', label: '10자 이상', met: password.length >= 10 },
-    { id: 'letter', label: '영문 포함', met: hasUpperCase(password) || hasLowerCase(password) },
+    { id: 'lowercase', label: '소문자 포함', met: hasLowerCase(password) },
+    { id: 'uppercase', label: '대문자 포함', met: hasUpperCase(password) },
     { id: 'digit', label: '숫자 포함', met: hasDigit(password) },
     { id: 'special', label: '특수문자 포함 (!@#$%^&*)', met: hasSpecial(password) },
     { id: 'repeat', label: '같은 문자 3회 반복 금지', met: !hasRepeating(password) },
@@ -102,8 +106,12 @@ export function validatePassword(password: string, email?: string): PasswordChec
   }
 
   const types = countTypes(password)
-  if (!hasUpperCase(password) && !hasLowerCase(password)) {
-    errors.push('영문을 1자 이상 포함해야 합니다.')
+  if (!hasLowerCase(password)) {
+    errors.push('영문 소문자를 1자 이상 포함해야 합니다.')
+  }
+
+  if (!hasUpperCase(password)) {
+    errors.push('영문 대문자를 1자 이상 포함해야 합니다.')
   }
 
   if (!hasDigit(password)) {

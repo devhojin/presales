@@ -129,7 +129,7 @@ function ResetPasswordForm() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
-                  placeholder="10자 이상, 영문·숫자·특수문자 포함"
+                  placeholder="10자 이상, 영문 대/소문자·숫자·특수문자 포함"
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError('') }}
                   className="w-full h-11 pl-11 pr-11 border border-border rounded-xl text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-colors"
