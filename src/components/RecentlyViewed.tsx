@@ -51,7 +51,7 @@ export function RecentlyViewed() {
               <Clock className="w-3.5 h-3.5 text-slate-700" />
               <span className="text-xs font-bold text-slate-900">최근 본 상품</span>
             </div>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-700" />
+            <ChevronUp className="w-3.5 h-3.5 text-slate-700" />
           </div>
         </button>
       ) : (
@@ -68,7 +68,7 @@ export function RecentlyViewed() {
               aria-label="최근 본 상품 접기"
               title="최근 본 상품 접기"
             >
-              <ChevronUp className="w-3.5 h-3.5 text-slate-700" />
+              <ChevronDown className="w-3.5 h-3.5 text-slate-700" />
             </button>
           </div>
 
