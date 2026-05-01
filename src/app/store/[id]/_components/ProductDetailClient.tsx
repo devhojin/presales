@@ -11,7 +11,7 @@ import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, ArrowRight, ShoppingCart, Check, CheckCircle, Download, Play, BookOpen, FileDown, Copy, Share2, Mail, FileText, AlertTriangle, Lightbulb, ShieldCheck, Image as ImageIcon, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, ShoppingCart, Check, CheckCircle, Download, Play, FileDown, Copy, Share2, Mail, FileText, AlertTriangle, Lightbulb, ShieldCheck, Image as ImageIcon, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { PdfPreviewModal } from '@/components/pdf-preview-modal'
 import { ProductReviews } from '@/components/reviews/ProductReviews'
 import { FreeToProUpsell } from '@/components/FreeToProUpsell'
@@ -551,10 +551,21 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           {product.preview_pdf_url ? (
             <button
               onClick={() => setShowPdfPreview(true)}
-            className="w-full bg-white border border-border/60 rounded-2xl py-3 hover:shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition-all duration-300 flex items-center justify-center gap-2 text-sm font-medium text-foreground active:scale-[0.98]"
+              className="group relative w-full overflow-hidden rounded-2xl border border-red-200 bg-gradient-to-r from-red-600 via-rose-600 to-blue-700 px-4 py-4 text-white shadow-[0_18px_45px_-22px_rgba(220,38,38,0.75)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_60px_-24px_rgba(37,99,235,0.8)] active:scale-[0.98]"
             >
-              <BookOpen className="w-4 h-4" />
-              문서 미리보기
+              <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(255,255,255,0.38),transparent_30%),linear-gradient(120deg,transparent,rgba(255,255,255,0.22),transparent)] opacity-80 transition-transform duration-700 group-hover:translate-x-8" />
+              <span className="relative flex items-center justify-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-red-600 shadow-sm">
+                  <FileText className="h-5 w-5" />
+                </span>
+                <span className="text-left">
+                  <span className="block text-[11px] font-bold uppercase tracking-[0.18em] text-white/80">PDF Preview</span>
+                  <span className="block text-base font-extrabold tracking-tight">PDF 미리보기 열기</span>
+                </span>
+                <span className="ml-auto hidden rounded-full bg-white/18 px-3 py-1 text-xs font-bold text-white ring-1 ring-white/25 sm:inline-flex">
+                  무료 확인
+                </span>
+              </span>
             </button>
           ) : (product.preview_note || displayFormat) && (
             <div className="w-full bg-white border border-border/60 rounded-2xl py-3 px-4 text-center">

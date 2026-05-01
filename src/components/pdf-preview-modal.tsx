@@ -29,8 +29,10 @@ export function PdfPreviewModal({
   const [error, setError] = useState('')
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  // 미리보기 전체 페이지 수 (최대 30)
-  const totalPreviewPages = Math.min(Math.max(previewPages, 1), 30)
+  const requestedPreviewPages = Math.min(Math.max(previewPages || 1, 1), 30)
+  const totalPreviewPages = pdfDoc
+    ? Math.min(requestedPreviewPages, pdfDoc.numPages)
+    : requestedPreviewPages
   // 70% 선명, 30% 블러
   const clearPages = Math.max(1, Math.ceil(totalPreviewPages * 0.7))
   const isBlurPage = currentPage > clearPages
@@ -42,6 +44,10 @@ export function PdfPreviewModal({
     setLoading(true)
     setError('')
     setCurrentPage(1)
+    setPdfDoc(null)
+    const previewUrl = `/api/pdf-preview?url=${encodeURIComponent(pdfUrl)}`
+    let cancelled = false
+    let loadedDoc: PDFDocumentProxy | null = null
 
     async function loadPdf() {
       try {
@@ -49,15 +55,34 @@ export function PdfPreviewModal({
         // CSP: worker-src 'self' 범위 내 로컬 파일 사용 (unpkg 차단 회피 + CDN 의존 제거)
         pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
+        const response = await fetch(previewUrl, {
+          credentials: 'same-origin',
+          cache: 'force-cache',
+        })
+
+        if (!response.ok) {
+          throw new Error(`PDF fetch failed: ${response.status}`)
+        }
+
+        const pdfData = new Uint8Array(await response.arrayBuffer())
         const loadingTask = pdfjs.getDocument({
-          url: pdfUrl,
-          withCredentials: false,
+          data: pdfData,
+          disableAutoFetch: true,
+          disableRange: true,
+          disableStream: true,
         })
         const doc = await loadingTask.promise
+        loadedDoc = doc
+        if (cancelled) {
+          await doc.destroy()
+          return
+        }
         setPdfDoc(doc)
+        setCurrentPage(1)
         setLoading(false)
       } catch (err: unknown) {
         console.error('PDF load error:', err)
+        if (cancelled) return
         const message = err instanceof Error ? err.message : String(err)
         if (message.includes('Missing PDF') || message.includes('Invalid PDF')) {
           setError('유효하지 않은 PDF 파일입니다.')
@@ -71,7 +96,18 @@ export function PdfPreviewModal({
     }
 
     loadPdf()
+
+    return () => {
+      cancelled = true
+      if (loadedDoc) void loadedDoc.destroy()
+    }
   }, [isOpen, pdfUrl])
+
+  useEffect(() => {
+    if (pdfDoc && currentPage > totalPreviewPages) {
+      setCurrentPage(totalPreviewPages)
+    }
+  }, [pdfDoc, currentPage, totalPreviewPages])
 
   // Render page
   useEffect(() => {
@@ -81,8 +117,9 @@ export function PdfPreviewModal({
 
     async function renderPage() {
       try {
-        const page = await doc.getPage(currentPage)
-        const viewport = page.getViewport({ scale: 1.5 })
+        const safePage = Math.min(Math.max(currentPage, 1), doc.numPages)
+        const page = await doc.getPage(safePage)
+        const viewport = page.getViewport({ scale: 1.75 })
         const ctx = canvas.getContext('2d')!
 
         canvas.width = viewport.width
@@ -134,7 +171,7 @@ export function PdfPreviewModal({
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-background rounded-2xl w-[calc(100%-1rem)] sm:w-auto max-w-4xl mx-auto my-4 sm:my-8 max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="relative bg-background rounded-2xl w-[calc(100%-1rem)] sm:w-auto max-w-4xl mx-auto my-2 sm:my-8 max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200">
           <div className="flex items-center gap-2 min-w-0">
@@ -164,7 +201,7 @@ export function PdfPreviewModal({
               <p className="text-sm text-red-500">{error}</p>
             </div>
           ) : (
-            <div className="relative flex items-center justify-center p-4 min-h-[400px]">
+            <div className="relative flex items-center justify-center p-3 sm:p-4 min-h-[min(62dvh,640px)] sm:min-h-[400px]">
               {/* Left Arrow */}
               <button
                 onClick={() => currentPage > 1 && setCurrentPage((p) => p - 1)}
@@ -178,7 +215,7 @@ export function PdfPreviewModal({
               <div className="relative">
                 <canvas
                   ref={canvasRef}
-                  className="max-w-full max-h-[70vh] mx-auto shadow-lg rounded-lg"
+                  className="max-w-full max-h-[calc(100dvh-12rem)] sm:max-h-[70vh] mx-auto shadow-lg rounded-lg bg-white"
                   style={{
                     filter: isBlurPage ? 'blur(8px)' : 'none',
                   }}
@@ -226,17 +263,20 @@ export function PdfPreviewModal({
         </div>
 
         {/* Footer */}
+        {!loading && !error && pdfDoc && (
         <div className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-3 gap-2 border-t border-gray-200 bg-gray-50">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
             <p className="text-sm text-gray-500">
               페이지 {currentPage} / {totalPreviewPages}
             </p>
+            {requestedPreviewPages > pdfDoc.numPages && (
             <span className="flex items-center gap-1 text-[11px] text-gray-400">
               <Info className="w-3 h-3" />
-              미리보기 수량은 실제 페이지 수량과 다릅니다
+              실제 PDF는 {pdfDoc.numPages}페이지입니다
             </span>
+            )}
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex max-w-full flex-wrap items-center justify-center gap-1.5">
             {Array.from({ length: totalPreviewPages }).map((_, i) => (
               <button
                 key={i}
@@ -255,6 +295,7 @@ export function PdfPreviewModal({
             ← → 키로 넘기기 · ESC로 닫기
           </p>
         </div>
+        )}
       </div>
     </div>
   )
