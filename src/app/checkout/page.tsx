@@ -214,7 +214,7 @@ export default function CheckoutPage() {
         currentUserIdRef.current = user.id
 
         if (CARD_PAYMENTS_DISABLED) {
-          addToast('현재 PG 연결 오류로 카드결제를 이용할 수 없습니다. 상담 결제는 메시지로 문의주세요.', 'error')
+          addToast('현재 PG 연결 진행 중으로 카드결제를 이용할 수 없습니다. 상담 결제는 메시지로 문의주세요.', 'error')
           setLoading(false)
           return
         }
@@ -668,7 +668,7 @@ export default function CheckoutPage() {
 
   async function handleCardPayment() {
     if (CARD_PAYMENTS_DISABLED) {
-      addToast('현재 PG 연결 오류로 카드결제를 이용할 수 없습니다. 무통장 입금을 선택해주세요.', 'error')
+      addToast('현재 PG 연결 진행 중으로 카드결제를 이용할 수 없습니다. 무통장 입금을 선택해주세요.', 'error')
       setSelectedMethod('bank_transfer')
       return
     }
@@ -837,7 +837,7 @@ export default function CheckoutPage() {
       <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
         <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
         <p>
-          현재 PG 연결 오류로 카드결제는 이용할 수 없습니다. 무통장 입금 신청 후 관리자가 입금을 승인하면 다운로드가 가능합니다.
+          현재 PG 연결 진행 중으로 카드결제는 이용할 수 없습니다. 무통장 입금 신청 후 관리자가 입금을 승인하면 다운로드가 가능합니다.
         </p>
       </div>
 
@@ -925,7 +925,7 @@ export default function CheckoutPage() {
             {selectedMethod === 'card' && (
               <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <p>{CARD_PAYMENTS_DISABLED ? '현재 PG 연결 오류로 카드결제를 이용할 수 없습니다.' : '신용카드 결제의 경우 세금계산서가 발행되지 않습니다. 매출전표를 활용하시면 됩니다.'}</p>
+                <p>{CARD_PAYMENTS_DISABLED ? '현재 PG 연결 진행 중으로 카드결제를 이용할 수 없습니다.' : '신용카드 결제의 경우 세금계산서가 발행되지 않습니다. 매출전표를 활용하시면 됩니다.'}</p>
               </div>
             )}
 
@@ -1061,7 +1061,7 @@ export default function CheckoutPage() {
               <CreditCard className={`w-5 h-5 shrink-0 ${selectedMethod === 'card' ? 'text-primary' : 'text-muted-foreground'}`} />
               <div>
                 <p className={`text-sm font-semibold ${selectedMethod === 'card' ? 'text-primary' : 'text-foreground'}`}>카드·가상계좌·간편결제</p>
-                <p className="text-[11px] text-muted-foreground">{CARD_PAYMENTS_DISABLED ? 'PG 연결 오류로 일시 중지' : '가상계좌 선택 시 현금영수증 자동 발급'}</p>
+                <p className="text-[11px] text-muted-foreground">{CARD_PAYMENTS_DISABLED ? 'PG 연결 진행 중' : '가상계좌 선택 시 현금영수증 자동 발급'}</p>
               </div>
             </button>
             <button
