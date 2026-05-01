@@ -108,7 +108,7 @@ function BankTransferContent() {
           <li>• 입금자명에 <strong>{orderNumber}</strong>을 기재해 주시면 빠른 확인이 가능합니다</li>
           <li>• 관리자가 입금 확인 후 승인하면 다운로드 권한이 열립니다</li>
           <li>• 승인 완료 후 주문 확인 이메일이 발송됩니다</li>
-          <li>• 입금 후 빠른 확인은 우측 하단 채널톡으로 문의해 주세요</li>
+          <li>• 입금 후 빠른 확인은 우측 하단 메시지로 문의주세요</li>
         </ul>
       </div>
 

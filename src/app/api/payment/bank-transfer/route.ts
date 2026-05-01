@@ -303,7 +303,7 @@ export async function POST(request: NextRequest) {
             </p>
           </div>
 
-          <p style="margin:0 0 16px;font-size:13px;color:#64748b;">입금 후 빠른 확인을 원하시면 우측 하단 채널톡으로 문의해 주세요.</p>
+          <p style="margin:0 0 16px;font-size:13px;color:#64748b;">입금 후 빠른 확인을 원하시면 우측 하단 메시지로 문의주세요.</p>
 
           <a href="${SITE_URL}/mypage" style="display:inline-block;background:#1e40af;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:600;">
             나의콘솔 바로가기

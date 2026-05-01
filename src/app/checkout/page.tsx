@@ -214,7 +214,7 @@ export default function CheckoutPage() {
         currentUserIdRef.current = user.id
 
         if (CARD_PAYMENTS_DISABLED) {
-          addToast('현재 PG 연결 오류로 카드결제를 이용할 수 없습니다. 상담 결제는 채널톡으로 문의해주세요.', 'error')
+          addToast('현재 PG 연결 오류로 카드결제를 이용할 수 없습니다. 상담 결제는 메시지로 문의주세요.', 'error')
           setLoading(false)
           return
         }
@@ -1005,7 +1005,7 @@ export default function CheckoutPage() {
               {selectedMethod === 'bank_transfer' && (
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
-                  무통장 입금 후 빠른 확인을 원하시면 &apos;우측 하단 채널톡&apos; 문의 부탁드립니다.
+                  무통장 입금 후 빠른 확인을 원하시면 우측 하단 메시지로 문의주세요.
                 </label>
                 <input
                   type="text"
