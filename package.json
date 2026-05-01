@@ -8,6 +8,7 @@
     "mcp:telegram": "node scripts/telegram-mcp.mjs",
     "products:remediate": "node scripts/remediate-product-catalog.mjs",
     "products:detail-pages": "node scripts/build-product-detail-pages.mjs",
+    "products:intro-images": "node scripts/generate-original-product-intro-images.mjs",
     "products:thumbnails": "node scripts/generate-thumbnails.js",
     "dev": "next dev",
     "prebuild": "node scripts/generate-work-history.js",

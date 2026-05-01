@@ -511,6 +511,9 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
     fileTypeItems.length > 0 ||
     Boolean(product.description_html || product.description)
   const productSerial = String(product.id).padStart(3, '0')
+  const productIntroImageUrl = Array.isArray(product.preview_images)
+    ? product.preview_images.find((url) => url.includes('/preview-images/original-intros/')) ?? null
+    : null
 
   const tabs: { id: TabId; label: string }[] = [
     { id: 'info', label: '상품정보' },
@@ -840,6 +843,39 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           {/* 상품정보 Tab */}
           {activeTab === 'info' && (
             <div className="space-y-10">
+              {productIntroImageUrl && (
+                <section className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-[0_24px_70px_-48px_rgba(15,23,42,0.6)]">
+                  <div className="flex flex-col gap-2 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-6">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">사업 한눈 이미지</p>
+                      <h3 className="mt-1 text-xl font-semibold tracking-tight text-zinc-950">이 상품의 사업 구조를 빠르게 파악하세요</h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowImagePreview(true)}
+                      className="inline-flex h-9 items-center justify-center rounded-full border border-slate-200 px-4 text-xs font-semibold text-slate-700 transition-all duration-300 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:scale-[0.98]"
+                    >
+                      크게 보기
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowImagePreview(true)}
+                    className="group relative block w-full overflow-hidden bg-slate-950 text-left"
+                  >
+                    <Image
+                      src={productIntroImageUrl}
+                      alt={`${product.title} 사업 소개 이미지`}
+                      width={1600}
+                      height={900}
+                      className="aspect-video w-full object-cover transition-transform duration-700 group-hover:scale-[1.015]"
+                      sizes="(min-width: 1024px) 900px, 100vw"
+                    />
+                    <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/10" />
+                  </button>
+                </section>
+              )}
+
               {(overview.summary || overview.points.length > 0) && (
                 <section className="relative overflow-hidden rounded-[1.75rem] border border-blue-100 bg-white p-6 sm:p-8 shadow-[0_22px_55px_-42px_rgba(37,99,235,0.55)]">
                   <div className="absolute inset-x-0 top-0 h-1 bg-blue-600" />
