@@ -27,6 +27,12 @@ function formatWon(amount: number) {
   return `${new Intl.NumberFormat('ko-KR').format(amount)}원`
 }
 
+function getInitialReviewActionRequested() {
+  if (typeof window === 'undefined') return false
+  const params = new URLSearchParams(window.location.search)
+  return params.get('writeReview') === '1' || params.get('reviewAction') === 'write'
+}
+
 export function ProductReviews({ productId }: ProductReviewsProps) {
   const [reviews, setReviews] = useState<DbReview[]>([])
   const [totalCount, setTotalCount] = useState(0)
@@ -36,7 +42,9 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<User | null>(null)
+  const [authChecked, setAuthChecked] = useState(false)
   const [hasPurchased, setHasPurchased] = useState(false)
+  const [eligibilityChecked, setEligibilityChecked] = useState(false)
   const [userReview, setUserReview] = useState<DbReview | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [editingReview, setEditingReview] = useState<DbReview | null>(null)
@@ -45,12 +53,15 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
   const [lightboxIndex, setLightboxIndex] = useState(0)
   const [deleteTarget, setDeleteTarget] = useState<DbReview | null>(null)
   const [reviewRewardAmount, setReviewRewardAmount] = useState(0)
+  const [reviewActionRequested] = useState(getInitialReviewActionRequested)
+  const [reviewActionHandled, setReviewActionHandled] = useState(false)
 
   // Load user
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user: u } }) => {
       setUser(u)
+      setAuthChecked(true)
     })
   }, [])
 
@@ -75,12 +86,15 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
     }
   }, [])
 
-  // Check purchase status and existing review
+  // Check purchase/download status, existing review, and helpful state.
   useEffect(() => {
-    if (!user) return
+    if (!user) {
+      return
+    }
+
+    let active = true
     const supabase = createClient()
 
-    // Check if user has bought the product or downloaded the free file.
     Promise.all([
       supabase
         .from('order_items')
@@ -95,34 +109,43 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
         .eq('product_id', productId)
         .eq('user_id', user.id)
         .limit(1),
-    ]).then(([orderResult, downloadResult]) => {
-      setHasPurchased(
+      supabase
+        .from('reviews')
+        .select('*')
+        .eq('product_id', productId)
+        .eq('user_id', user.id)
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from('review_helpful')
+        .select('review_id')
+        .eq('user_id', user.id),
+    ]).then(([orderResult, downloadResult, reviewResult, helpfulResult]) => {
+      if (!active) return
+      const purchased =
         (orderResult.data?.length ?? 0) > 0 ||
-        (downloadResult.data?.length ?? 0) > 0,
-      )
+        (downloadResult.data?.length ?? 0) > 0
+      const currentReview = reviewResult.data ? reviewResult.data as DbReview : null
+
+      setHasPurchased(purchased)
+      setUserReview(currentReview)
+      setHelpfulSet(new Set((helpfulResult.data ?? []).map((h) => h.review_id)))
+      setEligibilityChecked(true)
+
+      if (reviewActionRequested && !reviewActionHandled) {
+        if (purchased && !currentReview) {
+          setShowForm(true)
+        } else if (currentReview) {
+          setEditingReview(currentReview)
+        }
+        setReviewActionHandled(true)
+      }
     })
 
-    // Check if user already wrote a review
-    supabase
-      .from('reviews')
-      .select('*')
-      .eq('product_id', productId)
-      .eq('user_id', user.id)
-      .limit(1)
-      .single()
-      .then(({ data }) => {
-        if (data) setUserReview(data as DbReview)
-      })
-
-    // Load helpful status
-    supabase
-      .from('review_helpful')
-      .select('review_id')
-      .eq('user_id', user.id)
-      .then(({ data }) => {
-        if (data) setHelpfulSet(new Set(data.map((h) => h.review_id)))
-      })
-  }, [user, productId])
+    return () => {
+      active = false
+    }
+  }, [reviewActionHandled, reviewActionRequested, user, productId])
 
   // Load reviews
   const loadReviews = useCallback(async () => {
@@ -348,28 +371,52 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
         />
       ) : (
         <div className="mb-6">
-          {user && hasPurchased && !userReview && (
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          {!authChecked || (user && !eligibilityChecked) ? (
+            <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+              후기 작성 권한을 확인하고 있습니다.
+            </div>
+          ) : user && hasPurchased && !userReview ? (
+            <div className="flex flex-col gap-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-blue-950">구매 확인된 상품입니다.</p>
+                <p className="mt-1 text-xs text-blue-700">이 상품에 대한 후기를 작성할 수 있습니다.</p>
+              </div>
               <button
                 onClick={() => setShowForm(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 <PenLine className="w-4 h-4" />
-                글쓰기
+                후기 작성하기
               </button>
               {reviewRewardAmount > 0 && (
-                <p className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-700">
+                <p className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-700 sm:ml-auto">
                   <Coins className="h-4 w-4" />
                   후기 등록 시 {formatWon(reviewRewardAmount)} 적립
                 </p>
               )}
             </div>
-          )}
-          {!user && (
-            <p className="text-sm text-muted-foreground">리뷰를 작성하려면 로그인이 필요합니다.</p>
-          )}
-          {user && !hasPurchased && !userReview && (
-            <p className="text-sm text-muted-foreground">무료 다운로드 또는 구매 후 글쓰기가 가능합니다.</p>
+          ) : user && userReview ? (
+            <div className="flex flex-col gap-3 rounded-xl border border-border bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-foreground">이미 이 상품의 후기를 작성했습니다.</p>
+                <p className="mt-1 text-xs text-muted-foreground">작성한 후기는 언제든지 수정할 수 있습니다.</p>
+              </div>
+              <button
+                onClick={() => setEditingReview(userReview)}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+              >
+                <Pencil className="w-4 h-4" />
+                내 후기 수정하기
+              </button>
+            </div>
+          ) : !user ? (
+            <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+              리뷰를 작성하려면 로그인이 필요합니다.
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+              무료 다운로드 또는 구매 후 후기를 작성할 수 있습니다.
+            </div>
           )}
         </div>
       )}
