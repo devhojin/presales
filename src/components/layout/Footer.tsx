@@ -119,26 +119,26 @@ export function Footer() {
         </div>
 
         <div className="border-t border-border py-8">
-          <div className="rounded-2xl bg-white ring-1 ring-border/80 overflow-hidden">
+          <div className="rounded-2xl bg-[#0F172A] ring-1 ring-white/10 overflow-hidden shadow-[0_28px_80px_-52px_rgba(15,23,42,0.85)]">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
-              <div className="border-b border-border/70 px-4 py-4 md:border-r xl:border-b-0">
-                <p className="text-[11px] font-semibold text-muted-foreground">상호</p>
-                <p className="mt-1 text-sm font-medium text-foreground">{BUSINESS_INFO.companyName}</p>
+              <div className="border-b border-white/10 px-4 py-4 md:border-r xl:border-b-0">
+                <p className="text-[11px] font-semibold text-slate-400">상호</p>
+                <p className="mt-1 text-sm font-medium text-white">{BUSINESS_INFO.companyName}</p>
               </div>
-              <div className="border-b border-border/70 px-4 py-4 xl:border-r xl:border-b-0">
-                <p className="text-[11px] font-semibold text-muted-foreground">대표자</p>
-                <p className="mt-1 text-sm font-medium text-foreground">{BUSINESS_INFO.ceoName}</p>
+              <div className="border-b border-white/10 px-4 py-4 xl:border-r xl:border-b-0">
+                <p className="text-[11px] font-semibold text-slate-400">대표자</p>
+                <p className="mt-1 text-sm font-medium text-white">{BUSINESS_INFO.ceoName}</p>
               </div>
-              <div className="border-b border-border/70 px-4 py-4 md:border-r md:border-b-0">
-                <p className="text-[11px] font-semibold text-muted-foreground">사업자등록번호</p>
+              <div className="border-b border-white/10 px-4 py-4 md:border-r md:border-b-0">
+                <p className="text-[11px] font-semibold text-slate-400">사업자등록번호</p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium text-foreground">{BUSINESS_INFO.businessNumber}</span>
+                  <span className="text-sm font-medium text-white">{BUSINESS_INFO.businessNumber}</span>
                   <a
                     href={BUSINESS_INFO_URL}
                     onClick={openBusinessInfo}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex h-7 items-center gap-1 rounded-full border border-border bg-[#F7F7F4] px-2.5 text-[11px] font-semibold text-foreground hover:border-primary/40 hover:text-primary transition-colors"
+                    className="inline-flex h-7 items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2.5 text-[11px] font-semibold text-slate-100 hover:border-blue-300/50 hover:bg-blue-500/15 hover:text-blue-100 transition-colors"
                     aria-label="사업자정보확인 새창 열기"
                   >
                     사업자정보확인
@@ -147,49 +147,49 @@ export function Footer() {
                 </div>
               </div>
               <div className="px-4 py-4">
-                <p className="text-[11px] font-semibold text-muted-foreground">통신판매업신고</p>
-                <p className="mt-1 text-sm font-medium text-foreground">{BUSINESS_INFO.commerceNumber}</p>
+                <p className="text-[11px] font-semibold text-slate-400">통신판매업신고</p>
+                <p className="mt-1 text-sm font-medium text-white">{BUSINESS_INFO.commerceNumber}</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 border-t border-border/70 md:grid-cols-[1.25fr_0.75fr]">
-              <div className="px-4 py-4 md:border-r border-border/70">
-                <p className="text-[11px] font-semibold text-muted-foreground">사업장 주소</p>
-                <p className="mt-1 inline-flex items-start gap-2 text-sm text-foreground">
-                  <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <div className="grid grid-cols-1 border-t border-white/10 md:grid-cols-[1.25fr_0.75fr]">
+              <div className="px-4 py-4 md:border-r border-white/10">
+                <p className="text-[11px] font-semibold text-slate-400">사업장 주소</p>
+                <p className="mt-1 inline-flex items-start gap-2 text-sm text-slate-100">
+                  <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
                   {BUSINESS_INFO.address}
                 </p>
               </div>
               <div className="px-4 py-4">
-                <p className="text-[11px] font-semibold text-muted-foreground">전자우편</p>
-                <a href={`mailto:${BUSINESS_INFO.email}`} className="mt-1 inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary">
-                  <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+                <p className="text-[11px] font-semibold text-slate-400">전자우편</p>
+                <a href={`mailto:${BUSINESS_INFO.email}`} className="mt-1 inline-flex items-center gap-2 text-sm font-medium text-slate-100 hover:text-blue-200">
+                  <Mail className="h-3.5 w-3.5 text-slate-400" />
                   {BUSINESS_INFO.email}
                 </a>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 border-t border-border/70 md:grid-cols-3">
-              <div className="px-4 py-4 md:border-r border-border/70">
-                <p className="text-[11px] font-semibold text-muted-foreground">출판사 신고번호</p>
-                <p className="mt-1 text-sm font-medium text-foreground">{BUSINESS_INFO.publisherNumber}</p>
+            <div className="grid grid-cols-1 border-t border-white/10 md:grid-cols-3">
+              <div className="px-4 py-4 md:border-r border-white/10">
+                <p className="text-[11px] font-semibold text-slate-400">출판사 신고번호</p>
+                <p className="mt-1 text-sm font-medium text-white">{BUSINESS_INFO.publisherNumber}</p>
               </div>
-              <div className="px-4 py-4 md:border-r border-border/70">
-                <p className="text-[11px] font-semibold text-muted-foreground">고객센터</p>
-                <a href={`tel:${BUSINESS_INFO.phone.replace(/[^0-9+]/g, '')}`} className="mt-1 block text-sm font-medium text-foreground hover:text-primary">
+              <div className="px-4 py-4 md:border-r border-white/10">
+                <p className="text-[11px] font-semibold text-slate-400">고객센터</p>
+                <a href={`tel:${BUSINESS_INFO.phone.replace(/[^0-9+]/g, '')}`} className="mt-1 block text-sm font-medium text-white hover:text-blue-200">
                   {BUSINESS_INFO.phone}
                 </a>
-                <p className="mt-1 text-xs text-muted-foreground">{BUSINESS_INFO.supportHours}</p>
+                <p className="mt-1 text-xs text-slate-400">{BUSINESS_INFO.supportHours}</p>
               </div>
               <div className="px-4 py-4">
-                <p className="text-[11px] font-semibold text-muted-foreground">입금계좌</p>
-                <p className="mt-1 text-sm font-medium text-foreground">{BUSINESS_INFO.bankAccount}</p>
+                <p className="text-[11px] font-semibold text-slate-400">입금계좌</p>
+                <p className="mt-1 text-sm font-medium text-white">{BUSINESS_INFO.bankAccount}</p>
               </div>
             </div>
 
-            <div className="border-t border-border/70 px-4 py-4">
-              <p className="text-[11px] font-semibold text-muted-foreground">문의 안내</p>
-              <p className="mt-1 text-sm leading-6 text-foreground">
+            <div className="border-t border-white/10 px-4 py-4">
+              <p className="text-[11px] font-semibold text-slate-400">문의 안내</p>
+              <p className="mt-1 text-sm leading-6 text-slate-100">
                 문서 구매, 다운로드, 입금 확인, 컨설팅 문의는 이메일 또는 채팅으로 접수됩니다.
               </p>
             </div>
