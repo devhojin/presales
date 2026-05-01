@@ -3,13 +3,14 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import {
   FileText, Download, User, Loader2, Mail, Phone, Building, Pencil, Save, X,
   Lock, Eye, EyeOff, ChevronDown, ShoppingBag, AlertTriangle, Clock, Bookmark,
-  ExternalLink, Megaphone, Rss, Package, ArrowRight, Store, BookOpen,
-  ArrowLeft, BookmarkCheck, MessageCircle, CreditCard, HelpCircle, Tag, Copy, Check, Coins,
+  ExternalLink, Megaphone, Rss, Package, ArrowRight, Store,
+  ArrowLeft, MessageCircle, HelpCircle, Tag, Copy, Check, Coins,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { getPasswordAuthErrorMessage, validatePassword } from '@/lib/password-policy'
@@ -40,7 +41,7 @@ interface OrderItem {
   discount_reason?: string | null
   discount_source_product_id?: number | null
   discount_source_product?: { id: number; title: string; price: number } | null
-  products: { id: number; title: string; price: number } | { id: number; title: string; price: number }[] | null
+  products: { id: number; title: string; price: number; is_free?: boolean | null } | { id: number; title: string; price: number; is_free?: boolean | null }[] | null
 }
 
 interface Order {
@@ -150,6 +151,30 @@ const consultingStatusMap: Record<string, { label: string; class: string }> = {
 const formatPrice = (price: number) => new Intl.NumberFormat('ko-KR').format(price) + '원'
 const formatDate = (date: string) => new Date(date).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })
 
+function getOrderItemProduct(item: OrderItem) {
+  return Array.isArray(item.products) ? item.products[0] : item.products
+}
+
+function isFreeOrder(order: Order): boolean {
+  const items = order.order_items || []
+  if (items.length === 0) return Number(order.total_amount ?? 0) <= 0
+
+  const hasPaidProduct = items.some((item) => {
+    const prod = getOrderItemProduct(item)
+    const productPrice = Number(prod?.price ?? 0)
+    const originalPrice = Number(item.original_price ?? item.price ?? 0)
+    return prod?.is_free !== true && Math.max(productPrice, originalPrice, Number(item.price ?? 0)) > 0
+  })
+
+  return !hasPaidProduct && Number(order.total_amount ?? 0) <= 0
+}
+
+function orderKindInfo(order: Order) {
+  return isFreeOrder(order)
+    ? { label: '무료 주문', class: 'bg-blue-50 text-blue-800 border-blue-200' }
+    : { label: '유료 주문', class: 'bg-zinc-100 text-zinc-800 border-zinc-200' }
+}
+
 function relativeTime(date: Date): string {
   const diff = Date.now() - date.getTime()
   const mins = Math.floor(diff / 60000)
@@ -200,7 +225,6 @@ export default function MyConsolePage() {
   const [overlay, setOverlay] = useState<'profile' | null>(null)
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null)
   const [orderFilter, setOrderFilter] = useState('all')
-  const [showDownloadHistory, setShowDownloadHistory] = useState(false)
 
   // Profile editing
   const [editingProfile, setEditingProfile] = useState(false)
@@ -255,7 +279,7 @@ export default function MyConsolePage() {
         { data: rewardLedgerData },
       ] = await Promise.all([
         supabase.from('profiles').select('name, email, phone, company, reward_balance, role, created_at').eq('id', user.id).single(),
-        supabase.from('orders').select('id, order_number, total_amount, status, created_at, paid_at, payment_method, cash_receipt_url, refund_reason, coupon_discount, reward_discount, order_items(id, price, original_price, discount_amount, discount_reason, discount_source_product_id, products(id, title, price))').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('orders').select('id, order_number, total_amount, status, created_at, paid_at, payment_method, cash_receipt_url, refund_reason, coupon_discount, reward_discount, order_items(id, price, original_price, discount_amount, discount_reason, discount_source_product_id, products(id, title, price, is_free))').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('download_logs').select('id, product_id, file_name, downloaded_at, products(id, title, thumbnail_url, format, file_size, is_free)').eq('user_id', user.id).order('downloaded_at', { ascending: false }),
         supabase.from('announcement_bookmarks').select('announcement_id').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('feed_bookmarks').select('post_id').eq('user_id', user.id).order('created_at', { ascending: false }),
@@ -387,7 +411,7 @@ export default function MyConsolePage() {
   // Handlers
   // ===========================
 
-  async function handleProductDownload(productId: number, _title: string) {
+  async function handleProductDownload(productId: number) {
     try {
       const res = await fetch('/api/download', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId }) })
       if (!res.ok) { const d = await res.json(); addToast(d.error || '다운로드 실패', 'error'); return }
@@ -483,13 +507,35 @@ export default function MyConsolePage() {
     return items.sort((a, b) => b.raw.getTime() - a.raw.getTime()).slice(0, 8)
   }, [orders, downloadLogs])
 
+  const orderCounts = useMemo(() => {
+    const paid = orders.filter(order => !isFreeOrder(order)).length
+    const free = orders.length - paid
+    const pending = orders.filter(o => o.status === 'pending').length
+    const completed = orders.filter(o => o.status === 'paid' || o.status === 'completed').length
+    const other = orders.filter(o => ['cancelled', 'refunded', 'pending_refund'].includes(o.status)).length
+    return { all: orders.length, paid, free, pending, completed, other }
+  }, [orders])
+
   // Filtered orders
   const filteredOrders = useMemo(() => {
     if (orderFilter === 'all') return orders
+    if (orderFilter === 'paid') return orders.filter(o => !isFreeOrder(o))
+    if (orderFilter === 'free') return orders.filter(o => isFreeOrder(o))
     if (orderFilter === 'pending') return orders.filter(o => o.status === 'pending')
     if (orderFilter === 'completed') return orders.filter(o => o.status === 'paid' || o.status === 'completed')
     return orders.filter(o => ['cancelled', 'refunded', 'pending_refund'].includes(o.status))
   }, [orders, orderFilter])
+
+  const orderFilterLabel = (
+    {
+      all: '전체',
+      paid: '유료',
+      free: '무료',
+      pending: '대기',
+      completed: '완료',
+      other: '기타',
+    } as Record<string, string>
+  )[orderFilter] || '선택한'
 
   const catLabel = (c: string) => ({ news: '뉴스', policy: '정책', bid: '입찰', task: '과제', event: '행사' }[c] || c)
   const catColor = (c: string) => ({ news: 'bg-blue-100 text-blue-700', policy: 'bg-blue-100 text-blue-800', bid: 'bg-orange-100 text-orange-700', task: 'bg-purple-100 text-purple-700', event: 'bg-pink-100 text-pink-700' }[c] || 'bg-muted text-muted-foreground')
@@ -778,12 +824,15 @@ export default function MyConsolePage() {
               <h2 className="font-semibold">내 상품</h2>
               <span className="text-xs text-muted-foreground">{purchasedProducts.length}개</span>
             </div>
+            <p className="mb-4 text-xs leading-relaxed text-muted-foreground">
+              결제완료 주문 상품과 무료 다운로드 상품이 함께 표시됩니다. 주문 건수와 보유 상품 수는 서로 다를 수 있습니다.
+            </p>
             <div className="grid gap-3">
               {purchasedProducts.map(item => (
                 <div key={item.id} className="flex items-center justify-between p-4 border border-border/50 rounded-xl hover:shadow-sm transition-shadow">
                   <div className="flex items-center gap-3 min-w-0">
                     {item.thumbnail_url ? (
-                      <img src={item.thumbnail_url} alt={item.title} className="w-12 h-12 rounded-lg object-cover bg-muted shrink-0" />
+                      <Image src={item.thumbnail_url} alt={item.title} width={48} height={48} className="w-12 h-12 rounded-lg object-cover bg-muted shrink-0" />
                     ) : (
                       <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0">
                         <FileText className="w-5 h-5 text-muted-foreground" />
@@ -791,7 +840,12 @@ export default function MyConsolePage() {
                     )}
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">{item.title}</p>
-                      <p className="text-xs text-muted-foreground">{item.format || '문서'}{item.file_size ? ` · ${item.file_size}` : ''}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <Badge className={`h-5 border px-2 text-[10px] ${item.is_free ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-zinc-100 text-zinc-800 border-zinc-200'}`}>
+                          {item.is_free ? '무료' : '유료'}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground">{item.format || '문서'}{item.file_size ? ` · ${item.file_size}` : ''}</p>
+                      </div>
                     </div>
                   </div>
                   <div className="ml-3 flex shrink-0 items-center gap-2">
@@ -804,7 +858,7 @@ export default function MyConsolePage() {
                     </Link>
                     <button
                       type="button"
-                      onClick={() => handleProductDownload(item.id, item.title)}
+                      onClick={() => handleProductDownload(item.id)}
                       className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
                     >
                       <Download className="w-3.5 h-3.5" />
@@ -830,15 +884,28 @@ export default function MyConsolePage() {
                 <Package className="w-4 h-4 text-primary" />
                 <h2 className="font-semibold">내 주문</h2>
                 <span className="text-xs text-muted-foreground">{orders.length}건</span>
+                <span className="hidden text-xs text-muted-foreground sm:inline">
+                  유료 {orderCounts.paid}건 · 무료 {orderCounts.free}건
+                </span>
               </div>
             </div>
 
             {/* Order Filter Tabs */}
-            <div className="flex gap-1 mb-4 border-b border-border/50">
-              {[{ key: 'all', label: '전체' }, { key: 'pending', label: '대기' }, { key: 'completed', label: '완료' }, { key: 'other', label: '기타' }].map(t => (
+            <div className="mb-4 flex gap-1 overflow-x-auto border-b border-border/50">
+              {[
+                { key: 'all', label: '전체', count: orderCounts.all },
+                { key: 'paid', label: '유료', count: orderCounts.paid },
+                { key: 'free', label: '무료', count: orderCounts.free },
+                { key: 'pending', label: '대기', count: orderCounts.pending },
+                { key: 'completed', label: '완료', count: orderCounts.completed },
+                { key: 'other', label: '기타', count: orderCounts.other },
+              ].map(t => (
                 <button key={t.key} onClick={() => setOrderFilter(t.key)}
-                  className={`px-3 py-2 text-xs font-medium border-b-2 transition cursor-pointer ${orderFilter === t.key ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
+                  className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-medium transition cursor-pointer ${orderFilter === t.key ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}>
                   {t.label}
+                  <span className={`rounded-full px-1.5 py-0.5 text-[10px] ${orderFilter === t.key ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                    {t.count}
+                  </span>
                 </button>
               ))}
             </div>
@@ -846,7 +913,7 @@ export default function MyConsolePage() {
             {filteredOrders.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <ShoppingBag className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">주문 내역이 없습니다</p>
+                <p className="text-sm">{orderFilterLabel} 주문 내역이 없습니다</p>
                 <Link href="/store" className="inline-block mt-3 text-xs text-primary hover:underline">스토어 바로가기</Link>
               </div>
             ) : (
@@ -855,21 +922,28 @@ export default function MyConsolePage() {
                   const isExpanded = expandedOrderId === order.id
                   const items = (order.order_items || []) as OrderItem[]
                   const statusInfo = statusMap[order.status] || { label: order.status, class: 'bg-muted text-muted-foreground border-border' }
+                  const kindInfo = orderKindInfo(order)
                   return (
                     <div key={order.id} className="rounded-xl border border-border/50 overflow-hidden">
                       <button type="button" onClick={() => setExpandedOrderId(isExpanded ? null : order.id)} className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors cursor-pointer text-left">
                         <div><p className="text-xs font-mono text-muted-foreground">{order.order_number}</p><p className="text-sm font-semibold mt-0.5">{formatPrice(order.total_amount)}</p></div>
-                        <div className="flex items-center gap-3"><div className="text-right"><Badge className={`text-xs border ${statusInfo.class}`}>{statusInfo.label}</Badge><p className="text-xs text-muted-foreground mt-1">{formatDate(order.created_at)}</p></div><ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} /></div>
+                        <div className="flex items-center gap-3"><div className="text-right"><div className="flex flex-wrap justify-end gap-1"><Badge className={`text-xs border ${kindInfo.class}`}>{kindInfo.label}</Badge><Badge className={`text-xs border ${statusInfo.class}`}>{statusInfo.label}</Badge></div><p className="text-xs text-muted-foreground mt-1">{formatDate(order.created_at)}</p></div><ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} /></div>
                       </button>
                       {isExpanded && (
                         <div className="border-t border-border bg-muted/20 px-4 py-4 space-y-3">
                           {items.map(item => {
-                            const prod = Array.isArray(item.products) ? item.products[0] : item.products
+                            const prod = getOrderItemProduct(item)
+                            const isFreeProduct = prod?.is_free === true || Math.max(Number(prod?.price ?? 0), Number(item.original_price ?? item.price ?? 0), Number(item.price ?? 0)) <= 0
                             const hasDiscount = (item.discount_amount ?? 0) > 0 && item.original_price && item.original_price > item.price
                             return (
                               <div key={item.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-background border border-border/50">
                                 <div className="min-w-0">
-                                  <p className="text-sm font-medium truncate">{prod?.title || '-'}</p>
+                                  <div className="flex min-w-0 items-center gap-2">
+                                    <p className="truncate text-sm font-medium">{prod?.title || '-'}</p>
+                                    <Badge className={`h-5 shrink-0 border px-2 text-[10px] ${isFreeProduct ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-zinc-100 text-zinc-800 border-zinc-200'}`}>
+                                      {isFreeProduct ? '무료' : '유료'}
+                                    </Badge>
+                                  </div>
                                   {hasDiscount && (
                                     <div className="mt-1 space-y-0.5">
                                       <p className="text-[10px] text-blue-700">
@@ -899,7 +973,7 @@ export default function MyConsolePage() {
                                       >
                                         <Pencil className="w-3 h-3" />후기작성
                                       </Link>
-                                      <button type="button" onClick={e => { e.stopPropagation(); handleProductDownload(prod.id, prod.title) }} className="px-3 py-1 rounded-lg bg-blue-700 text-white text-xs font-medium hover:bg-blue-800 flex items-center gap-1 cursor-pointer"><Download className="w-3 h-3" />다운로드</button>
+                                      <button type="button" onClick={e => { e.stopPropagation(); handleProductDownload(prod.id) }} className="px-3 py-1 rounded-lg bg-blue-700 text-white text-xs font-medium hover:bg-blue-800 flex items-center gap-1 cursor-pointer"><Download className="w-3 h-3" />다운로드</button>
                                     </>
                                   )}
                                 </div>
