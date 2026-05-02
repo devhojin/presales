@@ -12,6 +12,7 @@ interface PdfPreviewModalProps {
   productTitle: string
   onPurchaseClick: () => void
   purchaseLabel?: string
+  pageImageUrls?: string[]
 }
 
 function ensurePromiseWithResolvers() {
@@ -44,9 +45,11 @@ export function PdfPreviewModal({
   productTitle,
   onPurchaseClick,
   purchaseLabel,
+  pageImageUrls = [],
 }: PdfPreviewModalProps) {
   const [currentPage, setCurrentPage] = useState(1)
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null)
+  const [imagePreviewMode, setImagePreviewMode] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [renderError, setRenderError] = useState('')
@@ -55,8 +58,12 @@ export function PdfPreviewModal({
   const canvasWrapRef = useRef<HTMLDivElement>(null)
 
   const requestedPreviewPages = Math.min(Math.max(previewPages || 1, 1), 20)
+  const imagePreviewPages = pageImageUrls.slice(0, requestedPreviewPages)
+  const pageImageUrlsKey = pageImageUrls.join('|')
   const previewUrl = `/api/pdf-preview?productId=${productId}&pages=${requestedPreviewPages}`
-  const totalPreviewPages = pdfDoc
+  const totalPreviewPages = imagePreviewMode
+    ? Math.min(requestedPreviewPages, imagePreviewPages.length)
+    : pdfDoc
     ? Math.min(requestedPreviewPages, pdfDoc.numPages)
     : requestedPreviewPages
   const clearPages = Math.max(1, Math.ceil(totalPreviewPages * 0.7))
@@ -70,11 +77,23 @@ export function PdfPreviewModal({
     setRenderError('')
     setCurrentPage(1)
     setPdfDoc(null)
+    setImagePreviewMode(false)
     let cancelled = false
     let loadedDoc: PDFDocumentProxy | null = null
 
     async function loadPdf() {
       try {
+        const preferImages =
+          imagePreviewPages.length > 0 &&
+          (window.matchMedia?.('(max-width: 768px)').matches ||
+            window.matchMedia?.('(hover: none), (pointer: coarse)').matches)
+
+        if (preferImages) {
+          setImagePreviewMode(true)
+          setLoading(false)
+          return
+        }
+
         ensurePromiseWithResolvers()
 
         const pdfjs = await import('pdfjs-dist')
@@ -118,6 +137,12 @@ export function PdfPreviewModal({
       } catch (err: unknown) {
         console.error('PDF load error:', err)
         if (cancelled) return
+        if (imagePreviewPages.length > 0) {
+          setImagePreviewMode(true)
+          setError('')
+          setLoading(false)
+          return
+        }
         const message = err instanceof Error ? err.message : String(err)
         if (message.includes('Missing PDF') || message.includes('Invalid PDF')) {
           setError('유효하지 않은 PDF 파일입니다.')
@@ -138,13 +163,13 @@ export function PdfPreviewModal({
       cancelled = true
       if (loadedDoc) void loadedDoc.destroy()
     }
-  }, [isOpen, productId, previewUrl])
+  }, [isOpen, productId, previewUrl, imagePreviewPages.length, pageImageUrlsKey])
 
   useEffect(() => {
-    if (pdfDoc && currentPage > totalPreviewPages) {
+    if ((pdfDoc || imagePreviewMode) && currentPage > totalPreviewPages) {
       setCurrentPage(totalPreviewPages)
     }
-  }, [pdfDoc, currentPage, totalPreviewPages])
+  }, [pdfDoc, imagePreviewMode, currentPage, totalPreviewPages])
 
   useEffect(() => {
     if (!pdfDoc || !canvasRef.current) return
@@ -277,6 +302,74 @@ export function PdfPreviewModal({
                 <p className="text-sm text-red-500">{error}</p>
               </div>
             </div>
+          ) : imagePreviewMode ? (
+            <div className="relative flex items-center justify-center p-3 sm:p-4 min-h-[min(62dvh,640px)] sm:min-h-[400px]">
+              <button
+                onClick={() => currentPage > 1 && setCurrentPage((p) => p - 1)}
+                disabled={currentPage <= 1}
+                className="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 z-10 w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-white/90 shadow-md flex items-center justify-center text-gray-600 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                aria-label="이전 페이지"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+
+              <div className="relative flex w-full max-w-full items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imagePreviewPages[currentPage - 1]}
+                  alt={`${productTitle} PDF 미리보기 ${currentPage}페이지`}
+                  className="max-h-[min(62dvh,640px)] max-w-full rounded-lg bg-white object-contain shadow-lg"
+                  style={{
+                    filter: isBlurPage ? 'blur(8px)' : 'none',
+                  }}
+                  onLoad={() => setRenderError('')}
+                  onError={() => setRenderError('PDF 페이지를 표시할 수 없습니다.')}
+                />
+
+                {renderError && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-white/95 px-6 text-center">
+                    <div>
+                      <p className="text-sm font-medium text-red-500">{renderError}</p>
+                      <p className="mt-3 text-xs text-gray-500">잠시 후 다시 시도해 주세요.</p>
+                    </div>
+                  </div>
+                )}
+
+                {isBlurPage && (
+                  <div className="absolute inset-0 bg-white/40 backdrop-blur-sm flex flex-col items-center justify-center rounded-lg">
+                    <div className="bg-white/95 rounded-2xl p-8 text-center shadow-xl max-w-sm mx-4">
+                      <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                        <Lock className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <p className="text-base font-semibold text-gray-900 mb-2">
+                        나머지 페이지는
+                        <br />
+                        구매 후 확인 가능합니다
+                      </p>
+                      <p className="text-xs text-gray-500 mb-6">
+                        미리보기는 일부만 제공됩니다
+                      </p>
+                      <button
+                        onClick={onPurchaseClick}
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium text-sm hover:bg-primary/90 transition-colors cursor-pointer"
+                      >
+                        <ShoppingCart className="w-4 h-4" />
+                        {purchaseLabel || '구매하기'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => currentPage < totalPreviewPages && setCurrentPage((p) => p + 1)}
+                disabled={currentPage >= totalPreviewPages}
+                className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-10 w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-white/90 shadow-md flex items-center justify-center text-gray-600 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                aria-label="다음 페이지"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
           ) : (
             <div className="relative flex items-center justify-center p-3 sm:p-4 min-h-[min(62dvh,640px)] sm:min-h-[400px]">
               <button
@@ -344,13 +437,13 @@ export function PdfPreviewModal({
           )}
         </div>
 
-        {!loading && !error && pdfDoc && (
+        {!loading && !error && (pdfDoc || imagePreviewMode) && (
           <div className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-3 gap-2 border-t border-gray-200 bg-gray-50">
             <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
               <p className="text-sm text-gray-500">
                 페이지 {currentPage} / {totalPreviewPages}
               </p>
-              {requestedPreviewPages > pdfDoc.numPages && (
+              {pdfDoc && requestedPreviewPages > pdfDoc.numPages && (
                 <span className="flex items-center gap-1 text-[11px] text-gray-400">
                   <Info className="w-3 h-3" />
                   실제 PDF는 {pdfDoc.numPages}페이지입니다

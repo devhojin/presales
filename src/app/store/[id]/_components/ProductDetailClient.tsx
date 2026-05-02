@@ -513,9 +513,11 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
     fileTypeItems.length > 0 ||
     Boolean(product.description_html || product.description)
   const productSerial = String(product.id).padStart(3, '0')
-  const productIntroImageUrl = Array.isArray(product.preview_images)
-    ? product.preview_images.find((url) => url.includes('/preview-images/original-intros/')) ?? null
-    : null
+  const previewImages = Array.isArray(product.preview_images) ? product.preview_images : []
+  const pdfPreviewPageImages = previewImages.filter((url) => url.includes('/preview-page-images/'))
+  const galleryPreviewImages = previewImages.filter((url) => !url.includes('/preview-page-images/'))
+  const productIntroImageUrl =
+    galleryPreviewImages.find((url) => url.includes('/preview-images/original-intros/')) ?? null
 
   const tabs: { id: TabId; label: string }[] = [
     { id: 'info', label: '상품정보' },
@@ -579,14 +581,14 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           )}
 
           {/* Image Preview Button */}
-          {product.preview_images && product.preview_images.length > 0 && (
+          {galleryPreviewImages.length > 0 && (
             <button
               onClick={() => setShowImagePreview(true)}
               className="w-full bg-white border border-border/60 rounded-2xl py-3 hover:shadow-[0_12px_30px_rgba(15,23,42,0.06)] transition-all duration-300 flex items-center justify-center gap-2 text-sm font-medium text-foreground active:scale-[0.98]"
             >
               <ImageIcon className="w-4 h-4" />
               이미지 미리보기
-              <span className="text-xs text-muted-foreground">({product.preview_images.length}장)</span>
+              <span className="text-xs text-muted-foreground">({galleryPreviewImages.length}장)</span>
             </button>
           )}
         </div>
@@ -1077,6 +1079,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           productId={product.id}
           previewPages={product.preview_clear_pages || Math.min(15, Math.max(3, Math.ceil((displayPages || 30) * 0.3)))}
           productTitle={product.title}
+          pageImageUrls={pdfPreviewPageImages}
           purchaseLabel={inCart ? '장바구니로 이동' : '장바구니 담기'}
           onPurchaseClick={() => {
             setShowPdfPreview(false)
@@ -1106,9 +1109,9 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
       )}
 
       {/* Image Preview Modal */}
-      {showImagePreview && product.preview_images && product.preview_images.length > 0 && (
+      {showImagePreview && galleryPreviewImages.length > 0 && (
         <ImagePreviewModal
-          images={product.preview_images}
+          images={galleryPreviewImages}
           onClose={() => setShowImagePreview(false)}
         />
       )}
