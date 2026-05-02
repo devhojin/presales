@@ -824,7 +824,7 @@ export default function MyConsolePage() {
       {/* 내 상품 (다운로드) */}
       {purchasedProducts.length > 0 && (
         <div className="mb-6">
-          <div className="bg-card border border-border/50 rounded-2xl p-6">
+          <div className="max-w-full overflow-hidden bg-card border border-border/50 rounded-2xl p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
               <Download className="w-4 h-4 text-primary" />
               <h2 className="font-semibold">내 상품</h2>
@@ -835,8 +835,8 @@ export default function MyConsolePage() {
             </p>
             <div className="grid gap-3">
               {purchasedProducts.map(item => (
-                <div key={item.id} className="flex items-center justify-between p-4 border border-border/50 rounded-xl hover:shadow-sm transition-shadow">
-                  <div className="flex items-center gap-3 min-w-0">
+                <div key={item.id} className="flex min-w-0 flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4 border border-border/50 rounded-xl hover:shadow-sm transition-shadow">
+                  <div className="flex min-w-0 items-center gap-3">
                     {item.thumbnail_url ? (
                       <Image src={item.thumbnail_url} alt={item.title} width={48} height={48} className="w-12 h-12 rounded-lg object-cover bg-muted shrink-0" />
                     ) : (
@@ -844,20 +844,20 @@ export default function MyConsolePage() {
                         <FileText className="w-5 h-5 text-muted-foreground" />
                       </div>
                     )}
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{item.title}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-2 break-words text-sm font-medium leading-snug">{item.title}</p>
                       <div className="mt-1 flex flex-wrap items-center gap-1.5">
                         <Badge className={`h-5 border px-2 text-[10px] ${item.is_free ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-zinc-100 text-zinc-800 border-zinc-200'}`}>
                           {item.is_free ? '무료' : '유료'}
                         </Badge>
-                        <p className="text-xs text-muted-foreground">{item.format || '문서'}{item.file_size ? ` · ${item.file_size}` : ''}</p>
+                        <p className="min-w-0 break-words text-xs text-muted-foreground">{item.format || '문서'}{item.file_size ? ` · ${item.file_size}` : ''}</p>
                       </div>
                     </div>
                   </div>
-                  <div className="ml-3 flex shrink-0 items-center gap-2">
+                  <div className="grid w-full grid-cols-2 gap-2 sm:ml-3 sm:flex sm:w-auto sm:shrink-0 sm:items-center">
                     <Link
                       href={`/store/${item.id}?tab=review&writeReview=1`}
-                      className="flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100"
+                      className="flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100 sm:px-4"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                       후기작성
@@ -865,7 +865,7 @@ export default function MyConsolePage() {
                     <button
                       type="button"
                       onClick={() => handleProductDownload(item.id)}
-                      className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer"
+                      className="flex min-w-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 cursor-pointer sm:px-4"
                     >
                       <Download className="w-3.5 h-3.5" />
                       다운로드
