@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Badge } from '@/components/ui/badge'
 import { ShoppingCart, Tag, Trash2, X } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
 import { useCartDiscountSources } from '@/hooks/use-cart-discount-sources'
 import { getCartDiscountSummary, getCartItemDiscountBreakdown } from '@/lib/cart-discounts'
@@ -116,13 +117,28 @@ export function CartDrawer() {
 
                 return (
                   <div key={item.productId} className="flex gap-3 p-3 rounded-lg border border-border">
-                    <img
-                      src={item.thumbnail}
-                      alt={item.title}
-                      className="w-16 h-12 rounded object-cover bg-muted shrink-0"
-                    />
+                    <Link
+                      href={`/store/${item.productId}`}
+                      onClick={() => setOpen(false)}
+                      className="shrink-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      aria-label={`${item.title} 상품 페이지로 이동`}
+                    >
+                      <Image
+                        src={item.thumbnail}
+                        alt={item.title}
+                        width={64}
+                        height={48}
+                        className="w-16 h-12 rounded object-cover bg-muted transition-opacity hover:opacity-85"
+                      />
+                    </Link>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium line-clamp-2 leading-snug">{item.title}</p>
+                      <Link
+                        href={`/store/${item.productId}`}
+                        onClick={() => setOpen(false)}
+                        className="block text-sm font-medium line-clamp-2 leading-snug transition-colors hover:text-primary"
+                      >
+                        {item.title}
+                      </Link>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-sm font-bold text-primary">{formatPrice(breakdown.effectivePrice)}</span>
                         {item.originalPrice > breakdown.effectivePrice && (

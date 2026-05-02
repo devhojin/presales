@@ -49,7 +49,7 @@ function pathLabel(p: string): string {
   if (p === '/about') return '회사소개'
   if (p === '/us') return 'Us'
   if (p === '/faq') return 'FAQ'
-  if (p === '/mypage') return '마이페이지'
+  if (p === '/mypage') return '나의콘솔'
   if (p === '/auth/login') return '로그인'
   if (p === '/auth/signup') return '회원가입'
   return p

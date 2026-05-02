@@ -170,7 +170,7 @@ export default function CartPage() {
       if (!result.ok || !result.orderId) return
       gtag.trackPurchase(String(result.orderId), 0)
       freeItems.forEach((item) => removeItem(item.productId))
-      addToast('무료 상품이 처리되었습니다! 마이페이지에서 다운로드하세요.', 'success')
+      addToast('무료 상품이 처리되었습니다! 나의콘솔에서 다운로드하세요.', 'success')
       router.push('/mypage')
       router.refresh()
     } catch {
@@ -658,7 +658,7 @@ export default function CartPage() {
                         if (!result.ok || !result.orderId) return
                         gtag.trackPurchase(String(result.orderId), 0)
                         clearCart()
-                        addToast('주문이 완료되었습니다! 마이페이지에서 다운로드하세요.', 'success')
+                        addToast('주문이 완료되었습니다! 나의콘솔에서 다운로드하세요.', 'success')
                         router.push('/mypage')
                         router.refresh()
                       } catch {

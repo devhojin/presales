@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: '마이페이지',
+  title: '나의콘솔',
   robots: {
     index: false,
     follow: false,

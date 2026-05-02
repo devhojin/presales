@@ -240,12 +240,12 @@ export default function CheckoutSuccessPage() {
           </div>
           <div className="mt-6 bg-blue-50 border border-blue-100 rounded-xl p-4 text-xs text-blue-900 space-y-1">
             <p>• 입금 확인은 토스페이먼츠 webhook 을 통해 자동 처리됩니다 (1~3분 소요)</p>
-            <p>• 입금 후 마이페이지에서 다운로드 가능하며 안내 이메일이 발송됩니다</p>
+            <p>• 입금 후 나의콘솔에서 다운로드 가능하며 안내 이메일이 발송됩니다</p>
             <p>• 기한 내 미입금 시 주문이 자동 취소됩니다</p>
           </div>
           <div className="mt-8 flex gap-3 justify-center">
             <Link
-              href="/mypage/orders"
+              href="/mypage#orders"
               className="h-11 px-6 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors inline-flex items-center"
             >
               주문 내역 확인
@@ -280,7 +280,7 @@ export default function CheckoutSuccessPage() {
         ) : (
           <p className="text-muted-foreground mb-8">
             주문이 완료되었습니다.<br />
-            마이페이지에서 문서를 다운로드하세요.
+            나의콘솔에서 문서를 다운로드하세요.
             {confirmedOrderId && <span className="block mt-2 text-xs font-mono text-muted-foreground">Order ID #{confirmedOrderId}</span>}
             {cashReceiptUrl && (
               <>
@@ -324,7 +324,7 @@ export default function CheckoutSuccessPage() {
         <div className="mt-8 max-w-md mx-auto text-left bg-muted/50 rounded-xl p-6">
           <h3 className="text-sm font-semibold mb-3">이렇게 활용하세요</h3>
           <ol className="space-y-2 text-xs text-muted-foreground">
-            <li className="flex gap-2"><span className="font-bold text-primary">1.</span> 마이페이지에서 원본 파일을 다운로드하세요</li>
+            <li className="flex gap-2"><span className="font-bold text-primary">1.</span> 나의콘솔에서 원본 파일을 다운로드하세요</li>
             <li className="flex gap-2"><span className="font-bold text-primary">2.</span> PPT/HWP를 열어 자사 내용으로 교체하세요</li>
             <li className="flex gap-2"><span className="font-bold text-primary">3.</span> 평가표 항목을 체크하며 최종 검토하세요</li>
           </ol>

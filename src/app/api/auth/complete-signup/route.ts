@@ -148,7 +148,8 @@ export async function POST(request: NextRequest) {
 
     // WELCOME10K 쿠폰 발급 (이미 가진 경우 skip)
     let couponIssued = false
-    const { data: welcome } = await supabase
+    const benefitClient = service || supabase
+    const { data: welcome } = await benefitClient
       .from('coupons')
       .select('id')
       .eq('code', 'WELCOME10K')
@@ -156,7 +157,7 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (welcome) {
-      const { data: already } = await supabase
+      const { data: already } = await benefitClient
         .from('user_coupons')
         .select('id')
         .eq('user_id', user.id)
@@ -164,7 +165,7 @@ export async function POST(request: NextRequest) {
         .maybeSingle()
 
       if (!already) {
-        const { error: couponErr } = await supabase.from('user_coupons').insert({
+        const { error: couponErr } = await benefitClient.from('user_coupons').insert({
           user_id: user.id,
           coupon_id: welcome.id,
           source: 'signup',

@@ -811,7 +811,7 @@ export default function CheckoutPage() {
       clearCart()
       sessionStorage.removeItem('presales-applied-coupon')
       sessionStorage.removeItem('presales-reward-use')
-      addToast('주문이 완료되었습니다. 마이페이지에서 다운로드하세요.', 'success')
+      addToast('주문이 완료되었습니다. 나의콘솔에서 다운로드하세요.', 'success')
       router.push(`/checkout/success?orderId=${data.orderId}`)
     } catch (err) {
       console.error('[0원 주문 처리 오류]', err)
@@ -1115,7 +1115,7 @@ export default function CheckoutPage() {
           <p className="text-sm font-semibold text-blue-900 mb-2">무통장 입금 안내</p>
           <ul className="space-y-1 text-xs text-blue-800">
             <li>• 주문 완료 후 안내 이메일로 계좌 정보가 발송됩니다</li>
-            <li>• 입금 확인 후 관리자가 승인하면 마이페이지에서 다운로드가 가능합니다</li>
+            <li>• 입금 확인 후 관리자가 승인하면 나의콘솔에서 다운로드가 가능합니다</li>
             <li>• 세금계산서 발행이 필요하신 경우 위 추가정보에서 담당자 정보와 사업자등록증을 등록해 주세요</li>
           </ul>
         </div>

@@ -568,7 +568,7 @@ export default function MyConsolePage() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
         <button onClick={() => { setOverlay(null); setEditingProfile(false); setShowPasswordSection(false) }} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 cursor-pointer">
-          <ArrowLeft className="w-4 h-4" /> 마이페이지로 돌아가기
+          <ArrowLeft className="w-4 h-4" /> 나의콘솔로 돌아가기
         </button>
 
         <h1 className="text-2xl font-bold mb-8">내 정보</h1>
@@ -759,7 +759,7 @@ export default function MyConsolePage() {
     <div className="max-w-7xl mx-auto px-4 md:px-8 pb-12">
       <div className="mt-6 mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">마이페이지</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">나의콘솔</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {profile?.email || profile?.name || '회원'} · 가입일 {profile ? formatDate(profile.created_at) : '-'}
           </p>
@@ -783,7 +783,7 @@ export default function MyConsolePage() {
           <p className="text-2xl font-bold text-foreground">{coupons.length}<span className="text-sm font-normal text-muted-foreground ml-1">장</span></p>
           <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 group-hover:text-pink-600 transition-colors">내 쿠폰 <ArrowRight className="w-3 h-3" /></p>
         </button>
-        <Link href="/cart"
+        <Link href="#rewards"
           className="group bg-card border border-border/50 rounded-2xl p-5 hover:shadow-md transition-all cursor-pointer">
           <div className="w-10 h-10 rounded-xl text-blue-700 bg-blue-50 flex items-center justify-center mb-3">
             <Coins className="w-5 h-5" />
@@ -1061,7 +1061,7 @@ export default function MyConsolePage() {
         <div className="space-y-6 lg:sticky lg:top-20 lg:self-start">
 
           {/* Reward Points */}
-          <div className="bg-card border border-border/50 rounded-2xl p-5">
+          <div id="rewards" className="scroll-mt-24 bg-card border border-border/50 rounded-2xl p-5">
             <div className="flex items-center justify-between gap-3 mb-3">
               <div className="flex items-center gap-2">
                 <Coins className="w-4 h-4 text-blue-700" />

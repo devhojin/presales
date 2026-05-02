@@ -119,7 +119,7 @@ function SignupForm() {
       return
     }
 
-    // Update profile with additional info (실패해도 가입은 성공 — 마이페이지에서 재입력 가능)
+    // Update profile with additional info (실패해도 가입은 성공 — 나의콘솔에서 재입력 가능)
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       const nowIso = new Date().toISOString()
@@ -138,27 +138,11 @@ function SignupForm() {
         console.warn('[signup] 프로필 부가정보 저장 실패:', profileErr.message)
       }
 
-      // 회원가입 축하 쿠폰 자동 발급 (WELCOME10K)
-      const { data: welcome } = await supabase
-        .from('coupons')
-        .select('id')
-        .eq('code', 'WELCOME10K')
-        .eq('is_active', true)
-        .maybeSingle()
-      if (welcome) {
-        const { error: couponErr } = await supabase.from('user_coupons').insert({
-          user_id: user.id,
-          coupon_id: welcome.id,
-          source: 'signup',
-        })
-        if (couponErr) {
-          console.warn('[signup] WELCOME10K 쿠폰 발급 실패:', couponErr.message)
-        }
+      try {
+        await fetch('/api/rewards/signup', { method: 'POST' })
+      } catch {
+        // 가입 혜택 지급 실패는 가입 성공에 영향 없음
       }
-
-      fetch('/api/rewards/signup', { method: 'POST' }).catch(() => {
-        // 적립금 지급 실패는 가입 성공에 영향 없음
-      })
     }
 
     // 환영 이메일 발송 (fire-and-forget: 실패해도 가입 성공으로 처리)

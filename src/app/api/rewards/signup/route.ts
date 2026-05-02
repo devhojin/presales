@@ -32,9 +32,63 @@ export async function POST() {
       { auth: { persistSession: false } },
     )
 
+    let couponIssued = false
+    let couponSkipped = false
+
+    const { data: welcome, error: welcomeErr } = await supabase
+      .from('coupons')
+      .select('id')
+      .eq('code', 'WELCOME10K')
+      .eq('is_active', true)
+      .maybeSingle()
+
+    if (welcomeErr) {
+      logger.warn('회원가입 쿠폰 조회 실패', 'rewards/signup', {
+        userId: user.id,
+        error: welcomeErr.message,
+      })
+    } else if (welcome) {
+      const { data: already, error: alreadyErr } = await supabase
+        .from('user_coupons')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('coupon_id', welcome.id)
+        .maybeSingle()
+
+      if (alreadyErr) {
+        logger.warn('회원가입 쿠폰 보유 여부 조회 실패', 'rewards/signup', {
+          userId: user.id,
+          error: alreadyErr.message,
+        })
+      } else if (already) {
+        couponSkipped = true
+      } else {
+        const { error: couponErr } = await supabase.from('user_coupons').insert({
+          user_id: user.id,
+          coupon_id: welcome.id,
+          source: 'signup',
+        })
+
+        if (couponErr) {
+          logger.warn('회원가입 쿠폰 발급 실패', 'rewards/signup', {
+            userId: user.id,
+            error: couponErr.message,
+          })
+        } else {
+          couponIssued = true
+        }
+      }
+    }
+
     const settings = await loadRewardSettings(supabase)
     if (!settings.enabled || settings.signupBonus <= 0) {
-      return NextResponse.json({ success: true, skipped: true })
+      return NextResponse.json({
+        success: true,
+        skipped: true,
+        rewardSkipped: true,
+        couponIssued,
+        couponSkipped,
+      })
     }
 
     const result = await grantRewardPoints(supabase, {
@@ -57,6 +111,9 @@ export async function POST() {
       success: true,
       amount: settings.signupBonus,
       skipped: Boolean(result.skipped),
+      rewardSkipped: Boolean(result.skipped),
+      couponIssued,
+      couponSkipped,
     })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '알 수 없는 오류'

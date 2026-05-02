@@ -165,7 +165,7 @@ export function Header() {
                       className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-muted/80 transition-colors mx-1.5 rounded-lg"
                     >
                       <span className="flex items-center gap-2.5">
-                        <User className="w-4 h-4 text-muted-foreground" /> 마이페이지
+                        <User className="w-4 h-4 text-muted-foreground" /> 나의콘솔
                       </span>
                       <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                     </Link>
@@ -259,7 +259,7 @@ export function Header() {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full flex items-center justify-center h-12 rounded-xl border border-border hover:bg-muted text-sm font-medium transition-colors"
                 >
-                  마이페이지
+                  나의콘솔
                 </Link>
                 {profile?.role === 'admin' && (
                   <a

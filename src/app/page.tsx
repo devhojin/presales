@@ -333,7 +333,7 @@ export default function Home() {
           </div>
           <div className="presales-payment-ticker flex min-w-0 flex-1 gap-10 whitespace-nowrap text-sm font-semibold">
             <span>PG사 연결 진행중이오니 현재 카드결제는 이용할 수 없습니다. 무통장입금만 가능합니다.</span>
-            <span aria-hidden="true">무통장 입금 후 관리자가 승인하면 마이페이지에서 다운로드가 열립니다.</span>
+            <span aria-hidden="true">무통장 입금 후 관리자가 승인하면 나의콘솔에서 다운로드가 열립니다.</span>
             <span aria-hidden="true">PG사 연결 진행중이오니 현재 카드결제는 이용할 수 없습니다. 무통장입금만 가능합니다.</span>
           </div>
         </div>

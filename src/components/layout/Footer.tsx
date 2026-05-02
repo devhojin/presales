@@ -122,8 +122,8 @@ export function Footer() {
           <div className="rounded-2xl bg-[#0F172A] ring-1 ring-white/10 overflow-hidden shadow-[0_28px_80px_-52px_rgba(15,23,42,0.85)]">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
               <div className="border-b border-white/10 px-4 py-4 md:border-r xl:border-b-0">
-                <p className="text-[11px] font-semibold text-slate-400">상호</p>
-                <p className="mt-1 text-sm font-medium text-white">{BUSINESS_INFO.companyName}</p>
+                <p className="text-[11px] font-semibold text-slate-400">브랜드</p>
+                <p className="mt-1 text-sm font-medium text-white">프리세일즈</p>
               </div>
               <div className="border-b border-white/10 px-4 py-4 xl:border-r xl:border-b-0">
                 <p className="text-[11px] font-semibold text-slate-400">대표자</p>

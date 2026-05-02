@@ -72,7 +72,7 @@ export default function TermsPage() {
         <section className="space-y-3">
           <SectionTitle id="definitions">제2조 용어 정의</SectionTitle>
           <ol className="list-decimal space-y-2 pl-5 text-muted-foreground">
-            <li><span className="font-medium text-foreground">서비스</span>란 회사가 제공하는 공공조달 문서 스토어, 입찰 공고, IT피드, 모닝 브리프, 컨설팅, 채팅 상담, 마이페이지, 관리자 기능 등 PRESALES 관련 기능 일체를 말합니다.</li>
+            <li><span className="font-medium text-foreground">서비스</span>란 회사가 제공하는 공공조달 문서 스토어, 입찰 공고, IT피드, 모닝 브리프, 컨설팅, 채팅 상담, 나의콘솔, 관리자 기능 등 PRESALES 관련 기능 일체를 말합니다.</li>
             <li><span className="font-medium text-foreground">이용자</span>란 서비스에 접속하여 본 약관에 따라 서비스를 이용하는 회원과 비회원을 말합니다.</li>
             <li><span className="font-medium text-foreground">회원</span>이란 이메일 기반 인증 또는 회사가 제공하는 인증 방식으로 계정을 생성한 이용자를 말합니다.</li>
             <li><span className="font-medium text-foreground">디지털 콘텐츠</span>란 회사가 제공하거나 판매하는 PPT, PPTX, PDF, HWP, DOC, DOCX, XLS, XLSX, ZIP 등 전자파일 형태의 문서, 템플릿, 가이드, 샘플을 말합니다.</li>
@@ -98,7 +98,7 @@ export default function TermsPage() {
             <li>회원은 정확한 정보를 제공해야 하며, 허위 정보 또는 타인의 정보를 이용하여 가입할 수 없습니다.</li>
             <li>비밀번호는 이용자가 직접 관리해야 하며, 관리 소홀 또는 제3자 사용으로 인한 손해는 이용자에게 책임이 있습니다.</li>
             <li>회사는 보안을 위해 비밀번호 정책, 로그인 실패 제한, 세션 만료 등 보호 조치를 적용할 수 있습니다.</li>
-            <li>회원은 마이페이지 또는 고객지원 채널을 통해 회원탈퇴를 요청할 수 있습니다. 단, 법령상 보관이 필요한 거래·분쟁 기록은 정해진 기간 동안 보관될 수 있습니다.</li>
+            <li>회원은 나의콘솔 또는 고객지원 채널을 통해 회원탈퇴를 요청할 수 있습니다. 단, 법령상 보관이 필요한 거래·분쟁 기록은 정해진 기간 동안 보관될 수 있습니다.</li>
           </ol>
         </section>
 
@@ -127,7 +127,7 @@ export default function TermsPage() {
         <section className="space-y-3">
           <SectionTitle id="download">제7조 디지털 콘텐츠 이용</SectionTitle>
           <ol className="list-decimal space-y-2 pl-5 text-muted-foreground">
-            <li>유료 디지털 콘텐츠는 결제 완료 후 마이페이지 또는 주문 화면에서 다운로드할 수 있습니다.</li>
+            <li>유료 디지털 콘텐츠는 결제 완료 후 나의콘솔 또는 주문 화면에서 다운로드할 수 있습니다.</li>
             <li>다운로드 링크는 보안을 위해 서버에서 구매 여부를 확인한 뒤 제한된 시간 동안 유효한 서명 URL로 제공될 수 있습니다.</li>
             <li>상품 설명에 명시된 파일 형식, 구성, 미리보기, 상세 설명은 구매 판단을 돕기 위한 정보입니다. 이용자는 구매 전 필요한 호환 프로그램과 사용 환경을 확인해야 합니다.</li>
             <li>무료 콘텐츠도 저작권과 이용범위 제한이 적용되며, 회사가 정한 방식 외의 대량 수집, 자동 다운로드, 재배포는 금지됩니다.</li>

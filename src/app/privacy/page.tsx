@@ -287,7 +287,7 @@ export default function PrivacyPage() {
             </li>
             <li>
               <span className="text-foreground font-medium">상품 제공:</span> 공공조달 제안서·템플릿·디지털
-              자료 구매, 다운로드 권한 확인, 구매 내역과 마이페이지 제공
+              자료 구매, 다운로드 권한 확인, 구매 내역과 나의콘솔 제공
             </li>
             <li>
               <span className="text-foreground font-medium">결제·정산:</span> 주문 생성, 결제 승인·취소·환불,
