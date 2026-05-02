@@ -17,6 +17,7 @@ export interface DbProduct {
   description_html: string | null
   youtube_id: string | null
   preview_pdf_url: string | null
+  has_preview_pdf?: boolean
   preview_clear_pages: number
   preview_blur_pages: number
   preview_note: string | null

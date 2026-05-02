@@ -7,6 +7,14 @@ export const revalidate = 0
 const SEARCH_FETCH_LIMIT = 1000
 type DiscountMatchProductId = Partial<Record<'source_product_id' | 'target_product_id', number>>
 
+function redactPreviewUrl<T extends { preview_pdf_url?: string | null }>(product: T) {
+  return {
+    ...product,
+    has_preview_pdf: Boolean(product.preview_pdf_url),
+    preview_pdf_url: null,
+  }
+}
+
 /**
  * Public API: Get paginated published products
  * GET /api/products?page=1&limit=12&category=1,2&sort=recommended&q=keyword&fileType=PPT&documentKind=original&priceRange=free
@@ -149,7 +157,7 @@ export async function GET(request: NextRequest) {
   const total = hasSearch ? filteredProducts.length : (count ?? 0)
 
   return NextResponse.json({
-    products: paginatedProducts,
+    products: paginatedProducts.map(redactPreviewUrl),
     total,
     page,
     limit,

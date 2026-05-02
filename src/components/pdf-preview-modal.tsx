@@ -7,7 +7,7 @@ import type { PDFDocumentProxy } from 'pdfjs-dist'
 interface PdfPreviewModalProps {
   isOpen: boolean
   onClose: () => void
-  pdfUrl: string
+  productId: number
   previewPages: number
   productTitle: string
   onPurchaseClick: () => void
@@ -17,7 +17,7 @@ interface PdfPreviewModalProps {
 export function PdfPreviewModal({
   isOpen,
   onClose,
-  pdfUrl,
+  productId,
   previewPages,
   productTitle,
   onPurchaseClick,
@@ -32,8 +32,8 @@ export function PdfPreviewModal({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const canvasWrapRef = useRef<HTMLDivElement>(null)
 
-  const requestedPreviewPages = Math.min(Math.max(previewPages || 1, 1), 30)
-  const previewUrl = `/api/pdf-preview?url=${encodeURIComponent(pdfUrl)}`
+  const requestedPreviewPages = Math.min(Math.max(previewPages || 1, 1), 20)
+  const previewUrl = `/api/pdf-preview?productId=${productId}&pages=${requestedPreviewPages}`
   const totalPreviewPages = pdfDoc
     ? Math.min(requestedPreviewPages, pdfDoc.numPages)
     : requestedPreviewPages
@@ -43,7 +43,7 @@ export function PdfPreviewModal({
 
   // Load PDF
   useEffect(() => {
-    if (!isOpen || !pdfUrl) return
+    if (!isOpen || !productId) return
 
     setLoading(true)
     setError('')
@@ -124,7 +124,7 @@ export function PdfPreviewModal({
       cancelled = true
       if (loadedDoc) void loadedDoc.destroy()
     }
-  }, [isOpen, pdfUrl, previewUrl])
+  }, [isOpen, productId, previewUrl])
 
   useEffect(() => {
     if (pdfDoc && currentPage > totalPreviewPages) {
@@ -261,14 +261,7 @@ export function PdfPreviewModal({
             <div className="flex items-center justify-center h-96 px-6">
               <div className="text-center">
                 <p className="text-sm text-red-500">{error}</p>
-                <a
-                  href={previewUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
-                >
-                  PDF 새창으로 보기
-                </a>
+                <p className="mt-3 text-xs text-gray-500">잠시 후 다시 시도해 주세요.</p>
               </div>
             </div>
           ) : (
@@ -296,14 +289,7 @@ export function PdfPreviewModal({
                   <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-white/95 px-6 text-center">
                     <div>
                       <p className="text-sm font-medium text-red-500">{renderError}</p>
-                      <a
-                        href={previewUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
-                      >
-                        PDF 새창으로 보기
-                      </a>
+                      <p className="mt-3 text-xs text-gray-500">잠시 후 다시 시도해 주세요.</p>
                     </div>
                   </div>
                 )}

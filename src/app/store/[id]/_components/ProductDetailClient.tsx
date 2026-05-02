@@ -24,12 +24,12 @@ import { buildProductTagSearchHref } from '@/lib/product-tags'
 import { formatProductFileSize, formatProductFileTypes, normalizeProductFileSizeBytes, summarizeProductFiles } from '@/lib/product-file-metadata'
 
 type TabId = 'info' | 'video' | 'review'
+type ProductDetail = DbProduct & { has_preview_pdf?: boolean }
 
 interface ProductFile {
   id: number
   product_id: number
   file_name: string
-  file_url: string
   file_size: number | string | null
   created_at: string
 }
@@ -179,7 +179,7 @@ function ImagePreviewModal({ images, onClose }: { images: string[]; onClose: () 
 export default function ProductDetailClient({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const [product, setProduct] = useState<DbProduct | null>(null)
+  const [product, setProduct] = useState<ProductDetail | null>(null)
   const [categories, setCategories] = useState<DbCategory[]>([])
   const [loading, setLoading] = useState(true)
   const [related, setRelated] = useState<DbProduct[]>([])
@@ -210,15 +210,15 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
   useEffect(() => {
     async function load() {
       const supabase = createClient()
-      const [{ data }, { data: catData }] = await Promise.all([
-        supabase
-          .from('products')
-          .select('*, categories!products_category_id_fkey(id, name, slug)')
-          .eq('id', Number(id))
-          .eq('is_published', true)
-          .single(),
+      const [productResult, { data: catData }] = await Promise.all([
+        fetch(`/api/products/${id}`, { cache: 'no-store' }).then(async (response) => {
+          if (!response.ok) return null
+          const payload = await response.json() as { product?: ProductDetail }
+          return payload.product ?? null
+        }),
         supabase.from('categories').select('*').order('sort_order'),
       ])
+      const data = productResult
       setCategories(catData || [])
 
       if (data) {
@@ -231,7 +231,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
         // Load product files
         const { data: filesData } = await supabase
           .from('product_files')
-          .select('*')
+          .select('id, product_id, file_name, file_size, created_at')
           .eq('product_id', data.id)
           .order('created_at', { ascending: true })
         setProductFiles(filesData || [])
@@ -325,11 +325,12 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
         const relatedIds = Array.isArray(data.related_product_ids) && data.related_product_ids.length > 0
           ? data.related_product_ids
           : null
+        const relatedSelect = 'id, title, thumbnail_url, category_id, category_ids, is_published'
 
         if (relatedIds) {
           const { data: relatedData } = await supabase
             .from('products')
-            .select('*, categories(id, name, slug)')
+            .select(relatedSelect)
             .in('id', relatedIds)
             .eq('is_published', true)
           // Preserve the order from related_product_ids
@@ -343,7 +344,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           if (productCatIds.length > 0) {
             const { data: allPublished } = await supabase
               .from('products')
-              .select('*, categories(id, name, slug)')
+              .select(relatedSelect)
               .eq('is_published', true)
               .neq('id', data.id)
 
@@ -353,7 +354,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                 : p.category_id ? [p.category_id] : []
               return pCatIds.some((cid: number) => productCatIds.includes(cid))
             }).slice(0, 10)
-            setRelated(relatedProducts)
+            setRelated(relatedProducts as DbProduct[])
           }
         }
       }
@@ -500,7 +501,8 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
   const displayFormat = formatProductFileTypes(fileTypeItems) || fileSummary.format || product.format || ''
   const displayFileSize = fileSummary.fileSize || product.file_size || ''
   const hasPageCountCandidate = fileSummary.fileTypes.some((type) => type === 'PDF' || type === 'PPTX' || type === 'PPT')
-  const displayPages = product.pages && (product.preview_pdf_url || productFiles.length === 0 || hasPageCountCandidate)
+  const hasPreviewPdf = Boolean(product.has_preview_pdf)
+  const displayPages = product.pages && (hasPreviewPdf || productFiles.length === 0 || hasPageCountCandidate)
     ? product.pages
     : null
   const hasDetailContent =
@@ -548,7 +550,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           </div>
 
           {/* PDF Preview Button */}
-          {product.preview_pdf_url ? (
+          {hasPreviewPdf ? (
             <button
               onClick={() => setShowPdfPreview(true)}
               className="group relative w-full overflow-hidden rounded-2xl border border-red-200 bg-gradient-to-r from-red-600 via-rose-600 to-blue-700 px-4 py-4 text-white shadow-[0_18px_45px_-22px_rgba(220,38,38,0.75)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_60px_-24px_rgba(37,99,235,0.8)] active:scale-[0.98]"
@@ -650,7 +652,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
             {displayPages && (
               <div className="py-2 flex justify-between">
                 <p className="text-muted-foreground">페이지 수</p>
-                <p className="font-medium">{product.preview_pdf_url ? `PDF 기준 ${displayPages}p` : `${displayPages}p`}</p>
+                <p className="font-medium">{hasPreviewPdf ? `PDF 기준 ${displayPages}p` : `${displayPages}p`}</p>
               </div>
             )}
             {displayFileSize && (
@@ -970,7 +972,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                         {displayPages && (
                           <div className="mt-4 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
                             <span className="font-medium text-slate-950">페이지 수</span>
-                            <span className="ml-2">{product.preview_pdf_url ? `PDF 미리보기 기준 ${displayPages}p` : `${displayPages}p`}</span>
+                            <span className="ml-2">{hasPreviewPdf ? `PDF 미리보기 기준 ${displayPages}p` : `${displayPages}p`}</span>
                           </div>
                         )}
                       </div>
@@ -1068,11 +1070,11 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
       )}
 
       {/* PDF Preview Modal */}
-      {product.preview_pdf_url && (
+      {hasPreviewPdf && (
         <PdfPreviewModal
           isOpen={showPdfPreview}
           onClose={() => setShowPdfPreview(false)}
-          pdfUrl={product.preview_pdf_url}
+          productId={product.id}
           previewPages={product.preview_clear_pages || Math.min(15, Math.max(3, Math.ceil((displayPages || 30) * 0.3)))}
           productTitle={product.title}
           purchaseLabel={inCart ? '장바구니로 이동' : '장바구니 담기'}
