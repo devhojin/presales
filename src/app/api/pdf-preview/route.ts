@@ -72,8 +72,21 @@ export async function GET(request: NextRequest) {
   }
 
   const sourceBytes = new Uint8Array(await upstream.arrayBuffer())
-  const sourcePdf = await PDFDocument.load(sourceBytes)
-  const sourcePageCount = sourcePdf.getPageCount()
+  let sourcePdf: PDFDocument
+  let sourcePageCount: number
+  try {
+    sourcePdf = await PDFDocument.load(sourceBytes, { ignoreEncryption: true })
+    sourcePageCount = sourcePdf.getPageCount()
+  } catch (error) {
+    console.error('PDF preview parse failed', {
+      productId,
+      message: error instanceof Error ? error.message : String(error),
+    })
+    return NextResponse.json(
+      { error: 'PDF 미리보기 파일을 처리할 수 없습니다.' },
+      { status: 422 }
+    )
+  }
   const previewPageCount = Math.min(requestedPages, sourcePageCount, MAX_PREVIEW_PAGES)
 
   if (previewPageCount < 1) {
@@ -83,13 +96,25 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  const previewPdf = await PDFDocument.create()
-  const copiedPages = await previewPdf.copyPages(
-    sourcePdf,
-    Array.from({ length: previewPageCount }, (_, index) => index)
-  )
-  copiedPages.forEach((page) => previewPdf.addPage(page))
-  const previewBytes = await previewPdf.save()
+  let previewBytes: Uint8Array
+  try {
+    const previewPdf = await PDFDocument.create()
+    const copiedPages = await previewPdf.copyPages(
+      sourcePdf,
+      Array.from({ length: previewPageCount }, (_, index) => index)
+    )
+    copiedPages.forEach((page) => previewPdf.addPage(page))
+    previewBytes = await previewPdf.save()
+  } catch (error) {
+    console.error('PDF preview copy failed', {
+      productId,
+      message: error instanceof Error ? error.message : String(error),
+    })
+    return NextResponse.json(
+      { error: 'PDF 미리보기 파일을 처리할 수 없습니다.' },
+      { status: 422 }
+    )
+  }
 
   return new NextResponse(Buffer.from(previewBytes), {
     status: 200,
