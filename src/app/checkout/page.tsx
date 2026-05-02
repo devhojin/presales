@@ -16,6 +16,7 @@ import {
 
 const CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY!
 const CARD_PAYMENTS_DISABLED = true
+const PURCHASE_HISTORY_DISCOUNT_REASON = '구매 이력 할인'
 
 type PaymentMethod = 'card' | 'bank_transfer'
 
@@ -371,17 +372,6 @@ export default function CheckoutPage() {
             .eq('is_active', true)
 
           if (activeMatches && activeMatches.length > 0) {
-            // source 상품 제목 조회 (할인 사유 표기용)
-            const sourceProductIds = Array.from(new Set(activeMatches.map(m => m.source_product_id)))
-            let sourceProducts: { id: number; title: string }[] = []
-            if (sourceProductIds.length > 0) {
-              const { data } = await supabase
-                .from('products')
-                .select('id, title')
-                .in('id', sourceProductIds)
-              sourceProducts = data || []
-            }
-
             // 각 상품별 할인 계산
             for (const item of paidItems) {
               const itemMatches = activeMatches.filter(m => m.target_product_id === item.productId)
@@ -404,11 +394,10 @@ export default function CheckoutPage() {
               expectedTotalAmount += discountedPrice
 
               if (applicableDiscount > 0 && appliedSourceId !== null) {
-                const sourceTitle = sourceProducts.find(p => p.id === appliedSourceId)?.title || ''
                 itemDiscountMap.set(item.productId, {
                   originalPrice,
                   discountAmount: applicableDiscount,
-                  discountReason: `${sourceTitle} 구매 할인`,
+                  discountReason: PURCHASE_HISTORY_DISCOUNT_REASON,
                   discountSourceProductId: appliedSourceId,
                 })
               }
@@ -608,6 +597,12 @@ export default function CheckoutPage() {
         })
         const { error: insertItemsError } = await supabase.from('order_items').insert(orderItems)
         if (insertItemsError) {
+          console.error('[checkout] order_items insert failed', {
+            code: insertItemsError.code,
+            message: insertItemsError.message,
+            details: insertItemsError.details,
+            hint: insertItemsError.hint,
+          })
           addToast('주문 상품 등록에 실패했습니다. 다시 시도해주세요.', 'error')
           router.replace('/cart')
           return
