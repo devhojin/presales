@@ -270,6 +270,12 @@ export default function MyConsolePage() {
       const identities = (user.identities ?? []) as Array<{ provider?: string }>
       setHasPasswordIdentity(identities.some((i) => i.provider === 'email'))
 
+      try {
+        await fetch('/api/rewards/signup', { method: 'POST' })
+      } catch {
+        // 가입 혜택 보정 실패는 나의콘솔 조회를 막지 않음
+      }
+
       const [
         { data: profileData },
         { data: ordersData },
