@@ -53,6 +53,27 @@ export default function CheckoutPage() {
   const [uploadingCert, setUploadingCert] = useState(false)
   const certInputRef = useRef<HTMLInputElement>(null)
 
+  const paidItems = items.filter((item) => item.price > 0)
+  const cartTotal = getTotal()
+  const [finalAmount, setFinalAmount] = useState<number>(isChatPayment ? (chatAmount ?? 0) : cartTotal)
+  const [couponDiscount, setCouponDiscount] = useState<number>(0)
+  const [couponCode, setCouponCode] = useState<string | null>(null)
+  const [rewardBalance, setRewardBalance] = useState<number>(0)
+  const [rewardDiscount, setRewardDiscount] = useState<number>(0)
+  const isRewardOnlyOrder = !isChatPayment && finalAmount <= 0
+
+  useEffect(() => {
+    if (CARD_PAYMENTS_DISABLED && selectedMethod === 'card') {
+      setSelectedMethod('bank_transfer')
+    }
+  }, [selectedMethod])
+
+  useEffect(() => {
+    if (isRewardOnlyOrder && taxInvoiceRequested) {
+      setTaxInvoiceRequested(false)
+    }
+  }, [isRewardOnlyOrder, taxInvoiceRequested])
+
   // 세션 복원 (세금계산서 정보)
   useEffect(() => {
     try {
@@ -89,17 +110,21 @@ export default function CheckoutPage() {
   }, [saveTaxInfo])
 
   function getAdditionalInfoPayload(method: PaymentMethod) {
-    const wantsTaxInvoice = method === 'bank_transfer' && taxInvoiceRequested
+    const hasPayableAmount = isChatPayment || finalAmount > 0
+    const wantsTaxInvoice = hasPayableAmount && method === 'bank_transfer' && taxInvoiceRequested
     return {
       tax_contact_info: wantsTaxInvoice ? taxContactInfo.trim() : null,
       business_cert_url: wantsTaxInvoice ? businessCertPath : null,
       business_cert_name: wantsTaxInvoice ? businessCertName : null,
-      deposit_memo: method === 'bank_transfer' ? depositMemo.trim() || null : null,
-      card_memo: method === 'card' ? cardMemo.trim() || null : null,
+      deposit_memo: hasPayableAmount && method === 'bank_transfer' ? depositMemo.trim() || null : null,
+      card_memo: hasPayableAmount && method === 'card' ? cardMemo.trim() || null : null,
     }
   }
 
   function validateAdditionalInfo(method: PaymentMethod) {
+    const hasPayableAmount = isChatPayment || finalAmount > 0
+    if (!hasPayableAmount) return true
+
     if (method === 'card' && taxInvoiceRequested) {
       addToast('신용카드 결제는 세금계산서가 발행되지 않습니다. 세금계산서가 필요하면 무통장 입금을 선택해주세요.', 'error')
       return false
@@ -179,14 +204,6 @@ export default function CheckoutPage() {
     setBusinessCertName(null)
     setBusinessCertPath(null)
   }
-
-  const paidItems = items.filter((item) => item.price > 0)
-  const cartTotal = getTotal()
-  const [finalAmount, setFinalAmount] = useState<number>(isChatPayment ? (chatAmount ?? 0) : cartTotal)
-  const [couponDiscount, setCouponDiscount] = useState<number>(0)
-  const [couponCode, setCouponCode] = useState<string | null>(null)
-  const [rewardBalance, setRewardBalance] = useState<number>(0)
-  const [rewardDiscount, setRewardDiscount] = useState<number>(0)
 
   useEffect(() => {
     // 채팅 결제: 장바구니 비어있어도 통과
@@ -506,7 +523,11 @@ export default function CheckoutPage() {
           if (raw) taxInfo = JSON.parse(raw)
         } catch { /* noop */ }
 
-        const wantsTaxInvoice = Boolean(taxInfo.tax_invoice_requested)
+        const hasPayableAmount = expectedTotalAmount > 0
+        const wantsTaxInvoice = hasPayableAmount && Boolean(taxInfo.tax_invoice_requested)
+        const draftPaymentMethod = hasPayableAmount
+          ? (CARD_PAYMENTS_DISABLED ? 'bank_transfer' : 'card')
+          : 'reward'
         const orderUpdateFields = {
           total_amount: expectedTotalAmount,
           coupon_id: appliedCouponInfo?.id ?? null,
@@ -516,8 +537,9 @@ export default function CheckoutPage() {
           tax_contact_info: wantsTaxInvoice ? taxInfo.tax_contact_info || null : null,
           business_cert_url: wantsTaxInvoice ? taxInfo.business_cert_path || null : null,
           business_cert_name: wantsTaxInvoice ? taxInfo.business_cert_name || null : null,
-          deposit_memo: taxInfo.deposit_memo || null,
-          card_memo: taxInfo.card_memo || null,
+          deposit_memo: hasPayableAmount ? taxInfo.deposit_memo || null : null,
+          card_memo: hasPayableAmount ? taxInfo.card_memo || null : null,
+          payment_method: draftPaymentMethod,
         }
 
         if (existingOrder) {
@@ -554,7 +576,6 @@ export default function CheckoutPage() {
               user_id: user.id,
               ...orderUpdateFields,
               status: 'pending',
-              payment_method: CARD_PAYMENTS_DISABLED ? 'bank_transfer' : 'card',
             })
             .select('id')
             .single()
@@ -775,7 +796,7 @@ export default function CheckoutPage() {
 
   async function handleRewardOnlyPayment() {
     if (!dbOrderId) return
-    if (!(await persistAdditionalInfo('card'))) return
+    if (!(await persistAdditionalInfo('bank_transfer'))) return
 
     setPaying(true)
     try {
@@ -912,17 +933,25 @@ export default function CheckoutPage() {
             <label className="flex items-center gap-2 rounded-xl border border-border/60 bg-background px-4 py-3 text-sm font-semibold text-foreground">
               <input
                 type="checkbox"
-                checked={taxInvoiceRequested}
+                checked={!isRewardOnlyOrder && taxInvoiceRequested}
                 onChange={(event) => setTaxInvoiceRequested(event.target.checked)}
-                className="h-4 w-4 rounded border-border text-primary cursor-pointer"
+                disabled={isRewardOnlyOrder}
+                className="h-4 w-4 rounded border-border text-primary cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               />
               세금계산서 발행 필요
-              {selectedMethod === 'card' && (
+              {isRewardOnlyOrder ? (
+                <span className="ml-auto text-xs font-medium text-muted-foreground">0원 주문 시 발행 대상 아님</span>
+              ) : selectedMethod === 'card' && (
                 <span className="ml-auto text-xs font-medium text-muted-foreground">카드 결제 시 선택 불가</span>
               )}
             </label>
 
-            {selectedMethod === 'card' && (
+            {isRewardOnlyOrder ? (
+              <div className="flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900">
+                <Coins className="mt-0.5 h-4 w-4 shrink-0" />
+                <p>적립금 전액 사용 주문은 추가 입금액이 없어 세금계산서 발행 대상이 아닙니다. 주문 완료 후 바로 다운로드할 수 있습니다.</p>
+              </div>
+            ) : selectedMethod === 'card' && (
               <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
                 <p>{CARD_PAYMENTS_DISABLED ? '현재 PG 연결 진행 중으로 카드결제를 이용할 수 없습니다.' : '신용카드 결제의 경우 세금계산서가 발행되지 않습니다. 매출전표를 활용하시면 됩니다.'}</p>
@@ -938,7 +967,7 @@ export default function CheckoutPage() {
                 <textarea
                   value={taxContactInfo}
                   onChange={(e) => setTaxContactInfo(e.target.value)}
-                  disabled={!taxInvoiceRequested || selectedMethod === 'card'}
+                  disabled={isRewardOnlyOrder || !taxInvoiceRequested || selectedMethod === 'card'}
                   placeholder="내용을 입력해주세요."
                   rows={3}
                   className="w-full rounded-xl border border-border px-4 py-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all resize-none disabled:bg-muted/40 disabled:text-muted-foreground"
@@ -983,7 +1012,7 @@ export default function CheckoutPage() {
                   <button
                     type="button"
                     onClick={() => certInputRef.current?.click()}
-                    disabled={uploadingCert || !taxInvoiceRequested || selectedMethod === 'card'}
+                    disabled={isRewardOnlyOrder || uploadingCert || !taxInvoiceRequested || selectedMethod === 'card'}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-border hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer disabled:opacity-50"
                   >
                     {uploadingCert ? (
@@ -1002,7 +1031,7 @@ export default function CheckoutPage() {
               </div>
 
               {/* 무통장 입금 메모 */}
-              {selectedMethod === 'bank_transfer' && (
+              {selectedMethod === 'bank_transfer' && !isRewardOnlyOrder && (
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   무통장 입금 후 빠른 확인을 원하시면 우측 하단 메시지로 문의주세요.
@@ -1018,7 +1047,7 @@ export default function CheckoutPage() {
               )}
 
               {/* 카드 결제 메모 */}
-              {selectedMethod === 'card' && (
+              {selectedMethod === 'card' && !isRewardOnlyOrder && (
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">
                   카드 결제 메모
@@ -1037,7 +1066,7 @@ export default function CheckoutPage() {
       )}
 
       {/* 결제 수단 선택 (채팅 결제는 카드 결제만 지원) */}
-      {!isChatPayment && (
+      {!isChatPayment && !isRewardOnlyOrder && (
         <div className="mb-6">
           <h2 className="font-semibold text-sm mb-3">결제 수단 선택</h2>
           <div className="grid grid-cols-2 gap-3">
@@ -1084,7 +1113,7 @@ export default function CheckoutPage() {
       )}
 
       {/* 무통장 입금 안내 */}
-      {!isChatPayment && selectedMethod === 'bank_transfer' && (
+      {!isChatPayment && !isRewardOnlyOrder && selectedMethod === 'bank_transfer' && (
         <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
           <p className="text-sm font-semibold text-blue-900 mb-2">무통장 입금 안내</p>
           <ul className="space-y-1 text-xs text-blue-800">
@@ -1141,7 +1170,9 @@ export default function CheckoutPage() {
       )}
 
       <p className="text-[11px] text-muted-foreground text-center mt-4">
-        {!isChatPayment && selectedMethod === 'bank_transfer'
+        {isRewardOnlyOrder
+          ? '적립금 전액 사용 주문은 주문 완료 후 바로 파일이 제공됩니다'
+          : !isChatPayment && selectedMethod === 'bank_transfer'
           ? '무통장 입금은 입금 확인 후 파일이 제공됩니다'
           : '결제는 토스페이먼츠를 통해 안전하게 처리됩니다'}
       </p>
