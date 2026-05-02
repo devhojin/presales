@@ -53,6 +53,7 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
   bank_transfer: '무통장입금',
   free: '무료 주문',
   reward: '적립금',
+  discount: '할인 적용 0원 결제',
 }
 
 const RECEIPT_SITE_URL = 'https://www.presales.co.kr'

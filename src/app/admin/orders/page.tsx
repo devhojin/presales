@@ -157,6 +157,8 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
   virtual_account: '가상계좌',
   phone: '휴대폰결제',
   free: '무료',
+  reward: '적립금',
+  discount: '할인 0원',
   admin_grant: '관리자 지급',
 }
 

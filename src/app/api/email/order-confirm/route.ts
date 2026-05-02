@@ -145,7 +145,9 @@ export async function POST(request: NextRequest) {
         ? '무통장입금'
         : order.payment_method === 'reward'
           ? '적립금 결제'
-          : '결제완료'
+          : order.payment_method === 'discount'
+            ? '할인 적용 0원 결제'
+            : '결제완료'
 
     // ===========================
     // 주문자에게 주문 확인 이메일

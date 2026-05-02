@@ -77,9 +77,6 @@ export async function POST(request: NextRequest) {
     }
 
     const rewardDiscount = Math.max(0, Number(order.reward_discount ?? 0))
-    if (rewardDiscount <= 0) {
-      return NextResponse.json({ error: '적립금 사용 금액이 없습니다' }, { status: 400 })
-    }
 
     const expectedAmount = await recomputeExpectedAmount(
       supabase,
@@ -89,17 +86,17 @@ export async function POST(request: NextRequest) {
       rewardDiscount,
     )
     if (expectedAmount === null) {
-      logger.error('적립금 주문 재계산 실패', 'payment/reward-only', { orderId })
+      logger.error('0원 주문 재계산 실패', 'payment/reward-only', { orderId })
       return NextResponse.json({ error: '주문 금액 재검증에 실패했습니다' }, { status: 500 })
     }
     if (expectedAmount !== 0 || Number(order.total_amount) !== 0) {
-      logger.error('적립금 전액 주문 금액 불일치', 'payment/reward-only', {
+      logger.error('0원 주문 금액 불일치', 'payment/reward-only', {
         orderId,
         expectedAmount,
         storedTotal: order.total_amount,
       })
       return NextResponse.json(
-        { error: '적립금 전액 결제 가능한 주문이 아닙니다. 장바구니에서 다시 진행해주세요.' },
+        { error: '0원 주문 처리 가능한 주문이 아닙니다. 장바구니에서 다시 진행해주세요.' },
         { status: 400 },
       )
     }
@@ -113,7 +110,7 @@ export async function POST(request: NextRequest) {
         p_applied_amount: order.coupon_discount || 0,
       })
       if (rpcErr) {
-        logger.error('적립금 전액 주문 쿠폰 예약 RPC 실패', 'payment/reward-only', {
+        logger.error('0원 주문 쿠폰 예약 RPC 실패', 'payment/reward-only', {
           couponId: order.coupon_id,
           orderId,
           error: rpcErr.message,
@@ -121,7 +118,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: '쿠폰 사용 예약에 실패했습니다' }, { status: 500 })
       }
       if (rpcResult && (rpcResult as { ok?: boolean }).ok === false) {
-        logger.error('적립금 전액 주문 쿠폰 사용 거부', 'payment/reward-only', {
+        logger.error('0원 주문 쿠폰 사용 거부', 'payment/reward-only', {
           couponId: order.coupon_id,
           orderId,
           result: rpcResult,
@@ -131,16 +128,20 @@ export async function POST(request: NextRequest) {
       couponReserved = true
     }
 
-    const reserve = await reserveRewardPoints(supabase, user.id, orderId, rewardDiscount)
-    if (!reserve.ok) {
-      if (couponReserved && order.coupon_id) {
-        await supabase.rpc('rollback_coupon_usage', {
-          p_coupon_id: order.coupon_id,
-          p_user_id: user.id,
-          p_order_id: orderId,
-        })
+    let rewardReserved = false
+    if (rewardDiscount > 0) {
+      const reserve = await reserveRewardPoints(supabase, user.id, orderId, rewardDiscount)
+      if (!reserve.ok) {
+        if (couponReserved && order.coupon_id) {
+          await supabase.rpc('rollback_coupon_usage', {
+            p_coupon_id: order.coupon_id,
+            p_user_id: user.id,
+            p_order_id: orderId,
+          })
+        }
+        return NextResponse.json({ error: '적립금 사용 예약에 실패했습니다' }, { status: 409 })
       }
-      return NextResponse.json({ error: '적립금 사용 예약에 실패했습니다' }, { status: 409 })
+      rewardReserved = true
     }
 
     const paidAt = new Date().toISOString()
@@ -148,7 +149,7 @@ export async function POST(request: NextRequest) {
       .from('orders')
       .update({
         status: 'paid',
-        payment_method: 'reward',
+        payment_method: rewardDiscount > 0 ? 'reward' : 'discount',
         paid_at: paidAt,
         updated_at: paidAt,
       })
@@ -157,7 +158,7 @@ export async function POST(request: NextRequest) {
       .select('id')
 
     if (updateError || !updated || updated.length === 0) {
-      await rollbackRewardPoints(supabase, orderId)
+      if (rewardReserved) await rollbackRewardPoints(supabase, orderId)
       if (couponReserved && order.coupon_id) {
         await supabase.rpc('rollback_coupon_usage', {
           p_coupon_id: order.coupon_id,
@@ -165,17 +166,17 @@ export async function POST(request: NextRequest) {
           p_order_id: orderId,
         })
       }
-      logger.error('적립금 주문 상태 변경 실패', 'payment/reward-only', {
+      logger.error('0원 주문 상태 변경 실패', 'payment/reward-only', {
         orderId,
         error: updateError?.message,
       })
       return NextResponse.json({ error: '주문 상태 업데이트에 실패했습니다' }, { status: 500 })
     }
 
-    await confirmRewardPoints(supabase, orderId)
+    if (rewardReserved) await confirmRewardPoints(supabase, orderId)
     const grant = await grantPurchaseRewardForOrder(supabase, orderId)
     if (grant.ok === false) {
-      logger.error('적립금 주문 구매 적립 실패', 'payment/reward-only', {
+      logger.error('0원 주문 구매 적립 실패', 'payment/reward-only', {
         orderId,
         reason: grant.reason,
       })
@@ -193,13 +194,13 @@ export async function POST(request: NextRequest) {
       })
     } catch (emailErr) {
       const message = emailErr instanceof Error ? emailErr.message : '알 수 없는 오류'
-      logger.error('적립금 주문 이메일 발송 실패(무시)', 'payment/reward-only', { error: message })
+      logger.error('0원 주문 이메일 발송 실패(무시)', 'payment/reward-only', { error: message })
     }
 
     return NextResponse.json({ success: true, orderId })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '알 수 없는 오류'
-    logger.error('적립금 결제 API 오류', 'payment/reward-only', { error: message })
+    logger.error('0원 주문 API 오류', 'payment/reward-only', { error: message })
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }
