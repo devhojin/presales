@@ -3,6 +3,7 @@ export const SITE_NAME = '프리세일즈'
 export const DEFAULT_OG_IMAGE = '/og-image.jpg'
 export const DEFAULT_OG_IMAGE_ALT = 'PRESALES - 공공조달 제안서 마켓플레이스'
 export const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || 'G-D6P9XZ78RK'
+export const CLARITY_PROJECT_ID = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID || 'wkkq5ht3nh'
 
 /** 컨설팅 패키지 가격 (한 곳에서 관리 — 각 페이지·이메일·API 가 모두 참조) */
 export const CONSULTING_PACKAGES = {

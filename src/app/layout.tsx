@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { PageViewTracker } from "@/components/PageViewTracker";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { MicrosoftClarity } from "@/components/MicrosoftClarity";
 import { ToastContainer } from "@/components/Toast";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 import { ExitIntentPopup } from "@/components/ExitIntentPopup";
@@ -107,6 +108,7 @@ export default function RootLayout({
       <head>
         <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} RSS`} href={`${SITE_URL}/rss.xml`} />
         <GoogleAnalytics />
+        <MicrosoftClarity />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLd) }}
