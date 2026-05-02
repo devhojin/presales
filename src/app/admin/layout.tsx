@@ -4,7 +4,7 @@ import './admin-theme.css'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, ArrowLeft, ChevronLeft, ChevronRight, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail, History, Coins, Bell } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, ArrowLeft, ChevronLeft, ChevronRight, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail, History, Coins, Bell, BookOpen } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
 type NavItem = { href: string; icon: typeof LayoutDashboard; label: string } | { divider: true; label: string }
@@ -20,6 +20,7 @@ const adminNav: NavItem[] = [
   { divider: true, label: '콘텐츠' },
   { href: '/admin/announcements', icon: Megaphone, label: '공고 관리' },
   { href: '/admin/feeds', icon: Rss, label: 'IT피드 관리' },
+  { href: '/admin/ai-proposal-guide', icon: BookOpen, label: 'AI 제안서 작성법' },
   { href: '/admin/notices', icon: Bell, label: '공지사항' },
   { href: '/admin/faq', icon: HelpCircle, label: 'FAQ 관리' },
 

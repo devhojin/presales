@@ -18,6 +18,7 @@ const FOOTER_GROUPS = [
   {
     title: '콘텐츠',
     links: [
+      { href: '/ai-proposal-guide', label: 'AI 제안서 작성법' },
       { href: '/brief', label: '모닝 브리프' },
       { href: '/feeds', label: 'IT피드' },
       { href: '/notices', label: '공지사항' },

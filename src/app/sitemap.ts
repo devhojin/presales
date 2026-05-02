@@ -3,7 +3,14 @@ import { createServerClient } from "@supabase/ssr";
 import { SITE_URL } from "@/lib/constants";
 import { morningBriefSlug } from "@/lib/public-briefs";
 import { SEO_LANDING_PAGES, seoLandingUrl } from "@/lib/seo-landing-pages";
+import {
+  aiProposalGuideIndexUrl,
+  aiProposalGuideUrl,
+} from "@/lib/ai-proposal-guide";
+import { getPublishedAiProposalGuideServerContent } from "@/lib/ai-proposal-guide-server";
 import { morningBriefService } from "../../morning-brief/lib/supabase";
+
+export const dynamic = "force-dynamic";
 
 const BASE_URL = SITE_URL;
 const SITEMAP_BATCH_SIZE = 1000;
@@ -34,6 +41,10 @@ type SitemapLegacyBrief = {
 };
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const aiProposalGuideContent = await getPublishedAiProposalGuideServerContent();
+  const aiProposalGuideUpdatedAt = aiProposalGuideContent.updatedAt
+    ? new Date(aiProposalGuideContent.updatedAt)
+    : new Date();
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: new Date(), changeFrequency: "weekly", priority: 1.0 },
     { url: `${BASE_URL}/us`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
@@ -41,6 +52,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/announcements`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
     { url: `${BASE_URL}/feeds`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
     { url: `${BASE_URL}/brief`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
+    { url: aiProposalGuideIndexUrl(), lastModified: aiProposalGuideUpdatedAt, changeFrequency: "weekly", priority: 0.82 },
     { url: `${BASE_URL}/consulting`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.85 },
     { url: `${BASE_URL}/about`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
     { url: `${BASE_URL}/faq`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
@@ -55,6 +67,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date("2026-04-29T00:00:00+09:00"),
     changeFrequency: "monthly" as const,
     priority: 0.72,
+  }));
+
+  const aiProposalGuidePages: MetadataRoute.Sitemap = aiProposalGuideContent.articles.map((guide) => ({
+    url: aiProposalGuideUrl(guide.slug),
+    lastModified: guide.updatedAt ? new Date(guide.updatedAt) : aiProposalGuideUpdatedAt,
+    changeFrequency: "monthly" as const,
+    priority: 0.74,
   }));
 
   try {
@@ -165,8 +184,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }));
     briefPages = [...briefPages, ...legacyBriefPages];
 
-    return [...staticPages, ...seoLandingPages, ...productPages, ...announcementPages, ...feedPages, ...briefPages];
+    return [...staticPages, ...seoLandingPages, ...aiProposalGuidePages, ...productPages, ...announcementPages, ...feedPages, ...briefPages];
   } catch {
-    return [...staticPages, ...seoLandingPages];
+    return [...staticPages, ...seoLandingPages, ...aiProposalGuidePages];
   }
 }

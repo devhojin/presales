@@ -2,11 +2,15 @@ import { createServerClient } from '@supabase/ssr'
 import { SITE_NAME, SITE_URL } from '@/lib/constants'
 import { morningBriefSlug } from '@/lib/public-briefs'
 import { SEO_LANDING_PAGES, seoLandingUrl } from '@/lib/seo-landing-pages'
+import {
+  aiProposalGuideIndexUrl,
+  aiProposalGuideUrl,
+} from '@/lib/ai-proposal-guide'
+import { getPublishedAiProposalGuideServerContent } from '@/lib/ai-proposal-guide-server'
 import { normalizeSeoText, truncateSeoText } from '@/lib/seo-text'
 import { morningBriefService } from '../../../morning-brief/lib/supabase'
 
 export const dynamic = 'force-dynamic'
-export const revalidate = 3600
 
 type RssItem = {
   title: string
@@ -202,12 +206,34 @@ function getLandingItems(): RssItem[] {
   }))
 }
 
+async function getAiProposalGuideItems(): Promise<RssItem[]> {
+  const content = await getPublishedAiProposalGuideServerContent()
+  const date = content.updatedAt ? new Date(content.updatedAt) : new Date()
+  const indexItem: RssItem = {
+    title: 'AI 제안서 작성법',
+    url: aiProposalGuideIndexUrl(),
+    description: 'ChatGPT, 이미지 생성, Codex를 활용해 RFP 분석부터 나라장터 입찰 제출까지 따라가는 AI 제안서 작성 실무 콘텐츠입니다.',
+    pubDate: date,
+    category: 'AI 제안서 작성법',
+  }
+  const guideItems = content.articles.map((guide) => ({
+    title: guide.title,
+    url: aiProposalGuideUrl(guide.slug),
+    description: guide.description,
+    pubDate: guide.updatedAt ? new Date(guide.updatedAt) : date,
+    category: guide.primaryKeyword || 'AI 제안서 작성법',
+  }))
+
+  return [indexItem, ...guideItems]
+}
+
 export async function GET() {
   const itemGroups = await Promise.all([
     getProductItems(),
     getAnnouncementItems(),
     getFeedItems(),
     getBriefItems(),
+    getAiProposalGuideItems(),
   ])
 
   const items = [...itemGroups.flat(), ...getLandingItems()]
@@ -232,7 +258,7 @@ ${items.map((item) => itemXml({ ...item, description: normalizeSeoText(item.desc
   return new Response(xml, {
     headers: {
       'Content-Type': 'application/rss+xml; charset=utf-8',
-      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600',
     },
   })
 }

@@ -52,6 +52,83 @@ input[type="checkbox"], input[type="radio"], select, label[for],
   border-color: var(--border);
 }
 
+/* AI proposal guide editorial body */
+.ai-guide-body h2 {
+  margin-top: 3.25rem;
+  margin-bottom: 1rem;
+  font-size: 1.55rem;
+  line-height: 1.35;
+  font-weight: 800;
+  color: #111827;
+}
+.ai-guide-body h2:first-child {
+  margin-top: 0;
+}
+.ai-guide-body h3 {
+  margin-top: 2.25rem;
+  margin-bottom: 0.8rem;
+  font-size: 1.2rem;
+  line-height: 1.45;
+  font-weight: 800;
+  color: #111827;
+}
+.ai-guide-body p {
+  margin-bottom: 1.25rem;
+  font-size: 1rem;
+  line-height: 2;
+  color: #334155;
+}
+.ai-guide-body ul,
+.ai-guide-body ol {
+  margin: 1rem 0 1.75rem;
+  padding-left: 1.35rem;
+}
+.ai-guide-body li {
+  margin-bottom: 0.85rem;
+  line-height: 1.9;
+  color: #334155;
+}
+.ai-guide-body li::marker {
+  color: #2563eb;
+  font-weight: 700;
+}
+.ai-guide-body blockquote {
+  margin: 2rem 0;
+  border-left: 3px solid #2563eb;
+  background: #eff6ff;
+  padding: 1rem 1.25rem;
+  color: #1e3a8a;
+}
+.ai-guide-body pre {
+  margin: 1.5rem 0 2rem;
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  background: #020617;
+  padding: 1.25rem;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+}
+.ai-guide-body code {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.88rem;
+}
+.ai-guide-body a {
+  color: #1d4ed8;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.ai-guide-body img {
+  margin: 2rem 0;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid #e2e8f0;
+}
+.ai-guide-body hr {
+  margin: 3rem 0;
+  border-color: #e2e8f0;
+}
+
 /* Premium transition defaults */
 * {
   transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
