@@ -37,39 +37,51 @@ export function GuideCover({
   compact?: boolean
   priority?: boolean
 }) {
+  const hasCoverImage = Boolean(guide.coverImageUrl)
+
   return (
     <div
       className={`relative isolate flex aspect-[3/4] min-h-0 w-full overflow-hidden border border-black/10 shadow-[0_22px_50px_-35px_rgba(15,23,42,0.5)] ${getThemeClasses(guide.coverTheme)}`}
     >
-      {guide.coverImageUrl ? (
+      {hasCoverImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={guide.coverImageUrl}
           alt=""
           loading={priority ? 'eager' : 'lazy'}
-          className="absolute inset-0 h-full w-full object-cover opacity-55 mix-blend-luminosity"
+          className="absolute inset-0 h-full w-full object-cover"
         />
       ) : null}
-      <div className="absolute inset-x-0 top-0 h-1 bg-[var(--accent)]" />
-      <div className="absolute -right-10 top-12 h-28 w-28 rounded-full border border-[var(--accent)]/45" />
-      <div className="absolute bottom-7 left-5 h-20 w-20 rounded-full border border-[var(--accent)]/35" />
+      {!hasCoverImage ? (
+        <>
+          <div className="absolute inset-x-0 top-0 h-1 bg-[var(--accent)]" />
+          <div className="absolute -right-10 top-12 h-28 w-28 rounded-full border border-[var(--accent)]/45" />
+          <div className="absolute bottom-7 left-5 h-20 w-20 rounded-full border border-[var(--accent)]/35" />
+        </>
+      ) : null}
       <div className={`relative flex h-full w-full flex-col justify-between p-5 ${compact ? 'p-4' : 'md:p-6'}`}>
         <div>
-          <div className="mb-5 inline-flex h-8 min-w-8 items-center justify-center border border-current/25 bg-white/10 px-2 text-xs font-bold">
+          <div
+            className={`mb-5 inline-flex h-8 min-w-8 items-center justify-center border px-2 text-xs font-bold ${hasCoverImage ? 'border-white/25 bg-black/25 text-white backdrop-blur-sm' : 'border-current/25 bg-white/10'}`}
+          >
             {String(guide.step).padStart(2, '0')}
           </div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
-            AI Proposal Guide
-          </p>
+          {!hasCoverImage ? (
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
+              AI Proposal Guide
+            </p>
+          ) : null}
         </div>
-        <div>
-          <h3 className={`${compact ? 'text-xl' : 'text-2xl md:text-3xl'} break-words font-black leading-tight tracking-normal`}>
-            {guide.coverTitle || guide.title}
-          </h3>
-          <p className="mt-4 break-words border-t border-current/20 pt-3 text-xs font-semibold leading-5 opacity-80">
-            {guide.coverSubtitle || guide.primaryKeyword}
-          </p>
-        </div>
+        {!hasCoverImage ? (
+          <div>
+            <h3 className={`${compact ? 'text-xl' : 'text-2xl md:text-3xl'} break-words font-black leading-tight tracking-normal`}>
+              {guide.coverTitle || guide.title}
+            </h3>
+            <p className="mt-4 break-words border-t border-current/20 pt-3 text-xs font-semibold leading-5 opacity-80">
+              {guide.coverSubtitle || guide.primaryKeyword}
+            </p>
+          </div>
+        ) : null}
       </div>
     </div>
   )
