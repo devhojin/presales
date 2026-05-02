@@ -27,9 +27,13 @@ export function PdfPreviewModal({
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [renderError, setRenderError] = useState('')
+  const [resizeTick, setResizeTick] = useState(0)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const canvasWrapRef = useRef<HTMLDivElement>(null)
 
   const requestedPreviewPages = Math.min(Math.max(previewPages || 1, 1), 30)
+  const previewUrl = `/api/pdf-preview?url=${encodeURIComponent(pdfUrl)}`
   const totalPreviewPages = pdfDoc
     ? Math.min(requestedPreviewPages, pdfDoc.numPages)
     : requestedPreviewPages
@@ -43,21 +47,40 @@ export function PdfPreviewModal({
 
     setLoading(true)
     setError('')
+    setRenderError('')
     setCurrentPage(1)
     setPdfDoc(null)
-    const previewUrl = `/api/pdf-preview?url=${encodeURIComponent(pdfUrl)}`
     let cancelled = false
     let loadedDoc: PDFDocumentProxy | null = null
 
     async function loadPdf() {
       try {
+        const PromiseWithResolvers = Promise as typeof Promise & {
+          withResolvers?: <T>() => {
+            promise: Promise<T>
+            resolve: (value: T | PromiseLike<T>) => void
+            reject: (reason?: unknown) => void
+          }
+        }
+        if (!PromiseWithResolvers.withResolvers) {
+          PromiseWithResolvers.withResolvers = function withResolvers<T>() {
+            let resolve!: (value: T | PromiseLike<T>) => void
+            let reject!: (reason?: unknown) => void
+            const promise = new Promise<T>((res, rej) => {
+              resolve = res
+              reject = rej
+            })
+            return { promise, resolve, reject }
+          }
+        }
+
         const pdfjs = await import('pdfjs-dist')
         // CSP: worker-src 'self' 범위 내 로컬 파일 사용 (unpkg 차단 회피 + CDN 의존 제거)
         pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
 
         const response = await fetch(previewUrl, {
           credentials: 'same-origin',
-          cache: 'force-cache',
+          cache: 'no-store',
         })
 
         if (!response.ok) {
@@ -101,7 +124,7 @@ export function PdfPreviewModal({
       cancelled = true
       if (loadedDoc) void loadedDoc.destroy()
     }
-  }, [isOpen, pdfUrl])
+  }, [isOpen, pdfUrl, previewUrl])
 
   useEffect(() => {
     if (pdfDoc && currentPage > totalPreviewPages) {
@@ -114,25 +137,63 @@ export function PdfPreviewModal({
     if (!pdfDoc || !canvasRef.current) return
     const doc = pdfDoc
     const canvas = canvasRef.current
+    let cancelled = false
 
     async function renderPage() {
       try {
+        setRenderError('')
         const safePage = Math.min(Math.max(currentPage, 1), doc.numPages)
         const page = await doc.getPage(safePage)
-        const viewport = page.getViewport({ scale: 1.75 })
+        if (cancelled) return
+
+        const baseViewport = page.getViewport({ scale: 1 })
+        const availableWidth = Math.max(
+          280,
+          Math.min(
+            canvasWrapRef.current?.clientWidth || window.innerWidth - 32,
+            window.innerWidth - 32,
+          ),
+        )
+        const viewportHeight = window.visualViewport?.height || window.innerHeight
+        const availableHeight = Math.max(280, viewportHeight - 210)
+        const cssScale = Math.min(
+          availableWidth / baseViewport.width,
+          availableHeight / baseViewport.height,
+          1.6,
+        )
+        const dpr = Math.min(window.devicePixelRatio || 1, 2)
+        const viewport = page.getViewport({ scale: cssScale * dpr })
         const ctx = canvas.getContext('2d')!
 
-        canvas.width = viewport.width
-        canvas.height = viewport.height
+        canvas.width = Math.floor(viewport.width)
+        canvas.height = Math.floor(viewport.height)
+        canvas.style.width = `${Math.floor(viewport.width / dpr)}px`
+        canvas.style.height = `${Math.floor(viewport.height / dpr)}px`
 
         await page.render({ canvas, canvasContext: ctx, viewport }).promise
       } catch (err) {
         console.error('Page render error:', err)
+        if (!cancelled) setRenderError('PDF 페이지를 표시할 수 없습니다.')
       }
     }
 
     renderPage()
-  }, [pdfDoc, currentPage])
+
+    return () => {
+      cancelled = true
+    }
+  }, [pdfDoc, currentPage, resizeTick])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleResize = () => setResizeTick((tick) => tick + 1)
+    window.addEventListener('resize', handleResize)
+    window.visualViewport?.addEventListener('resize', handleResize)
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      window.visualViewport?.removeEventListener('resize', handleResize)
+    }
+  }, [isOpen])
 
   // Keyboard navigation
   const handleKeyDown = useCallback(
@@ -197,8 +258,18 @@ export function PdfPreviewModal({
               </div>
             </div>
           ) : error ? (
-            <div className="flex items-center justify-center h-96">
-              <p className="text-sm text-red-500">{error}</p>
+            <div className="flex items-center justify-center h-96 px-6">
+              <div className="text-center">
+                <p className="text-sm text-red-500">{error}</p>
+                <a
+                  href={previewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                >
+                  PDF 새창으로 보기
+                </a>
+              </div>
             </div>
           ) : (
             <div className="relative flex items-center justify-center p-3 sm:p-4 min-h-[min(62dvh,640px)] sm:min-h-[400px]">
@@ -212,14 +283,30 @@ export function PdfPreviewModal({
               </button>
 
               {/* Canvas */}
-              <div className="relative">
+              <div ref={canvasWrapRef} className="relative flex w-full max-w-full items-center justify-center">
                 <canvas
                   ref={canvasRef}
-                  className="max-w-full max-h-[calc(100dvh-12rem)] sm:max-h-[70vh] mx-auto shadow-lg rounded-lg bg-white"
+                  className="max-w-full mx-auto shadow-lg rounded-lg bg-white"
                   style={{
                     filter: isBlurPage ? 'blur(8px)' : 'none',
                   }}
                 />
+
+                {renderError && (
+                  <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-white/95 px-6 text-center">
+                    <div>
+                      <p className="text-sm font-medium text-red-500">{renderError}</p>
+                      <a
+                        href={previewUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-4 inline-flex h-10 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                      >
+                        PDF 새창으로 보기
+                      </a>
+                    </div>
+                  </div>
+                )}
 
                 {/* Blur Overlay */}
                 {isBlurPage && (
