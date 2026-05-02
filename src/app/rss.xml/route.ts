@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { SITE_NAME, SITE_URL } from '@/lib/constants'
 import { morningBriefSlug } from '@/lib/public-briefs'
-import { SEO_LANDING_PAGES, seoLandingUrl } from '@/lib/seo-landing-pages'
+import { SEO_LANDING_LAST_MODIFIED, SEO_LANDING_PAGES, getSeoLandingDescription, seoLandingUrl } from '@/lib/seo-landing-pages'
 import {
   AI_PROPOSAL_GUIDE_DESCRIPTION,
   AI_PROPOSAL_GUIDE_TITLE,
@@ -217,11 +217,11 @@ async function getBriefItems(): Promise<RssItem[]> {
 }
 
 function getLandingItems(): RssItem[] {
-  const date = new Date('2026-04-29T00:00:00+09:00')
+  const date = new Date(SEO_LANDING_LAST_MODIFIED)
   return SEO_LANDING_PAGES.map((page) => ({
     title: page.title,
     url: seoLandingUrl(page.slug),
-    description: page.description,
+    description: getSeoLandingDescription(page),
     pubDate: date,
     category: page.primaryKeyword,
   }))

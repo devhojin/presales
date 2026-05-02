@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { createServerClient } from "@supabase/ssr";
 import { SITE_URL } from "@/lib/constants";
 import { morningBriefSlug } from "@/lib/public-briefs";
-import { SEO_LANDING_PAGES, seoLandingUrl } from "@/lib/seo-landing-pages";
+import { SEO_LANDING_LAST_MODIFIED, SEO_LANDING_PAGES, seoLandingUrl } from "@/lib/seo-landing-pages";
 import {
   aiProposalGuideIndexUrl,
   aiProposalGuideUrl,
@@ -50,6 +50,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: BASE_URL, lastModified: new Date(), changeFrequency: "weekly", priority: 1.0 },
     { url: `${BASE_URL}/us`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
     { url: `${BASE_URL}/store`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
+    { url: `${BASE_URL}/solutions`, lastModified: new Date(SEO_LANDING_LAST_MODIFIED), changeFrequency: "weekly", priority: 0.88 },
     { url: `${BASE_URL}/announcements`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
     { url: `${BASE_URL}/feeds`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
     { url: `${BASE_URL}/brief`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
@@ -71,9 +72,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const seoLandingPages: MetadataRoute.Sitemap = SEO_LANDING_PAGES.map((page) => ({
     url: seoLandingUrl(page.slug),
-    lastModified: new Date("2026-04-29T00:00:00+09:00"),
+    lastModified: new Date(SEO_LANDING_LAST_MODIFIED),
     changeFrequency: "monthly" as const,
-    priority: 0.72,
+    priority: page.commercialIntent === "consulting" ? 0.82 : page.commercialIntent === "review" ? 0.8 : 0.74,
   }));
 
   const aiProposalGuidePages: MetadataRoute.Sitemap = aiProposalGuideContent.articles.map((guide) => ({

@@ -1,5 +1,7 @@
 import { SITE_URL } from '@/lib/constants'
 
+export const SEO_LANDING_LAST_MODIFIED = '2026-05-03T09:00:00+09:00'
+
 export type SeoLandingPage = {
   slug: string
   title: string
@@ -18,6 +20,17 @@ export type SeoLandingPage = {
   relatedLinks: Array<{
     href: string
     label: string
+  }>
+  commercialIntent?: 'consulting' | 'template' | 'review' | 'research'
+  conversionTitle?: string
+  conversionBody?: string
+  conversionLinks?: Array<{
+    href: string
+    label: string
+  }>
+  faqs?: Array<{
+    question: string
+    answer: string
   }>
 }
 
@@ -190,10 +203,375 @@ export const SEO_LANDING_PAGES: SeoLandingPage[] = [
       { href: '/brief', label: '모닝브리프 보기' },
     ],
   },
+  {
+    slug: 'bid-proposal-consulting',
+    title: '입찰 제안서 컨설팅과 작성 지원',
+    shortTitle: '입찰 제안서 컨설팅',
+    description:
+      '공공입찰 제안서 컨설팅이 필요한 기업을 위해 RFP 분석, 요구사항 대응표, 목차 설계, 제출 전 검수까지 지원 범위를 정리했습니다.',
+    primaryKeyword: '입찰 제안서 컨설팅',
+    keywords: ['입찰 제안서 컨설팅', '공공입찰 컨설팅', '제안서 작성 지원', '제안서 검토', '나라장터 제안서'],
+    audience: '마감은 다가오는데 내부 인력만으로 제안서 구조와 검수를 끝내기 어려운 대표, 영업, 제안 담당자',
+    commercialIntent: 'consulting',
+    painPoints: [
+      'RFP를 읽었지만 제안 전략, 목차, 요구사항 대응표로 옮기는 시간이 부족합니다.',
+      '기존 제안서 문장을 재사용하다 보니 이번 공고의 평가 기준과 맞지 않는 부분이 남습니다.',
+      '제출 직전 PDF, 파일명, 증빙, 가격서 분리 같은 실무 누락이 반복됩니다.',
+    ],
+    solutions: [
+      '공고문과 제안요청서를 기준으로 요구사항 대응표와 제안서 목차를 먼저 정리합니다.',
+      'AI 초안을 그대로 쓰지 않고 근거, 실적, 과업 범위, 제출 조건을 사람이 검수하는 방식으로 품질을 높입니다.',
+      '필요한 경우 문서 스토어 템플릿과 컨설팅을 연결해 작성 시간을 줄입니다.',
+    ],
+    contentSections: [
+      {
+        title: '컨설팅이 필요한 순간',
+        body: '입찰 제안서는 글을 잘 쓰는 문제보다 공고 조건을 빠뜨리지 않고 평가자가 읽을 구조로 바꾸는 문제입니다.',
+        bullets: ['참가자격과 제출물 검토', 'RFP 요구사항 추출', '평가항목별 목차 설계', '제출 전 누락 점검'],
+      },
+      {
+        title: '상담 전에 준비하면 좋은 자료',
+        body: '공고문, 제안요청서, 별첨 양식, 기존 회사 소개서가 있으면 짧은 상담에서도 위험 지점을 빠르게 볼 수 있습니다.',
+        bullets: ['나라장터 공고 URL', '제안요청서 PDF', '정량평가 증빙 후보', '기존 제안서 또는 회사소개서'],
+      },
+      {
+        title: 'PRESALES에서 바로 할 수 있는 일',
+        body: '무료 자료로 구조를 잡고, 필요한 부분은 유료 문서나 전문가 검토로 보완하는 흐름을 만들 수 있습니다.',
+        bullets: ['AI 제안서 작성법으로 초벌 구조 파악', '문서 스토어에서 유사 제안서 확인', '컨설팅으로 리스크 검토', '입찰공고로 신규 기회 확인'],
+      },
+    ],
+    conversionTitle: '이번 공고에 맞는 제안서 구조부터 점검하세요',
+    conversionBody: '공고 URL이나 RFP 파일을 기준으로 참가 가능성, 제안 목차, 누락 위험을 빠르게 검토하는 상담 흐름으로 연결합니다.',
+    conversionLinks: [
+      { href: '/consulting', label: '제안서 컨설팅 문의' },
+      { href: '/ai-proposal-guide', label: 'AI 제안서 작성법 보기' },
+    ],
+    relatedLinks: [
+      { href: '/consulting', label: '제안서 컨설팅 문의' },
+      { href: '/landing/rfp-analysis-service', label: 'RFP 분석 지원' },
+      { href: '/landing/proposal-review-check', label: '제출 전 검수' },
+    ],
+    faqs: [
+      {
+        question: '입찰 제안서 전체 대행도 가능한가요?',
+        answer: '공고 범위와 일정에 따라 작성 지원, 구조 설계, 검수 중심으로 상담합니다. 제출 주체와 최종 확인은 입찰 참여 기업이 맡아야 합니다.',
+      },
+      {
+        question: '상담 전에 무엇을 보내야 하나요?',
+        answer: '나라장터 공고 URL, 제안요청서, 별첨 양식, 기존 회사소개서가 있으면 검토 범위와 우선순위를 빠르게 정할 수 있습니다.',
+      },
+    ],
+  },
+  {
+    slug: 'rfp-analysis-service',
+    title: 'RFP 분석 서비스: 요구사항 대응표와 제안 전략 정리',
+    shortTitle: 'RFP 분석 서비스',
+    description:
+      '제안요청서 RFP를 과업 범위, 기능 요구사항, 평가 기준, 리스크, 질의 후보로 나누고 제안서 목차와 대응표로 연결하는 방법입니다.',
+    primaryKeyword: 'RFP 분석 서비스',
+    keywords: ['RFP 분석', '제안요청서 분석', '요구사항 대응표', 'RFP 검토', '제안서 전략'],
+    audience: '긴 RFP를 읽고도 무엇을 먼저 제안서에 반영해야 할지 막히는 제안 담당자',
+    commercialIntent: 'consulting',
+    painPoints: [
+      'RFP 분량이 길고 별첨이 많아 요구사항을 빠뜨리기 쉽습니다.',
+      '평가 기준과 과업 요구사항이 섞여 제안서 목차가 산만해집니다.',
+      '질의해야 할 애매한 조건을 내부 추정으로 처리해 제출 후 리스크가 생깁니다.',
+    ],
+    solutions: [
+      'RFP를 과업, 기능, 비기능, 보안, 산출물, 일정으로 분해합니다.',
+      '각 요구사항을 제안서 목차, 증빙, 담당자, 검수 상태에 연결합니다.',
+      '질의 후보와 원문 근거를 분리해 제안서 초안의 신뢰도를 높입니다.',
+    ],
+    contentSections: [
+      {
+        title: 'RFP 분석 결과물',
+        body: '분석 결과는 단순 요약이 아니라 제안서 작성자가 바로 쓸 수 있는 표와 체크리스트여야 합니다.',
+        bullets: ['과업 범위 요약', '요구사항 대응표', '평가 배점 대응표', '질의 후보 목록'],
+      },
+      {
+        title: 'AI를 쓸 때 주의할 점',
+        body: 'ChatGPT는 초벌 분류에 유용하지만 원문에 없는 해석을 만들 수 있으므로 근거 위치를 함께 기록해야 합니다.',
+        bullets: ['원문 페이지 번호 기록', '확정/추정/질의 필요 상태 분리', '평가 기준과 요구사항 분리', '별첨 파일 누락 확인'],
+      },
+      {
+        title: '매출 관점의 활용',
+        body: 'RFP 분석이 빨라지면 참여 여부 결정, 견적 검토, 컨소시엄 구성까지 앞당길 수 있어 수주 기회를 놓칠 가능성이 줄어듭니다.',
+        bullets: ['참여 가능성 조기 판단', '제안 작업 범위 산정', '외부 협력사 역할 분담', '제출 일정 역산'],
+      },
+    ],
+    conversionTitle: 'RFP 분석을 제안서 목차로 바꾸세요',
+    conversionBody: '분석만 끝나는 것이 아니라 요구사항 대응표와 목차까지 이어져야 실제 작성 시간이 줄어듭니다.',
+    conversionLinks: [
+      { href: '/consulting', label: 'RFP 분석 상담' },
+      { href: '/ai-proposal-guide/chatgpt-rfp-analysis', label: 'ChatGPT RFP 분석 글' },
+    ],
+    relatedLinks: [
+      { href: '/ai-proposal-guide/chatgpt-rfp-analysis', label: 'ChatGPT RFP 분석 방법' },
+      { href: '/ai-proposal-guide/requirements-response-table', label: '요구사항 대응표 만들기' },
+      { href: '/consulting', label: '분석 상담 문의' },
+    ],
+    faqs: [
+      {
+        question: 'RFP 분석과 단순 요약은 무엇이 다른가요?',
+        answer: '요약은 내용을 줄이는 작업이고, RFP 분석은 요구사항, 평가 기준, 리스크, 질의 후보를 제안서 작성 단위로 재구성하는 작업입니다.',
+      },
+      {
+        question: 'AI 분석만으로 제출해도 되나요?',
+        answer: '아닙니다. AI는 초벌 분류에 쓰고, 참가자격, 제출 조건, 실적, 가격서, 보안 조건은 사람이 원문 기준으로 확인해야 합니다.',
+      },
+    ],
+  },
+  {
+    slug: 'proposal-review-check',
+    title: '제안서 검토와 제출 전 체크리스트',
+    shortTitle: '제안서 검토',
+    description:
+      '제안서 제출 전에 누락 서류, 요구사항 대응, PDF 변환, 파일명, 증빙 자료, 가격서 분리 여부를 검토하는 실무 체크리스트입니다.',
+    primaryKeyword: '제안서 검토',
+    keywords: ['제안서 검토', '제안서 리뷰', '제출 전 체크리스트', '입찰 서류 검수', '제안서 PDF 검수'],
+    audience: '제출 직전 누락과 형식 오류를 줄이고 싶은 입찰 담당자와 제안 PM',
+    commercialIntent: 'review',
+    painPoints: [
+      '본문은 완성했지만 RFP 요구사항에 모두 답했는지 확신하기 어렵습니다.',
+      'PDF 변환, 인쇄, 파일명, 가격서 분리 같은 형식 오류가 제출 직전에 발견됩니다.',
+      '증빙 자료와 정량평가 항목이 본문과 따로 놀아 평가자가 확인하기 어렵습니다.',
+    ],
+    solutions: [
+      '요구사항 대응표를 기준으로 본문 위치와 증빙 위치를 대조합니다.',
+      '제출 파일 목록, 파일명, PDF 상태, 가격서 분리 여부를 별도 체크합니다.',
+      '위험 문구, 과장 표현, 원문 불일치 표현을 사람 기준으로 수정합니다.',
+    ],
+    contentSections: [
+      {
+        title: '제출 전 반드시 보는 항목',
+        body: '검토는 맞춤법 확인이 아니라 탈락과 감점 가능성을 줄이는 작업입니다.',
+        bullets: ['참가자격 증빙', '요구사항 대응 위치', '정량평가 증빙', '제출 파일명', '가격서 분리'],
+      },
+      {
+        title: 'PDF와 인쇄 검수',
+        body: '전자 제출과 오프라인 제출이 함께 있는 공고는 화면에서 보이는 문서와 출력물이 다를 수 있습니다.',
+        bullets: ['글꼴 포함 여부', '이미지 해상도', '페이지 번호', '표 잘림', '첨부파일 버전'],
+      },
+      {
+        title: '검토 결과를 작업으로 바꾸기',
+        body: '검토표는 발견 목록에서 끝나면 안 됩니다. 담당자, 수정 우선순위, 마감 시간을 붙여야 실제 제출 안정성이 높아집니다.',
+        bullets: ['수정 담당자 지정', '필수/권장 구분', '재검토 상태 표시', '최종 제출자 확인'],
+      },
+    ],
+    conversionTitle: '제출 전 마지막 검수로 감점 위험을 줄이세요',
+    conversionBody: '완성된 제안서라도 요구사항 누락, 증빙 불일치, 파일 형식 오류가 있으면 평가 전에 문제가 됩니다.',
+    conversionLinks: [
+      { href: '/consulting', label: '제출 전 검토 문의' },
+      { href: '/ai-proposal-guide/final-review', label: '검수 방법 읽기' },
+    ],
+    relatedLinks: [
+      { href: '/ai-proposal-guide/final-review', label: '제출 전 검수 방법' },
+      { href: '/ai-proposal-guide/narajangteo-submission', label: '나라장터 제출 절차' },
+      { href: '/consulting', label: '검토 상담' },
+    ],
+    faqs: [
+      {
+        question: '제안서 검토는 언제 맡기는 것이 좋나요?',
+        answer: '본문이 70% 이상 완성되고 제출 파일 목록이 보이는 시점이 좋습니다. 너무 늦으면 발견한 문제를 수정할 시간이 부족합니다.',
+      },
+      {
+        question: '검토에서 가장 자주 나오는 문제는 무엇인가요?',
+        answer: '요구사항 대응 위치 누락, 증빙 파일 불일치, 가격서 분리 오류, PDF 변환 후 표 잘림, 공고 변경사항 미반영이 자주 나옵니다.',
+      },
+    ],
+  },
+  {
+    slug: 'proposal-ppt-template',
+    title: '제안서 PPT 템플릿과 발표자료 구성',
+    shortTitle: '제안서 PPT 템플릿',
+    description:
+      '평가 발표와 제안 설명에 필요한 제안서 PPT 템플릿, 발표 목차, 핵심 메시지, 시각자료 구성을 공공입찰 관점에서 정리했습니다.',
+    primaryKeyword: '제안서 PPT 템플릿',
+    keywords: ['제안서 PPT 템플릿', '입찰 발표자료', '기술제안서 PPT', '제안 발표 PPT', '공공입찰 발표자료'],
+    audience: 'PDF 제안서는 있는데 발표자료와 핵심 메시지를 다시 구성해야 하는 영업·제안팀',
+    commercialIntent: 'template',
+    painPoints: [
+      '본문 내용을 PPT로 줄이다가 핵심 메시지가 흐려집니다.',
+      '발표 시간이 짧아 평가자가 봐야 할 차별점이 뒤쪽에 묻힙니다.',
+      '디자인 시안은 많지만 공공입찰 발표 구조에 맞는 템플릿을 찾기 어렵습니다.',
+    ],
+    solutions: [
+      '평가 기준과 요구사항 대응 순서에 맞춰 발표 흐름을 재구성합니다.',
+      '표지, 사업 이해, 해결 전략, 수행 계획, 기대효과를 한 흐름으로 정리합니다.',
+      '문서 스토어의 PPT 템플릿과 컨설팅을 함께 활용해 발표 완성도를 높입니다.',
+    ],
+    contentSections: [
+      {
+        title: '발표자료 첫 5장 구성',
+        body: '심사위원은 짧은 시간 안에 사업 이해와 수행 가능성을 판단합니다. 초반 장표가 전체 인상을 결정합니다.',
+        bullets: ['한 줄 제안 메시지', '발주 문제 정의', '우리 접근법', '핵심 차별점', '수행 조직과 일정'],
+      },
+      {
+        title: 'PPT 템플릿 선택 기준',
+        body: '공공입찰 PPT는 화려함보다 정보의 위계와 근거 제시가 중요합니다.',
+        bullets: ['표와 도식 가독성', '평가항목 연결성', '인쇄 가독성', '수정 편의성'],
+      },
+      {
+        title: 'PDF 제안서와 발표자료 연결',
+        body: '발표자료는 PDF 제안서의 축약본이 아니라 평가위원에게 반드시 남겨야 할 메시지의 재구성입니다.',
+        bullets: ['목차 용어 통일', '핵심 표 재사용', '증빙 위치 안내', '질의응답 예상 포함'],
+      },
+    ],
+    conversionTitle: '발표자료를 제안 전략에 맞게 다시 구성하세요',
+    conversionBody: '기존 제안서 내용을 발표용 메시지로 압축하면 평가장에서 기억되는 포인트가 선명해집니다.',
+    conversionLinks: [
+      { href: '/store?q=PPT', label: 'PPT 템플릿 보기' },
+      { href: '/consulting', label: '발표자료 상담' },
+    ],
+    relatedLinks: [
+      { href: '/store?q=PPT', label: 'PPT 자료 검색' },
+      { href: '/landing/technical-proposal-template', label: '기술제안서 템플릿' },
+      { href: '/consulting', label: '발표자료 컨설팅' },
+    ],
+    faqs: [
+      {
+        question: 'PPT 템플릿만 바꾸면 발표 품질이 좋아지나요?',
+        answer: '디자인보다 먼저 발표 순서와 핵심 메시지가 정리되어야 합니다. 템플릿은 그 구조를 빠르게 시각화하는 도구로 쓰는 것이 좋습니다.',
+      },
+      {
+        question: '제안서 PDF와 발표 PPT는 같은 목차여야 하나요?',
+        answer: '완전히 같을 필요는 없지만 용어와 핵심 메시지는 일치해야 합니다. 발표자료는 평가자가 기억할 구조로 압축해야 합니다.',
+      },
+    ],
+  },
+  {
+    slug: 'ai-proposal-writing',
+    title: 'AI 제안서 작성: ChatGPT와 Codex 활용법',
+    shortTitle: 'AI 제안서 작성',
+    description:
+      'ChatGPT와 Codex를 활용해 RFP 분석, 제안서 초안, 요구사항 대응표, 검수 체크리스트를 만들고 사람이 최종 판단하는 실무 방법입니다.',
+    primaryKeyword: 'AI 제안서 작성',
+    keywords: ['AI 제안서 작성', 'ChatGPT 제안서', 'Codex 문서 작업', 'AI RFP 분석', '제안서 자동화'],
+    audience: 'AI를 제안 업무에 쓰고 싶지만 품질과 위험 문구를 통제해야 하는 실무자',
+    commercialIntent: 'research',
+    painPoints: [
+      'AI가 만든 문장이 그럴듯하지만 원문 근거와 맞는지 확인하기 어렵습니다.',
+      '요구사항 대응표, 초안, 검수표를 각각 따로 만들어 작업 흐름이 끊깁니다.',
+      '보안, 실적, 가격, 제출 조건처럼 사람이 판단해야 할 항목이 AI 초안에 섞입니다.',
+    ],
+    solutions: [
+      'AI에는 초벌 분류와 반복 문서 작업을 맡기고 최종 판단은 사람이 합니다.',
+      'RFP 분석, 요구사항 대응표, 본문 초안, 검수 체크리스트를 하나의 흐름으로 연결합니다.',
+      'AI 제안서 작성법 12편과 컨설팅을 통해 실무 적용 범위를 나눌 수 있습니다.',
+    ],
+    contentSections: [
+      {
+        title: 'AI가 맡기 좋은 작업',
+        body: 'AI는 문서를 빨리 읽고 분류하는 데 강합니다. 반복되는 표와 체크리스트를 만들 때 특히 효과적입니다.',
+        bullets: ['RFP 장별 요약', '요구사항 추출', '질의 후보 정리', '본문 초안 작성'],
+      },
+      {
+        title: '사람이 반드시 확인할 작업',
+        body: '참가자격, 실적 증빙, 보안 조건, 가격서, 제출 조건은 원문과 회사 자료를 기준으로 사람이 판단해야 합니다.',
+        bullets: ['원문 근거 확인', '실적과 숫자 검증', '위험 문구 수정', '최종 제출 조건 확인'],
+      },
+      {
+        title: '도구를 연결하는 방식',
+        body: 'ChatGPT는 해석과 초안, 이미지 생성은 표지와 개념도, Codex는 반복 표와 체크리스트 구조화에 쓰면 역할이 분명해집니다.',
+        bullets: ['ChatGPT: 분석과 초안', '이미지 생성: 시각자료 방향', 'Codex: 표와 파일 정리', '사람: 검수와 책임 판단'],
+      },
+    ],
+    conversionTitle: 'AI를 쓰되 제출 책임은 통제하세요',
+    conversionBody: 'AI 초안이 빠른 만큼 원문 근거, 실적, 제출 조건 검수 체계가 필요합니다.',
+    conversionLinks: [
+      { href: '/ai-proposal-guide', label: 'AI 제안서 작성법 보기' },
+      { href: '/consulting', label: 'AI 제안서 상담' },
+    ],
+    relatedLinks: [
+      { href: '/ai-proposal-guide', label: 'AI 제안서 작성법 12편' },
+      { href: '/ai-proposal-guide/codex-document-operations', label: 'Codex 자료 정리' },
+      { href: '/consulting', label: 'AI 활용 컨설팅' },
+    ],
+    faqs: [
+      {
+        question: 'AI로 만든 제안서를 그대로 제출해도 되나요?',
+        answer: '권장하지 않습니다. AI는 초안과 정리에 쓰고, 원문 근거, 실적, 보안 조건, 제출 형식은 반드시 사람이 검수해야 합니다.',
+      },
+      {
+        question: 'ChatGPT와 Codex는 어떻게 나눠 쓰나요?',
+        answer: 'ChatGPT는 RFP 해석과 초안 작성에, Codex는 파일 목록, 표, 체크리스트처럼 반복 구조를 정리하는 작업에 쓰는 것이 효율적입니다.',
+      },
+    ],
+  },
+  {
+    slug: 'public-bid-consulting',
+    title: '공공입찰 컨설팅: 공고 검토부터 제안서 제출 준비까지',
+    shortTitle: '공공입찰 컨설팅',
+    description:
+      '공공입찰 참여 가능성 검토, 나라장터 공고 확인, 제안서 전략, 증빙 자료, 제출 일정 관리를 한 흐름으로 정리하는 컨설팅 안내입니다.',
+    primaryKeyword: '공공입찰 컨설팅',
+    keywords: ['공공입찰 컨설팅', '나라장터 컨설팅', '조달청 입찰 컨설팅', '입찰 참여 검토', '제안서 컨설팅'],
+    audience: '공공입찰을 매출 채널로 만들고 싶지만 공고 탐색과 제안 준비 체계가 부족한 기업',
+    commercialIntent: 'consulting',
+    painPoints: [
+      '입찰 공고는 많지만 우리 회사가 들어갈 수 있는 공고를 고르는 기준이 없습니다.',
+      '제안서 작성과 증빙 준비가 늦어져 좋은 공고를 보고도 참여하지 못합니다.',
+      '반복 입찰을 해도 결과를 축적하지 않아 다음 제안서 품질이 개선되지 않습니다.',
+    ],
+    solutions: [
+      '공고 탐색, 참가 가능성 판단, 제안서 준비, 제출 검수를 단계별로 나눕니다.',
+      '문서 스토어, 입찰공고, 모닝브리프를 연결해 반복 가능한 수주 운영 흐름을 만듭니다.',
+      '컨설팅을 통해 참여 우선순위와 제안서 보완 포인트를 정리합니다.',
+    ],
+    contentSections: [
+      {
+        title: '공공입찰을 매출 채널로 보는 기준',
+        body: '입찰은 한 번의 제안서가 아니라 적합한 공고를 찾고 반복 학습하는 운영 체계입니다.',
+        bullets: ['관심 분야 정의', '참가자격 매칭', '실적과 인증 정리', '제안서 자산화'],
+      },
+      {
+        title: '컨설팅 범위',
+        body: '공고 검토부터 제출 전 확인까지 기업 상황에 맞춰 필요한 구간만 선택할 수 있어야 비용과 시간을 통제할 수 있습니다.',
+        bullets: ['공고 적합성 검토', '제안 전략 수립', '문서 목차 설계', '제출 전 체크'],
+      },
+      {
+        title: 'PRESALES 활용 흐름',
+        body: '입찰공고와 문서 스토어를 같은 사이트 안에서 연결하면 탐색과 작성 사이의 시간이 줄어듭니다.',
+        bullets: ['공고 확인', '유사 자료 검색', 'AI 제안서 작성법 학습', '컨설팅 문의'],
+      },
+    ],
+    conversionTitle: '공공입찰을 반복 가능한 매출 파이프라인으로 만드세요',
+    conversionBody: '공고를 보는 데서 끝나지 않고 참여 판단, 제안 준비, 제출 검수까지 이어지는 운영 흐름을 잡습니다.',
+    conversionLinks: [
+      { href: '/announcements', label: '입찰공고 확인' },
+      { href: '/consulting', label: '공공입찰 상담' },
+    ],
+    relatedLinks: [
+      { href: '/announcements', label: '입찰공고 보기' },
+      { href: '/landing/bid-proposal-consulting', label: '제안서 컨설팅' },
+      { href: '/brief', label: '모닝브리프 보기' },
+    ],
+    faqs: [
+      {
+        question: '공공입찰 컨설팅은 제안서 작성만 의미하나요?',
+        answer: '아닙니다. 공고 적합성 판단, 참가자격, 실적 정리, 제안 전략, 제출 전 검수까지 필요한 구간을 나누어 볼 수 있습니다.',
+      },
+      {
+        question: '입찰 공고를 매일 봐야 하나요?',
+        answer: '관심 분야가 정해져 있다면 매일 신규 공고와 마감 공고를 확인하는 편이 좋습니다. 모닝브리프와 공고 페이지를 함께 쓰면 누락을 줄일 수 있습니다.',
+      },
+    ],
+  },
 ]
 
 export function getSeoLandingPage(slug: string): SeoLandingPage | undefined {
   return SEO_LANDING_PAGES.find((page) => page.slug === slug)
+}
+
+export function getSeoLandingDescription(page: Pick<SeoLandingPage, 'description' | 'primaryKeyword'>): string {
+  const source = page.description.length >= 95
+    ? page.description
+    : `${page.description} ${page.primaryKeyword} 관련 문서 구매, 컨설팅 문의, RFP 분석, 제출 전 검수까지 이어지는 실무 동선을 확인하세요.`
+  return source.length <= 160 ? source : `${source.slice(0, 157).trim()}…`
+}
+
+export function getSeoLandingPagesByIntent(intent: SeoLandingPage['commercialIntent']): SeoLandingPage[] {
+  return SEO_LANDING_PAGES.filter((page) => page.commercialIntent === intent)
 }
 
 export function seoLandingUrl(slug: string): string {

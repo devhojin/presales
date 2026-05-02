@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 3600
 
 const CANONICAL_SITE_URL = 'https://presales.co.kr'
-const NAVER_SITE_URL = 'http://www.presales.co.kr'
+const NAVER_SITE_URL = 'https://www.presales.co.kr'
 
 function escapeXml(value: string | number | Date | null | undefined): string {
   return String(value ?? '')

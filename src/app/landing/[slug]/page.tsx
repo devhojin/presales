@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowRight, CheckCircle2, FileText, Search, Target } from 'lucide-react'
+import { ArrowRight, CheckCircle2, FileText, MessageSquareText, Search, Target } from 'lucide-react'
 import { SITE_NAME, SITE_URL } from '@/lib/constants'
 import { safeJsonLd } from '@/lib/json-ld'
-import { getSeoLandingPage, SEO_LANDING_PAGES, seoLandingUrl } from '@/lib/seo-landing-pages'
+import { getSeoLandingDescription, getSeoLandingPage, SEO_LANDING_PAGES, seoLandingUrl } from '@/lib/seo-landing-pages'
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -20,14 +20,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!page) return { title: `페이지를 찾을 수 없습니다 | ${SITE_NAME}` }
 
   const url = seoLandingUrl(page.slug)
+  const seoDescription = getSeoLandingDescription(page)
   return {
     title: `${page.title} | ${SITE_NAME}`,
-    description: page.description,
+    description: seoDescription,
     keywords: page.keywords,
     alternates: { canonical: url },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
+    },
     openGraph: {
       title: `${page.title} | ${SITE_NAME}`,
-      description: page.description,
+      description: seoDescription,
       url,
       siteName: SITE_NAME,
       locale: 'ko_KR',
@@ -36,7 +42,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     twitter: {
       card: 'summary_large_image',
       title: `${page.title} | ${SITE_NAME}`,
-      description: page.description,
+      description: seoDescription,
     },
   }
 }
@@ -47,12 +53,14 @@ export default async function SeoLandingPage({ params }: PageProps) {
   if (!page) notFound()
 
   const url = seoLandingUrl(page.slug)
+  const seoDescription = getSeoLandingDescription(page)
+  const conversionLinks = page.conversionLinks ?? page.relatedLinks
   const jsonLd = safeJsonLd({
     '@context': 'https://schema.org',
     '@type': 'WebPage',
     name: page.title,
     headline: page.title,
-    description: page.description,
+    description: seoDescription,
     url,
     inLanguage: 'ko-KR',
     about: page.keywords,
@@ -61,6 +69,11 @@ export default async function SeoLandingPage({ params }: PageProps) {
       name: SITE_NAME,
       url: SITE_URL,
     },
+    mainEntity: page.contentSections.map((section) => ({
+      '@type': 'CreativeWork',
+      name: section.title,
+      text: section.body,
+    })),
     breadcrumb: {
       '@type': 'BreadcrumbList',
       itemListElement: [
@@ -79,10 +92,43 @@ export default async function SeoLandingPage({ params }: PageProps) {
       ],
     },
   })
+  const serviceJsonLd = safeJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: page.title,
+    description: seoDescription,
+    serviceType: page.primaryKeyword,
+    areaServed: {
+      '@type': 'Country',
+      name: 'KR',
+    },
+    provider: {
+      '@type': 'Organization',
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+    url,
+  })
+  const faqJsonLd = page.faqs?.length
+    ? safeJsonLd({
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: page.faqs.map((faq) => ({
+          '@type': 'Question',
+          name: faq.question,
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: faq.answer,
+          },
+        })),
+      })
+    : null
 
   return (
     <main className="bg-background">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serviceJsonLd }} />
+      {faqJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqJsonLd }} />}
 
       <section className="border-b border-border/50">
         <div className="mx-auto max-w-[1160px] px-4 py-12 md:px-8 md:py-16">
@@ -97,11 +143,37 @@ export default async function SeoLandingPage({ params }: PageProps) {
             {page.description}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            {page.relatedLinks.slice(0, 2).map((link) => (
+            {conversionLinks.slice(0, 2).map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                {link.label}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-border/50 bg-foreground text-background">
+        <div className="mx-auto grid max-w-[1160px] gap-6 px-4 py-10 md:grid-cols-[1fr_auto] md:items-center md:px-8">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-background/60">Revenue Intent</p>
+            <h2 className="mt-3 break-words text-2xl font-bold tracking-tight md:text-3xl">
+              {page.conversionTitle ?? `${page.primaryKeyword} 문제를 빠르게 해결하세요`}
+            </h2>
+            <p className="mt-4 max-w-2xl break-words text-sm leading-7 text-background/72">
+              {page.conversionBody ?? '검색에서 정보를 찾는 단계에서 끝나지 않고, 문서 구매나 컨설팅 문의로 바로 이어질 수 있게 필요한 자료와 다음 행동을 연결했습니다.'}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3 md:justify-end">
+            {conversionLinks.slice(0, 2).map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="inline-flex h-11 items-center gap-2 rounded-full bg-background px-5 text-sm font-semibold text-foreground transition-colors hover:bg-background/90"
               >
                 {link.label}
                 <ArrowRight className="h-4 w-4" />
@@ -196,6 +268,25 @@ export default async function SeoLandingPage({ params }: PageProps) {
           </div>
         </div>
       </section>
+
+      {page.faqs && page.faqs.length > 0 && (
+        <section className="border-t border-border/50 bg-muted/20">
+          <div className="mx-auto max-w-[960px] px-4 py-12 md:px-8">
+            <div className="mb-8 flex items-center gap-2">
+              <MessageSquareText className="h-5 w-5 text-primary" />
+              <h2 className="text-2xl font-bold tracking-tight text-foreground">자주 묻는 질문</h2>
+            </div>
+            <div className="grid gap-4">
+              {page.faqs.map((faq) => (
+                <article key={faq.question} className="border border-border bg-card p-5">
+                  <h3 className="break-words text-base font-bold text-foreground">{faq.question}</h3>
+                  <p className="mt-3 break-words text-sm leading-7 text-muted-foreground">{faq.answer}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </main>
   )
 }

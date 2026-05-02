@@ -12,6 +12,7 @@ const FOOTER_GROUPS = [
       { href: '/store', label: '문서 스토어' },
       { href: '/store?price=free', label: '무료 자료' },
       { href: '/consulting', label: '전문가 컨설팅' },
+      { href: '/solutions', label: '수주 전략 허브' },
       { href: '/announcements', label: '입찰 공고' },
     ],
   },
@@ -22,6 +23,15 @@ const FOOTER_GROUPS = [
       { href: '/brief', label: '모닝 브리프' },
       { href: '/feeds', label: 'IT피드' },
       { href: '/notices', label: '공지사항' },
+    ],
+  },
+  {
+    title: '검색 인기 주제',
+    links: [
+      { href: '/landing/bid-proposal-consulting', label: '입찰 제안서 컨설팅' },
+      { href: '/landing/rfp-analysis-service', label: 'RFP 분석 서비스' },
+      { href: '/landing/proposal-review-check', label: '제안서 검토' },
+      { href: '/landing/proposal-ppt-template', label: '제안서 PPT 템플릿' },
     ],
   },
   {
@@ -102,7 +112,7 @@ export function Footer() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-8 md:grid-cols-3 xl:grid-cols-5">
               {FOOTER_GROUPS.map((group) => (
                 <nav key={group.title} aria-label={group.title}>
                   <h4 className="text-xs font-semibold text-foreground uppercase tracking-widest mb-5">{group.title}</h4>
