@@ -189,6 +189,7 @@ function formatAmount(n: number) {
 export function ChatWidget() {
   const pathname = usePathname()
   const { isOpen, toggle, close, roomId, setRoomId } = useChatWidgetStore()
+  const isAiProposalGuidePage = pathname?.startsWith('/ai-proposal-guide')
 
   const [user, setUser] = useState<{ id: string; email?: string } | null>(null)
   const [guestId, setGuestId] = useState<string | null>(null)
@@ -656,7 +657,7 @@ export function ChatWidget() {
   // 플로팅 버튼 (닫혀있을 때)
   if (!isOpen) {
     return (
-      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+      <div className={`fixed bottom-6 right-6 z-50 flex-col items-end gap-2 ${isAiProposalGuidePage ? 'hidden sm:flex' : 'flex'}`}>
         {canUseKakaoChannel && (
           <button
             onClick={() => { void handleKakaoChannelChat() }}
