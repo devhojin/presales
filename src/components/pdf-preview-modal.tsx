@@ -14,6 +14,28 @@ interface PdfPreviewModalProps {
   purchaseLabel?: string
 }
 
+function ensurePromiseWithResolvers() {
+  const promiseCtor = Promise as typeof Promise & {
+    withResolvers?: <T>() => {
+      promise: Promise<T>
+      resolve: (value: T | PromiseLike<T>) => void
+      reject: (reason?: unknown) => void
+    }
+  }
+
+  if (!promiseCtor.withResolvers) {
+    promiseCtor.withResolvers = function withResolvers<T>() {
+      let resolve!: (value: T | PromiseLike<T>) => void
+      let reject!: (reason?: unknown) => void
+      const promise = new Promise<T>((res, rej) => {
+        resolve = res
+        reject = rej
+      })
+      return { promise, resolve, reject }
+    }
+  }
+}
+
 export function PdfPreviewModal({
   isOpen,
   onClose,
@@ -37,11 +59,9 @@ export function PdfPreviewModal({
   const totalPreviewPages = pdfDoc
     ? Math.min(requestedPreviewPages, pdfDoc.numPages)
     : requestedPreviewPages
-  // 70% 선명, 30% 블러
   const clearPages = Math.max(1, Math.ceil(totalPreviewPages * 0.7))
   const isBlurPage = currentPage > clearPages
 
-  // Load PDF
   useEffect(() => {
     if (!isOpen || !productId) return
 
@@ -55,28 +75,12 @@ export function PdfPreviewModal({
 
     async function loadPdf() {
       try {
-        const PromiseWithResolvers = Promise as typeof Promise & {
-          withResolvers?: <T>() => {
-            promise: Promise<T>
-            resolve: (value: T | PromiseLike<T>) => void
-            reject: (reason?: unknown) => void
-          }
-        }
-        if (!PromiseWithResolvers.withResolvers) {
-          PromiseWithResolvers.withResolvers = function withResolvers<T>() {
-            let resolve!: (value: T | PromiseLike<T>) => void
-            let reject!: (reason?: unknown) => void
-            const promise = new Promise<T>((res, rej) => {
-              resolve = res
-              reject = rej
-            })
-            return { promise, resolve, reject }
-          }
-        }
+        ensurePromiseWithResolvers()
 
         const pdfjs = await import('pdfjs-dist')
-        // CSP: worker-src 'self' 범위 내 로컬 파일 사용 (unpkg 차단 회피 + CDN 의존 제거)
-        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
+        // 모바일 구형 브라우저는 PDF.js 워커 내부의 Promise.withResolvers 지원이 없을 수 있다.
+        // 원본/사본 PDF URL을 노출하지 않고, 서버가 잘라낸 미리보기 PDF만 이 워커로 렌더링한다.
+        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.compat.mjs'
 
         const response = await fetch(previewUrl, {
           credentials: 'same-origin',
@@ -84,7 +88,14 @@ export function PdfPreviewModal({
         })
 
         if (!response.ok) {
-          throw new Error(`PDF fetch failed: ${response.status}`)
+          let serverMessage = ''
+          try {
+            const payload = (await response.clone().json()) as { error?: string }
+            serverMessage = payload.error || ''
+          } catch {
+            serverMessage = ''
+          }
+          throw new Error(serverMessage || `PDF preview request failed: ${response.status}`)
         }
 
         const pdfData = new Uint8Array(await response.arrayBuffer())
@@ -93,6 +104,7 @@ export function PdfPreviewModal({
           disableAutoFetch: true,
           disableRange: true,
           disableStream: true,
+          isEvalSupported: false,
         })
         const doc = await loadingTask.promise
         loadedDoc = doc
@@ -109,10 +121,12 @@ export function PdfPreviewModal({
         const message = err instanceof Error ? err.message : String(err)
         if (message.includes('Missing PDF') || message.includes('Invalid PDF')) {
           setError('유효하지 않은 PDF 파일입니다.')
-        } else if (message.includes('fetch') || message.includes('network') || message.includes('Failed')) {
-          setError('PDF 파일을 불러올 수 없습니다. 파일 URL을 확인해주세요.')
+        } else if (message.includes('PDF 미리보기가 없습니다')) {
+          setError('이 상품은 PDF 미리보기가 준비되지 않았습니다.')
+        } else if (message.includes('허용되지 않은')) {
+          setError('PDF 미리보기 권한을 확인할 수 없습니다.')
         } else {
-          setError('PDF를 불러올 수 없습니다.')
+          setError('PDF 미리보기를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.')
         }
         setLoading(false)
       }
@@ -132,7 +146,6 @@ export function PdfPreviewModal({
     }
   }, [pdfDoc, currentPage, totalPreviewPages])
 
-  // Render page
   useEffect(() => {
     if (!pdfDoc || !canvasRef.current) return
     const doc = pdfDoc
@@ -163,7 +176,12 @@ export function PdfPreviewModal({
         )
         const dpr = Math.min(window.devicePixelRatio || 1, 2)
         const viewport = page.getViewport({ scale: cssScale * dpr })
-        const ctx = canvas.getContext('2d')!
+        const ctx = canvas.getContext('2d')
+
+        if (!ctx) {
+          setRenderError('PDF 페이지를 표시할 수 없습니다.')
+          return
+        }
 
         canvas.width = Math.floor(viewport.width)
         canvas.height = Math.floor(viewport.height)
@@ -195,16 +213,16 @@ export function PdfPreviewModal({
     }
   }, [isOpen])
 
-  // Keyboard navigation
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (!isOpen) return
       if (e.key === 'Escape') onClose()
       if (e.key === 'ArrowLeft' && currentPage > 1) setCurrentPage((p) => p - 1)
-      if (e.key === 'ArrowRight' && currentPage < totalPreviewPages)
+      if (e.key === 'ArrowRight' && currentPage < totalPreviewPages) {
         setCurrentPage((p) => p + 1)
+      }
     },
-    [isOpen, currentPage, totalPreviewPages, onClose]
+    [isOpen, currentPage, totalPreviewPages, onClose],
   )
 
   useEffect(() => {
@@ -212,7 +230,6 @@ export function PdfPreviewModal({
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
 
-  // Body scroll lock
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
@@ -228,12 +245,9 @@ export function PdfPreviewModal({
 
   return (
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      {/* Modal */}
       <div className="relative bg-background rounded-2xl w-[calc(100%-1rem)] sm:w-auto max-w-4xl mx-auto my-2 sm:my-8 max-h-[calc(100dvh-1rem)] sm:max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-200">
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-lg shrink-0">📖</span>
@@ -243,12 +257,12 @@ export function PdfPreviewModal({
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+            aria-label="미리보기 닫기"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* PDF Content */}
         <div className="flex-1 overflow-auto bg-gray-100 relative">
           {loading ? (
             <div className="flex items-center justify-center h-96">
@@ -261,21 +275,19 @@ export function PdfPreviewModal({
             <div className="flex items-center justify-center h-96 px-6">
               <div className="text-center">
                 <p className="text-sm text-red-500">{error}</p>
-                <p className="mt-3 text-xs text-gray-500">잠시 후 다시 시도해 주세요.</p>
               </div>
             </div>
           ) : (
             <div className="relative flex items-center justify-center p-3 sm:p-4 min-h-[min(62dvh,640px)] sm:min-h-[400px]">
-              {/* Left Arrow */}
               <button
                 onClick={() => currentPage > 1 && setCurrentPage((p) => p - 1)}
                 disabled={currentPage <= 1}
                 className="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 z-10 w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-white/90 shadow-md flex items-center justify-center text-gray-600 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                aria-label="이전 페이지"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
 
-              {/* Canvas */}
               <div ref={canvasWrapRef} className="relative flex w-full max-w-full items-center justify-center">
                 <canvas
                   ref={canvasRef}
@@ -294,7 +306,6 @@ export function PdfPreviewModal({
                   </div>
                 )}
 
-                {/* Blur Overlay */}
                 {isBlurPage && (
                   <div className="absolute inset-0 bg-white/40 backdrop-blur-sm flex flex-col items-center justify-center rounded-lg">
                     <div className="bg-white/95 rounded-2xl p-8 text-center shadow-xl max-w-sm mx-4">
@@ -321,13 +332,11 @@ export function PdfPreviewModal({
                 )}
               </div>
 
-              {/* Right Arrow */}
               <button
-                onClick={() =>
-                  currentPage < totalPreviewPages && setCurrentPage((p) => p + 1)
-                }
+                onClick={() => currentPage < totalPreviewPages && setCurrentPage((p) => p + 1)}
                 disabled={currentPage >= totalPreviewPages}
                 className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-10 w-11 h-11 sm:w-10 sm:h-10 rounded-full bg-white/90 shadow-md flex items-center justify-center text-gray-600 hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer"
+                aria-label="다음 페이지"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -335,39 +344,39 @@ export function PdfPreviewModal({
           )}
         </div>
 
-        {/* Footer */}
         {!loading && !error && pdfDoc && (
-        <div className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-3 gap-2 border-t border-gray-200 bg-gray-50">
-          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-            <p className="text-sm text-gray-500">
-              페이지 {currentPage} / {totalPreviewPages}
+          <div className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-3 gap-2 border-t border-gray-200 bg-gray-50">
+            <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+              <p className="text-sm text-gray-500">
+                페이지 {currentPage} / {totalPreviewPages}
+              </p>
+              {requestedPreviewPages > pdfDoc.numPages && (
+                <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                  <Info className="w-3 h-3" />
+                  실제 PDF는 {pdfDoc.numPages}페이지입니다
+                </span>
+              )}
+            </div>
+            <div className="flex max-w-full flex-wrap items-center justify-center gap-1.5">
+              {Array.from({ length: totalPreviewPages }).map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-3 h-3 sm:w-2 sm:h-2 rounded-full transition-colors cursor-pointer ${
+                    currentPage === i + 1
+                      ? 'bg-blue-500'
+                      : i < clearPages
+                        ? 'bg-gray-300 hover:bg-gray-400'
+                        : 'bg-gray-200'
+                  }`}
+                  aria-label={`${i + 1}페이지로 이동`}
+                />
+              ))}
+            </div>
+            <p className="hidden sm:block text-xs text-gray-400">
+              ← → 키로 넘기기 · ESC로 닫기
             </p>
-            {requestedPreviewPages > pdfDoc.numPages && (
-            <span className="flex items-center gap-1 text-[11px] text-gray-400">
-              <Info className="w-3 h-3" />
-              실제 PDF는 {pdfDoc.numPages}페이지입니다
-            </span>
-            )}
           </div>
-          <div className="flex max-w-full flex-wrap items-center justify-center gap-1.5">
-            {Array.from({ length: totalPreviewPages }).map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setCurrentPage(i + 1)}
-                className={`w-3 h-3 sm:w-2 sm:h-2 rounded-full transition-colors cursor-pointer ${
-                  currentPage === i + 1
-                    ? 'bg-blue-500'
-                    : i < clearPages
-                      ? 'bg-gray-300 hover:bg-gray-400'
-                      : 'bg-gray-200'
-                }`}
-              />
-            ))}
-          </div>
-          <p className="hidden sm:block text-xs text-gray-400">
-            ← → 키로 넘기기 · ESC로 닫기
-          </p>
-        </div>
         )}
       </div>
     </div>
