@@ -9,6 +9,8 @@ import {
   aiProposalGuideUrl,
   getAiProposalGuideCategory,
   getAiProposalGuideImageUrl,
+  getAiProposalGuideSeoDescription,
+  getAiProposalGuideSeoKeywords,
   sanitizeGuideHtml,
 } from '@/lib/ai-proposal-guide'
 import { getPublishedAiProposalGuideServerContent } from '@/lib/ai-proposal-guide-server'
@@ -242,10 +244,10 @@ async function getAiProposalGuideItems(): Promise<RssItem[]> {
     return {
       title: guide.title,
       url: aiProposalGuideUrl(guide.slug),
-      description: guide.description,
+      description: getAiProposalGuideSeoDescription(guide),
       pubDate: guide.updatedAt ? new Date(guide.updatedAt) : date,
       category: guide.primaryKeyword || AI_PROPOSAL_GUIDE_TITLE,
-      categories: [AI_PROPOSAL_GUIDE_TITLE, category?.title, ...guide.keywords].filter(Boolean) as string[],
+      categories: [AI_PROPOSAL_GUIDE_TITLE, category?.title, ...getAiProposalGuideSeoKeywords(guide)].filter(Boolean) as string[],
       contentHtml: guide.bodyHtml,
       imageUrl: getAiProposalGuideImageUrl(guide),
     }

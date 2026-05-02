@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/constants";
 
-const NAVER_SITE_URL = "http://www.presales.co.kr";
+const NAVER_SITE_URL = "https://www.presales.co.kr";
 
 export default function robots(): MetadataRoute.Robots {
   return {

@@ -121,7 +121,7 @@ export function EditorialArticleLink({ guide }: { guide: AiProposalGuideStep }) 
         </h3>
         <p className="mt-2 line-clamp-2 break-words text-sm leading-6 text-slate-600">{guide.description}</p>
         <div className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-blue-700">
-          읽기
+          {guide.primaryKeyword} 읽기
           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
         </div>
       </div>

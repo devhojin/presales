@@ -5,15 +5,84 @@ export const AI_PROPOSAL_GUIDE_PUBLISHED_AT = '2026-05-02T09:00:00+09:00'
 export const AI_PROPOSAL_GUIDE_SETTING_KEY = 'ai_proposal_guide_content'
 export const AI_PROPOSAL_GUIDE_TITLE = 'AI 제안서 작성법'
 export const AI_PROPOSAL_GUIDE_DESCRIPTION =
-  'ChatGPT, 이미지 생성, Codex를 활용해 RFP 분석부터 나라장터 입찰 제출까지 따라가는 AI 제안서 작성 실무 콘텐츠입니다.'
+  'ChatGPT, 이미지 생성, Codex를 활용해 RFP 분석, 요구사항 대응표, 제안서 목차와 본문, 검수, 나라장터 제출까지 따라가는 공공입찰 제안서 작성 실무 가이드입니다.'
 export const AI_PROPOSAL_GUIDE_OG_IMAGE = '/images/hero-ai-readiness.webp'
 export const AI_PROPOSAL_GUIDE_KEYWORDS = [
   'AI 제안서 작성법',
+  'AI 제안서 작성',
   'ChatGPT 제안서',
   'Codex 제안서',
   '나라장터 입찰',
   'RFP 분석',
+  '공공입찰 제안서',
+  '제안요청서 분석',
+  '요구사항 대응표',
+  '제안서 검수',
+  '나라장터 제출',
 ]
+
+const AI_PROPOSAL_GUIDE_SEO_META: Record<string, { title: string; description: string }> = {
+  'rfp-origin': {
+    title: 'RFP 발생 과정과 사전규격 준비 | AI 제안서 작성법',
+    description:
+      'RFP가 발주 계획, 사전규격, 본공고로 이어지는 흐름을 설명하고 ChatGPT와 Codex로 일정, 준비물, 질의 후보를 정리하는 방법을 안내합니다.',
+  },
+  'narajangteo-notice-check': {
+    title: '나라장터 공고 확인법: 참가자격·마감·제출물 | AI 제안서 작성법',
+    description:
+      '나라장터 입찰 공고에서 참가자격, 공동수급, 마감, 평가 배점, 필수 제출물을 먼저 판독하고 AI로 공고 요약표를 만드는 실무 절차를 정리합니다.',
+  },
+  'chatgpt-rfp-analysis': {
+    title: 'ChatGPT RFP 분석: 과업 범위·요구사항 추출 | AI 제안서 작성법',
+    description:
+      'ChatGPT로 RFP의 과업 범위, 기능·비기능 요구사항, 평가 포인트, 리스크, 질의 후보를 초벌 분석하고 사람이 원문 기준으로 검수하는 방법을 설명합니다.',
+  },
+  'requirements-response-table': {
+    title: '요구사항 대응표 만들기: RFP와 제안서 목차 연결 | AI 제안서 작성법',
+    description:
+      'RFP 요구사항과 평가항목을 제안서 목차, 증빙 자료, 담당자, 검수 상태에 연결하는 요구사항 대응표를 만들고 누락을 줄이는 방법을 안내합니다.',
+  },
+  'proposal-strategy-message': {
+    title: '제안 전략 잡기: 수주 메시지와 차별점 설계 | AI 제안서 작성법',
+    description:
+      'AI로 발주기관 문제, 평가 기준, 경쟁 구도를 정리하고 사람이 최종 선택해야 할 제안서 핵심 메시지, 차별점, 표지 콘셉트를 설계합니다.',
+  },
+  'proposal-outline': {
+    title: '제안서 목차 설계: 정량·정성·요약서 구조 | AI 제안서 작성법',
+    description:
+      '평가표와 RFP 요구사항을 기준으로 정량평가, 정성평가, 요약서, 발표자료 목차를 설계하고 AI 초안을 실무 목차로 다듬는 방법을 정리합니다.',
+  },
+  'ai-draft-writing': {
+    title: 'AI 제안서 본문 초안 작성과 사람 검수 기준 | AI 제안서 작성법',
+    description:
+      'ChatGPT로 제안서 본문 초안을 빠르게 만들되 과장 표현, 근거 없는 수치, 원문 불일치를 사람이 검수해 공공입찰 문서 품질을 높이는 방법입니다.',
+  },
+  'proposal-visuals': {
+    title: '제안서용 이미지 만들기: 표지·개념도·프로세스 | AI 제안서 작성법',
+    description:
+      '이미지 생성 도구로 제안서 표지, 서비스 개념도, 프로세스 시각자료를 빠르게 시안화하고 최종 문서에 맞게 텍스트와 구조를 검수합니다.',
+  },
+  'codex-document-operations': {
+    title: 'Codex로 제안서 자료 정리: 표·체크리스트 자동화 | AI 제안서 작성법',
+    description:
+      'Codex를 활용해 RFP 요구사항 표, 제출 파일 목록, 검수 체크리스트, 반복 문서 작업을 구조화하고 제안서 작성 시간을 줄이는 방법을 설명합니다.',
+  },
+  'consortium-role-split': {
+    title: '컨소시엄 역할 분담: 공동수급·지분율·실적 정리 | AI 제안서 작성법',
+    description:
+      '공동수급, 분담이행, 지분율, 참여사 실적을 AI로 표준화해 정리하고 제안서 역할 분담, 책임 범위, 증빙 자료를 검수하는 절차입니다.',
+  },
+  'final-review': {
+    title: '제출 전 제안서 검수: 누락·PDF·파일명 체크 | AI 제안서 작성법',
+    description:
+      '제안서 제출 전 누락 서류, 인쇄 품질, PDF 변환, 파일명, 증빙 자료, 가격서 분리 여부를 체크리스트로 검수하는 방법을 안내합니다.',
+  },
+  'narajangteo-submission': {
+    title: '나라장터 입찰 제출까지: 업로드·제출 확인·이후 대응 | AI 제안서 작성법',
+    description:
+      '나라장터 최종 업로드, 제출 확인서 저장, 가격서 제출, 질의 답변 반영, 제출 이후 내부 대응까지 입찰 마무리 절차를 실무 흐름으로 정리합니다.',
+  },
+}
 
 export const AI_PROPOSAL_COVER_THEMES = [
   'ink',
@@ -1144,13 +1213,36 @@ export function getAiProposalGuideImageUrl(guide?: Pick<AiProposalGuideStep, 'co
   return toAbsoluteSiteUrl(guide?.coverImageUrl || AI_PROPOSAL_GUIDE_OG_IMAGE)
 }
 
-export function getAiProposalGuideSeoTitle(guide: Pick<AiProposalGuideStep, 'title'>): string {
-  return `${guide.title} | ${AI_PROPOSAL_GUIDE_TITLE}`
+function normalizeSeoSnippet(value: string): string {
+  return value.replace(/\s+/g, ' ').trim()
 }
 
-export function getAiProposalGuideSeoDescription(guide: Pick<AiProposalGuideStep, 'description'>): string {
-  if (guide.description.length <= 160) return guide.description
-  return `${guide.description.slice(0, 157).trim()}…`
+function truncateSeoSnippet(value: string): string {
+  const normalized = normalizeSeoSnippet(value)
+  if (normalized.length <= 160) return normalized
+  return `${normalized.slice(0, 157).trim()}…`
+}
+
+export function getAiProposalGuideSeoTitle(
+  guide: Pick<AiProposalGuideStep, 'slug' | 'title' | 'primaryKeyword'>,
+): string {
+  return AI_PROPOSAL_GUIDE_SEO_META[guide.slug]?.title || `${guide.primaryKeyword}: ${guide.title} | ${AI_PROPOSAL_GUIDE_TITLE}`
+}
+
+export function getAiProposalGuideSeoDescription(
+  guide: Pick<AiProposalGuideStep, 'slug' | 'description' | 'primaryKeyword'>,
+): string {
+  const source = AI_PROPOSAL_GUIDE_SEO_META[guide.slug]?.description || guide.description
+  if (source.length >= 90) return truncateSeoSnippet(source)
+  return truncateSeoSnippet(
+    `${source} ${guide.primaryKeyword} 관점에서 AI 활용 방법, 사람이 검수할 기준, 제안서 산출물 예시를 함께 정리합니다.`,
+  )
+}
+
+export function getAiProposalGuideSeoKeywords(
+  guide: Pick<AiProposalGuideStep, 'keywords' | 'primaryKeyword'>,
+): string[] {
+  return Array.from(new Set([guide.primaryKeyword, ...guide.keywords, ...AI_PROPOSAL_GUIDE_KEYWORDS].filter(Boolean)))
 }
 
 export function getAdjacentAiProposalGuides(

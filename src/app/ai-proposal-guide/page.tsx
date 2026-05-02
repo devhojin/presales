@@ -14,6 +14,8 @@ import {
   aiProposalGuideUrl,
   getAiProposalGuideCategoriesWithArticles,
   getAiProposalGuideImageUrl,
+  getAiProposalGuideSeoDescription,
+  getAiProposalGuideSeoKeywords,
   type AiProposalGuideStep,
 } from '@/lib/ai-proposal-guide'
 import { getPublishedAiProposalGuideServerContent } from '@/lib/ai-proposal-guide-server'
@@ -27,19 +29,24 @@ export const metadata: Metadata = {
   alternates: { canonical: aiProposalGuideIndexUrl() },
   keywords: AI_PROPOSAL_GUIDE_KEYWORDS,
   category: 'business',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
+  },
   openGraph: {
     title: `${AI_PROPOSAL_GUIDE_TITLE} | ${SITE_NAME}`,
-    description: 'RFP 분석부터 나라장터 제출까지 AI와 함께 제안서를 완성하는 실무 콘텐츠',
+    description: AI_PROPOSAL_GUIDE_DESCRIPTION,
     url: aiProposalGuideIndexUrl(),
     siteName: SITE_NAME,
     locale: 'ko_KR',
     type: 'website',
-    images: [{ url: AI_PROPOSAL_GUIDE_OG_IMAGE, width: 1200, height: 630, alt: AI_PROPOSAL_GUIDE_TITLE }],
+    images: [{ url: AI_PROPOSAL_GUIDE_OG_IMAGE, width: 2400, height: 1309, alt: AI_PROPOSAL_GUIDE_TITLE }],
   },
   twitter: {
     card: 'summary_large_image',
     title: `${AI_PROPOSAL_GUIDE_TITLE} | ${SITE_NAME}`,
-    description: 'ChatGPT, 이미지 생성, Codex로 제안서를 완성하는 실무 흐름',
+    description: AI_PROPOSAL_GUIDE_DESCRIPTION,
     images: [AI_PROPOSAL_GUIDE_OG_IMAGE],
   },
 }
@@ -64,6 +71,11 @@ export default async function AiProposalGuideIndexPage() {
   const sections = getAiProposalGuideCategoriesWithArticles(content)
   const articles = content.articles
   const { hero, shelf, secondary } = getFeaturedGuides(articles)
+  const topicLinks = articles.map((guide) => ({
+    href: aiProposalGuideUrl(guide.slug).replace(SITE_URL, ''),
+    title: guide.primaryKeyword,
+    description: guide.shortTitle,
+  }))
 
   const jsonLd = safeJsonLd({
     '@context': 'https://schema.org',
@@ -90,10 +102,24 @@ export default async function AiProposalGuideIndexPage() {
       itemListElement: articles.map((guide) => ({
         '@type': 'ListItem',
         position: guide.sortOrder,
-        name: guide.title,
-        url: aiProposalGuideUrl(guide.slug),
+        item: {
+          '@type': 'Article',
+          headline: guide.title,
+          description: getAiProposalGuideSeoDescription(guide),
+          url: aiProposalGuideUrl(guide.slug),
+          image: getAiProposalGuideImageUrl(guide),
+          keywords: getAiProposalGuideSeoKeywords(guide),
+        },
       })),
     },
+    hasPart: articles.map((guide) => ({
+      '@type': 'Article',
+      headline: guide.title,
+      description: getAiProposalGuideSeoDescription(guide),
+      url: aiProposalGuideUrl(guide.slug),
+      image: getAiProposalGuideImageUrl(guide),
+      position: guide.sortOrder,
+    })),
   })
   const breadcrumbJsonLd = safeJsonLd({
     '@context': 'https://schema.org',
@@ -241,6 +267,30 @@ export default async function AiProposalGuideIndexPage() {
               </article>
             )
           })}
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 bg-white">
+        <div className="mx-auto max-w-[1180px] px-4 py-14 md:px-8">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold tracking-[0.2em] text-blue-700">SEARCH TOPICS</p>
+            <h2 className="mt-3 break-words text-2xl font-bold md:text-3xl">AI 제안서 작성 주제별 바로가기</h2>
+            <p className="mt-4 break-words text-sm leading-7 text-slate-600">
+              검색 의도가 분명한 주제는 별도 글로 연결했습니다. RFP 분석, 요구사항 대응표, 제안서 검수처럼 실무자가 바로 찾는 문제부터 읽을 수 있습니다.
+            </p>
+          </div>
+          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {topicLinks.map((topic) => (
+              <Link
+                key={topic.href}
+                href={topic.href}
+                className="group min-w-0 border border-slate-200 bg-[#F8FAFC] p-4 transition-colors hover:border-blue-300 hover:bg-blue-50"
+              >
+                <span className="break-words text-sm font-bold text-zinc-950 group-hover:text-blue-800">{topic.title}</span>
+                <span className="mt-1 block break-words text-xs leading-5 text-slate-500">{topic.description}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 

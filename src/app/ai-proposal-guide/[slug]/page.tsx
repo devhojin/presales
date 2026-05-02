@@ -14,6 +14,7 @@ import {
   getAiProposalGuideCategory,
   getAiProposalGuideImageUrl,
   getAiProposalGuideSeoDescription,
+  getAiProposalGuideSeoKeywords,
   getAiProposalGuideSeoTitle,
   getAiProposalGuideWordCount,
   plainTextFromGuideHtml,
@@ -48,15 +49,23 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const url = aiProposalGuideUrl(guide.slug)
   const imageUrl = getAiProposalGuideImageUrl(guide)
   const seoDescription = getAiProposalGuideSeoDescription(guide)
+  const seoKeywords = getAiProposalGuideSeoKeywords(guide)
   const seoTitle = getAiProposalGuideSeoTitle(guide)
   return {
     title: seoTitle,
     description: seoDescription,
-    keywords: guide.keywords,
+    keywords: seoKeywords,
     category: 'business',
     alternates: { canonical: url },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
+    },
+    authors: [{ name: SITE_NAME, url: SITE_URL }],
+    publisher: SITE_NAME,
     openGraph: {
-      title: `${guide.title} | ${SITE_NAME}`,
+      title: seoTitle,
       description: seoDescription,
       url,
       siteName: SITE_NAME,
@@ -64,11 +73,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: 'article',
       publishedTime: guide.publishedAt,
       modifiedTime: guide.updatedAt,
-      images: [{ url: imageUrl, width: 1200, height: 630, alt: guide.title }],
+      images: [{ url: imageUrl, width: 1200, height: 760, alt: guide.title }],
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${guide.title} | ${SITE_NAME}`,
+      title: seoTitle,
       description: seoDescription,
       images: [imageUrl],
     },
@@ -85,6 +94,9 @@ export default async function AiProposalGuideDetailPage({ params }: PageProps) {
   const { previous, next } = getAdjacentAiProposalGuides(guide.step, content)
   const url = aiProposalGuideUrl(guide.slug)
   const imageUrl = getAiProposalGuideImageUrl(guide)
+  const seoDescription = getAiProposalGuideSeoDescription(guide)
+  const seoKeywords = getAiProposalGuideSeoKeywords(guide)
+  const seoTitle = getAiProposalGuideSeoTitle(guide)
   const articleBodyText = plainTextFromGuideHtml(guide.bodyHtml)
   const sanitizedHtml = sanitizeGuideHtml(guide.bodyHtml)
   const relatedGuides = content.articles
@@ -94,13 +106,14 @@ export default async function AiProposalGuideDetailPage({ params }: PageProps) {
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: guide.title,
-    description: guide.description,
+    description: seoDescription,
     url,
     image: [imageUrl],
+    thumbnailUrl: imageUrl,
     inLanguage: 'ko-KR',
     datePublished: guide.publishedAt,
     dateModified: guide.updatedAt,
-    keywords: guide.keywords,
+    keywords: seoKeywords,
     articleSection: category?.title || 'AI 제안서 작성법',
     articleBody: articleBodyText.slice(0, 5000),
     wordCount: getAiProposalGuideWordCount(guide),
@@ -123,11 +136,36 @@ export default async function AiProposalGuideDetailPage({ params }: PageProps) {
       '@type': 'Organization',
       name: SITE_NAME,
       url: SITE_URL,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/icon.png`,
+      },
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
       '@id': url,
     },
+  })
+  const webPageJsonLd = safeJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: seoTitle,
+    description: seoDescription,
+    url,
+    inLanguage: 'ko-KR',
+    isPartOf: {
+      '@type': 'WebSite',
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+    primaryImageOfPage: {
+      '@type': 'ImageObject',
+      url: imageUrl,
+    },
+    about: seoKeywords.slice(0, 8).map((keyword) => ({
+      '@type': 'Thing',
+      name: keyword,
+    })),
   })
   const breadcrumbJsonLd = safeJsonLd({
     '@context': 'https://schema.org',
@@ -157,6 +195,7 @@ export default async function AiProposalGuideDetailPage({ params }: PageProps) {
   return (
     <main className="overflow-x-hidden bg-[#F7F6F2] text-zinc-950">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: webPageJsonLd }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd }} />
 
       <section className="border-b border-slate-200 bg-white">
@@ -213,11 +252,25 @@ export default async function AiProposalGuideDetailPage({ params }: PageProps) {
         />
 
         <section className="mt-14 border-t border-slate-200 pt-8">
+          <h2 className="text-xl font-bold text-zinc-950">핵심 주제</h2>
+          <p className="mt-4 break-words text-sm leading-7 text-slate-600">
+            이 글은 {guide.primaryKeyword}를 중심으로 {seoKeywords.slice(1, 5).join(', ')} 실무를 함께 다룹니다.
+          </p>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {seoKeywords.slice(0, 8).map((keyword) => (
+              <span key={keyword} className="inline-flex items-center border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700">
+                {keyword}
+              </span>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-14 border-t border-slate-200 pt-8">
           <h2 className="text-xl font-bold text-zinc-950">관련 페이지</h2>
           <div className="mt-5 flex flex-wrap gap-3">
-            <LinkPill href="/store" label="문서 스토어" />
-            <LinkPill href="/announcements" label="입찰 공고" />
-            <LinkPill href="/consulting" label="제안서 컨설팅" />
+            <LinkPill href="/store" label="제안서 템플릿 문서 스토어" />
+            <LinkPill href="/announcements" label="나라장터 입찰 공고 보기" />
+            <LinkPill href="/consulting" label="AI 제안서 컨설팅 문의" />
           </div>
         </section>
 
