@@ -5,10 +5,15 @@ import { SITE_NAME, SITE_URL } from '@/lib/constants'
 import { safeJsonLd } from '@/lib/json-ld'
 import {
   AI_PROPOSAL_GUIDE_BASE_PATH,
+  AI_PROPOSAL_GUIDE_DESCRIPTION,
+  AI_PROPOSAL_GUIDE_KEYWORDS,
+  AI_PROPOSAL_GUIDE_OG_IMAGE,
   AI_PROPOSAL_GUIDE_PUBLISHED_AT,
+  AI_PROPOSAL_GUIDE_TITLE,
   aiProposalGuideIndexUrl,
   aiProposalGuideUrl,
   getAiProposalGuideCategoriesWithArticles,
+  getAiProposalGuideImageUrl,
   type AiProposalGuideStep,
 } from '@/lib/ai-proposal-guide'
 import { getPublishedAiProposalGuideServerContent } from '@/lib/ai-proposal-guide-server'
@@ -17,25 +22,25 @@ import { EditorialArticleLink, GuideCover, GuideCoverLink } from '@/components/a
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: `AI 제안서 작성법 | ${SITE_NAME}`,
-  description:
-    'ChatGPT, 이미지 생성, Codex를 활용해 RFP 분석부터 나라장터 입찰 제출까지 따라가는 AI 제안서 작성 실무 콘텐츠입니다.',
+  title: `${AI_PROPOSAL_GUIDE_TITLE} | ${SITE_NAME}`,
+  description: AI_PROPOSAL_GUIDE_DESCRIPTION,
   alternates: { canonical: aiProposalGuideIndexUrl() },
-  keywords: ['AI 제안서 작성법', 'ChatGPT 제안서', 'Codex 제안서', '나라장터 입찰', 'RFP 분석'],
+  keywords: AI_PROPOSAL_GUIDE_KEYWORDS,
+  category: 'business',
   openGraph: {
-    title: `AI 제안서 작성법 | ${SITE_NAME}`,
+    title: `${AI_PROPOSAL_GUIDE_TITLE} | ${SITE_NAME}`,
     description: 'RFP 분석부터 나라장터 제출까지 AI와 함께 제안서를 완성하는 실무 콘텐츠',
     url: aiProposalGuideIndexUrl(),
     siteName: SITE_NAME,
     locale: 'ko_KR',
     type: 'website',
-    images: [{ url: '/images/hero-ai-readiness.webp', width: 1200, height: 630, alt: 'AI 제안서 작성법' }],
+    images: [{ url: AI_PROPOSAL_GUIDE_OG_IMAGE, width: 1200, height: 630, alt: AI_PROPOSAL_GUIDE_TITLE }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: `AI 제안서 작성법 | ${SITE_NAME}`,
+    title: `${AI_PROPOSAL_GUIDE_TITLE} | ${SITE_NAME}`,
     description: 'ChatGPT, 이미지 생성, Codex로 제안서를 완성하는 실무 흐름',
-    images: ['/images/hero-ai-readiness.webp'],
+    images: [AI_PROPOSAL_GUIDE_OG_IMAGE],
   },
 }
 
@@ -63,10 +68,16 @@ export default async function AiProposalGuideIndexPage() {
   const jsonLd = safeJsonLd({
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: 'AI 제안서 작성법',
+    name: AI_PROPOSAL_GUIDE_TITLE,
     description: metadata.description,
     url: aiProposalGuideIndexUrl(),
     inLanguage: 'ko-KR',
+    image: getAiProposalGuideImageUrl(),
+    keywords: AI_PROPOSAL_GUIDE_KEYWORDS,
+    about: AI_PROPOSAL_GUIDE_KEYWORDS.map((keyword) => ({
+      '@type': 'Thing',
+      name: keyword,
+    })),
     datePublished: AI_PROPOSAL_GUIDE_PUBLISHED_AT,
     dateModified: content.updatedAt,
     publisher: {
@@ -84,10 +95,29 @@ export default async function AiProposalGuideIndexPage() {
       })),
     },
   })
+  const breadcrumbJsonLd = safeJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: SITE_NAME,
+        item: SITE_URL,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: AI_PROPOSAL_GUIDE_TITLE,
+        item: aiProposalGuideIndexUrl(),
+      },
+    ],
+  })
 
   return (
     <main className="overflow-x-hidden bg-[#F6F5F1] text-zinc-950">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd }} />
 
       <section className="bg-[#6F7476] text-white">
         <div className="mx-auto grid min-h-[520px] max-w-[1180px] gap-10 px-4 py-16 md:grid-cols-[1fr_360px] md:px-8 md:py-20">

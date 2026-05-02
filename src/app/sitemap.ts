@@ -6,6 +6,7 @@ import { SEO_LANDING_PAGES, seoLandingUrl } from "@/lib/seo-landing-pages";
 import {
   aiProposalGuideIndexUrl,
   aiProposalGuideUrl,
+  getAiProposalGuideImageUrl,
 } from "@/lib/ai-proposal-guide";
 import { getPublishedAiProposalGuideServerContent } from "@/lib/ai-proposal-guide-server";
 import { morningBriefService } from "../../morning-brief/lib/supabase";
@@ -52,7 +53,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE_URL}/announcements`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
     { url: `${BASE_URL}/feeds`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
     { url: `${BASE_URL}/brief`, lastModified: new Date(), changeFrequency: "daily", priority: 0.8 },
-    { url: aiProposalGuideIndexUrl(), lastModified: aiProposalGuideUpdatedAt, changeFrequency: "weekly", priority: 0.82 },
+    {
+      url: aiProposalGuideIndexUrl(),
+      lastModified: aiProposalGuideUpdatedAt,
+      changeFrequency: "weekly",
+      priority: 0.86,
+      images: [getAiProposalGuideImageUrl()],
+    },
     { url: `${BASE_URL}/consulting`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.85 },
     { url: `${BASE_URL}/about`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
     { url: `${BASE_URL}/faq`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
@@ -72,8 +79,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const aiProposalGuidePages: MetadataRoute.Sitemap = aiProposalGuideContent.articles.map((guide) => ({
     url: aiProposalGuideUrl(guide.slug),
     lastModified: guide.updatedAt ? new Date(guide.updatedAt) : aiProposalGuideUpdatedAt,
-    changeFrequency: "monthly" as const,
-    priority: 0.74,
+    changeFrequency: "weekly" as const,
+    priority: 0.78,
+    images: [getAiProposalGuideImageUrl(guide)],
   }));
 
   try {

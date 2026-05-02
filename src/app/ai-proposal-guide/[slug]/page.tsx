@@ -6,11 +6,16 @@ import { SITE_NAME, SITE_URL } from '@/lib/constants'
 import { safeJsonLd } from '@/lib/json-ld'
 import {
   AI_PROPOSAL_GUIDE_BASE_PATH,
+  AI_PROPOSAL_GUIDE_TITLE,
   aiProposalGuideIndexUrl,
   aiProposalGuideUrl,
   getAdjacentAiProposalGuides,
   getAiProposalGuide,
   getAiProposalGuideCategory,
+  getAiProposalGuideImageUrl,
+  getAiProposalGuideSeoDescription,
+  getAiProposalGuideSeoTitle,
+  getAiProposalGuideWordCount,
   plainTextFromGuideHtml,
   sanitizeGuideHtml,
   type AiProposalGuideStep,
@@ -41,27 +46,31 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!guide) return { title: `페이지를 찾을 수 없습니다 | ${SITE_NAME}` }
 
   const url = aiProposalGuideUrl(guide.slug)
+  const imageUrl = getAiProposalGuideImageUrl(guide)
+  const seoDescription = getAiProposalGuideSeoDescription(guide)
+  const seoTitle = getAiProposalGuideSeoTitle(guide)
   return {
-    title: `${guide.title} | AI 제안서 작성법`,
-    description: guide.description,
+    title: seoTitle,
+    description: seoDescription,
     keywords: guide.keywords,
+    category: 'business',
     alternates: { canonical: url },
     openGraph: {
       title: `${guide.title} | ${SITE_NAME}`,
-      description: guide.description,
+      description: seoDescription,
       url,
       siteName: SITE_NAME,
       locale: 'ko_KR',
       type: 'article',
       publishedTime: guide.publishedAt,
       modifiedTime: guide.updatedAt,
-      images: [{ url: guide.coverImageUrl || '/images/hero-ai-readiness.webp', width: 1200, height: 630, alt: guide.title }],
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: guide.title }],
     },
     twitter: {
       card: 'summary_large_image',
       title: `${guide.title} | ${SITE_NAME}`,
-      description: guide.description,
-      images: [guide.coverImageUrl || '/images/hero-ai-readiness.webp'],
+      description: seoDescription,
+      images: [imageUrl],
     },
   }
 }
@@ -75,20 +84,36 @@ export default async function AiProposalGuideDetailPage({ params }: PageProps) {
   const category = getAiProposalGuideCategory(guide.categorySlug, content)
   const { previous, next } = getAdjacentAiProposalGuides(guide.step, content)
   const url = aiProposalGuideUrl(guide.slug)
+  const imageUrl = getAiProposalGuideImageUrl(guide)
   const articleBodyText = plainTextFromGuideHtml(guide.bodyHtml)
   const sanitizedHtml = sanitizeGuideHtml(guide.bodyHtml)
+  const relatedGuides = content.articles
+    .filter((item) => item.slug !== guide.slug && item.categorySlug === guide.categorySlug)
+    .slice(0, 4)
   const jsonLd = safeJsonLd({
     '@context': 'https://schema.org',
     '@type': 'Article',
     headline: guide.title,
     description: guide.description,
     url,
+    image: [imageUrl],
     inLanguage: 'ko-KR',
     datePublished: guide.publishedAt,
     dateModified: guide.updatedAt,
     keywords: guide.keywords,
     articleSection: category?.title || 'AI 제안서 작성법',
     articleBody: articleBodyText.slice(0, 5000),
+    wordCount: getAiProposalGuideWordCount(guide),
+    timeRequired: `PT${guide.readingMinutes}M`,
+    isPartOf: {
+      '@type': 'CreativeWorkSeries',
+      name: AI_PROPOSAL_GUIDE_TITLE,
+      url: aiProposalGuideIndexUrl(),
+    },
+    about: guide.keywords.slice(0, 6).map((keyword) => ({
+      '@type': 'Thing',
+      name: keyword,
+    })),
     author: {
       '@type': 'Organization',
       name: SITE_NAME,
@@ -104,21 +129,46 @@ export default async function AiProposalGuideDetailPage({ params }: PageProps) {
       '@id': url,
     },
   })
+  const breadcrumbJsonLd = safeJsonLd({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: SITE_NAME,
+        item: SITE_URL,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: AI_PROPOSAL_GUIDE_TITLE,
+        item: aiProposalGuideIndexUrl(),
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: guide.title,
+        item: url,
+      },
+    ],
+  })
 
   return (
     <main className="overflow-x-hidden bg-[#F7F6F2] text-zinc-950">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd }} />
 
       <section className="border-b border-slate-200 bg-white">
         <div className="mx-auto grid max-w-[1120px] gap-10 px-4 py-12 md:grid-cols-[1fr_300px] md:px-8 md:py-16">
           <div className="min-w-0">
-            <Link
-              href={AI_PROPOSAL_GUIDE_BASE_PATH}
-              className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-blue-700"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              AI 제안서 작성법 전체보기
-            </Link>
+            <nav className="mb-8 flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-600" aria-label="breadcrumb">
+              <Link href="/" className="hover:text-blue-700">{SITE_NAME}</Link>
+              <span aria-hidden="true">/</span>
+              <Link href={AI_PROPOSAL_GUIDE_BASE_PATH} className="hover:text-blue-700">{AI_PROPOSAL_GUIDE_TITLE}</Link>
+              <span aria-hidden="true">/</span>
+              <span className="text-zinc-950">{guide.title}</span>
+            </nav>
             <div className="mb-5 flex flex-wrap items-center gap-2">
               <span className="inline-flex h-8 items-center bg-blue-700 px-3 text-xs font-bold text-white">
                 {String(guide.step).padStart(2, '0')}
@@ -170,6 +220,29 @@ export default async function AiProposalGuideDetailPage({ params }: PageProps) {
             <LinkPill href="/consulting" label="제안서 컨설팅" />
           </div>
         </section>
+
+        {relatedGuides.length > 0 && (
+          <section className="mt-10 border-t border-slate-200 pt-8">
+            <h2 className="text-xl font-bold text-zinc-950">같은 카테고리 글</h2>
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              {relatedGuides.map((relatedGuide) => (
+                <Link
+                  key={relatedGuide.slug}
+                  href={`${AI_PROPOSAL_GUIDE_BASE_PATH}/${relatedGuide.slug}`}
+                  className="group min-w-0 border border-slate-200 bg-white p-5 transition-colors hover:border-blue-300 hover:bg-blue-50/35"
+                >
+                  <p className="text-xs font-semibold text-blue-700">{relatedGuide.primaryKeyword}</p>
+                  <h3 className="mt-2 break-words text-sm font-bold text-zinc-950 group-hover:text-blue-800">
+                    {relatedGuide.title}
+                  </h3>
+                  <p className="mt-2 line-clamp-2 break-words text-sm leading-6 text-slate-600">
+                    {relatedGuide.description}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         <nav className="mt-10 grid gap-3 border-t border-slate-200 pt-8 md:grid-cols-2" aria-label="AI 제안서 작성법 이전 다음 글">
           {previous ? <AdjacentLink guide={previous} direction="prev" /> : <div />}

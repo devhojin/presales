@@ -3,8 +3,13 @@ import { SITE_NAME, SITE_URL } from '@/lib/constants'
 import { morningBriefSlug } from '@/lib/public-briefs'
 import { SEO_LANDING_PAGES, seoLandingUrl } from '@/lib/seo-landing-pages'
 import {
+  AI_PROPOSAL_GUIDE_DESCRIPTION,
+  AI_PROPOSAL_GUIDE_TITLE,
   aiProposalGuideIndexUrl,
   aiProposalGuideUrl,
+  getAiProposalGuideCategory,
+  getAiProposalGuideImageUrl,
+  sanitizeGuideHtml,
 } from '@/lib/ai-proposal-guide'
 import { getPublishedAiProposalGuideServerContent } from '@/lib/ai-proposal-guide-server'
 import { normalizeSeoText, truncateSeoText } from '@/lib/seo-text'
@@ -18,6 +23,9 @@ type RssItem = {
   description: string
   pubDate: Date
   category?: string
+  categories?: string[]
+  contentHtml?: string
+  imageUrl?: string
 }
 
 type ProductRow = {
@@ -83,14 +91,25 @@ function toDate(value: string | null | undefined): Date {
 }
 
 function itemXml(item: RssItem): string {
-  const category = item.category ? `\n      <category>${escapeXml(item.category)}</category>` : ''
+  const categories = Array.from(new Set([item.category, ...(item.categories ?? [])].filter(Boolean) as string[]))
+  const categoryXml = categories.map((category) => `\n      <category>${escapeXml(category)}</category>`).join('')
+  const contentXml = item.contentHtml
+    ? `\n      <content:encoded>${cdata(sanitizeGuideHtml(item.contentHtml))}</content:encoded>`
+    : ''
+  const imageXml = item.imageUrl
+    ? `\n      <media:content url="${escapeXml(item.imageUrl)}" medium="image" />`
+    : ''
   return `    <item>
       <title>${escapeXml(item.title)}</title>
       <link>${escapeXml(item.url)}</link>
       <description>${escapeXml(item.description)}</description>
       <pubDate>${item.pubDate.toUTCString()}</pubDate>
-      <guid isPermaLink="true">${escapeXml(item.url)}</guid>${category}
+      <guid isPermaLink="true">${escapeXml(item.url)}</guid>${categoryXml}${imageXml}${contentXml}
     </item>`
+}
+
+function cdata(value: string): string {
+  return `<![CDATA[${value.replaceAll(']]>', ']]]]><![CDATA[>')}]]>`
 }
 
 async function getProductItems(): Promise<RssItem[]> {
@@ -210,25 +229,39 @@ async function getAiProposalGuideItems(): Promise<RssItem[]> {
   const content = await getPublishedAiProposalGuideServerContent()
   const date = content.updatedAt ? new Date(content.updatedAt) : new Date()
   const indexItem: RssItem = {
-    title: 'AI 제안서 작성법',
+    title: AI_PROPOSAL_GUIDE_TITLE,
     url: aiProposalGuideIndexUrl(),
-    description: 'ChatGPT, 이미지 생성, Codex를 활용해 RFP 분석부터 나라장터 입찰 제출까지 따라가는 AI 제안서 작성 실무 콘텐츠입니다.',
+    description: AI_PROPOSAL_GUIDE_DESCRIPTION,
     pubDate: date,
-    category: 'AI 제안서 작성법',
+    category: AI_PROPOSAL_GUIDE_TITLE,
+    categories: ['ChatGPT 제안서', 'RFP 분석', '나라장터 입찰'],
+    imageUrl: getAiProposalGuideImageUrl(),
   }
-  const guideItems = content.articles.map((guide) => ({
-    title: guide.title,
-    url: aiProposalGuideUrl(guide.slug),
-    description: guide.description,
-    pubDate: guide.updatedAt ? new Date(guide.updatedAt) : date,
-    category: guide.primaryKeyword || 'AI 제안서 작성법',
-  }))
+  const guideItems = content.articles.map((guide) => {
+    const category = getAiProposalGuideCategory(guide.categorySlug, content)
+    return {
+      title: guide.title,
+      url: aiProposalGuideUrl(guide.slug),
+      description: guide.description,
+      pubDate: guide.updatedAt ? new Date(guide.updatedAt) : date,
+      category: guide.primaryKeyword || AI_PROPOSAL_GUIDE_TITLE,
+      categories: [AI_PROPOSAL_GUIDE_TITLE, category?.title, ...guide.keywords].filter(Boolean) as string[],
+      contentHtml: guide.bodyHtml,
+      imageUrl: getAiProposalGuideImageUrl(guide),
+    }
+  })
 
   return [indexItem, ...guideItems]
 }
 
 export async function GET() {
-  const itemGroups = await Promise.all([
+  const [
+    productItems,
+    announcementItems,
+    feedItems,
+    briefItems,
+    aiProposalGuideItems,
+  ] = await Promise.all([
     getProductItems(),
     getAnnouncementItems(),
     getFeedItems(),
@@ -236,20 +269,32 @@ export async function GET() {
     getAiProposalGuideItems(),
   ])
 
-  const items = [...itemGroups.flat(), ...getLandingItems()]
+  const alwaysIncludedUrls = new Set(aiProposalGuideItems.map((item) => item.url))
+  const sortedItems = [
+    ...productItems,
+    ...announcementItems,
+    ...feedItems,
+    ...briefItems,
+    ...aiProposalGuideItems,
+    ...getLandingItems(),
+  ]
     .filter((item) => item.title && item.url.startsWith(SITE_URL))
     .sort((a, b) => b.pubDate.getTime() - a.pubDate.getTime())
-    .slice(0, 120)
+  const items = [
+    ...sortedItems.filter((item) => alwaysIncludedUrls.has(item.url)),
+    ...sortedItems.filter((item) => !alwaysIncludedUrls.has(item.url)).slice(0, 180),
+  ].sort((a, b) => b.pubDate.getTime() - a.pubDate.getTime())
 
   const now = new Date()
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:media="http://search.yahoo.com/mrss/">
   <channel>
     <title>${escapeXml(SITE_NAME)}</title>
     <link>${escapeXml(SITE_URL)}</link>
     <description>${escapeXml('공공조달 제안서, 입찰공고, IT피드, 모닝브리프 최신 콘텐츠')}</description>
     <language>ko-KR</language>
     <lastBuildDate>${now.toUTCString()}</lastBuildDate>
+    <ttl>30</ttl>
     <atom:link href="${escapeXml(`${SITE_URL}/rss.xml`)}" rel="self" type="application/rss+xml" />
 ${items.map((item) => itemXml({ ...item, description: normalizeSeoText(item.description) })).join('\n')}
   </channel>

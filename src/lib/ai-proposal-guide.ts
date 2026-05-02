@@ -3,6 +3,17 @@ import { SITE_URL } from '@/lib/constants'
 export const AI_PROPOSAL_GUIDE_BASE_PATH = '/ai-proposal-guide'
 export const AI_PROPOSAL_GUIDE_PUBLISHED_AT = '2026-05-02T09:00:00+09:00'
 export const AI_PROPOSAL_GUIDE_SETTING_KEY = 'ai_proposal_guide_content'
+export const AI_PROPOSAL_GUIDE_TITLE = 'AI 제안서 작성법'
+export const AI_PROPOSAL_GUIDE_DESCRIPTION =
+  'ChatGPT, 이미지 생성, Codex를 활용해 RFP 분석부터 나라장터 입찰 제출까지 따라가는 AI 제안서 작성 실무 콘텐츠입니다.'
+export const AI_PROPOSAL_GUIDE_OG_IMAGE = '/images/hero-ai-readiness.webp'
+export const AI_PROPOSAL_GUIDE_KEYWORDS = [
+  'AI 제안서 작성법',
+  'ChatGPT 제안서',
+  'Codex 제안서',
+  '나라장터 입찰',
+  'RFP 분석',
+]
 
 export const AI_PROPOSAL_COVER_THEMES = [
   'ink',
@@ -759,6 +770,28 @@ export function aiProposalGuideIndexUrl(): string {
   return `${SITE_URL}${AI_PROPOSAL_GUIDE_BASE_PATH}`
 }
 
+export function toAbsoluteSiteUrl(value: string): string {
+  if (!value) return SITE_URL
+  try {
+    return new URL(value, SITE_URL).toString()
+  } catch {
+    return SITE_URL
+  }
+}
+
+export function getAiProposalGuideImageUrl(guide?: Pick<AiProposalGuideStep, 'coverImageUrl'>): string {
+  return toAbsoluteSiteUrl(guide?.coverImageUrl || AI_PROPOSAL_GUIDE_OG_IMAGE)
+}
+
+export function getAiProposalGuideSeoTitle(guide: Pick<AiProposalGuideStep, 'title'>): string {
+  return `${guide.title} | ${AI_PROPOSAL_GUIDE_TITLE}`
+}
+
+export function getAiProposalGuideSeoDescription(guide: Pick<AiProposalGuideStep, 'description'>): string {
+  if (guide.description.length <= 160) return guide.description
+  return `${guide.description.slice(0, 157).trim()}…`
+}
+
 export function getAdjacentAiProposalGuides(
   step: number,
   content: AiProposalGuideContent = DEFAULT_AI_PROPOSAL_GUIDE_CONTENT,
@@ -854,6 +887,11 @@ export function plainTextFromGuideHtml(html: string): string {
     .replace(/<[^>]+>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+export function getAiProposalGuideWordCount(guide: Pick<AiProposalGuideStep, 'bodyHtml'>): number {
+  const text = plainTextFromGuideHtml(guide.bodyHtml)
+  return text ? text.split(/\s+/).length : 0
 }
 
 function cleanUrlAttribute(value: string, allowImages = false): string {
