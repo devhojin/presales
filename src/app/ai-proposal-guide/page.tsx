@@ -148,9 +148,9 @@ export default async function AiProposalGuideIndexPage() {
       <section className="relative isolate overflow-hidden bg-[#111A20] text-white">
         <div className="pointer-events-none absolute inset-0 -z-10">
           <div className="absolute inset-0 bg-[url('/images/ai-proposal-guide/hero-gemini-background.webp')] bg-cover bg-[center_44%]" />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,17,22,0.96)_0%,rgba(16,24,30,0.88)_43%,rgba(16,24,30,0.34)_74%,rgba(11,17,22,0.72)_100%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,10,14,0.24),rgba(6,10,14,0.08)_48%,rgba(6,10,14,0.42))]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_38%,rgba(96,165,250,0.16),transparent_34%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,17,22,0.96)_0%,rgba(16,24,30,0.86)_43%,rgba(16,24,30,0.22)_74%,rgba(11,17,22,0.42)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,10,14,0.18),rgba(6,10,14,0.04)_48%,rgba(6,10,14,0.32))]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_38%,rgba(96,165,250,0.2),transparent_34%)]" />
         </div>
         <div className="mx-auto grid min-h-[520px] max-w-[1180px] gap-10 px-4 py-16 md:grid-cols-[1fr_360px] md:px-8 md:py-20">
           <div className="flex min-w-0 flex-col justify-center">
