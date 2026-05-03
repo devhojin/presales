@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import DOMPurify from 'dompurify'
 import { createClient } from '@/lib/supabase'
 import Link from 'next/link'
-import { type DbProduct, type DbCategory } from '@/lib/types'
+import { type DbProduct, type DbCategory, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
 import { Badge } from '@/components/ui/badge'
@@ -526,6 +526,10 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
   const productIntroImageUrl =
     galleryPreviewImages.find((url) => url.includes('/preview-images/original-intros/')) ?? null
   const reviewTabLabel = `리뷰 (${reviewCount.toLocaleString('ko-KR')} 건)`
+  const hasOriginalPrice = !product.is_free && product.original_price > product.price && product.original_price > 0
+  const discountRate = hasOriginalPrice
+    ? Math.max(1, Math.round(((product.original_price - product.price) / product.original_price) * 100))
+    : 0
 
   const tabs: { id: TabId; label: string }[] = [
     { id: 'info', label: '상품정보' },
@@ -626,6 +630,30 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
               ))}
             </div>
             <h1 className="text-3xl md:text-5xl font-semibold tracking-tight leading-[1.08] text-zinc-950 text-balance">{product.title}</h1>
+            <div className="mt-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">판매가격</p>
+              <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-2">
+                {product.is_free ? (
+                  <span className="text-3xl font-black tracking-tight text-primary md:text-4xl">무료</span>
+                ) : (
+                  <>
+                    <span className="text-3xl font-black tracking-tight text-primary md:text-4xl">
+                      {formatPrice(product.price)}
+                    </span>
+                    {hasOriginalPrice && (
+                      <span className="mb-1 text-sm font-medium text-muted-foreground line-through">
+                        {formatPrice(product.original_price)}
+                      </span>
+                    )}
+                    {discountRate > 0 && (
+                      <span className="mb-1 inline-flex h-7 items-center rounded-full bg-red-50 px-3 text-xs font-bold text-red-600 ring-1 ring-red-100">
+                        {discountRate}% 할인
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
             {overview.summary && (
               <p className="mt-5 max-w-[68ch] text-[15px] leading-7 text-zinc-600">{overview.summary}</p>
             )}
