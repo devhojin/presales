@@ -1,185 +1,326 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  Activity,
+  ArrowDownRight,
+  BarChart3,
+  CircleDollarSign,
+  MousePointerClick,
+  RefreshCw,
+  Search,
+  TrendingUp,
+  Users,
+} from 'lucide-react'
+import {
+  Area,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ComposedChart,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 import type {
   AdminAnalyticsDayStat,
   AdminAnalyticsFunnel,
   AdminAnalyticsSummary,
 } from '@/lib/admin-analytics'
 
-// ── helpers ──────────────────────────────────────────────────────────
-function fmt(d: Date) {
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  return `${mm}-${dd}`
-}
-function isoDate(d: Date) {
-  // KST(UTC+9) 기준 YYYY-MM-DD. toISOString()은 UTC라 KST 자정이 전날로 밀림.
-  const kst = new Date(d.getTime() + 9 * 3600 * 1000)
-  return kst.toISOString().slice(0, 10)
-}
-function startOfDay(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
-}
-function addDays(d: Date, n: number) {
-  const r = new Date(d)
-  r.setDate(r.getDate() + n)
-  return r
-}
-
-const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
-
 type DayStat = AdminAnalyticsDayStat
+
+type PeriodDays = 7 | 30 | 90
 
 interface ReferrerStat {
   referrer: string
   count: number
 }
 
-function pathLabel(p: string): string {
-  if (!p || p === '/') return '홈'
-  if (p === '/store') return '스토어'
-  if (p.startsWith('/store/')) return `상품 상세`
-  if (p === '/announcements') return '공고 목록'
-  if (p.startsWith('/announcements/')) return '공고 상세'
-  if (p === '/feeds') return '피드'
-  if (p === '/brief') return '데일리 브리프'
-  if (p.startsWith('/brief/')) return '브리프 상세'
-  if (p === '/consulting') return '컨설팅'
-  if (p === '/about') return '회사소개'
-  if (p === '/us') return 'Us'
-  if (p === '/faq') return 'FAQ'
-  if (p === '/mypage') return '나의콘솔'
-  if (p === '/auth/login') return '로그인'
-  if (p === '/auth/signup') return '회원가입'
-  return p
+interface ChartDatum {
+  date: string
+  label: string
+  pageViews: number
+  visitors: number
+  revenue: number
+  orders: number
+  storeViews: number
+  cartViews: number
+  checkoutViews: number
+  signups: number
+  consulting: number
+  reviews: number
 }
 
-// ── SVG line chart (shared) ───────────────────────────────────────────
-
-interface LineChartSeries {
-  points: { x: number; y: number }[]
-  stroke: string
-  fill?: string
-  strokeWidth?: number
+interface TooltipPayload<T> {
+  dataKey?: string | number
+  name?: string | number
+  value?: number | string
+  color?: string
+  payload?: T
 }
 
-function LineChart({
-  series,
-  xLabels,
-  yMax,
-  height = 180,
-  seriesLabels,
-  valueFormatter,
+interface ChartTooltipProps<T> {
+  active?: boolean
+  payload?: TooltipPayload<T>[]
+  label?: string | number
+}
+
+const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
+
+const TRAFFIC_COLORS = {
+  pageViews: '#93c5fd',
+  visitors: '#2563eb',
+  storeViews: '#14b8a6',
+  cartViews: '#f59e0b',
+  checkoutViews: '#ef4444',
+}
+
+const ACTION_COLORS = ['#2563eb', '#14b8a6', '#f59e0b', '#ef4444', '#64748b']
+
+function compactNumber(value: number): string {
+  if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(1)}억`
+  if (value >= 10_000) return `${Math.round(value / 10_000).toLocaleString()}만`
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}천`
+  return value.toLocaleString()
+}
+
+function currency(value: number): string {
+  return `${value.toLocaleString()}원`
+}
+
+function compactCurrency(value: number): string {
+  if (value >= 100_000_000) return `${(value / 100_000_000).toFixed(1)}억원`
+  if (value >= 10_000) return `${Math.round(value / 10_000).toLocaleString()}만원`
+  return currency(value)
+}
+
+function percent(value: number, total: number): string {
+  if (total <= 0) return '0%'
+  const pct = (value / total) * 100
+  if (pct > 0 && pct < 1) return '<1%'
+  return `${Math.round(pct)}%`
+}
+
+function formatMonthDay(ymd: string): string {
+  const [, month, day] = ymd.split('-')
+  return `${month}/${day}`
+}
+
+function formatFullDate(ymd: string): string {
+  return ymd.replace(/-/g, '.')
+}
+
+function isoDate(d: Date) {
+  const kst = new Date(d.getTime() + 9 * 3600 * 1000)
+  return kst.toISOString().slice(0, 10)
+}
+
+function startOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+function addDays(d: Date, n: number) {
+  const r = new Date(d)
+  r.setDate(r.getDate() + n)
+  return r
+}
+
+function pathLabel(path: string): string {
+  if (!path || path === '/') return '홈'
+  if (path === '/store') return '스토어'
+  if (path.startsWith('/store/')) return '상품 상세'
+  if (path === '/announcements') return '공고 목록'
+  if (path.startsWith('/announcements/')) return '공고 상세'
+  if (path === '/feeds') return 'IT 피드'
+  if (path.startsWith('/feeds/')) return 'IT 피드 상세'
+  if (path === '/brief') return '데일리 브리프'
+  if (path.startsWith('/brief/')) return '브리프 상세'
+  if (path === '/consulting') return '컨설팅'
+  if (path === '/about') return '회사소개'
+  if (path === '/us') return 'Us'
+  if (path === '/faq') return 'FAQ'
+  if (path === '/mypage') return '나의콘솔'
+  if (path === '/auth/login') return '로그인'
+  if (path === '/auth/signup') return '회원가입'
+  return path
+}
+
+function Panel({
+  title,
+  subtitle,
+  children,
+  action,
+  className = '',
 }: {
-  series: LineChartSeries[]
-  xLabels: string[]
-  yMax: number
-  height?: number
-  seriesLabels?: string[]
-  valueFormatter?: (v: number) => string
+  title: string
+  subtitle?: string
+  children: React.ReactNode
+  action?: React.ReactNode
+  className?: string
 }) {
-  const W = 700
-  const H = height
-  const PAD_X = 50
-  const PAD_Y = 16
-  const BOTTOM = 24
-  const plotW = W - PAD_X * 2
-  const plotH = H - PAD_Y - BOTTOM
-  const lastIdx = Math.max(xLabels.length - 1, 1)
-
-  function toX(i: number) {
-    return PAD_X + (i / lastIdx) * plotW
-  }
-  function toY(v: number) {
-    return PAD_Y + plotH - (v / Math.max(yMax, 1)) * plotH
-  }
-
-  const yTicks = [0, 0.25, 0.5, 0.75, 1].map((r) => ({
-    y: toY(yMax * r),
-    label:
-      yMax * r >= 1_000_000
-        ? `${Math.round((yMax * r) / 10000)}만`
-        : yMax * r >= 1000
-        ? `${Math.round((yMax * r) / 1000)}천`
-        : String(Math.round(yMax * r)),
-  }))
-
-  // X: show at most 7 evenly-spaced labels to avoid overlap
-  const step = Math.max(1, Math.ceil(xLabels.length / 7))
-  const xIndices = xLabels
-    .map((_, i) => i)
-    .filter((i) => i % step === 0 || i === xLabels.length - 1)
-
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height }}>
-      {/* Grid + Y labels */}
-      {yTicks.map(({ y, label }) => (
-        <g key={label}>
-          <line x1={PAD_X} y1={y} x2={W - PAD_X} y2={y} stroke="#e5e7eb" strokeWidth="1" />
-          <text x={PAD_X - 6} y={y + 4} textAnchor="end" fontSize="10" fill="#9ca3af">
-            {label}
-          </text>
-        </g>
-      ))}
-
-      {/* Series */}
-      {series.map((s, si) => {
-        const pts = s.points.map((p) => `${toX(p.x)},${toY(p.y)}`).join(' ')
-        const areaStart = `${toX(s.points[0]?.x ?? 0)},${PAD_Y + plotH}`
-        const areaEnd = `${toX(s.points[s.points.length - 1]?.x ?? lastIdx)},${PAD_Y + plotH}`
-        return (
-          <g key={si}>
-            {s.fill && (
-              <polygon
-                points={`${areaStart} ${pts} ${areaEnd}`}
-                fill={s.fill}
-              />
-            )}
-            <polyline
-              points={pts}
-              fill="none"
-              stroke={s.stroke}
-              strokeWidth={s.strokeWidth ?? 2}
-              strokeLinejoin="round"
-            />
-            {s.points.map((p, i) => {
-              const seriesLabel = seriesLabels?.[si]
-              const valStr = valueFormatter ? valueFormatter(p.y) : p.y.toLocaleString()
-              const tip = `${xLabels[i] ?? ''}${seriesLabel ? ` · ${seriesLabel}` : ''}: ${valStr}`
-              return (
-                <g key={i}>
-                  <circle cx={toX(p.x)} cy={toY(p.y)} r="3" fill={s.stroke} />
-                  {/* 히트박스 + 네이티브 툴팁 */}
-                  <circle cx={toX(p.x)} cy={toY(p.y)} r="12" fill="transparent" style={{ cursor: 'pointer' }}>
-                    <title>{tip}</title>
-                  </circle>
-                </g>
-              )
-            })}
-          </g>
-        )
-      })}
-
-      {/* X labels */}
-      {xIndices.map((i) => (
-        <text key={i} x={toX(i)} y={H - 4} textAnchor="middle" fontSize="10" fill="#6b7280">
-          {xLabels[i]}
-        </text>
-      ))}
-    </svg>
+    <section className={`rounded-lg border border-slate-200 bg-white p-5 shadow-sm ${className}`}>
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold text-slate-950">{title}</h2>
+          {subtitle && <p className="mt-1 text-sm leading-5 text-slate-500">{subtitle}</p>}
+        </div>
+        {action}
+      </div>
+      {children}
+    </section>
   )
 }
 
-// ── component ────────────────────────────────────────────────────────
+function MetricTile({
+  label,
+  value,
+  detail,
+  icon: Icon,
+}: {
+  label: string
+  value: string
+  detail: string
+  icon: typeof Users
+}) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-5 flex items-center justify-between">
+        <p className="text-sm font-medium text-slate-500">{label}</p>
+        <span className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-100 text-slate-700">
+          <Icon className="h-4 w-4" />
+        </span>
+      </div>
+      <p className="font-mono text-3xl font-semibold text-slate-950">{value}</p>
+      <p className="mt-2 text-xs leading-5 text-slate-500">{detail}</p>
+    </div>
+  )
+}
+
+function LegendItem({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-2 text-xs font-medium text-slate-600">
+      <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: color }} />
+      {label}
+    </span>
+  )
+}
+
+function TrafficTooltip({ active, payload }: ChartTooltipProps<ChartDatum>) {
+  if (!active || !payload?.length) return null
+
+  const row = payload[0]?.payload
+  if (!row) return null
+
+  return (
+    <div className="min-w-[220px] rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm shadow-xl">
+      <p className="mb-3 font-semibold text-slate-950">{formatFullDate(row.date)}</p>
+      <div className="space-y-2">
+        <TooltipLine color={TRAFFIC_COLORS.pageViews} label="페이지뷰" value={row.pageViews.toLocaleString()} />
+        <TooltipLine color={TRAFFIC_COLORS.visitors} label="방문자" value={row.visitors.toLocaleString()} />
+        <TooltipLine color={TRAFFIC_COLORS.storeViews} label="스토어/상품" value={row.storeViews.toLocaleString()} />
+        <TooltipLine color={TRAFFIC_COLORS.cartViews} label="장바구니" value={row.cartViews.toLocaleString()} />
+        <TooltipLine color={TRAFFIC_COLORS.checkoutViews} label="결제 진입" value={row.checkoutViews.toLocaleString()} />
+      </div>
+    </div>
+  )
+}
+
+function RevenueTooltip({ active, payload }: ChartTooltipProps<ChartDatum>) {
+  if (!active || !payload?.length) return null
+
+  const row = payload[0]?.payload
+  if (!row) return null
+
+  return (
+    <div className="min-w-[210px] rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm shadow-xl">
+      <p className="mb-3 font-semibold text-slate-950">{formatFullDate(row.date)}</p>
+      <div className="space-y-2">
+        <TooltipLine color="#059669" label="매출" value={currency(row.revenue)} />
+        <TooltipLine color="#f59e0b" label="주문수" value={`${row.orders.toLocaleString()}건`} />
+        <TooltipLine color="#2563eb" label="방문자" value={row.visitors.toLocaleString()} />
+      </div>
+    </div>
+  )
+}
+
+function ActionTooltip({ active, payload }: ChartTooltipProps<ChartDatum>) {
+  if (!active || !payload?.length) return null
+
+  const row = payload[0]?.payload
+  if (!row) return null
+
+  return (
+    <div className="min-w-[220px] rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm shadow-xl">
+      <p className="mb-3 font-semibold text-slate-950">{formatFullDate(row.date)}</p>
+      <div className="space-y-2">
+        <TooltipLine color={ACTION_COLORS[0]} label="주문" value={`${row.orders.toLocaleString()}건`} />
+        <TooltipLine color={ACTION_COLORS[1]} label="가입" value={`${row.signups.toLocaleString()}건`} />
+        <TooltipLine color={ACTION_COLORS[2]} label="문의" value={`${row.consulting.toLocaleString()}건`} />
+        <TooltipLine color={ACTION_COLORS[3]} label="후기" value={`${row.reviews.toLocaleString()}건`} />
+      </div>
+    </div>
+  )
+}
+
+function ReferrerTooltip({
+  active,
+  payload,
+}: ChartTooltipProps<{ label: string; count: number; pct: string }>) {
+  if (!active || !payload?.length) return null
+  const row = payload[0]?.payload
+  if (!row) return null
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm shadow-xl">
+      <p className="mb-2 font-semibold text-slate-950">{row.label}</p>
+      <TooltipLine color="#2563eb" label="유입" value={`${row.count.toLocaleString()}건`} />
+      <TooltipLine color="#94a3b8" label="비중" value={row.pct} />
+    </div>
+  )
+}
+
+function TooltipLine({ color, label, value }: { color: string; label: string; value: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: color }} />
+      <span className="text-slate-600">{label}</span>
+      <span className="ml-auto pl-6 font-mono font-semibold text-slate-950">{value}</span>
+    </div>
+  )
+}
+
+function AnalyticsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="rounded-lg border border-slate-200 bg-white p-6">
+        <div className="h-6 w-40 animate-pulse rounded bg-slate-200" />
+        <div className="mt-3 h-4 w-96 max-w-full animate-pulse rounded bg-slate-100" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="h-32 animate-pulse rounded-lg border border-slate-200 bg-slate-100" />
+        ))}
+      </div>
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.9fr)]">
+        <div className="h-[460px] animate-pulse rounded-lg border border-slate-200 bg-slate-100" />
+        <div className="h-[460px] animate-pulse rounded-lg border border-slate-200 bg-slate-100" />
+      </div>
+    </div>
+  )
+}
+
 export default function AnalyticsPage() {
   const [dailyStats, setDailyStats] = useState<DayStat[]>([])
   const [monthlyData, setMonthlyData] = useState<Record<string, Record<number, { pv: number; uv: number }>>>({})
   const [viewMode, setViewMode] = useState<'visitors' | 'pageviews'>('visitors')
   const [loading, setLoading] = useState(true)
-  const [periodDays, setPeriodDays] = useState(7)
-
-  // Funnel data
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [periodDays, setPeriodDays] = useState<PeriodDays>(30)
   const [funnelData, setFunnelData] = useState<AdminAnalyticsFunnel>({
     visitors: 0,
     storeViews: 0,
@@ -188,22 +329,15 @@ export default function AnalyticsPage() {
     orders: 0,
     completed: 0,
   })
-
-  // Referrer data
   const [referrers, setReferrers] = useState<ReferrerStat[]>([])
   const [totalRefs, setTotalRefs] = useState(0)
-
-  // Top pages
   const [topPages, setTopPages] = useState<{ path: string; count: number }[]>([])
-
-  // Search keywords
   const [keywords, setKeywords] = useState<{ keyword: string; count: number }[]>([])
-
-  // Recent signups
   const [recentSignups, setRecentSignups] = useState<{ name: string | null; email: string | null; created_at: string }[]>([])
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
+    setErrorMessage(null)
     try {
       const response = await fetch(`/api/admin/analytics/summary?days=${periodDays}`, {
         cache: 'no-store',
@@ -222,7 +356,9 @@ export default function AnalyticsPage() {
       setKeywords(summary.keywords)
       setRecentSignups(summary.recentSignups)
     } catch (error) {
+      const message = error instanceof Error ? error.message : '통계 데이터를 불러오지 못했습니다'
       console.error('[admin/analytics] failed to load summary', error)
+      setErrorMessage(message)
       setDailyStats([])
       setMonthlyData({})
       setFunnelData({
@@ -250,521 +386,658 @@ export default function AnalyticsPage() {
     return () => window.clearTimeout(timer)
   }, [fetchAll])
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20 text-muted-foreground text-sm">
-        데이터를 불러오는 중...
-      </div>
-    )
-  }
+  const chartData = useMemo<ChartDatum[]>(
+    () =>
+      dailyStats.map((stat) => ({
+        date: stat.date,
+        label: formatMonthDay(stat.date),
+        pageViews: stat.pageViews,
+        visitors: stat.visitors,
+        revenue: stat.revenue,
+        orders: stat.orders,
+        storeViews: stat.storeViews,
+        cartViews: stat.cartViews,
+        checkoutViews: stat.checkoutViews,
+        signups: stat.signups,
+        consulting: stat.consulting,
+        reviews: stat.reviews,
+      })),
+    [dailyStats]
+  )
 
-  // ── Chart data ────────────────────────────────────────────────────────
-  const maxPv = Math.max(...dailyStats.map((s) => s.pageViews), 1)
-  const maxUv = Math.max(...dailyStats.map((s) => s.visitors), 1)
-  const pvuvMax = Math.max(maxPv, maxUv, 1)
-  const maxRevenue = Math.max(...dailyStats.map((s) => s.revenue), 1)
+  const totals = useMemo(() => {
+    const pageViews = dailyStats.reduce((sum, row) => sum + row.pageViews, 0)
+    const revenue = dailyStats.reduce((sum, row) => sum + row.revenue, 0)
+    const orders = dailyStats.reduce((sum, row) => sum + row.orders, 0)
+    const completed = funnelData.completed
+    const visitors = funnelData.visitors
+    const pagesPerVisitor = visitors > 0 ? pageViews / visitors : 0
 
-  const pvSeries: LineChartSeries = {
-    points: dailyStats.map((s, i) => ({ x: i, y: s.pageViews })),
-    stroke: 'rgba(147,197,253,0.8)',
-    fill: 'rgba(147,197,253,0.2)',
-    strokeWidth: 2,
-  }
-  const uvSeries: LineChartSeries = {
-    points: dailyStats.map((s, i) => ({ x: i, y: s.visitors })),
-    stroke: '#2563eb',
-    strokeWidth: 2.5,
-  }
-  const revSeries: LineChartSeries = {
-    points: dailyStats.map((s, i) => ({ x: i, y: s.revenue })),
-    stroke: '#ef4444',
-    fill: 'rgba(239,68,68,0.08)',
-    strokeWidth: 2.5,
-  }
+    return { pageViews, revenue, orders, completed, visitors, pagesPerVisitor }
+  }, [dailyStats, funnelData])
 
-  const xLabels = dailyStats.map((s) => fmt(new Date(s.date)))
+  const referrerChart = useMemo(
+    () =>
+      referrers.map((item) => ({
+        label: item.referrer,
+        count: item.count,
+        pct: percent(item.count, totalRefs),
+      })),
+    [referrers, totalRefs]
+  )
 
-  // Monthly/Yearly
-  const years = Object.keys(monthlyData).sort()
-  if (years.length === 0) {
-    const curYear = String(new Date().getFullYear())
-    if (!years.includes(curYear)) years.push(curYear)
-  }
+  const years = useMemo(() => {
+    const keys = Object.keys(monthlyData).sort()
+    return keys.length > 0 ? keys : [String(new Date().getFullYear())]
+  }, [monthlyData])
 
-  // Weekly calendar (last 4 weeks)
-  const todayDate = startOfDay(new Date())
-  const todayDow = todayDate.getDay()
-  const lastSunday = addDays(todayDate, -todayDow)
-  const weeks: { start: Date; days: (DayStat | null)[] }[] = []
-  for (let w = 3; w >= 0; w--) {
-    const weekStart = addDays(lastSunday, -w * 7)
-    const days: (DayStat | null)[] = []
-    for (let d = 0; d < 7; d++) {
-      const date = addDays(weekStart, d)
-      const ds = isoDate(date)
-      const match = dailyStats.find((s) => s.date === ds)
-      days.push(match || null)
+  const weeks = useMemo(() => {
+    const todayDate = startOfDay(new Date())
+    const todayDow = todayDate.getDay()
+    const lastSunday = addDays(todayDate, -todayDow)
+    const result: { start: Date; days: (DayStat | null)[] }[] = []
+
+    for (let w = 3; w >= 0; w -= 1) {
+      const weekStart = addDays(lastSunday, -w * 7)
+      const days: (DayStat | null)[] = []
+      for (let d = 0; d < 7; d += 1) {
+        const date = addDays(weekStart, d)
+        const ds = isoDate(date)
+        const match = dailyStats.find((stat) => stat.date === ds)
+        days.push(match || null)
+      }
+      result.push({ start: weekStart, days })
     }
-    weeks.push({ start: weekStart, days })
-  }
 
-  function daysInMonth(year: number, month: number) {
-    return new Date(year, month, 0).getDate()
-  }
+    return result
+  }, [dailyStats])
 
-  // ── Funnel bars ───────────────────────────────────────────────────────
+  const todayDate = startOfDay(new Date())
   const funnelSteps = [
-    { label: '방문자 수', value: funnelData.visitors, color: 'bg-primary' },
-    { label: '문서스토어/상품 조회', value: funnelData.storeViews, color: 'bg-indigo-500' },
-    { label: '장바구니 진입', value: funnelData.cartViews, color: 'bg-sky-500' },
-    { label: '결제 진입', value: funnelData.checkoutViews, color: 'bg-amber-500' },
-    { label: '주문 생성', value: funnelData.orders, color: 'bg-orange-500' },
-    { label: '구매 완료', value: funnelData.completed, color: 'bg-blue-500' },
+    { label: '방문자', detail: '고유 session_id', value: funnelData.visitors, color: '#2563eb' },
+    { label: '스토어/상품', detail: '/store 접속 세션', value: funnelData.storeViews, color: '#14b8a6' },
+    { label: '장바구니', detail: '/cart 접속 세션', value: funnelData.cartViews, color: '#f59e0b' },
+    { label: '결제 진입', detail: '/checkout 접속 세션', value: funnelData.checkoutViews, color: '#ef4444' },
+    { label: '주문 생성', detail: '취소/환불 제외 주문', value: funnelData.orders, color: '#475569' },
+    { label: '구매 완료', detail: 'paid/completed 주문', value: funnelData.completed, color: '#059669' },
   ]
-  const funnelMax = Math.max(funnelData.visitors, 1)
+
+  if (loading) {
+    return <AnalyticsSkeleton />
+  }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">통계 분석</h1>
-        <div className="flex items-center gap-1 bg-muted rounded-xl p-1">
-          {([7, 30, 90] as const).map((days) => (
+      <header className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-500">analytics console</p>
+            <h1 className="mt-2 text-3xl font-semibold text-slate-950">통계 분석</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+              방문자는 자체 page_views 로그의 고유 세션 기준입니다. 관리자 페이지와 봇성 user-agent는 수집 단계에서 제외됩니다.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+              {([7, 30, 90] as const).map((days) => (
+                <button
+                  key={days}
+                  type="button"
+                  onClick={() => setPeriodDays(days)}
+                  className={`rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
+                    periodDays === days
+                      ? 'bg-white text-slate-950 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-950'
+                  }`}
+                >
+                  {days}일
+                </button>
+              ))}
+            </div>
             <button
-              key={days}
               type="button"
-              onClick={() => setPeriodDays(days)}
-              className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                periodDays === days
-                  ? 'bg-white text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
+              onClick={() => void fetchAll()}
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
             >
-              {days}일
+              <RefreshCw className="h-4 w-4" />
+              새로고침
             </button>
-          ))}
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* ── 방문자 차트 ── */}
-      <div className="bg-white rounded-xl border border-border p-6">
-        <h2 className="text-sm font-semibold text-foreground mb-4">
-          방문자 추이 (최근 {periodDays}일)
-        </h2>
-        <div className="flex items-center gap-6 mb-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: 'rgba(147,197,253,0.5)' }} />
-            페이지뷰
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-sm bg-primary" />
-            방문자
-          </span>
+      {errorMessage && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          {errorMessage}
         </div>
-        <LineChart
-          series={[pvSeries, uvSeries]}
-          xLabels={xLabels}
-          yMax={pvuvMax}
-          height={200}
-          seriesLabels={['페이지뷰', '방문자']}
+      )}
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricTile
+          label="방문자"
+          value={totals.visitors.toLocaleString()}
+          detail={`최근 ${periodDays}일 고유 세션`}
+          icon={Users}
+        />
+        <MetricTile
+          label="페이지뷰"
+          value={totals.pageViews.toLocaleString()}
+          detail={`방문자당 평균 ${totals.pagesPerVisitor.toFixed(1)}페이지`}
+          icon={MousePointerClick}
+        />
+        <MetricTile
+          label="매출"
+          value={compactCurrency(totals.revenue)}
+          detail={`${totals.orders.toLocaleString()}건 주문 기준`}
+          icon={CircleDollarSign}
+        />
+        <MetricTile
+          label="구매 완료"
+          value={totals.completed.toLocaleString()}
+          detail={`방문 대비 ${percent(totals.completed, totals.visitors)}`}
+          icon={TrendingUp}
         />
       </div>
 
-      {/* ── 매출 추이 차트 ── */}
-      <div className="bg-white rounded-xl border border-border p-6">
-        <h2 className="text-sm font-semibold text-foreground mb-4">
-          매출 추이 (최근 {periodDays}일, 결제완료 기준)
-        </h2>
-        <div className="flex items-center gap-6 mb-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-sm bg-red-500" />
-            일별 매출
-          </span>
-          <span className="text-muted-foreground ml-auto font-medium">
-            기간 합계: {dailyStats.reduce((a, s) => a + s.revenue, 0).toLocaleString()}원
-          </span>
-        </div>
-        <LineChart
-          series={[revSeries]}
-          xLabels={xLabels}
-          yMax={maxRevenue}
-          height={200}
-          seriesLabels={['일별 매출']}
-          valueFormatter={(v) => `${v.toLocaleString()}원`}
-        />
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.9fr)]">
+        <Panel
+          title="방문 흐름"
+          subtitle={`최근 ${periodDays}일 페이지뷰와 방문 세션 추이`}
+          action={
+            <div className="hidden flex-wrap items-center gap-4 md:flex">
+              <LegendItem color={TRAFFIC_COLORS.pageViews} label="페이지뷰" />
+              <LegendItem color={TRAFFIC_COLORS.visitors} label="방문자" />
+            </div>
+          }
+        >
+          <div className="h-[380px]">
+            {chartData.length === 0 ? (
+              <EmptyState icon={Activity} label="방문 데이터가 없습니다" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={chartData} margin={{ top: 10, right: 18, left: 0, bottom: 4 }}>
+                  <defs>
+                    <linearGradient id="trafficPageViews" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={TRAFFIC_COLORS.pageViews} stopOpacity={0.72} />
+                      <stop offset="100%" stopColor={TRAFFIC_COLORS.pageViews} stopOpacity={0.14} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="#e2e8f0" vertical={false} />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 12, fill: '#64748b' }}
+                    tickLine={false}
+                    axisLine={{ stroke: '#cbd5e1' }}
+                    minTickGap={16}
+                  />
+                  <YAxis
+                    tickFormatter={(value: number) => compactNumber(value)}
+                    tick={{ fontSize: 12, fill: '#64748b' }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={54}
+                  />
+                  <Tooltip content={<TrafficTooltip />} cursor={{ fill: 'rgba(15, 23, 42, 0.04)' }} />
+                  <Bar
+                    dataKey="pageViews"
+                    name="페이지뷰"
+                    fill="url(#trafficPageViews)"
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={36}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="visitors"
+                    name="방문자"
+                    stroke={TRAFFIC_COLORS.visitors}
+                    strokeWidth={2.6}
+                    dot={periodDays <= 30 ? { r: 3, fill: TRAFFIC_COLORS.visitors } : false}
+                    activeDot={{ r: 5 }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </Panel>
+
+        <Panel
+          title="매출 추이"
+          subtitle="결제 완료 주문 기준"
+          action={<span className="font-mono text-sm font-semibold text-emerald-700">{currency(totals.revenue)}</span>}
+        >
+          <div className="h-[380px]">
+            {chartData.length === 0 ? (
+              <EmptyState icon={CircleDollarSign} label="매출 데이터가 없습니다" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={chartData} margin={{ top: 10, right: 18, left: 0, bottom: 4 }}>
+                  <defs>
+                    <linearGradient id="revenueArea" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity={0.34} />
+                      <stop offset="100%" stopColor="#10b981" stopOpacity={0.04} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid stroke="#e2e8f0" vertical={false} />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 12, fill: '#64748b' }}
+                    tickLine={false}
+                    axisLine={{ stroke: '#cbd5e1' }}
+                    minTickGap={16}
+                  />
+                  <YAxis
+                    yAxisId="revenue"
+                    tickFormatter={(value: number) => compactCurrency(value)}
+                    tick={{ fontSize: 12, fill: '#64748b' }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={64}
+                  />
+                  <YAxis yAxisId="orders" orientation="right" hide />
+                  <Tooltip content={<RevenueTooltip />} cursor={{ fill: 'rgba(15, 23, 42, 0.04)' }} />
+                  <Area
+                    yAxisId="revenue"
+                    type="monotone"
+                    dataKey="revenue"
+                    name="매출"
+                    stroke="#059669"
+                    strokeWidth={2.4}
+                    fill="url(#revenueArea)"
+                  />
+                  <Bar
+                    yAxisId="orders"
+                    dataKey="orders"
+                    name="주문수"
+                    fill="#f59e0b"
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={22}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </Panel>
       </div>
 
-      {/* ── 전환 퍼널 ── */}
-      <div className="bg-white rounded-xl border border-border p-6">
-        <h2 className="text-sm font-semibold text-foreground mb-5">
-          전환 퍼널 (최근 {periodDays}일)
-        </h2>
-        <div className="space-y-4">
-          {funnelSteps.map((step, i) => {
-            const pct = funnelMax > 0 ? Math.round((step.value / funnelMax) * 100) : 0
-            const prevValue = i > 0 ? funnelSteps[i - 1].value : step.value
-            const dropPct =
-              i > 0 && prevValue > 0
-                ? Math.round((step.value / prevValue) * 100)
-                : null
-
-            return (
-              <div key={step.label}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-foreground font-medium">{step.label}</span>
-                    {dropPct !== null && (
-                      <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
-                        전단계 대비 {dropPct}%
-                      </span>
-                    )}
-                  </div>
-                  <span className="text-sm font-semibold text-foreground">
-                    {step.value.toLocaleString()}
-                    <span className="text-xs text-muted-foreground font-normal ml-1">({pct}%)</span>
-                  </span>
-                </div>
-                <div className="h-7 w-full bg-muted rounded-xl overflow-hidden">
-                  <div
-                    className={`h-full ${step.color} rounded-xl transition-all duration-500 flex items-center justify-end pr-2`}
-                    style={{ width: `${Math.max(pct, pct > 0 ? 2 : 0)}%` }}
-                  >
-                    {pct >= 8 && (
-                      <span className="text-white text-xs font-medium">{pct}%</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+      <Panel
+        title="일별 운영 지표"
+        subtitle="주문, 가입, 문의, 후기 흐름을 한 그래프에서 비교합니다"
+        action={
+          <div className="hidden flex-wrap items-center gap-4 lg:flex">
+            <LegendItem color={ACTION_COLORS[0]} label="주문" />
+            <LegendItem color={ACTION_COLORS[1]} label="가입" />
+            <LegendItem color={ACTION_COLORS[2]} label="문의" />
+            <LegendItem color={ACTION_COLORS[3]} label="후기" />
+          </div>
+        }
+      >
+        <div className="h-[310px]">
+          {chartData.length === 0 ? (
+            <EmptyState icon={BarChart3} label="운영 지표 데이터가 없습니다" />
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 10, right: 18, left: 0, bottom: 4 }} barCategoryGap="24%">
+                <CartesianGrid stroke="#e2e8f0" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 12, fill: '#64748b' }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#cbd5e1' }}
+                  minTickGap={16}
+                />
+                <YAxis
+                  tickFormatter={(value: number) => compactNumber(value)}
+                  tick={{ fontSize: 12, fill: '#64748b' }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={48}
+                />
+                <Tooltip content={<ActionTooltip />} cursor={{ fill: 'rgba(15, 23, 42, 0.04)' }} />
+                <Bar dataKey="orders" name="주문" fill={ACTION_COLORS[0]} radius={[3, 3, 0, 0]} maxBarSize={18} />
+                <Bar dataKey="signups" name="가입" fill={ACTION_COLORS[1]} radius={[3, 3, 0, 0]} maxBarSize={18} />
+                <Bar dataKey="consulting" name="문의" fill={ACTION_COLORS[2]} radius={[3, 3, 0, 0]} maxBarSize={18} />
+                <Bar dataKey="reviews" name="후기" fill={ACTION_COLORS[3]} radius={[3, 3, 0, 0]} maxBarSize={18} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
-        {funnelData.visitors === 0 && (
-          <p className="text-xs text-muted-foreground mt-4 text-center">이 기간의 방문 데이터가 없습니다</p>
-        )}
-      </div>
+      </Panel>
 
-      {/* ── 유입 경로 (레퍼러) ── */}
-      <div className="bg-white rounded-xl border border-border p-6">
-        <h2 className="text-sm font-semibold text-foreground mb-5">
-          유입 경로 (최근 {periodDays}일)
-        </h2>
-        {referrers.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">유입 데이터가 없습니다</p>
-        ) : (
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+        <Panel title="전환 퍼널" subtitle={`최근 ${periodDays}일 방문자에서 구매 완료까지`}>
           <div className="space-y-3">
-            {referrers.map((ref) => {
-              const pct = totalRefs > 0 ? Math.round((ref.count / totalRefs) * 100) : 0
+            {funnelSteps.map((step, index) => {
+              const width = percentWidth(step.value, funnelData.visitors)
+              const prev = index > 0 ? funnelSteps[index - 1].value : step.value
+              const ratioLabel = index > 0 ? stepRatioLabel(step.value, prev) : '기준값'
               return (
-                <div key={ref.referrer}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-foreground font-medium truncate max-w-[60%]">
-                      {ref.referrer}
-                    </span>
-                    <span className="text-sm text-muted-foreground shrink-0 ml-2">
-                      {ref.count.toLocaleString()}건{' '}
-                      <span className="text-muted-foreground text-xs">({pct}%)</span>
-                    </span>
+                <div key={step.label} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="mb-2 flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-950">{step.label}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">{step.detail}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-mono text-sm font-semibold text-slate-950">{step.value.toLocaleString()}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">{ratioLabel}</p>
+                    </div>
                   </div>
-                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary rounded-full transition-all duration-500"
-                      style={{ width: `${Math.max(pct, pct > 0 ? 1 : 0)}%` }}
-                    />
+                  <div className="h-3 overflow-hidden rounded-md bg-white">
+                    <div className="h-full rounded-md" style={{ width, backgroundColor: step.color }} />
                   </div>
                 </div>
               )
             })}
           </div>
-        )}
-      </div>
+        </Panel>
 
-      {/* ── 많이 방문한 페이지 + 유입 검색어 (2컬럼) ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-border p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-4">많이 방문한 페이지</h2>
-          {topPages.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">데이터 없음</p>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-muted-foreground text-xs">
-                  <th className="text-left py-2 font-medium">제목</th>
-                  <th className="text-left py-2 px-3 font-medium">URL</th>
-                  <th className="text-right py-2 font-medium">조회</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topPages.map((p, i) => (
-                  <tr key={p.path} className={i % 2 === 1 ? 'bg-muted' : ''}>
-                    <td className="py-2 text-foreground">{pathLabel(p.path)}</td>
-                    <td className="py-2 px-3 text-muted-foreground text-xs truncate max-w-[180px]">{p.path}</td>
-                    <td className="py-2 text-right font-medium text-primary">{p.count.toLocaleString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        <div className="bg-white rounded-xl border border-border p-6">
-          <h2 className="text-sm font-semibold text-foreground mb-4">유입 검색어</h2>
-          {keywords.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">유입 검색어 없음 (검색엔진 referrer가 있어야 표시됩니다)</p>
-          ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border text-muted-foreground text-xs">
-                  <th className="text-left py-2 font-medium">검색어</th>
-                  <th className="text-right py-2 font-medium">클릭수</th>
-                </tr>
-              </thead>
-              <tbody>
-                {keywords.map((k, i) => (
-                  <tr key={k.keyword} className={i % 2 === 1 ? 'bg-muted' : ''}>
-                    <td className="py-2 text-foreground">{k.keyword}</td>
-                    <td className="py-2 text-right font-medium text-primary">{k.count.toLocaleString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
-
-      {/* ── 최근 가입자 (컨텐츠 반응) ── */}
-      <div className="bg-white rounded-xl border border-border p-6">
-        <h2 className="text-sm font-semibold text-foreground mb-4">최근 가입자</h2>
-        {recentSignups.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-4">가입자 없음</p>
-        ) : (
-          <div className="space-y-3">
-            {recentSignups.map((u) => (
-              <div key={u.created_at} className="flex items-center gap-3 text-sm">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs shrink-0">
-                  {(u.name || u.email || '?').charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-foreground font-medium">{u.name || u.email || '이름없음'}</span>
-                  <span className="text-muted-foreground ml-2">님이 가입했습니다.</span>
-                </div>
-                <span className="text-xs text-muted-foreground shrink-0">
-                  {new Date(u.created_at).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })}
-                </span>
-              </div>
-            ))}
+        <Panel title="유입 경로" subtitle="referrer 기준 상위 유입">
+          <div className="h-[360px]">
+            {referrerChart.length === 0 ? (
+              <EmptyState icon={ArrowDownRight} label="유입 데이터가 없습니다" />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={referrerChart} layout="vertical" margin={{ top: 4, right: 18, left: 12, bottom: 4 }}>
+                  <CartesianGrid stroke="#e2e8f0" horizontal={false} />
+                  <XAxis type="number" hide />
+                  <YAxis
+                    type="category"
+                    dataKey="label"
+                    tick={{ fontSize: 12, fill: '#475569' }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={92}
+                  />
+                  <Tooltip content={<ReferrerTooltip />} cursor={{ fill: 'rgba(15, 23, 42, 0.04)' }} />
+                  <Bar dataKey="count" name="유입" radius={[0, 4, 4, 0]} maxBarSize={24}>
+                    {referrerChart.map((_, index) => (
+                      <Cell key={index} fill={ACTION_COLORS[index % ACTION_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
-        )}
+        </Panel>
       </div>
 
-      {/* ── 기간별 분석 ── */}
-      <div className="bg-white rounded-xl border border-border p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-foreground">기간별 분석 (최근 {periodDays}일)</h2>
-        </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Panel title="많이 방문한 페이지" subtitle="상위 10개 경로">
+          {topPages.length === 0 ? (
+            <EmptyState icon={MousePointerClick} label="페이지 데이터가 없습니다" compact />
+          ) : (
+            <RankedList
+              rows={topPages.map((row) => ({
+                key: row.path,
+                label: pathLabel(row.path),
+                detail: row.path,
+                value: row.count,
+              }))}
+            />
+          )}
+        </Panel>
+
+        <Panel title="유입 검색어" subtitle="검색엔진 referrer에서 확인된 키워드">
+          {keywords.length === 0 ? (
+            <EmptyState icon={Search} label="유입 검색어가 없습니다" compact />
+          ) : (
+            <RankedList
+              rows={keywords.map((row) => ({
+                key: row.keyword,
+                label: row.keyword,
+                detail: '검색 유입',
+                value: row.count,
+              }))}
+            />
+          )}
+        </Panel>
+      </div>
+
+      <Panel title="기간별 분석" subtitle={`최근 ${periodDays}일 일별 원자료`}>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[760px] text-sm">
             <thead>
-              <tr className="border-b border-border text-muted-foreground text-xs">
-                <th className="text-left py-2 pr-4 font-medium">일자</th>
-                <th className="text-right py-2 px-3 font-medium">주문수</th>
-                <th className="text-right py-2 px-3 font-medium">매출액</th>
-                <th className="text-right py-2 px-3 font-medium">방문자</th>
-                <th className="text-right py-2 px-3 font-medium">가입</th>
-                <th className="text-right py-2 px-3 font-medium">문의</th>
-                <th className="text-right py-2 px-3 font-medium">후기</th>
+              <tr className="border-b border-slate-200 text-xs text-slate-500">
+                <th className="py-3 pr-4 text-left font-semibold">일자</th>
+                <th className="px-3 py-3 text-right font-semibold">페이지뷰</th>
+                <th className="px-3 py-3 text-right font-semibold">방문자</th>
+                <th className="px-3 py-3 text-right font-semibold">주문수</th>
+                <th className="px-3 py-3 text-right font-semibold">매출액</th>
+                <th className="px-3 py-3 text-right font-semibold">가입</th>
+                <th className="px-3 py-3 text-right font-semibold">문의</th>
+                <th className="px-3 py-3 text-right font-semibold">후기</th>
               </tr>
             </thead>
             <tbody>
-              {[...dailyStats].reverse().map((s, i) => (
-                <tr key={s.date} className={i % 2 === 1 ? 'bg-muted' : ''}>
-                  <td className="py-2 pr-4 text-foreground">{s.date}</td>
-                  <td className="py-2 px-3 text-right text-muted-foreground">{s.orders}</td>
-                  <td className="py-2 px-3 text-right text-muted-foreground">{s.revenue.toLocaleString()}원</td>
-                  <td className="py-2 px-3 text-right text-primary font-medium">{s.visitors}</td>
-                  <td className="py-2 px-3 text-right text-muted-foreground">{s.signups}</td>
-                  <td className="py-2 px-3 text-right text-muted-foreground">{s.consulting}</td>
-                  <td className="py-2 px-3 text-right text-muted-foreground">{s.reviews}</td>
+              {[...dailyStats].reverse().map((stat) => (
+                <tr key={stat.date} className="border-b border-slate-100 last:border-0">
+                  <td className="py-3 pr-4 font-medium text-slate-950">{formatFullDate(stat.date)}</td>
+                  <td className="px-3 py-3 text-right font-mono text-slate-600">{stat.pageViews.toLocaleString()}</td>
+                  <td className="px-3 py-3 text-right font-mono font-semibold text-blue-700">{stat.visitors.toLocaleString()}</td>
+                  <td className="px-3 py-3 text-right font-mono text-slate-600">{stat.orders.toLocaleString()}</td>
+                  <td className="px-3 py-3 text-right font-mono text-slate-600">{currency(stat.revenue)}</td>
+                  <td className="px-3 py-3 text-right font-mono text-slate-600">{stat.signups.toLocaleString()}</td>
+                  <td className="px-3 py-3 text-right font-mono text-slate-600">{stat.consulting.toLocaleString()}</td>
+                  <td className="px-3 py-3 text-right font-mono text-slate-600">{stat.reviews.toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t border-border font-medium text-foreground bg-muted">
-                <td className="py-2 pr-4">합계</td>
-                <td className="py-2 px-3 text-right">{dailyStats.reduce((a, s) => a + s.orders, 0)}</td>
-                <td className="py-2 px-3 text-right">
-                  {dailyStats.reduce((a, s) => a + s.revenue, 0).toLocaleString()}원
-                </td>
-                <td className="py-2 px-3 text-right text-primary">
-                  {dailyStats.reduce((a, s) => a + s.visitors, 0)}
-                </td>
-                <td className="py-2 px-3 text-right">{dailyStats.reduce((a, s) => a + s.signups, 0)}</td>
-                <td className="py-2 px-3 text-right">
-                  {dailyStats.reduce((a, s) => a + s.consulting, 0)}
-                </td>
-                <td className="py-2 px-3 text-right">{dailyStats.reduce((a, s) => a + s.reviews, 0)}</td>
+              <tr className="border-t border-slate-300 bg-slate-50 font-semibold text-slate-950">
+                <td className="py-3 pr-4">합계</td>
+                <td className="px-3 py-3 text-right font-mono">{totals.pageViews.toLocaleString()}</td>
+                <td className="px-3 py-3 text-right font-mono text-blue-700">{dailyStats.reduce((sum, row) => sum + row.visitors, 0).toLocaleString()}</td>
+                <td className="px-3 py-3 text-right font-mono">{totals.orders.toLocaleString()}</td>
+                <td className="px-3 py-3 text-right font-mono">{currency(totals.revenue)}</td>
+                <td className="px-3 py-3 text-right font-mono">{dailyStats.reduce((sum, row) => sum + row.signups, 0).toLocaleString()}</td>
+                <td className="px-3 py-3 text-right font-mono">{dailyStats.reduce((sum, row) => sum + row.consulting, 0).toLocaleString()}</td>
+                <td className="px-3 py-3 text-right font-mono">{dailyStats.reduce((sum, row) => sum + row.reviews, 0).toLocaleString()}</td>
               </tr>
             </tfoot>
           </table>
         </div>
-      </div>
+      </Panel>
 
-      {/* ── 월간 및 연간 ── */}
-      <div className="bg-white rounded-xl border border-border p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-foreground">월간 및 연간</h2>
-          <div className="flex rounded-xl border border-border overflow-hidden text-xs">
-            <button
-              onClick={() => setViewMode('visitors')}
-              className={`px-3 py-1.5 cursor-pointer ${
-                viewMode === 'visitors'
-                  ? 'bg-primary text-white'
-                  : 'bg-white text-muted-foreground hover:bg-muted'
-              }`}
-            >
-              방문자
-            </button>
-            <button
-              onClick={() => setViewMode('pageviews')}
-              className={`px-3 py-1.5 cursor-pointer ${
-                viewMode === 'pageviews'
-                  ? 'bg-primary text-white'
-                  : 'bg-white text-muted-foreground hover:bg-muted'
-              }`}
-            >
-              페이지뷰
-            </button>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-muted-foreground text-xs">
-                <th className="text-left py-2 pr-4 font-medium">연도</th>
-                {Array.from({ length: 12 }, (_, i) => (
-                  <th key={i} className="text-right py-2 px-2 font-medium">
-                    {i + 1}월
-                  </th>
-                ))}
-                <th className="text-right py-2 pl-3 font-medium">합계</th>
-              </tr>
-            </thead>
-            <tbody>
-              {years.map((y, yi) => {
-                let total = 0
-                return (
-                  <tr key={y} className={yi % 2 === 1 ? 'bg-muted' : ''}>
-                    <td className="py-2 pr-4 font-medium text-foreground">{y}</td>
-                    {Array.from({ length: 12 }, (_, i) => {
-                      const m = i + 1
-                      const val = monthlyData[y]?.[m]
-                        ? viewMode === 'visitors'
-                          ? monthlyData[y][m].uv
-                          : monthlyData[y][m].pv
-                        : 0
-                      total += val
-                      return (
-                        <td key={m} className="py-2 px-2 text-right text-muted-foreground">
-                          {val > 0 ? val.toLocaleString() : '-'}
-                        </td>
-                      )
-                    })}
-                    <td className="py-2 pl-3 text-right font-medium text-primary">
-                      {total > 0 ? total.toLocaleString() : '-'}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* ── 일간 평균 ── */}
-      <div className="bg-white rounded-xl border border-border p-6">
-        <h2 className="text-sm font-semibold text-foreground mb-4">일간 평균 (방문자)</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-muted-foreground text-xs">
-                <th className="text-left py-2 pr-4 font-medium">연도</th>
-                {Array.from({ length: 12 }, (_, i) => (
-                  <th key={i} className="text-right py-2 px-2 font-medium">
-                    {i + 1}월
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {years.map((y, yi) => (
-                <tr key={y} className={yi % 2 === 1 ? 'bg-muted' : ''}>
-                  <td className="py-2 pr-4 font-medium text-foreground">{y}</td>
-                  {Array.from({ length: 12 }, (_, i) => {
-                    const m = i + 1
-                    const uv = monthlyData[y]?.[m]?.uv || 0
-                    const days = daysInMonth(+y, m)
-                    const avg = uv > 0 ? (uv / days).toFixed(1) : '-'
-                    return (
-                      <td key={m} className="py-2 px-2 text-right text-muted-foreground">
-                        {avg}
-                      </td>
-                    )
-                  })}
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <Panel
+          title="월간 및 연간"
+          subtitle="전체 page_views 누적 기준"
+          action={
+            <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+              <button
+                type="button"
+                onClick={() => setViewMode('visitors')}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
+                  viewMode === 'visitors' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-950'
+                }`}
+              >
+                방문자
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('pageviews')}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold ${
+                  viewMode === 'pageviews' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-950'
+                }`}
+              >
+                페이지뷰
+              </button>
+            </div>
+          }
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-xs text-slate-500">
+                  <th className="py-3 pr-4 text-left font-semibold">연도</th>
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <th key={i} className="px-2 py-3 text-right font-semibold">
+                      {i + 1}월
+                    </th>
+                  ))}
+                  <th className="py-3 pl-3 text-right font-semibold">합계</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {years.map((year) => {
+                  let total = 0
+                  return (
+                    <tr key={year} className="border-b border-slate-100 last:border-0">
+                      <td className="py-3 pr-4 font-semibold text-slate-950">{year}</td>
+                      {Array.from({ length: 12 }, (_, i) => {
+                        const month = i + 1
+                        const value = monthlyData[year]?.[month]
+                          ? viewMode === 'visitors'
+                            ? monthlyData[year][month].uv
+                            : monthlyData[year][month].pv
+                          : 0
+                        total += value
+                        return (
+                          <td key={month} className="px-2 py-3 text-right font-mono text-slate-600">
+                            {value > 0 ? value.toLocaleString() : '-'}
+                          </td>
+                        )
+                      })}
+                      <td className="py-3 pl-3 text-right font-mono font-semibold text-blue-700">
+                        {total > 0 ? total.toLocaleString() : '-'}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Panel>
+
+        <Panel title="최근 주별 현황" subtitle="일별 방문자 기준">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[520px] text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-xs text-slate-500">
+                  <th className="py-3 pr-4 text-left font-semibold">주</th>
+                  {DAY_LABELS.map((day) => (
+                    <th key={day} className="px-3 py-3 text-center font-semibold">
+                      {day}
+                    </th>
+                  ))}
+                  <th className="py-3 pl-3 text-right font-semibold">합계</th>
+                </tr>
+              </thead>
+              <tbody>
+                {weeks.map((week) => {
+                  const weekTotal = week.days.reduce((sum, day) => sum + (day?.visitors || 0), 0)
+                  return (
+                    <tr key={week.start.toISOString()} className="border-b border-slate-100 last:border-0">
+                      <td className="whitespace-nowrap py-3 pr-4 font-medium text-slate-600">
+                        {formatMonthDay(isoDate(week.start))}~{formatMonthDay(isoDate(addDays(week.start, 6)))}
+                      </td>
+                      {week.days.map((day, index) => {
+                        const dateObj = addDays(week.start, index)
+                        const isFuture = dateObj > todayDate
+                        return (
+                          <td
+                            key={`${week.start.toISOString()}-${index}`}
+                            className={`px-3 py-3 text-center font-mono ${
+                              isFuture ? 'text-slate-300' : day ? 'font-semibold text-slate-950' : 'text-slate-400'
+                            }`}
+                          >
+                            {isFuture ? '' : day ? day.visitors : 0}
+                          </td>
+                        )
+                      })}
+                      <td className="py-3 pl-3 text-right font-mono font-semibold text-blue-700">
+                        {weekTotal.toLocaleString()}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Panel>
       </div>
 
-      {/* ── 최근 주별 현황 ── */}
-      <div className="bg-white rounded-xl border border-border p-6">
-        <h2 className="text-sm font-semibold text-foreground mb-4">최근 주별 현황</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-muted-foreground text-xs">
-                <th className="text-left py-2 pr-4 font-medium">주</th>
-                {DAY_LABELS.map((d) => (
-                  <th key={d} className="text-center py-2 px-3 font-medium">
-                    {d}
-                  </th>
-                ))}
-                <th className="text-right py-2 pl-3 font-medium">합계</th>
-              </tr>
-            </thead>
-            <tbody>
-              {weeks.map((week, wi) => {
-                const weekTotal = week.days.reduce((a, d) => a + (d?.visitors || 0), 0)
-                return (
-                  <tr key={wi} className={wi % 2 === 1 ? 'bg-muted' : ''}>
-                    <td className="py-2 pr-4 text-muted-foreground whitespace-nowrap">
-                      {fmt(week.start)}~{fmt(addDays(week.start, 6))}
-                    </td>
-                    {week.days.map((d, di) => {
-                      const dateObj = addDays(week.start, di)
-                      const isFuture = dateObj > todayDate
-                      return (
-                        <td
-                          key={di}
-                          className={`py-2 px-3 text-center ${
-                            isFuture
-                              ? 'text-muted-foreground'
-                              : d
-                              ? 'text-foreground'
-                              : 'text-muted-foreground'
-                          }`}
-                        >
-                          {isFuture ? '' : d ? d.visitors : 0}
-                        </td>
-                      )
-                    })}
-                    <td className="py-2 pl-3 text-right font-medium text-primary">{weekTotal}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+      <Panel title="최근 가입자" subtitle="최근 가입한 회원 5명">
+        {recentSignups.length === 0 ? (
+          <EmptyState icon={Users} label="최근 가입자가 없습니다" compact />
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            {recentSignups.map((user) => (
+              <div key={`${user.email || user.name || 'unknown'}-${user.created_at}`} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-md bg-white font-semibold text-blue-700">
+                  {(user.name || user.email || '?').charAt(0).toUpperCase()}
+                </div>
+                <p className="truncate text-sm font-semibold text-slate-950">{user.name || user.email || '이름없음'}</p>
+                <p className="mt-1 truncate text-xs text-slate-500">{user.email || '이메일 없음'}</p>
+                <p className="mt-3 text-xs font-medium text-slate-500">{formatFullDate(user.created_at.slice(0, 10))}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Panel>
+    </div>
+  )
+}
+
+function EmptyState({
+  icon: Icon,
+  label,
+  compact = false,
+}: {
+  icon: typeof Users
+  label: string
+  compact?: boolean
+}) {
+  return (
+    <div className={`flex items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-slate-500 ${compact ? 'h-40' : 'h-full min-h-[220px]'}`}>
+      <div className="text-center">
+        <Icon className="mx-auto h-5 w-5" />
+        <p className="mt-2 text-sm font-medium">{label}</p>
       </div>
     </div>
   )
+}
+
+function RankedList({
+  rows,
+}: {
+  rows: { key: string; label: string; detail: string; value: number }[]
+}) {
+  const max = Math.max(...rows.map((row) => row.value), 1)
+
+  return (
+    <div className="space-y-3">
+      {rows.map((row, index) => {
+        const width = percentWidth(row.value, max)
+        return (
+          <div key={row.key} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="mb-2 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-slate-950">
+                  <span className="mr-2 font-mono text-xs text-slate-400">{String(index + 1).padStart(2, '0')}</span>
+                  {row.label}
+                </p>
+                <p className="mt-1 truncate text-xs text-slate-500">{row.detail}</p>
+              </div>
+              <p className="font-mono text-sm font-semibold text-blue-700">{row.value.toLocaleString()}</p>
+            </div>
+            <div className="h-2 overflow-hidden rounded-md bg-white">
+              <div className="h-full rounded-md bg-blue-600" style={{ width }} />
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function percentWidth(value: number, total: number): string {
+  if (value <= 0 || total <= 0) return '0%'
+  return `${Math.max((value / total) * 100, 2)}%`
+}
+
+function stepRatioLabel(value: number, previous: number): string {
+  if (previous <= 0) return '전 단계 0%'
+  if (value > previous) return '전 단계보다 많음'
+  return `전 단계 ${percent(value, previous)}`
 }
