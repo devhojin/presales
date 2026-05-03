@@ -592,139 +592,137 @@ export default function AnalyticsPage() {
         />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.9fr)]">
-        <Panel
-          title="방문 흐름"
-          subtitle={`최근 ${periodDays}일 페이지뷰와 방문 세션 추이`}
-          action={
-            <div className="hidden flex-wrap items-center gap-4 md:flex">
-              <LegendItem color={TRAFFIC_COLORS.pageViews} label="페이지뷰" />
-              <LegendItem color={TRAFFIC_COLORS.visitors} label="방문자" />
-            </div>
-          }
-        >
-          {chartData.length === 0 ? (
-            <div className="h-[380px]">
-              <EmptyState icon={Activity} label="방문 데이터가 없습니다" />
-            </div>
-          ) : (
-            <ChartFrame className="h-[380px]">
-              {({ width, height }) => (
-                <ComposedChart
-                  width={width}
-                  height={height}
-                  data={chartData}
-                  margin={{ top: 10, right: 18, left: 0, bottom: 4 }}
-                >
-                  <defs>
-                    <linearGradient id="trafficPageViews" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={TRAFFIC_COLORS.pageViews} stopOpacity={0.72} />
-                      <stop offset="100%" stopColor={TRAFFIC_COLORS.pageViews} stopOpacity={0.14} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="#e2e8f0" vertical={false} />
-                  <XAxis
-                    dataKey="label"
-                    tick={{ fontSize: 12, fill: '#64748b' }}
-                    tickLine={false}
-                    axisLine={{ stroke: '#cbd5e1' }}
-                    minTickGap={16}
-                  />
-                  <YAxis
-                    tickFormatter={(value: number) => compactNumber(value)}
-                    tick={{ fontSize: 12, fill: '#64748b' }}
-                    tickLine={false}
-                    axisLine={false}
-                    width={54}
-                  />
-                  <Tooltip content={<TrafficTooltip />} cursor={{ fill: 'rgba(15, 23, 42, 0.04)' }} />
-                  <Bar
-                    dataKey="pageViews"
-                    name="페이지뷰"
-                    fill="url(#trafficPageViews)"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={36}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="visitors"
-                    name="방문자"
-                    stroke={TRAFFIC_COLORS.visitors}
-                    strokeWidth={2.6}
-                    dot={periodDays <= 30 ? { r: 3, fill: TRAFFIC_COLORS.visitors } : false}
-                    activeDot={{ r: 5 }}
-                  />
-                </ComposedChart>
-              )}
-            </ChartFrame>
-          )}
-        </Panel>
+      <Panel
+        title="방문 흐름"
+        subtitle={`최근 ${periodDays}일 페이지뷰와 방문 세션 추이`}
+        action={
+          <div className="hidden flex-wrap items-center gap-4 md:flex">
+            <LegendItem color={TRAFFIC_COLORS.pageViews} label="페이지뷰" />
+            <LegendItem color={TRAFFIC_COLORS.visitors} label="방문자" />
+          </div>
+        }
+      >
+        {chartData.length === 0 ? (
+          <div className="h-[380px]">
+            <EmptyState icon={Activity} label="방문 데이터가 없습니다" />
+          </div>
+        ) : (
+          <ChartFrame className="h-[380px]">
+            {({ width, height }) => (
+              <ComposedChart
+                width={width}
+                height={height}
+                data={chartData}
+                margin={{ top: 10, right: 18, left: 0, bottom: 4 }}
+              >
+                <defs>
+                  <linearGradient id="trafficPageViews" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={TRAFFIC_COLORS.pageViews} stopOpacity={0.72} />
+                    <stop offset="100%" stopColor={TRAFFIC_COLORS.pageViews} stopOpacity={0.14} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#e2e8f0" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 12, fill: '#64748b' }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#cbd5e1' }}
+                  minTickGap={16}
+                />
+                <YAxis
+                  tickFormatter={(value: number) => compactNumber(value)}
+                  tick={{ fontSize: 12, fill: '#64748b' }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={54}
+                />
+                <Tooltip content={<TrafficTooltip />} cursor={{ fill: 'rgba(15, 23, 42, 0.04)' }} />
+                <Bar
+                  dataKey="pageViews"
+                  name="페이지뷰"
+                  fill="url(#trafficPageViews)"
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={36}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="visitors"
+                  name="방문자"
+                  stroke={TRAFFIC_COLORS.visitors}
+                  strokeWidth={2.6}
+                  dot={periodDays <= 30 ? { r: 3, fill: TRAFFIC_COLORS.visitors } : false}
+                  activeDot={{ r: 5 }}
+                />
+              </ComposedChart>
+            )}
+          </ChartFrame>
+        )}
+      </Panel>
 
-        <Panel
-          title="매출 추이"
-          subtitle="결제 완료 주문 기준"
-          action={<span className="font-mono text-sm font-semibold text-emerald-700">{currency(totals.revenue)}</span>}
-        >
-          {chartData.length === 0 ? (
-            <div className="h-[380px]">
-              <EmptyState icon={CircleDollarSign} label="매출 데이터가 없습니다" />
-            </div>
-          ) : (
-            <ChartFrame className="h-[380px]">
-              {({ width, height }) => (
-                <ComposedChart
-                  width={width}
-                  height={height}
-                  data={chartData}
-                  margin={{ top: 10, right: 18, left: 0, bottom: 4 }}
-                >
-                  <defs>
-                    <linearGradient id="revenueArea" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#10b981" stopOpacity={0.34} />
-                      <stop offset="100%" stopColor="#10b981" stopOpacity={0.04} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid stroke="#e2e8f0" vertical={false} />
-                  <XAxis
-                    dataKey="label"
-                    tick={{ fontSize: 12, fill: '#64748b' }}
-                    tickLine={false}
-                    axisLine={{ stroke: '#cbd5e1' }}
-                    minTickGap={16}
-                  />
-                  <YAxis
-                    yAxisId="revenue"
-                    tickFormatter={(value: number) => compactCurrency(value)}
-                    tick={{ fontSize: 12, fill: '#64748b' }}
-                    tickLine={false}
-                    axisLine={false}
-                    width={64}
-                  />
-                  <YAxis yAxisId="orders" orientation="right" hide />
-                  <Tooltip content={<RevenueTooltip />} cursor={{ fill: 'rgba(15, 23, 42, 0.04)' }} />
-                  <Area
-                    yAxisId="revenue"
-                    type="monotone"
-                    dataKey="revenue"
-                    name="매출"
-                    stroke="#059669"
-                    strokeWidth={2.4}
-                    fill="url(#revenueArea)"
-                  />
-                  <Bar
-                    yAxisId="orders"
-                    dataKey="orders"
-                    name="주문수"
-                    fill="#f59e0b"
-                    radius={[4, 4, 0, 0]}
-                    maxBarSize={22}
-                  />
-                </ComposedChart>
-              )}
-            </ChartFrame>
-          )}
-        </Panel>
-      </div>
+      <Panel
+        title="매출 흐름"
+        subtitle="결제 완료 주문 기준"
+        action={<span className="font-mono text-sm font-semibold text-emerald-700">{currency(totals.revenue)}</span>}
+      >
+        {chartData.length === 0 ? (
+          <div className="h-[380px]">
+            <EmptyState icon={CircleDollarSign} label="매출 데이터가 없습니다" />
+          </div>
+        ) : (
+          <ChartFrame className="h-[380px]">
+            {({ width, height }) => (
+              <ComposedChart
+                width={width}
+                height={height}
+                data={chartData}
+                margin={{ top: 10, right: 18, left: 0, bottom: 4 }}
+              >
+                <defs>
+                  <linearGradient id="revenueArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.34} />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity={0.04} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid stroke="#e2e8f0" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 12, fill: '#64748b' }}
+                  tickLine={false}
+                  axisLine={{ stroke: '#cbd5e1' }}
+                  minTickGap={16}
+                />
+                <YAxis
+                  yAxisId="revenue"
+                  tickFormatter={(value: number) => compactCurrency(value)}
+                  tick={{ fontSize: 12, fill: '#64748b' }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={64}
+                />
+                <YAxis yAxisId="orders" orientation="right" hide />
+                <Tooltip content={<RevenueTooltip />} cursor={{ fill: 'rgba(15, 23, 42, 0.04)' }} />
+                <Area
+                  yAxisId="revenue"
+                  type="monotone"
+                  dataKey="revenue"
+                  name="매출"
+                  stroke="#059669"
+                  strokeWidth={2.4}
+                  fill="url(#revenueArea)"
+                />
+                <Bar
+                  yAxisId="orders"
+                  dataKey="orders"
+                  name="주문수"
+                  fill="#f59e0b"
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={22}
+                />
+              </ComposedChart>
+            )}
+          </ChartFrame>
+        )}
+      </Panel>
 
       <Panel
         title="일별 운영 지표"
