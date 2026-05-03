@@ -382,15 +382,17 @@ export default function ConsultingPage() {
     <main className="overflow-x-hidden bg-[#F5F7FA] text-foreground">
       <section className="relative min-h-[760px] overflow-hidden bg-[#07111F] text-white md:min-h-[720px]">
         <Image
-          src="/images/consulting-strategy-room-gemini.webp"
-          alt="공공조달 제안서 컨설팅 전략 회의"
+          src="/images/consulting-hero-gemini-background.webp"
+          alt="공공조달 제안서 컨설팅 검토 배경"
           fill
           priority
           sizes="100vw"
           className="object-cover"
+          style={{ filter: 'brightness(1.18) saturate(1.04)' }}
         />
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,17,31,0.98)_0%,rgba(7,17,31,0.9)_36%,rgba(7,17,31,0.42)_70%,rgba(7,17,31,0.2)_100%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,17,31,0.18)_0%,rgba(7,17,31,0.24)_66%,#F5F7FA_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,17,31,0.96)_0%,rgba(7,17,31,0.82)_38%,rgba(7,17,31,0.14)_73%,rgba(7,17,31,0)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,17,31,0)_0%,rgba(7,17,31,0.08)_66%,#F5F7FA_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_36%,rgba(96,165,250,0.16),transparent_34%)]" />
 
         <div className="relative z-10 mx-auto grid min-h-[760px] max-w-[1240px] gap-10 px-4 pb-24 pt-20 md:min-h-[720px] md:grid-cols-[1.05fr_0.95fr] md:px-8 md:pt-24">
           <div className="flex min-w-0 flex-col justify-center">
@@ -402,8 +404,12 @@ export default function ConsultingPage() {
               <span className="block whitespace-nowrap">평가 대응 구조를</span>
               <span className="block">점검합니다.</span>
             </h1>
-            <p className="mt-6 max-w-2xl break-words text-base leading-8 text-white/74 md:text-lg">
-              RFP 원문, 평가표, 기존 제안서, 발표자료를 함께 보고 이번 공고에서 바로 고쳐야 할 목차, 메시지, 증빙, 제출 리스크를 정리합니다.
+            <p className="mt-6 max-w-2xl break-keep text-base leading-8 text-white/74 md:text-lg">
+              <span className="block md:inline">RFP 원문, 평가표, 기존 제안서, 발표자료를 함께 보고</span>
+              <span className="hidden md:inline"> </span>
+              <span className="block md:inline">이번 공고에서 바로 고쳐야 할 목차, 메시지, 증빙,</span>
+              <span className="hidden md:inline"> </span>
+              <span className="block md:inline">제출 리스크를 정리합니다.</span>
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <button
