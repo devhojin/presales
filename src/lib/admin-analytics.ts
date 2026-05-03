@@ -3,8 +3,9 @@ import type { Database } from '@/lib/database.types'
 
 type PageViewRow = Pick<
   Database['public']['Tables']['page_views']['Row'],
-  'created_at' | 'session_id' | 'path' | 'referrer'
+  'id' | 'created_at' | 'session_id' | 'path' | 'referrer'
 >
+type MonthlyPageViewRow = Pick<PageViewRow, 'id' | 'created_at' | 'session_id'>
 type OrderRow = Pick<
   Database['public']['Tables']['orders']['Row'],
   'created_at' | 'status' | 'total_amount'
@@ -48,8 +49,38 @@ export interface AdminAnalyticsSummary {
 }
 
 const ANALYTICS_ROW_LIMIT = 100_000
+const ANALYTICS_PAGE_SIZE = 1000
 const COMPLETED_ORDER_STATUSES = new Set(['paid', 'completed'])
 const VOID_ORDER_STATUSES = new Set(['cancelled', 'canceled', 'refunded'])
+
+type ListQueryResult<T> = {
+  data: T[] | null
+  error: { message: string } | null
+}
+
+async function fetchAllRows<T>(
+  queryPage: (from: number, to: number) => PromiseLike<ListQueryResult<T>>
+): Promise<T[]> {
+  const rows: T[] = []
+
+  for (let from = 0; from < ANALYTICS_ROW_LIMIT; from += ANALYTICS_PAGE_SIZE) {
+    const to = Math.min(from + ANALYTICS_PAGE_SIZE - 1, ANALYTICS_ROW_LIMIT - 1)
+    const result = await queryPage(from, to)
+
+    if (result.error) {
+      throw new Error(result.error.message)
+    }
+
+    const page = result.data || []
+    rows.push(...page)
+
+    if (page.length < ANALYTICS_PAGE_SIZE) {
+      break
+    }
+  }
+
+  return rows
+}
 
 function toKstYmd(date: Date): string {
   const kst = new Date(date.getTime() + 9 * 3600 * 1000)
@@ -148,76 +179,76 @@ export async function getAdminAnalyticsSummary(
   const rangeEnd = kstDayStartUtcIso(endKey)
 
   const [
-    pageViewsResult,
-    ordersResult,
-    profilesResult,
-    consultingResult,
-    reviewsResult,
+    pageViews,
+    orders,
+    profiles,
+    consulting,
+    reviews,
     recentSignupsResult,
-    allPageViewsResult,
+    allPageViews,
   ] = await Promise.all([
-    service
-      .from('page_views')
-      .select('created_at, session_id, path, referrer')
-      .gte('created_at', rangeStart)
-      .lt('created_at', rangeEnd)
-      .range(0, ANALYTICS_ROW_LIMIT - 1),
-    service
-      .from('orders')
-      .select('created_at, total_amount, status')
-      .gte('created_at', rangeStart)
-      .lt('created_at', rangeEnd)
-      .range(0, ANALYTICS_ROW_LIMIT - 1),
-    service
-      .from('profiles')
-      .select('created_at')
-      .gte('created_at', rangeStart)
-      .lt('created_at', rangeEnd)
-      .range(0, ANALYTICS_ROW_LIMIT - 1),
-    service
-      .from('consulting_requests')
-      .select('created_at')
-      .gte('created_at', rangeStart)
-      .lt('created_at', rangeEnd)
-      .range(0, ANALYTICS_ROW_LIMIT - 1),
-    service
-      .from('reviews')
-      .select('created_at')
-      .gte('created_at', rangeStart)
-      .lt('created_at', rangeEnd)
-      .range(0, ANALYTICS_ROW_LIMIT - 1),
+    fetchAllRows<PageViewRow>((from, to) =>
+      service
+        .from('page_views')
+        .select('id, created_at, session_id, path, referrer')
+        .gte('created_at', rangeStart)
+        .lt('created_at', rangeEnd)
+        .order('id', { ascending: true })
+        .range(from, to)
+    ),
+    fetchAllRows<OrderRow>((from, to) =>
+      service
+        .from('orders')
+        .select('created_at, total_amount, status')
+        .gte('created_at', rangeStart)
+        .lt('created_at', rangeEnd)
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    ),
+    fetchAllRows<CreatedAtRow>((from, to) =>
+      service
+        .from('profiles')
+        .select('created_at')
+        .gte('created_at', rangeStart)
+        .lt('created_at', rangeEnd)
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    ),
+    fetchAllRows<CreatedAtRow>((from, to) =>
+      service
+        .from('consulting_requests')
+        .select('created_at')
+        .gte('created_at', rangeStart)
+        .lt('created_at', rangeEnd)
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    ),
+    fetchAllRows<CreatedAtRow>((from, to) =>
+      service
+        .from('reviews')
+        .select('created_at')
+        .gte('created_at', rangeStart)
+        .lt('created_at', rangeEnd)
+        .order('created_at', { ascending: true })
+        .range(from, to)
+    ),
     service
       .from('profiles')
       .select('name, email, created_at')
       .order('created_at', { ascending: false })
       .limit(5),
-    service
-      .from('page_views')
-      .select('created_at, session_id')
-      .order('created_at', { ascending: true })
-      .range(0, ANALYTICS_ROW_LIMIT - 1),
+    fetchAllRows<MonthlyPageViewRow>((from, to) =>
+      service
+        .from('page_views')
+        .select('id, created_at, session_id')
+        .order('id', { ascending: true })
+        .range(from, to)
+    ),
   ])
 
-  const errors = [
-    pageViewsResult.error,
-    ordersResult.error,
-    profilesResult.error,
-    consultingResult.error,
-    reviewsResult.error,
-    recentSignupsResult.error,
-    allPageViewsResult.error,
-  ].filter(Boolean)
-
-  if (errors.length > 0) {
-    throw new Error(errors.map((error) => error?.message).join(' / '))
+  if (recentSignupsResult.error) {
+    throw new Error(recentSignupsResult.error.message)
   }
-
-  const pageViews = (pageViewsResult.data || []) as PageViewRow[]
-  const orders = (ordersResult.data || []) as OrderRow[]
-  const profiles = (profilesResult.data || []) as CreatedAtRow[]
-  const consulting = (consultingResult.data || []) as CreatedAtRow[]
-  const reviews = (reviewsResult.data || []) as CreatedAtRow[]
-  const allPageViews = (allPageViewsResult.data || []) as Pick<PageViewRow, 'created_at' | 'session_id'>[]
 
   const dailyStats: AdminAnalyticsDayStat[] = []
   for (let i = 0; i < days; i += 1) {

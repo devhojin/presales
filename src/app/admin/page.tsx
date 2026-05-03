@@ -1555,7 +1555,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.95fr)]">
+          <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
             <DashboardPanel
               eyebrow="revenue stream"
               title="매출 추이"
