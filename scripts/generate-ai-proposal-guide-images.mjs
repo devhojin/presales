@@ -8,13 +8,13 @@ const coverDir = path.join(outputDir, 'covers')
 const guides = [
   ['rfp-origin', 'RFP 발생 흐름', ['발주계획', '사전규격', '본공고', '제안준비'], '#111827', '#f5c76b'],
   ['narajangteo-notice-check', '공고 판독 우선순위', ['참가자격', '마감', '평가', '제출물'], '#1e40af', '#bfdbfe'],
-  ['chatgpt-rfp-analysis', 'RFP 초벌 분석', ['과업범위', '요구사항', '리스크', '질의후보'], '#7c2d12', '#fed7aa'],
+  ['ai-rfp-analysis', 'RFP 초벌 분석', ['과업범위', '요구사항', '리스크', '질의후보'], '#7c2d12', '#fed7aa'],
   ['requirements-response-table', '요구사항 대응표', ['요구사항', '목차', '증빙', '검수상태'], '#047857', '#bbf7d0'],
   ['proposal-strategy-message', '제안 전략 메시지', ['문제정의', '차별점', '근거', '요약문'], '#be123c', '#fecdd3'],
   ['proposal-outline', '제안서 목차 설계', ['정량', '정성', '요약서', '발표자료'], '#8b5e34', '#fde68a'],
   ['ai-draft-writing', '본문 초안 작성', ['초안', '근거확인', '삭제', '수정'], '#4c1d95', '#ddd6fe'],
   ['proposal-visuals', '제안서 이미지 제작', ['표지', '개념도', '프로세스', '캡션'], '#334155', '#d9f99d'],
-  ['codex-document-operations', 'Codex 자료 정리', ['파일목록', '체크리스트', '표준화', '누락탐지'], '#0f172a', '#67e8f9'],
+  ['ai-document-operations', 'AI 자료 정리', ['파일목록', '체크리스트', '표준화', '누락탐지'], '#0f172a', '#67e8f9'],
   ['consortium-role-split', '컨소시엄 역할 분담', ['참여사', '역할', '지분율', '증빙'], '#1d4ed8', '#bfdbfe'],
   ['final-review', '제출 전 검수', ['PDF', '파일명', '증빙', '가격서'], '#7f1d1d', '#fecaca'],
   ['narajangteo-submission', '나라장터 제출 확인', ['업로드', '접수번호', '확인서', '이후대응'], '#065f46', '#a7f3d0'],
@@ -67,7 +67,7 @@ function svgFor([slug, title, steps, bg, accent]) {
   <circle cx="210" cy="660" r="230" fill="${accent}" opacity="0.08"/>
   <text x="86" y="105" font-family="Noto Sans KR, Apple SD Gothic Neo, Arial, sans-serif" font-size="22" font-weight="800" fill="${accent}" letter-spacing="6">AI PROPOSAL GUIDE</text>
   <text x="86" y="170" font-family="Noto Sans KR, Apple SD Gothic Neo, Arial, sans-serif" font-size="54" font-weight="900" fill="#ffffff">${escapeXml(title)}</text>
-  <text x="86" y="220" font-family="Noto Sans KR, Apple SD Gothic Neo, Arial, sans-serif" font-size="24" font-weight="600" fill="rgba(255,255,255,0.72)">ChatGPT · 이미지 생성 · Codex로 제안서 작업을 구조화하는 실무 시각자료</text>
+  <text x="86" y="220" font-family="Noto Sans KR, Apple SD Gothic Neo, Arial, sans-serif" font-size="24" font-weight="600" fill="rgba(255,255,255,0.72)">AI 활용으로 제안서 작업을 구조화하는 실무 시각자료</text>
   <g transform="translate(86 315)">
     ${card(steps[0], 0, 0, '01', accent)}
     ${card(steps[1], 240, 0, '02', accent)}
@@ -102,7 +102,7 @@ function coverSvgFor([slug, title, steps, bg, accent]) {
   <circle cx="148" cy="960" r="230" fill="${accent}" opacity="0.1"/>
   <text x="76" y="110" font-family="Noto Sans KR, Apple SD Gothic Neo, Arial, sans-serif" font-size="18" font-weight="800" fill="${accent}" letter-spacing="7">AI PROPOSAL GUIDE</text>
   <text x="76" y="185" font-family="Noto Sans KR, Apple SD Gothic Neo, Arial, sans-serif" font-size="64" font-weight="900" fill="#ffffff">${escapeXml(title)}</text>
-  <text x="76" y="244" font-family="Noto Sans KR, Apple SD Gothic Neo, Arial, sans-serif" font-size="24" font-weight="600" fill="rgba(255,255,255,0.72)">ChatGPT · 이미지 생성 · Codex</text>
+  <text x="76" y="244" font-family="Noto Sans KR, Apple SD Gothic Neo, Arial, sans-serif" font-size="24" font-weight="600" fill="rgba(255,255,255,0.72)">AI 활용 · 제안서 작성</text>
   <g filter="url(#shadow)">
     <rect x="76" y="355" width="748" height="438" rx="34" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.18)"/>
     <rect x="122" y="412" width="296" height="104" rx="24" fill="rgba(255,255,255,0.92)"/>

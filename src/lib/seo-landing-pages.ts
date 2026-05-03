@@ -365,7 +365,7 @@ const CORE_SEO_LANDING_PAGES: SeoLandingPage[] = [
       },
       {
         title: 'AI를 쓸 때 주의할 점',
-        body: 'ChatGPT는 초벌 분류에 유용하지만 원문에 없는 해석을 만들 수 있으므로 근거 위치를 함께 기록해야 합니다.',
+        body: 'AI는 초벌 분류에 유용하지만 원문에 없는 해석을 만들 수 있으므로 근거 위치를 함께 기록해야 합니다.',
         bullets: ['원문 페이지 번호 기록', '확정/추정/질의 필요 상태 분리', '평가 기준과 요구사항 분리', '별첨 파일 누락 확인'],
       },
       {
@@ -378,10 +378,10 @@ const CORE_SEO_LANDING_PAGES: SeoLandingPage[] = [
     conversionBody: '분석만 끝나는 것이 아니라 요구사항 대응표와 목차까지 이어져야 실제 작성 시간이 줄어듭니다.',
     conversionLinks: [
       { href: '/consulting', label: 'RFP 분석 상담' },
-      { href: '/ai-proposal-guide/chatgpt-rfp-analysis', label: 'ChatGPT RFP 분석 글' },
+      { href: '/ai-proposal-guide/ai-rfp-analysis', label: 'AI RFP 분석 글' },
     ],
     relatedLinks: [
-      { href: '/ai-proposal-guide/chatgpt-rfp-analysis', label: 'ChatGPT RFP 분석 방법' },
+      { href: '/ai-proposal-guide/ai-rfp-analysis', label: 'AI RFP 분석 방법' },
       { href: '/ai-proposal-guide/requirements-response-table', label: '요구사항 대응표 만들기' },
       { href: '/consulting', label: '분석 상담 문의' },
     ],
@@ -516,12 +516,12 @@ const CORE_SEO_LANDING_PAGES: SeoLandingPage[] = [
   },
   {
     slug: 'ai-proposal-writing',
-    title: 'AI 제안서 작성: ChatGPT와 Codex 활용법',
+    title: 'AI 제안서 작성: 도구에 상관없는 실무 활용법',
     shortTitle: 'AI 제안서 작성',
     description:
-      'ChatGPT와 Codex를 활용해 RFP 분석, 제안서 초안, 요구사항 대응표, 검수 체크리스트를 만들고 사람이 최종 판단하는 실무 방법입니다.',
+      'AI 도구를 활용해 RFP 분석, 제안서 초안, 요구사항 대응표, 검수 체크리스트를 만들고 사람이 최종 판단하는 실무 방법입니다.',
     primaryKeyword: 'AI 제안서 작성',
-    keywords: ['AI 제안서 작성', 'ChatGPT 제안서', 'Codex 문서 작업', 'AI RFP 분석', '제안서 자동화'],
+    keywords: ['AI 제안서 작성', 'AI 제안서', 'AI 문서 작업', 'AI RFP 분석', '제안서 자동화'],
     audience: 'AI를 제안 업무에 쓰고 싶지만 품질과 위험 문구를 통제해야 하는 실무자',
     commercialIntent: 'research',
     painPoints: [
@@ -546,9 +546,9 @@ const CORE_SEO_LANDING_PAGES: SeoLandingPage[] = [
         bullets: ['원문 근거 확인', '실적과 숫자 검증', '위험 문구 수정', '최종 제출 조건 확인'],
       },
       {
-        title: '도구를 연결하는 방식',
-        body: 'ChatGPT는 해석과 초안, 이미지 생성은 표지와 개념도, Codex는 반복 표와 체크리스트 구조화에 쓰면 역할이 분명해집니다.',
-        bullets: ['ChatGPT: 분석과 초안', '이미지 생성: 시각자료 방향', 'Codex: 표와 파일 정리', '사람: 검수와 책임 판단'],
+        title: 'AI 활용 범위를 나누는 방식',
+        body: '도구 이름보다 역할 구분이 중요합니다. 분석과 초안, 이미지 시안, 표와 체크리스트 정리, 최종 검수를 나눠야 품질을 통제할 수 있습니다.',
+        bullets: ['문서 분석: RFP 요약과 요구사항 추출', '이미지 생성: 시각자료 방향', '자료 정리: 표와 파일 목록', '사람: 검수와 책임 판단'],
       },
     ],
     conversionTitle: 'AI를 쓰되 제출 책임은 통제하세요',
@@ -559,7 +559,7 @@ const CORE_SEO_LANDING_PAGES: SeoLandingPage[] = [
     ],
     relatedLinks: [
       { href: '/ai-proposal-guide', label: 'AI 제안서 작성법 12편' },
-      { href: '/ai-proposal-guide/codex-document-operations', label: 'Codex 자료 정리' },
+      { href: '/ai-proposal-guide/ai-document-operations', label: 'AI 자료 정리' },
       { href: '/consulting', label: 'AI 활용 컨설팅' },
     ],
     faqs: [
@@ -568,8 +568,8 @@ const CORE_SEO_LANDING_PAGES: SeoLandingPage[] = [
         answer: '권장하지 않습니다. AI는 초안과 정리에 쓰고, 원문 근거, 실적, 보안 조건, 제출 형식은 반드시 사람이 검수해야 합니다.',
       },
       {
-        question: 'ChatGPT와 Codex는 어떻게 나눠 쓰나요?',
-        answer: 'ChatGPT는 RFP 해석과 초안 작성에, Codex는 파일 목록, 표, 체크리스트처럼 반복 구조를 정리하는 작업에 쓰는 것이 효율적입니다.',
+        question: 'AI는 제안 업무에서 어떻게 나눠 쓰나요?',
+        answer: 'RFP 해석과 초안 작성, 파일 목록 정리, 표와 체크리스트 작성처럼 반복 구조를 만드는 작업에 쓰고 최종 판단은 사람이 맡는 것이 효율적입니다.',
       },
     ],
   },

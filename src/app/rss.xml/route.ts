@@ -236,7 +236,7 @@ async function getAiProposalGuideItems(): Promise<RssItem[]> {
     description: AI_PROPOSAL_GUIDE_DESCRIPTION,
     pubDate: date,
     category: AI_PROPOSAL_GUIDE_TITLE,
-    categories: ['ChatGPT 제안서', 'RFP 분석', '나라장터 입찰'],
+    categories: ['AI 제안서', 'RFP 분석', '나라장터 입찰'],
     imageUrl: getAiProposalGuideImageUrl(),
   }
   const guideItems = content.articles.map((guide) => {

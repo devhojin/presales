@@ -109,6 +109,16 @@ const nextConfig: NextConfig = {
       { source: "/notice/:path*", destination: "/feeds", permanent: true },
       { source: "/23", destination: "/feeds", permanent: true },
       { source: "/23/:path*", destination: "/feeds", permanent: true },
+      {
+        source: "/ai-proposal-guide/chatgpt-rfp-analysis",
+        destination: "/ai-proposal-guide/ai-rfp-analysis",
+        permanent: true,
+      },
+      {
+        source: "/ai-proposal-guide/codex-document-operations",
+        destination: "/ai-proposal-guide/ai-document-operations",
+        permanent: true,
+      },
       { source: "/:legacyId(\\d+)", destination: "/store", permanent: true },
       { source: "/:legacyId(\\d+)/:path*", destination: "/store", permanent: true },
     ];

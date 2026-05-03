@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { ArrowRight, Bot, FileText, Image as ImageIcon, ListChecks, PenLine, Search, TerminalSquare } from 'lucide-react'
+import { ArrowRight, Bot, FileText, Image as ImageIcon, ListChecks, PenLine, Search } from 'lucide-react'
 import { SITE_NAME, SITE_URL } from '@/lib/constants'
 import { safeJsonLd } from '@/lib/json-ld'
 import {
@@ -53,7 +53,7 @@ export const metadata: Metadata = {
 
 const workflow = [
   { title: '공고를 읽기 전에', body: '사전규격, 본공고, 마감, 참가자격을 먼저 분리합니다.', icon: Search },
-  { title: 'AI로 초벌 구조화', body: 'ChatGPT로 요구사항, 평가항목, 리스크를 빠르게 분류합니다.', icon: Bot },
+  { title: 'AI로 초벌 구조화', body: 'AI로 요구사항, 평가항목, 리스크를 빠르게 분류합니다.', icon: Bot },
   { title: '사람이 검수', body: '참가자격, 실적, 가격서, 제출 조건은 원문 기준으로 다시 확인합니다.', icon: ListChecks },
   { title: '문서로 완성', body: '이미지, 본문, PDF, 나라장터 제출 확인까지 하나의 흐름으로 묶습니다.', icon: FileText },
 ]
@@ -158,7 +158,7 @@ export default async function AiProposalGuideIndexPage() {
               AI 제안서 작성법
             </h1>
             <p className="mt-6 max-w-xl break-words text-base leading-8 text-white/82">
-              ChatGPT, 이미지 생성, Codex를 보조자로 두고 RFP 분석부터 나라장터 제출 확인까지 따라가는 실무 콘텐츠 허브입니다.
+              각자 쓰는 AI 도구를 보조자로 두고 RFP 분석부터 나라장터 제출 확인까지 따라가는 실무 콘텐츠 허브입니다.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               {hero && (
@@ -259,9 +259,9 @@ export default async function AiProposalGuideIndexPage() {
       <section className="border-t border-slate-200 bg-white">
         <div className="mx-auto grid max-w-[1180px] gap-6 px-4 py-14 md:grid-cols-3 md:px-8">
           {[
-            { icon: Bot, title: 'ChatGPT', body: 'RFP 요약, 요구사항 추출, 질의 후보, 본문 초안, 발표 예상 질문을 만드는 보조자로 사용합니다.' },
-            { icon: ImageIcon, title: '이미지 생성', body: '표지와 개념도 방향을 빠르게 실험하고, 최종 텍스트와 구조는 제안서 문서에서 다시 검수합니다.' },
-            { icon: TerminalSquare, title: 'Codex', body: '요구사항 표, 제출 파일 목록, 검수 체크리스트, 반복 문서 정리를 구조화하는 작업 보조자로 씁니다.' },
+            { icon: Bot, title: 'AI 초벌 분석', body: 'RFP 요약, 요구사항 추출, 질의 후보, 본문 초안, 발표 예상 질문을 만드는 보조자로 사용합니다.' },
+            { icon: ImageIcon, title: 'AI 이미지 시안', body: '표지와 개념도 방향을 빠르게 실험하고, 최종 텍스트와 구조는 제안서 문서에서 다시 검수합니다.' },
+            { icon: ListChecks, title: '반복 자료 정리', body: '요구사항 표, 제출 파일 목록, 검수 체크리스트, 반복 문서 정리를 AI로 구조화합니다.' },
           ].map((item) => {
             const Icon = item.icon
             return (
