@@ -59,20 +59,16 @@ export function GuideCover({
           <div className="absolute bottom-7 left-5 h-20 w-20 rounded-full border border-[var(--accent)]/35" />
         </>
       ) : null}
-      <div className={`relative flex h-full w-full flex-col justify-between p-5 ${compact ? 'p-4' : 'md:p-6'}`}>
-        <div>
-          <div
-            className={`mb-5 inline-flex h-8 min-w-8 items-center justify-center border px-2 text-xs font-bold ${hasCoverImage ? 'border-white/25 bg-black/25 text-white backdrop-blur-sm' : 'border-current/25 bg-white/10'}`}
-          >
-            {String(guide.step).padStart(2, '0')}
-          </div>
-          {!hasCoverImage ? (
+      {!hasCoverImage ? (
+        <div className={`relative flex h-full w-full flex-col justify-between p-5 ${compact ? 'p-4' : 'md:p-6'}`}>
+          <div>
+            <div className="mb-5 inline-flex h-8 min-w-8 items-center justify-center border border-current/25 bg-white/10 px-2 text-xs font-bold">
+              {String(guide.step).padStart(2, '0')}
+            </div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--accent)]">
               AI Proposal Guide
             </p>
-          ) : null}
-        </div>
-        {!hasCoverImage ? (
+          </div>
           <div>
             <h3 className={`${compact ? 'text-xl' : 'text-2xl md:text-3xl'} break-words font-black leading-tight tracking-normal`}>
               {guide.coverTitle || guide.title}
@@ -81,8 +77,8 @@ export function GuideCover({
               {guide.coverSubtitle || guide.primaryKeyword}
             </p>
           </div>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </div>
   )
 }
