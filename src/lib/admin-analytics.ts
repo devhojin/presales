@@ -50,6 +50,7 @@ export interface AdminAnalyticsSummary {
 
 const ANALYTICS_ROW_LIMIT = 100_000
 const ANALYTICS_PAGE_SIZE = 1000
+const ANALYTICS_LAUNCH_START_KEY = '2026-05-01'
 const COMPLETED_ORDER_STATUSES = new Set(['paid', 'completed'])
 const VOID_ORDER_STATUSES = new Set(['cancelled', 'canceled', 'refunded'])
 
@@ -92,6 +93,14 @@ function addDaysToYmd(ymd: string, days: number): string {
   const date = new Date(Date.UTC(year, month - 1, day))
   date.setUTCDate(date.getUTCDate() + days)
   return date.toISOString().slice(0, 10)
+}
+
+function daysBetweenInclusive(startYmd: string, endYmd: string): number {
+  const [startYear, startMonth, startDay] = startYmd.split('-').map(Number)
+  const [endYear, endMonth, endDay] = endYmd.split('-').map(Number)
+  const start = Date.UTC(startYear, startMonth - 1, startDay)
+  const end = Date.UTC(endYear, endMonth - 1, endDay)
+  return Math.floor((end - start) / 86_400_000) + 1
 }
 
 function kstDayStartUtcIso(ymd: string): string {
@@ -173,7 +182,10 @@ export async function getAdminAnalyticsSummary(
 ): Promise<AdminAnalyticsSummary> {
   const days = [7, 30, 90].includes(periodDays) ? periodDays : 7
   const todayKey = toKstYmd(new Date())
-  const startKey = addDaysToYmd(todayKey, -(days - 1))
+  const periodStartKey = addDaysToYmd(todayKey, -(days - 1))
+  const launchAdjustedStartKey = periodStartKey < ANALYTICS_LAUNCH_START_KEY ? ANALYTICS_LAUNCH_START_KEY : periodStartKey
+  const startKey = launchAdjustedStartKey > todayKey ? todayKey : launchAdjustedStartKey
+  const dailyStatDays = Math.max(1, daysBetweenInclusive(startKey, todayKey))
   const endKey = addDaysToYmd(todayKey, 1)
   const rangeStart = kstDayStartUtcIso(startKey)
   const rangeEnd = kstDayStartUtcIso(endKey)
@@ -235,12 +247,15 @@ export async function getAdminAnalyticsSummary(
     service
       .from('profiles')
       .select('name, email, created_at')
+      .gte('created_at', rangeStart)
+      .lt('created_at', rangeEnd)
       .order('created_at', { ascending: false })
       .limit(5),
     fetchAllRows<MonthlyPageViewRow>((from, to) =>
       service
         .from('page_views')
         .select('id, created_at, session_id')
+        .gte('created_at', kstDayStartUtcIso(ANALYTICS_LAUNCH_START_KEY))
         .order('id', { ascending: true })
         .range(from, to)
     ),
@@ -251,7 +266,7 @@ export async function getAdminAnalyticsSummary(
   }
 
   const dailyStats: AdminAnalyticsDayStat[] = []
-  for (let i = 0; i < days; i += 1) {
+  for (let i = 0; i < dailyStatDays; i += 1) {
     const date = addDaysToYmd(startKey, i)
     const dayPageViews = pageViews.filter((row) => kstDateKey(row.created_at) === date)
     const daySessions = new Set(dayPageViews.map((row, index) => sessionKey(row, index)))

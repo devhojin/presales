@@ -469,6 +469,12 @@ export default function AnalyticsPage() {
     return { pageViews, revenue, orders, completed, visitors, pagesPerVisitor }
   }, [dailyStats, funnelData])
 
+  const periodLabel = useMemo(() => {
+    const firstDate = dailyStats[0]?.date
+    if (!firstDate || dailyStats.length >= periodDays) return `최근 ${periodDays}일`
+    return `${firstDate.replace(/-/g, '.')} 이후`
+  }, [dailyStats, periodDays])
+
   const referrerChart = useMemo(
     () =>
       referrers.map((item) => ({
@@ -569,7 +575,7 @@ export default function AnalyticsPage() {
         <MetricTile
           label="방문자"
           value={totals.visitors.toLocaleString()}
-          detail={`최근 ${periodDays}일 고유 세션`}
+          detail={`${periodLabel} 고유 세션`}
           icon={Users}
         />
         <MetricTile
@@ -594,7 +600,7 @@ export default function AnalyticsPage() {
 
       <Panel
         title="방문 흐름"
-        subtitle={`최근 ${periodDays}일 페이지뷰와 방문 세션 추이`}
+        subtitle={`${periodLabel} 페이지뷰와 방문 세션 추이`}
         action={
           <div className="hidden flex-wrap items-center gap-4 md:flex">
             <LegendItem color={TRAFFIC_COLORS.pageViews} label="페이지뷰" />
@@ -777,7 +783,7 @@ export default function AnalyticsPage() {
       </Panel>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-        <Panel title="전환 퍼널" subtitle={`최근 ${periodDays}일 방문자에서 구매 완료까지`}>
+        <Panel title="전환 퍼널" subtitle={`${periodLabel} 방문자에서 구매 완료까지`}>
           <div className="space-y-3">
             {funnelSteps.map((step, index) => {
               const width = percentWidth(step.value, funnelData.visitors)
@@ -874,7 +880,7 @@ export default function AnalyticsPage() {
         </Panel>
       </div>
 
-      <Panel title="기간별 분석" subtitle={`최근 ${periodDays}일 일별 원자료`}>
+      <Panel title="기간별 분석" subtitle={`${periodLabel} 일별 원자료`}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] text-sm">
             <thead>
@@ -922,7 +928,7 @@ export default function AnalyticsPage() {
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <Panel
           title="월간 및 연간"
-          subtitle="전체 page_views 누적 기준"
+          subtitle="2026.05.01 이후 page_views 기준"
           action={
             <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
               <button

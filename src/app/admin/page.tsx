@@ -145,6 +145,7 @@ interface AdminMembersResponse {
 // ===========================
 
 const PERIODS: Period[] = ['7일', '30일', '90일', '전체']
+const ADMIN_ANALYTICS_LAUNCH_START_ISO = '2026-04-30T15:00:00.000Z'
 const inflightDashboardLoads = new Map<Period, Promise<void>>()
 let inflightMemberRequest: Promise<AdminMemberSummary[]> | null = null
 const EMPTY_FUNNEL: AdminAnalyticsFunnel = {
@@ -218,6 +219,13 @@ function getPrevPeriodStart(period: Period): string | null {
   d.setDate(d.getDate() - days * 2)
   d.setHours(0, 0, 0, 0)
   return d.toISOString()
+}
+
+function clampToLaunchStart(iso: string | null): string {
+  if (!iso) return ADMIN_ANALYTICS_LAUNCH_START_ISO
+  return new Date(iso).getTime() < new Date(ADMIN_ANALYTICS_LAUNCH_START_ISO).getTime()
+    ? ADMIN_ANALYTICS_LAUNCH_START_ISO
+    : iso
 }
 
 function getAnalyticsDays(period: Period): 7 | 30 | 90 {
@@ -885,12 +893,13 @@ export default function AdminDashboard() {
     setLoading(true)
     const supabase = createClient()
 
-    const periodStart = getPeriodStart(period)
-    const prevPeriodStart = getPrevPeriodStart(period)
+    const periodStart = clampToLaunchStart(getPeriodStart(period))
+    const prevPeriodStart = period === '전체' ? null : clampToLaunchStart(getPrevPeriodStart(period))
     const days = getAnalyticsDays(period)
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
     const todayISO = todayStart.toISOString()
+    const launchStartMs = new Date(ADMIN_ANALYTICS_LAUNCH_START_ISO).getTime()
     const membersPromise = fetchAdminMembers()
     const analyticsPromise = fetch(`/api/admin/analytics/summary?days=${days}`, {
       cache: 'no-store',
@@ -962,6 +971,7 @@ export default function AdminDashboard() {
       supabase
         .from('orders')
         .select('id, order_number, user_id, total_amount, status, created_at')
+        .gte('created_at', ADMIN_ANALYTICS_LAUNCH_START_ISO)
         .order('created_at', { ascending: false })
         .limit(5),
       supabase
@@ -972,16 +982,19 @@ export default function AdminDashboard() {
       supabase
         .from('consulting_requests')
         .select('id, name, package_type, status, created_at')
+        .gte('created_at', ADMIN_ANALYTICS_LAUNCH_START_ISO)
         .order('created_at', { ascending: false })
         .limit(5),
       supabase
         .from('reviews')
         .select('id, rating, user_id, product_id, created_at, products(title)')
+        .gte('created_at', ADMIN_ANALYTICS_LAUNCH_START_ISO)
         .order('created_at', { ascending: false })
         .limit(5),
       supabase
         .from('download_logs')
         .select('id, user_id, product_id, downloaded_at')
+        .gte('downloaded_at', ADMIN_ANALYTICS_LAUNCH_START_ISO)
         .order('downloaded_at', { ascending: false })
         .limit(5),
       supabase
@@ -999,14 +1012,13 @@ export default function AdminDashboard() {
     ])
 
     // 기간별 회원 카운트 계산 (API 결과에서)
-    const periodStartMs = periodStart ? new Date(periodStart).getTime() : null
-    const membersInPeriod = periodStartMs !== null
-      ? allMembers.filter(m => new Date(m.created_at).getTime() >= periodStartMs).length
-      : allMembers.length
+    const periodStartMs = new Date(periodStart).getTime()
+    const openMembers = allMembers.filter(m => new Date(m.created_at).getTime() >= launchStartMs)
+    const membersInPeriod = allMembers.filter(m => new Date(m.created_at).getTime() >= periodStartMs).length
 
     // Recent 5 members from API result
     const recentMembersData = {
-      data: allMembers
+      data: openMembers
         .slice()
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, 5),
