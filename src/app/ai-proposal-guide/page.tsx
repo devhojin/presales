@@ -145,10 +145,15 @@ export default async function AiProposalGuideIndexPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd }} />
 
-      <section className="bg-[#6F7476] text-white">
+      <section className="relative isolate overflow-hidden bg-[#5F6668] text-white">
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-[url('/images/ai-proposal-guide/rfp-origin.webp')] bg-cover bg-[center_35%] opacity-42 mix-blend-soft-light" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(95,102,104,0.96)_0%,rgba(95,102,104,0.86)_42%,rgba(95,102,104,0.52)_76%,rgba(95,102,104,0.82)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(17,24,39,0.18),rgba(255,255,255,0.05)_46%,rgba(17,24,39,0.24))]" />
+        </div>
         <div className="mx-auto grid min-h-[520px] max-w-[1180px] gap-10 px-4 py-16 md:grid-cols-[1fr_360px] md:px-8 md:py-20">
           <div className="flex min-w-0 flex-col justify-center">
-            <p className="mb-6 text-xs font-semibold tracking-[0.24em] text-white/72">PRESALES ORIGINAL</p>
+            <p className="mb-6 text-xs font-semibold tracking-[0.24em] text-white/76">PRESALES ORIGINAL</p>
             <h1 className="max-w-2xl break-words text-4xl font-semibold leading-tight md:text-6xl">
               AI 제안서 작성법
             </h1>
