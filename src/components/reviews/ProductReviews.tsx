@@ -14,6 +14,7 @@ type SortOption = 'latest' | 'rating_high' | 'rating_low' | 'helpful'
 
 interface ProductReviewsProps {
   productId: number
+  onCountChange?: (count: number) => void
 }
 
 interface PublicRewardSettings {
@@ -33,7 +34,7 @@ function getInitialReviewActionRequested() {
   return params.get('writeReview') === '1' || params.get('reviewAction') === 'write'
 }
 
-export function ProductReviews({ productId }: ProductReviewsProps) {
+export function ProductReviews({ productId, onCountChange }: ProductReviewsProps) {
   const [reviews, setReviews] = useState<DbReview[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [ratingDist, setRatingDist] = useState<number[]>([0, 0, 0, 0, 0])
@@ -165,9 +166,16 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
         dist[r.rating - 1]++
         sum += r.rating
       })
+      const nextTotalCount = allReviews.length
       setRatingDist(dist)
-      setTotalCount(allReviews.length)
-      setAvgRating(allReviews.length > 0 ? sum / allReviews.length : 0)
+      setTotalCount(nextTotalCount)
+      setAvgRating(nextTotalCount > 0 ? sum / nextTotalCount : 0)
+      onCountChange?.(nextTotalCount)
+    } else {
+      setRatingDist([0, 0, 0, 0, 0])
+      setTotalCount(0)
+      setAvgRating(0)
+      onCountChange?.(0)
     }
 
     // Get paginated reviews (no embedded join — uses denormalized reviewer_name column)
@@ -198,7 +206,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
     const { data } = await query
     setReviews((data || []) as DbReview[])
     setLoading(false)
-  }, [productId, sort, page])
+  }, [onCountChange, productId, sort, page])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {

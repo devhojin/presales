@@ -126,6 +126,11 @@ function normalizeFileTypes(value: unknown, format: string | null): string[] {
   return Array.from(found)
 }
 
+function normalizeReviewCount(value: unknown): number {
+  const count = Number(value)
+  return Number.isFinite(count) ? Math.max(0, Math.floor(count)) : 0
+}
+
 function ImagePreviewModal({ images, onClose }: { images: string[]; onClose: () => void }) {
   const [current, setCurrent] = useState(0)
 
@@ -184,6 +189,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
   const [loading, setLoading] = useState(true)
   const [related, setRelated] = useState<DbProduct[]>([])
   const [activeTab, setActiveTab] = useState<TabId>('info')
+  const [reviewCount, setReviewCount] = useState(0)
   const [showPdfPreview, setShowPdfPreview] = useState(false)
   const [showImagePreview, setShowImagePreview] = useState(false)
   const [hasPurchased, setHasPurchased] = useState(false)
@@ -223,6 +229,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
 
       if (data) {
         setProduct(data)
+        setReviewCount(normalizeReviewCount(data.review_count))
         // GA4: product view
         gtag.trackProductView(String(data.id), data.title, data.price ?? undefined)
         // 최근 본 상품 기록
@@ -518,11 +525,12 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
   const galleryPreviewImages = previewImages.filter((url) => !url.includes('/preview-page-images/'))
   const productIntroImageUrl =
     galleryPreviewImages.find((url) => url.includes('/preview-images/original-intros/')) ?? null
+  const reviewTabLabel = `리뷰 (${reviewCount.toLocaleString('ko-KR')} 건)`
 
   const tabs: { id: TabId; label: string }[] = [
     { id: 'info', label: '상품정보' },
     ...(product.youtube_id ? [{ id: 'video' as TabId, label: '동영상 보기' }] : []),
-    { id: 'review', label: '리뷰' },
+    { id: 'review', label: reviewTabLabel },
   ]
 
   return (
@@ -1017,7 +1025,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
 
           {/* 리뷰 Tab */}
           {activeTab === 'review' && (
-            <ProductReviews productId={product.id} />
+            <ProductReviews productId={product.id} onCountChange={setReviewCount} />
           )}
         </div>
       </div>
