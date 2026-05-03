@@ -145,11 +145,12 @@ export default async function AiProposalGuideIndexPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbJsonLd }} />
 
-      <section className="relative isolate overflow-hidden bg-[#5F6668] text-white">
+      <section className="relative isolate overflow-hidden bg-[#111A20] text-white">
         <div className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-[url('/images/ai-proposal-guide/rfp-origin.webp')] bg-cover bg-[center_35%] opacity-42 mix-blend-soft-light" />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(95,102,104,0.96)_0%,rgba(95,102,104,0.86)_42%,rgba(95,102,104,0.52)_76%,rgba(95,102,104,0.82)_100%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(17,24,39,0.18),rgba(255,255,255,0.05)_46%,rgba(17,24,39,0.24))]" />
+          <div className="absolute inset-0 bg-[url('/images/ai-proposal-guide/hero-gemini-background.webp')] bg-cover bg-[center_44%]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(11,17,22,0.96)_0%,rgba(16,24,30,0.88)_43%,rgba(16,24,30,0.34)_74%,rgba(11,17,22,0.72)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,10,14,0.24),rgba(6,10,14,0.08)_48%,rgba(6,10,14,0.42))]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_38%,rgba(96,165,250,0.16),transparent_34%)]" />
         </div>
         <div className="mx-auto grid min-h-[520px] max-w-[1180px] gap-10 px-4 py-16 md:grid-cols-[1fr_360px] md:px-8 md:py-20">
           <div className="flex min-w-0 flex-col justify-center">
@@ -157,7 +158,7 @@ export default async function AiProposalGuideIndexPage() {
             <h1 className="max-w-2xl break-words text-4xl font-semibold leading-tight md:text-6xl">
               AI 제안서 작성법
             </h1>
-            <p className="mt-6 max-w-xl break-words text-base leading-8 text-white/82">
+            <p className="mt-6 max-w-[22rem] break-words text-sm leading-7 text-white/82 sm:max-w-xl sm:text-base sm:leading-8">
               각자 쓰는 AI 도구를 보조자로 두고 RFP 분석부터 나라장터 제출 확인까지 따라가는 실무 콘텐츠 허브입니다.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
@@ -179,7 +180,7 @@ export default async function AiProposalGuideIndexPage() {
             </div>
           </div>
           {hero && (
-            <div className="mx-auto w-full max-w-[300px] self-center md:max-w-none">
+            <div className="mx-auto w-full max-w-[280px] self-center sm:max-w-[300px] md:max-w-none">
               <GuideCover guide={hero} priority />
             </div>
           )}
