@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     title: "컨설팅 — 공공조달 제안서 리뷰와 입찰 전략 코칭",
     description: "제안서 구조, 평가표 대응, 발표 준비를 전문가와 함께 점검합니다.",
     url: `${SITE_URL}/consulting`,
-    images: [{ url: '/images/consulting-strategy-room-gemini.webp', width: 1200, height: 630, alt: '프리세일즈 컨설팅' }],
+    images: [{ url: '/images/consulting-strategy-room-gemini.webp', width: 1200, height: 675, alt: '프리세일즈 컨설팅' }],
   },
   twitter: {
     card: "summary_large_image",
