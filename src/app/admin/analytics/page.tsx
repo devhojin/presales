@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Activity,
   ArrowDownRight,
@@ -20,7 +20,6 @@ import {
   Cell,
   ComposedChart,
   Line,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -67,6 +66,11 @@ interface ChartTooltipProps<T> {
   active?: boolean
   payload?: TooltipPayload<T>[]
   label?: string | number
+}
+
+interface ChartSize {
+  width: number
+  height: number
 }
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
@@ -163,7 +167,7 @@ function Panel({
   className?: string
 }) {
   return (
-    <section className={`rounded-lg border border-slate-200 bg-white p-5 shadow-sm ${className}`}>
+    <section className={`min-w-0 rounded-lg border border-slate-200 bg-white p-5 shadow-sm ${className}`}>
       <div className="mb-5 flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h2 className="text-base font-semibold text-slate-950">{title}</h2>
@@ -173,6 +177,55 @@ function Panel({
       </div>
       {children}
     </section>
+  )
+}
+
+function ChartFrame({
+  className,
+  children,
+}: {
+  className: string
+  children: (size: ChartSize) => React.ReactNode
+}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [size, setSize] = useState<ChartSize>({ width: 0, height: 0 })
+
+  useEffect(() => {
+    const node = ref.current
+    if (!node) return
+
+    const updateSize = (width: number, height: number) => {
+      const next = {
+        width: Math.floor(width),
+        height: Math.floor(height),
+      }
+
+      if (next.width <= 0 || next.height <= 0) return
+
+      setSize((prev) =>
+        prev.width === next.width && prev.height === next.height ? prev : next,
+      )
+    }
+
+    const rect = node.getBoundingClientRect()
+    updateSize(rect.width, rect.height)
+
+    const observer = new ResizeObserver(([entry]) => {
+      updateSize(entry.contentRect.width, entry.contentRect.height)
+    })
+
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div ref={ref} className={`min-w-0 ${className}`}>
+      {size.width > 0 && size.height > 0 ? (
+        children(size)
+      ) : (
+        <div className="h-full w-full rounded-lg bg-slate-50" aria-hidden="true" />
+      )}
+    </div>
   )
 }
 
@@ -550,12 +603,19 @@ export default function AnalyticsPage() {
             </div>
           }
         >
-          <div className="h-[380px]">
-            {chartData.length === 0 ? (
+          {chartData.length === 0 ? (
+            <div className="h-[380px]">
               <EmptyState icon={Activity} label="방문 데이터가 없습니다" />
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={chartData} margin={{ top: 10, right: 18, left: 0, bottom: 4 }}>
+            </div>
+          ) : (
+            <ChartFrame className="h-[380px]">
+              {({ width, height }) => (
+                <ComposedChart
+                  width={width}
+                  height={height}
+                  data={chartData}
+                  margin={{ top: 10, right: 18, left: 0, bottom: 4 }}
+                >
                   <defs>
                     <linearGradient id="trafficPageViews" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor={TRAFFIC_COLORS.pageViews} stopOpacity={0.72} />
@@ -595,9 +655,9 @@ export default function AnalyticsPage() {
                     activeDot={{ r: 5 }}
                   />
                 </ComposedChart>
-              </ResponsiveContainer>
-            )}
-          </div>
+              )}
+            </ChartFrame>
+          )}
         </Panel>
 
         <Panel
@@ -605,12 +665,19 @@ export default function AnalyticsPage() {
           subtitle="결제 완료 주문 기준"
           action={<span className="font-mono text-sm font-semibold text-emerald-700">{currency(totals.revenue)}</span>}
         >
-          <div className="h-[380px]">
-            {chartData.length === 0 ? (
+          {chartData.length === 0 ? (
+            <div className="h-[380px]">
               <EmptyState icon={CircleDollarSign} label="매출 데이터가 없습니다" />
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={chartData} margin={{ top: 10, right: 18, left: 0, bottom: 4 }}>
+            </div>
+          ) : (
+            <ChartFrame className="h-[380px]">
+              {({ width, height }) => (
+                <ComposedChart
+                  width={width}
+                  height={height}
+                  data={chartData}
+                  margin={{ top: 10, right: 18, left: 0, bottom: 4 }}
+                >
                   <defs>
                     <linearGradient id="revenueArea" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#10b981" stopOpacity={0.34} />
@@ -653,9 +720,9 @@ export default function AnalyticsPage() {
                     maxBarSize={22}
                   />
                 </ComposedChart>
-              </ResponsiveContainer>
-            )}
-          </div>
+              )}
+            </ChartFrame>
+          )}
         </Panel>
       </div>
 
@@ -671,12 +738,20 @@ export default function AnalyticsPage() {
           </div>
         }
       >
-        <div className="h-[310px]">
-          {chartData.length === 0 ? (
+        {chartData.length === 0 ? (
+          <div className="h-[310px]">
             <EmptyState icon={BarChart3} label="운영 지표 데이터가 없습니다" />
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 10, right: 18, left: 0, bottom: 4 }} barCategoryGap="24%">
+          </div>
+        ) : (
+          <ChartFrame className="h-[310px]">
+            {({ width, height }) => (
+              <BarChart
+                width={width}
+                height={height}
+                data={chartData}
+                margin={{ top: 10, right: 18, left: 0, bottom: 4 }}
+                barCategoryGap="24%"
+              >
                 <CartesianGrid stroke="#e2e8f0" vertical={false} />
                 <XAxis
                   dataKey="label"
@@ -698,9 +773,9 @@ export default function AnalyticsPage() {
                 <Bar dataKey="consulting" name="문의" fill={ACTION_COLORS[2]} radius={[3, 3, 0, 0]} maxBarSize={18} />
                 <Bar dataKey="reviews" name="후기" fill={ACTION_COLORS[3]} radius={[3, 3, 0, 0]} maxBarSize={18} />
               </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
+            )}
+          </ChartFrame>
+        )}
       </Panel>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
@@ -732,12 +807,20 @@ export default function AnalyticsPage() {
         </Panel>
 
         <Panel title="유입 경로" subtitle="referrer 기준 상위 유입">
-          <div className="h-[360px]">
-            {referrerChart.length === 0 ? (
+          {referrerChart.length === 0 ? (
+            <div className="h-[360px]">
               <EmptyState icon={ArrowDownRight} label="유입 데이터가 없습니다" />
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={referrerChart} layout="vertical" margin={{ top: 4, right: 18, left: 12, bottom: 4 }}>
+            </div>
+          ) : (
+            <ChartFrame className="h-[360px]">
+              {({ width, height }) => (
+                <BarChart
+                  width={width}
+                  height={height}
+                  data={referrerChart}
+                  layout="vertical"
+                  margin={{ top: 4, right: 18, left: 12, bottom: 4 }}
+                >
                   <CartesianGrid stroke="#e2e8f0" horizontal={false} />
                   <XAxis type="number" hide />
                   <YAxis
@@ -755,9 +838,9 @@ export default function AnalyticsPage() {
                     ))}
                   </Bar>
                 </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
+              )}
+            </ChartFrame>
+          )}
         </Panel>
       </div>
 
