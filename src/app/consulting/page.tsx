@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
-import { Check, X, Clock, Video, FileText, Star, Upload, Loader2, MessageSquare, Trophy, Sparkles, Factory, Quote, ShieldCheck, Target, Mic } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Check, CheckCircle2, ClipboardCheck, Clock, Factory, FileSearch, FileText, Layers3, Loader2, Mic, ShieldCheck, Sparkles, Star, Target, Trophy, Upload, Video, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { useDraggableModal } from '@/hooks/useDraggableModal'
 import { CONSULTING_PACKAGES, INDUSTRY_CONSULTING_PRICE_FLOOR_WON, formatWonShort } from '@/lib/constants'
@@ -313,6 +314,37 @@ const compareFeatures = [
   { label: '프로젝트 완료 후 30일 지원', spot: false, review: false, project: true },
 ]
 
+const heroStats = [
+  { value: '24h', label: '영업일 기준 1차 응답' },
+  { value: '4단계', label: 'RFP 분석부터 제출 전 검수' },
+  { value: '1:1', label: '자료 기반 맞춤 리뷰' },
+]
+
+const riskSignals = [
+  {
+    icon: FileSearch,
+    title: 'RFP는 읽었지만 구조가 안 잡힐 때',
+    body: '과업 범위, 평가항목, 제출물을 분리해 제안서 목차와 대응표로 바꿉니다.',
+  },
+  {
+    icon: AlertTriangle,
+    title: '마감이 가까운데 누락이 불안할 때',
+    body: '참가자격, 증빙, 파일명, 가격서 분리, PDF 상태까지 제출 전 위험을 점검합니다.',
+  },
+  {
+    icon: Layers3,
+    title: '기존 제안서를 재사용해야 할 때',
+    body: '그대로 붙여넣기보다 이번 공고의 평가 언어에 맞게 메시지와 순서를 재배치합니다.',
+  },
+]
+
+const consultingOutputs = [
+  'RFP 핵심 요구사항과 평가항목 요약',
+  '제안서 목차와 요구사항 대응표 방향',
+  '감점 위험 문구와 누락 가능성 체크',
+  '발표 PT 흐름과 예상 질의 정리',
+]
+
 function FeatureCell({ value }: { value: boolean | string }) {
   if (value === true) return <Check className="w-5 h-5 text-primary mx-auto" />
   if (value === false) return <X className="w-5 h-5 text-gray-300 mx-auto" />
@@ -347,81 +379,115 @@ export default function ConsultingPage() {
   const project = packages.find(p => p.slug === 'project')
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 md:px-8">
-      {/* Page Header */}
-      <div className="py-8 md:py-12">
-        <div className="flex items-center gap-3 mb-3">
-          <MessageSquare className="w-7 h-7 text-primary" />
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">컨설팅</h1>
-        </div>
-        <p className="text-muted-foreground">이번 입찰, 혼자 준비하지 마세요. 제안서 구조와 평가 대응 전략을 함께 정리합니다.</p>
-      </div>
+    <main className="overflow-x-hidden bg-[#F5F7FA] text-foreground">
+      <section className="relative min-h-[760px] overflow-hidden bg-[#07111F] text-white md:min-h-[720px]">
+        <Image
+          src="/images/consulting-strategy-room-gemini.webp"
+          alt="공공조달 제안서 컨설팅 전략 회의"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(7,17,31,0.98)_0%,rgba(7,17,31,0.9)_36%,rgba(7,17,31,0.42)_70%,rgba(7,17,31,0.2)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,17,31,0.18)_0%,rgba(7,17,31,0.24)_66%,#F5F7FA_100%)]" />
 
-      {/* ===========================
-          1. 프리세일즈 컨설팅 소개 섹션
-          =========================== */}
-      <div className="max-w-4xl mx-auto mb-12">
-        <div className="rounded-2xl border border-border bg-card p-8 md:p-10">
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
-            {/* 서비스 이니셜 아바타 */}
-            <div className="shrink-0 w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <span className="text-2xl font-bold text-white tracking-wide">PS</span>
+        <div className="relative z-10 mx-auto grid min-h-[760px] max-w-[1240px] gap-10 px-4 pb-24 pt-20 md:min-h-[720px] md:grid-cols-[1.05fr_0.95fr] md:px-8 md:pt-24">
+          <div className="flex min-w-0 flex-col justify-center">
+            <p className="mb-5 inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold tracking-[0.18em] text-white/78 backdrop-blur-md">
+              PRESALES CONSULTING
+            </p>
+            <h1 className="max-w-3xl text-[2.55rem] font-black leading-[1.08] tracking-tight sm:text-5xl md:text-6xl">
+              <span className="block whitespace-nowrap">제안서가 아니라</span>
+              <span className="block whitespace-nowrap">평가 대응 구조를</span>
+              <span className="block">점검합니다.</span>
+            </h1>
+            <p className="mt-6 max-w-2xl break-words text-base leading-8 text-white/74 md:text-lg">
+              RFP 원문, 평가표, 기존 제안서, 발표자료를 함께 보고 이번 공고에서 바로 고쳐야 할 목차, 메시지, 증빙, 제출 리스크를 정리합니다.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <button
+                onClick={() => openInquiry('review')}
+                className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-6 text-sm font-bold text-[#07111F] shadow-[0_18px_50px_rgba(0,0,0,0.22)] transition-colors hover:bg-blue-50 active:scale-[0.98]"
+              >
+                제안서 리뷰 문의
+                <ArrowRight className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => openInquiry('spot')}
+                className="inline-flex h-12 items-center gap-2 rounded-full border border-white/24 bg-white/10 px-6 text-sm font-bold text-white backdrop-blur-md transition-colors hover:bg-white/16 active:scale-[0.98]"
+              >
+                스팟 상담 시작
+              </button>
             </div>
+            <div className="mt-10 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
+              {heroStats.map((item) => (
+                <div key={item.label} className="border-y border-white/18 py-4">
+                  <p className="text-2xl font-black tabular-nums text-white">{item.value}</p>
+                  <p className="mt-1 text-xs font-medium leading-5 text-white/58">{item.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
 
-            {/* 서비스 소개 텍스트 */}
-            <div className="flex-1 text-center md:text-left">
-              <h2 className="text-xl font-bold text-foreground mb-1">PRESALES Consulting</h2>
-              <p className="text-sm text-primary font-medium mb-3">공공조달 제안서 리뷰와 입찰 전략 코칭</p>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-                공공조달 제안서, RFP, 평가표를 함께 검토하며 제안 구조와 메시지를 정리합니다.
-                프리세일즈의 문서 데이터와 실무 검토 프로세스를 바탕으로 일관된 컨설팅 품질을 제공합니다.
-              </p>
-
-              {/* 핵심 영역 뱃지 */}
-              <div className="flex flex-wrap justify-center md:justify-start gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                  <Trophy className="w-3.5 h-3.5" />
-                  평가표 기반 구조 점검
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                  <Factory className="w-3.5 h-3.5" />
-                  RFP 요구사항 매핑
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  발표 흐름 리허설
-                </span>
+          <div className="self-end md:pb-10">
+            <div className="ml-auto max-w-md border border-white/14 bg-white/10 p-5 shadow-[0_26px_90px_rgba(0,0,0,0.32)] backdrop-blur-xl">
+              <p className="text-xs font-semibold tracking-[0.18em] text-blue-100/72">REVIEW SCOPE</p>
+              <div className="mt-5 grid gap-3">
+                {consultingOutputs.map((item) => (
+                  <div key={item} className="flex gap-3 border-t border-white/12 pt-3 text-sm leading-6 text-white/82">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-blue-200" />
+                    <span>{item}</span>
+                  </div>
+                ))}
               </div>
+              <p className="mt-5 text-xs leading-5 text-white/48">
+                컨설팅은 낙찰이나 평가점수를 보장하지 않습니다. 대신 제출 전에 확인해야 할 구조와 리스크를 명확히 드러냅니다.
+              </p>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ===========================
-          2. 전략적 메시지 섹션
-          =========================== */}
-      <div className="max-w-3xl mx-auto mb-20">
-        <div className="relative rounded-2xl bg-[#0C1220] p-8 md:p-10">
-          <Quote className="absolute top-6 left-6 w-8 h-8 text-primary/20" />
-          <div className="relative z-10 text-center space-y-4">
-            <p className="text-sm md:text-base text-blue-100/90 leading-relaxed">
-              대부분의 제안서는 &lsquo;기술을 설명&rsquo;합니다.
-            </p>
-            <p className="text-sm md:text-base text-white font-semibold leading-relaxed">
-              하지만 잘 읽히는 제안서는 &lsquo;평가표에 맞춰 설득&rsquo;합니다.
-            </p>
-            <div className="w-12 h-px bg-primary/40 mx-auto" />
-            <p className="text-sm md:text-base text-blue-100/80 leading-relaxed">
-              평가표와 맞물리는 구조를 먼저 잡고,<br className="hidden md:block" />
-              감점으로 이어질 수 있는 표현을 줄이는 방법을 점검합니다.
-            </p>
-            <p className="text-sm md:text-base text-white font-semibold leading-relaxed">
-              그 차이를 만드는 것이 프리세일즈 컨설팅의 역할입니다.
-            </p>
-            <p className="text-xs text-blue-300/60 mt-4 font-medium">— PRESALES Consulting</p>
+      <div className="mx-auto max-w-[1400px] px-4 md:px-8">
+        <section className="relative z-10 -mt-16 mb-16 grid gap-4 md:grid-cols-3">
+          {riskSignals.map((item) => {
+            const Icon = item.icon
+            return (
+              <article key={item.title} className="min-w-0 border border-slate-200 bg-white p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
+                <Icon className="h-6 w-6 text-primary" />
+                <h2 className="mt-5 break-words text-lg font-bold tracking-tight">{item.title}</h2>
+                <p className="mt-3 break-words text-sm leading-7 text-muted-foreground">{item.body}</p>
+              </article>
+            )
+          })}
+        </section>
+
+        <section className="mx-auto mb-20 grid max-w-6xl gap-8 md:grid-cols-[0.9fr_1.1fr] md:items-center">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold tracking-[0.2em] text-primary">OPERATING MODEL</p>
+            <h2 className="mt-3 break-words text-3xl font-black leading-tight tracking-tight md:text-4xl">
+              공고 해석, 제안서 리뷰, 발표 준비를 한 흐름으로 봅니다.
+            </h2>
           </div>
-        </div>
-      </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[
+              { icon: ClipboardCheck, title: '평가표 대응', body: '평가항목별로 본문 위치와 증빙 근거를 연결합니다.' },
+              { icon: FileText, title: '본문 구조', body: '기술 설명을 평가자가 읽는 순서에 맞게 재배치합니다.' },
+              { icon: ShieldCheck, title: '제출 리스크', body: '누락 서류, 파일 형식, 가격서 분리, 위험 문구를 확인합니다.' },
+              { icon: Mic, title: '발표 흐름', body: '제안 메시지, 예상 질의, 핵심 장표 순서를 점검합니다.' },
+            ].map((item) => {
+              const Icon = item.icon
+              return (
+                <article key={item.title} className="min-w-0 border-t border-slate-200 pt-5">
+                  <Icon className="h-5 w-5 text-primary" />
+                  <h3 className="mt-3 break-words text-base font-bold">{item.title}</h3>
+                  <p className="mt-2 break-words text-sm leading-7 text-muted-foreground">{item.body}</p>
+                </article>
+              )
+            })}
+          </div>
+        </section>
 
       {/* Package Cards - equal height */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-20">
@@ -734,12 +800,14 @@ export default function ConsultingPage() {
         </div>
       </div>
 
+      </div>
+
       {/* Inquiry Modal */}
       <InquiryModal
         isOpen={showInquiry}
         onClose={() => setShowInquiry(false)}
         initialPackage={inquiryPackage}
       />
-    </div>
+    </main>
   )
 }
