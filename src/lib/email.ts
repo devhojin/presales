@@ -47,22 +47,34 @@ export function buildEmailHtml(title: string, bodyHtml: string): string {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="light only" />
+  <meta name="supported-color-schemes" content="light only" />
   <title>${title}</title>
+  <style>
+    :root { color-scheme: light only; supported-color-schemes: light only; }
+    .presales-mail-header, .presales-mail-header * { color-scheme: light only; }
+    .presales-brand-name { color:#ffffff !important; -webkit-text-fill-color:#ffffff !important; }
+    .presales-brand-tagline { color:#dbeafe !important; -webkit-text-fill-color:#dbeafe !important; }
+    .presales-logo-text { color:#1d4ed8 !important; -webkit-text-fill-color:#1d4ed8 !important; }
+  </style>
 </head>
-<body style="margin:0;padding:0;background:#f5f7fa;font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f7fa;padding:40px 0;">
+<body style="margin:0;padding:0;background:#f5f7fa;font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;color-scheme:light only;">
+  <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#f5f7fa" style="background:#f5f7fa;padding:40px 0;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+        <table width="600" cellpadding="0" cellspacing="0" bgcolor="#ffffff" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
 
           <!-- Header -->
           <tr>
-            <td style="background:linear-gradient(135deg,#1e40af 0%,#3b82f6 100%);padding:32px 40px;">
-              <table width="100%" cellpadding="0" cellspacing="0">
+            <td class="presales-mail-header" bgcolor="#1e40af" style="background-color:#1e40af;background-image:linear-gradient(135deg,#1e40af 0%,#3b82f6 100%);padding:32px 40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
                 <tr>
-                  <td>
-                    <span style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.5px;">PRESALES</span>
-                    <span style="font-size:12px;color:rgba(255,255,255,0.7);margin-left:8px;">공공조달 전문 플랫폼</span>
+                  <td width="44" valign="middle" bgcolor="#ffffff" style="width:44px;height:44px;background-color:#ffffff;border-radius:12px;text-align:center;box-shadow:0 8px 22px rgba(15,23,42,0.18);">
+                    <span class="presales-logo-text" style="display:block;font-size:13px;line-height:44px;font-weight:800;letter-spacing:-0.2px;color:#1d4ed8 !important;-webkit-text-fill-color:#1d4ed8 !important;mso-style-textfill-fill-color:#1d4ed8;">PS</span>
+                  </td>
+                  <td valign="middle" style="padding-left:14px;">
+                    <div class="presales-brand-name" style="margin:0;font-size:24px;line-height:1.05;font-weight:800;color:#ffffff !important;-webkit-text-fill-color:#ffffff !important;mso-style-textfill-fill-color:#ffffff;letter-spacing:-0.5px;">PRESALES</div>
+                    <div class="presales-brand-tagline" style="margin:6px 0 0;font-size:13px;line-height:1.4;font-weight:600;color:#dbeafe !important;-webkit-text-fill-color:#dbeafe !important;mso-style-textfill-fill-color:#dbeafe;">공공조달 전문 플랫폼</div>
                   </td>
                 </tr>
               </table>
