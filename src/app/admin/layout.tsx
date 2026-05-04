@@ -4,7 +4,7 @@ import './admin-theme.css'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail, History, Coins, Bell, BookOpen, Search, UserCircle, Sparkles, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail, History, Coins, Bell, BookOpen, UserCircle, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
 type AdminNavItem = {
@@ -475,16 +475,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </span>
             </Link>
 
-            <div className="flex min-w-0 flex-1 items-center gap-3 rounded-full border border-white/[0.08] bg-black/[0.22] px-4 py-3 text-white/[0.45]">
-              <Search className="h-4 w-4 shrink-0" />
-              <span className="truncate text-sm">운영 메뉴와 데이터를 빠르게 탐색하세요</span>
-            </div>
+            <div className="min-w-0 flex-1" />
 
             <div className="flex shrink-0 items-center gap-2">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.06] px-3 py-2 text-xs font-semibold text-white/[0.72]">
-                <Sparkles className="h-3.5 w-3.5 text-[#c8ff2e]" />
-                Live
-              </span>
               <div className="relative">
                 <button
                   type="button"
