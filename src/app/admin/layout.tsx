@@ -4,7 +4,7 @@ import './admin-theme.css'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail, History, Coins, Bell, BookOpen, Search, UserCircle, Sparkles } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail, History, Coins, Bell, BookOpen, Search, UserCircle, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
 type AdminNavItem = {
@@ -133,10 +133,15 @@ function getBadgeCountForSection(section: AdminSection, badges: Record<string, n
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const [sectionRailCollapsed, setSectionRailCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('admin-section-rail-collapsed') === 'true'
+  })
   const [mobileOpen, setMobileOpen] = useState(false)
   const [badges, setBadges] = useState<Record<string, number>>({})
   const activeSection = getActiveSection(pathname)
   const activeItem = getActiveItem(pathname)
+  const ActiveSectionIcon = activeSection.icon
 
   // 사이드바 뱃지 카운트 로드 (middleware가 admin 권한 보장)
   const [ready, setReady] = useState(false)
@@ -238,7 +243,59 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     )
   }
 
-  const sectionMenu = (isMobile: boolean) => (
+  const toggleSectionRail = () => {
+    setSectionRailCollapsed((current) => {
+      const next = !current
+      localStorage.setItem('admin-section-rail-collapsed', String(next))
+      return next
+    })
+  }
+
+  const sectionMenu = (isMobile: boolean, isCollapsed = false) => {
+    if (!isMobile && isCollapsed) {
+      return (
+        <>
+          <div className="border-b border-[#ece9e2] px-2 py-4">
+            <div
+              className="mx-auto flex h-11 w-11 items-center justify-center rounded-[16px] bg-[#17171f] text-[#c8ff2e]"
+              title={`${activeSection.label}: ${activeSection.summary}`}
+            >
+              <ActiveSectionIcon className="h-5 w-5" />
+            </div>
+          </div>
+
+          <nav className="flex-1 space-y-2 overflow-y-auto p-2">
+            {activeSection.items.map((item) => {
+              const Icon = item.icon
+              const isActive = activeItem.href === item.href
+              const badgeCount = badges[item.href] || 0
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  title={item.label}
+                  aria-label={item.label}
+                  className={`relative flex h-11 w-11 items-center justify-center rounded-[16px] border transition-all ${
+                    isActive
+                      ? 'border-[#17171f] bg-[#17171f] text-[#c8ff2e] shadow-[0_14px_28px_-22px_rgba(23,23,31,0.8)]'
+                      : 'border-transparent bg-transparent text-[#5f5b52] hover:border-[#e4e0d7] hover:bg-white hover:text-[#17171f]'
+                  }`}
+                >
+                  <Icon className="h-[18px] w-[18px]" />
+                  {badgeCount > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#2563eb] px-1 text-[10px] font-bold text-white">
+                      {badgeCount > 99 ? '99+' : badgeCount}
+                    </span>
+                  )}
+                </Link>
+              )
+            })}
+          </nav>
+        </>
+      )
+    }
+
+    return (
     <>
       <div className="border-b border-[#ece9e2] px-4 py-4">
         <div className="flex items-start justify-between gap-3">
@@ -331,7 +388,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         })}
       </nav>
     </>
-  )
+    )
+  }
 
   return (
     <div className="admin-tone min-h-[100dvh] bg-background text-foreground">
@@ -432,8 +490,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         <div className="flex min-h-0 flex-1 gap-4 md:pt-4">
-          <aside className="admin-section-rail hidden w-[286px] shrink-0 flex-col overflow-hidden rounded-[30px] border border-[#ddd8ce] bg-[#f7f6f0] md:flex">
-            {sectionMenu(false)}
+          <aside
+            className={`admin-section-rail relative hidden shrink-0 flex-col rounded-[30px] border border-[#ddd8ce] bg-[#f7f6f0] md:flex ${
+              sectionRailCollapsed ? 'w-[76px]' : 'w-[286px]'
+            }`}
+          >
+            <button
+              type="button"
+              title={sectionRailCollapsed ? '왼쪽 메뉴 펼치기' : '왼쪽 메뉴 접기'}
+              aria-label={sectionRailCollapsed ? '왼쪽 메뉴 펼치기' : '왼쪽 메뉴 접기'}
+              onClick={toggleSectionRail}
+              className="absolute -right-3 top-6 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-[#d8d4cb] bg-[#fbfaf5] text-[#5f5b52] shadow-[0_10px_24px_-16px_rgba(23,23,31,0.46)] hover:bg-white hover:text-[#17171f]"
+            >
+              {sectionRailCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </button>
+            {sectionMenu(false, sectionRailCollapsed)}
           </aside>
 
           <main className="min-w-0 flex-1">

@@ -51,6 +51,10 @@
 }
 
 .admin-tone .admin-section-rail {
+  transition:
+    width 240ms ease,
+    box-shadow 180ms ease,
+    border-color 180ms ease;
   box-shadow:
     0 28px 70px -56px rgba(23, 23, 31, 0.58),
     inset 0 1px 0 rgba(255, 255, 255, 0.74);
