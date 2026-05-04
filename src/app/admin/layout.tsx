@@ -4,7 +4,7 @@ import './admin-theme.css'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, ArrowLeft, ChevronLeft, ChevronRight, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail, History, Coins, Bell, BookOpen } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, ChevronLeft, ChevronRight, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail, History, Coins, Bell, BookOpen } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
 type NavItem = { href: string; icon: typeof LayoutDashboard; label: string } | { divider: true; label: string }
@@ -148,9 +148,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className={`${!isMobile && collapsed ? 'p-3' : 'px-5 py-5'} border-b border-white/10 transition-all duration-300`}>
         <div className="flex items-center justify-between">
           {(isMobile || !collapsed) && (
-            <Link href="/" className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors">
-              <ArrowLeft className="w-3.5 h-3.5" /> 사이트로 돌아가기
-            </Link>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Presales Admin</p>
           )}
           {isMobile && (
             <button type="button" title="사이드바 닫기" onClick={() => setMobileOpen(false)} className="text-zinc-400 hover:text-white p-1">
@@ -222,14 +220,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         })}
       </nav>
 
-      {/* Collapse hint */}
-      {!isMobile && collapsed && (
-        <div className="p-2 border-t border-white/10">
-          <Link href="/" title="사이트로 돌아가기" className="flex items-center justify-center py-2 text-zinc-400 hover:text-primary transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-        </div>
-      )}
     </>
   )
 

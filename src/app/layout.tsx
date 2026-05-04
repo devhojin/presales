@@ -1,14 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { PageViewTracker } from "@/components/PageViewTracker";
-import { GoogleAnalytics } from "@/components/GoogleAnalytics";
-import { MicrosoftClarity } from "@/components/MicrosoftClarity";
-import { ToastContainer } from "@/components/Toast";
-import { ChatWidget } from "@/components/chat/ChatWidget";
-import { ExitIntentPopup } from "@/components/ExitIntentPopup";
+import { SiteChrome } from "@/components/layout/SiteChrome";
 import { DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_ALT, SITE_NAME, SITE_URL } from "@/lib/constants";
 import { safeJsonLd } from "@/lib/json-ld";
 
@@ -107,8 +100,6 @@ export default function RootLayout({
     >
       <head>
         <link rel="alternate" type="application/rss+xml" title={`${SITE_NAME} RSS`} href={`${SITE_URL}/rss.xml`} />
-        <GoogleAnalytics />
-        <MicrosoftClarity />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationJsonLd) }}
@@ -119,13 +110,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col">
-        <Header />
-        <PageViewTracker />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <ToastContainer />
-        <ChatWidget />
-        <ExitIntentPopup />
+        <SiteChrome>{children}</SiteChrome>
       </body>
     </html>
   );

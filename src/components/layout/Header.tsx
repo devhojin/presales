@@ -173,6 +173,8 @@ export function Header() {
                     {profile?.role === 'admin' && (
                       <a
                         href="/admin"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         onClick={() => setProfileMenu(false)}
                         className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-muted/80 transition-colors mx-1.5 rounded-lg"
                       >
