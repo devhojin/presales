@@ -395,14 +395,6 @@ function SignupForm() {
                 label="개인정보처리방침"
                 preview={PRIVACY_PREVIEW}
               />
-              <div className="ml-7 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs leading-relaxed text-blue-800">
-                서비스 제공을 위해 암호화된 개인정보가 해외 클라우드 및 해외 SaaS에 이전·보관될 수
-                있습니다. 자세한 내용은{' '}
-                <Link href="/privacy#overseas" target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-4">
-                  개인정보처리방침 국외 이전
-                </Link>
-                에서 확인할 수 있습니다.
-              </div>
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"

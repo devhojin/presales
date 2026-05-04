@@ -207,7 +207,7 @@ export default function TermsPage() {
         <section className="space-y-3">
           <SectionTitle id="privacy">제14조 개인정보 보호</SectionTitle>
           <p className="text-muted-foreground">
-            회사는 서비스 제공을 위해 필요한 최소한의 개인정보를 처리하며, 처리 목적과 보유기간, 위탁·국외이전, 권리행사 절차 등은 <Link href="/privacy" className="text-primary underline underline-offset-4">개인정보처리방침</Link>에 따릅니다.
+            회사는 서비스 제공을 위해 필요한 최소한의 개인정보를 처리하며, 외부 인프라를 통한 처리위탁·보관을 포함한 처리 목적, 보유기간, 권리행사 절차 등은 <Link href="/privacy" className="text-primary underline underline-offset-4">개인정보처리방침</Link>에 따릅니다.
           </p>
         </section>
 
