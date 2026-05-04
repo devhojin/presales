@@ -109,6 +109,10 @@ function ChatAgentIcon() {
   )
 }
 
+function isComposingInput(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+  return e.nativeEvent.isComposing || e.keyCode === 229
+}
+
 const BLOCKED_EXTENSIONS = [
   '.exe', '.bat', '.cmd', '.com', '.msi', '.scr', '.pif',
   '.vbs', '.vbe', '.js', '.jse', '.ws', '.wsf', '.wsc', '.wsh',
@@ -208,6 +212,7 @@ export function ChatWidget() {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const sendingRef = useRef(false)
   const kakaoJavascriptKey = process.env.NEXT_PUBLIC_KAKAO_JAVASCRIPT_KEY
   const kakaoChannelPublicId = process.env.NEXT_PUBLIC_KAKAO_CHANNEL_PUBLIC_ID
   const canUseKakaoChannel = Boolean(kakaoJavascriptKey && kakaoChannelPublicId)
@@ -416,7 +421,8 @@ export function ChatWidget() {
   // 메시지 전송
   const sendMessage = async () => {
     const text = input.trim()
-    if (!text || !roomId) return
+    if (!text || !roomId || sendingRef.current) return
+    sendingRef.current = true
     setSending(true)
     setInput('')
 
@@ -438,6 +444,7 @@ export function ChatWidget() {
       setInput(text)
       setError('전송에 실패했습니다')
     } finally {
+      sendingRef.current = false
       setSending(false)
       textareaRef.current?.focus()
     }
@@ -542,6 +549,7 @@ export function ChatWidget() {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
+      if (isComposingInput(e as React.KeyboardEvent<HTMLTextAreaElement>)) return
       e.preventDefault()
       sendMessage()
     }

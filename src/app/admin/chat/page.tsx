@@ -99,6 +99,10 @@ function isBlocked(name: string) {
   return BLOCKED_EXTENSIONS.includes(ext)
 }
 
+function isComposingInput(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+  return e.nativeEvent.isComposing || e.keyCode === 229
+}
+
 function formatTime(d: string) {
   const date = new Date(d)
   const now = new Date()
@@ -364,6 +368,7 @@ export default function AdminChatPage() {
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const sendingRef = useRef(false)
 
   // 방 목록 로드
   const loadRooms = useCallback(async () => {
@@ -469,6 +474,14 @@ export default function AdminChatPage() {
     }
   }, [selectedRoom])
 
+  const appendSentMessage = (message: ChatMessage | null | undefined) => {
+    if (!message?.id) return
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === message.id)) return prev
+      return [...prev, message]
+    })
+  }
+
   useEffect(() => {
     // 컨테이너 내부에서만 스크롤 (페이지 전체 스크롤 방지)
     const container = messagesContainerRef.current
@@ -480,18 +493,26 @@ export default function AdminChatPage() {
   // 전송
   const sendMessage = async () => {
     const text = input.trim()
-    if (!text || !selectedRoom) return
+    if (!text || !selectedRoom || sendingRef.current) return
+    sendingRef.current = true
     setSending(true)
     setInput('')
     try {
-      await fetch('/api/chat/messages', {
+      const res = await fetch('/api/chat/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ room_id: selectedRoom.id, content: text }),
       })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || '전송 실패')
+      appendSentMessage(data.message as ChatMessage | undefined)
+      setError(null)
+      loadRooms()
     } catch {
+      setInput(text)
       setError('전송 실패')
     } finally {
+      sendingRef.current = false
       setSending(false)
       textareaRef.current?.focus()
     }
@@ -518,7 +539,7 @@ export default function AdminChatPage() {
       const uploadData = await uploadAdminChatFile(file, selectedRoom.id)
       if (!uploadData) { setError('파일 업로드 실패'); return }
 
-      await fetch('/api/chat/messages', {
+      const res = await fetch('/api/chat/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -531,6 +552,11 @@ export default function AdminChatPage() {
           file_type: uploadData.type,
         }),
       })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(data.error || '전송 실패')
+      appendSentMessage(data.message as ChatMessage | undefined)
+      setError(null)
+      loadRooms()
     } catch { setError('파일 업로드 실패') }
     finally { setUploading(false); e.target.value = '' }
   }
@@ -550,7 +576,7 @@ export default function AdminChatPage() {
         try {
           const uploadData = await uploadAdminChatFile(file, selectedRoom.id)
           if (uploadData) {
-            await fetch('/api/chat/messages', {
+            const res = await fetch('/api/chat/messages', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -563,6 +589,11 @@ export default function AdminChatPage() {
                 file_type: uploadData.type,
               }),
             })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(data.error || '전송 실패')
+            appendSentMessage(data.message as ChatMessage | undefined)
+            setError(null)
+            loadRooms()
           }
         } catch { /* ignore */ }
         finally { setUploading(false) }
@@ -572,7 +603,11 @@ export default function AdminChatPage() {
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      if (isComposingInput(e as React.KeyboardEvent<HTMLTextAreaElement>)) return
+      e.preventDefault()
+      sendMessage()
+    }
   }
 
   // 방 닫기
