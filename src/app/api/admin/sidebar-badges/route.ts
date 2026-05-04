@@ -5,6 +5,15 @@ import { cookies } from 'next/headers'
 import { isMemberAdminUnread, isOrderAdminUnread } from '@/lib/admin-read-state'
 import { logger } from '@/lib/logger'
 
+type ChatNotification = {
+  id: string
+  label: string
+  description: string
+  unreadCount: number
+  lastMessageAt: string | null
+  href: string
+}
+
 async function getAdminService() {
   const cookieStore = await cookies()
   const supabaseAuth = createServerClient(
@@ -59,10 +68,11 @@ export async function GET() {
         .gte('created_at', todayIso),
       service
         .from('chat_rooms')
-        .select('admin_unread_count')
+        .select('id, user_id, guest_name, room_type, last_message, last_message_at, admin_unread_count')
         .eq('hidden_by_admin', false)
         .not('last_message', 'is', null)
-        .gt('admin_unread_count', 0),
+        .gt('admin_unread_count', 0)
+        .order('last_message_at', { ascending: false }),
       service
         .from('consulting_requests')
         .select('id', { count: 'exact', head: true })
@@ -92,11 +102,45 @@ export async function GET() {
     )
     const unreadOrders = (ordersRes.data || []).filter(isOrderAdminUnread).length
     const unreadMembers = (membersRes.data || []).filter(isMemberAdminUnread).length
+    const chatUserIds = (chatRes.data || [])
+      .map((room) => room.user_id)
+      .filter((userId): userId is string => Boolean(userId))
+
+    let profileMap: Record<string, { name: string | null; email: string | null }> = {}
+    if (chatUserIds.length > 0) {
+      const { data: profiles, error: profilesError } = await service
+        .from('profiles')
+        .select('id, name, email')
+        .in('id', Array.from(new Set(chatUserIds)))
+
+      if (profilesError) throw profilesError
+      profileMap = (profiles || []).reduce<Record<string, { name: string | null; email: string | null }>>((acc, profile) => {
+        acc[profile.id] = { name: profile.name, email: profile.email }
+        return acc
+      }, {})
+    }
+
+    const chatNotifications: ChatNotification[] = (chatRes.data || []).slice(0, 8).map((room) => {
+      const profile = room.user_id ? profileMap[room.user_id] : null
+      const label = room.room_type === 'member'
+        ? (profile?.name || profile?.email || '회원')
+        : (room.guest_name || '비회원')
+
+      return {
+        id: room.id,
+        label,
+        description: room.last_message || '새 메시지',
+        unreadCount: Number(room.admin_unread_count || 0),
+        lastMessageAt: room.last_message_at,
+        href: `/admin/chat?room=${room.id}`,
+      }
+    })
 
     return NextResponse.json({
       announcementsToday: annRes.count || 0,
       feedsToday: feedRes.count || 0,
       chatUnread,
+      chatNotifications,
       consultingPending: consultRes.count || 0,
       unreadOrders,
       unreadMembers,

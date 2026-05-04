@@ -463,13 +463,20 @@ export default function AdminChatPage() {
   }, [loadRooms])
 
   // 방 선택 — 이전 방 메시지를 즉시 비워서 깜빡임 방지
-  const selectRoom = (room: ChatRoom) => {
+  const selectRoom = useCallback((room: ChatRoom) => {
     if (selectedRoom?.id === room.id) return
     setMessages([])
     setError(null)
     setSelectedRoom(room)
     loadMessages(room.id)
-  }
+  }, [loadMessages, selectedRoom?.id])
+
+  useEffect(() => {
+    const roomId = new URLSearchParams(window.location.search).get('room')
+    if (!roomId || selectedRoom?.id === roomId || rooms.length === 0) return
+    const targetRoom = rooms.find((room) => room.id === roomId)
+    if (targetRoom) selectRoom(targetRoom)
+  }, [rooms, selectedRoom?.id, selectRoom])
 
   // Realtime 구독: 선택한 방의 새 메시지 실시간 수신
   useEffect(() => {

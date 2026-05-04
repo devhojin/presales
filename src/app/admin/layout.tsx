@@ -24,6 +24,15 @@ type AdminSection = {
   items: AdminNavItem[]
 }
 
+type ChatNotification = {
+  id: string
+  label: string
+  description: string
+  unreadCount: number
+  lastMessageAt: string | null
+  href: string
+}
+
 const adminSections: AdminSection[] = [
   {
     key: 'home',
@@ -131,12 +140,27 @@ function getBadgeCountForSection(section: AdminSection, badges: Record<string, n
   return section.items.reduce((sum, item) => sum + (badges[item.href] || 0), 0)
 }
 
+function formatNotificationTime(value: string | null) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return new Intl.DateTimeFormat('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const [sectionRailCollapsed, setSectionRailCollapsed] = useState(false)
   const [globalNavExpanded, setGlobalNavExpanded] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [badges, setBadges] = useState<Record<string, number>>({})
+  const [chatNotifications, setChatNotifications] = useState<ChatNotification[]>([])
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const activeSection = getActiveSection(pathname)
   const activeItem = getActiveItem(pathname)
   const ActiveSectionIcon = activeSection.icon
@@ -177,6 +201,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           consultingPending?: number
           unreadOrders?: number
           unreadMembers?: number
+          chatNotifications?: ChatNotification[]
         }
 
         setBadges({
@@ -187,6 +212,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           '/admin/chat': data.chatUnread || 0,
           '/admin/consulting': data.consultingPending || 0,
         })
+        setChatNotifications(data.chatNotifications || [])
       } catch (e) {
         console.error('badge load error', e)
       }
@@ -261,6 +287,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       return next
     })
   }
+
+  const chatUnreadCount = badges['/admin/chat'] || 0
 
   const sectionMenu = (isMobile: boolean, isCollapsed = false) => {
     if (!isMobile && isCollapsed) {
@@ -457,9 +485,70 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <Sparkles className="h-3.5 w-3.5 text-[#c8ff2e]" />
                 Live
               </span>
-              <button type="button" title="알림" className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.06] text-white/[0.72] hover:bg-white/10">
-                <Bell className="h-4 w-4" />
-              </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  title="읽지 않은 채팅 알림"
+                  aria-label={`읽지 않은 채팅 ${chatUnreadCount}개`}
+                  aria-expanded={notificationsOpen}
+                  onClick={() => setNotificationsOpen((current) => !current)}
+                  className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.06] text-white/[0.72] hover:bg-white/10"
+                >
+                  <Bell className="h-4 w-4" />
+                  {chatUnreadCount > 0 && (
+                    <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#c8ff2e] px-1.5 text-[10px] font-black text-[#17171f] shadow-[0_10px_24px_-12px_rgba(200,255,46,0.7)]">
+                      {chatUnreadCount > 99 ? '99+' : chatUnreadCount}
+                    </span>
+                  )}
+                </button>
+                {notificationsOpen && (
+                  <div className="absolute right-0 top-12 z-50 w-[360px] overflow-hidden rounded-[22px] border border-[#d8d4cb] bg-[#fbfaf5] text-[#17171f] shadow-[0_34px_80px_-42px_rgba(0,0,0,0.55)]">
+                    <div className="border-b border-[#e4e0d6] px-4 py-3">
+                      <p className="text-sm font-bold">채팅 알림</p>
+                      <p className="mt-0.5 text-xs text-[#726e65]">
+                        읽지 않은 채팅 {chatUnreadCount}개
+                      </p>
+                    </div>
+                    <div className="max-h-[360px] overflow-y-auto py-2">
+                      {chatNotifications.length === 0 ? (
+                        <div className="px-4 py-8 text-center text-sm text-[#726e65]">
+                          읽지 않은 채팅이 없습니다
+                        </div>
+                      ) : (
+                        chatNotifications.map((item) => (
+                          <Link
+                            key={item.id}
+                            href={item.href}
+                            onClick={() => setNotificationsOpen(false)}
+                            className="flex gap-3 px-4 py-3 text-left hover:bg-[#eeece5]"
+                          >
+                            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#17171f] text-[#c8ff2e]">
+                              <MessageCircle className="h-4 w-4" />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="flex items-center justify-between gap-3">
+                                <span className="truncate text-sm font-semibold">{item.label}</span>
+                                <span className="shrink-0 text-[10px] text-[#8a867f]">{formatNotificationTime(item.lastMessageAt)}</span>
+                              </span>
+                              <span className="mt-1 block truncate text-xs text-[#726e65]">{item.description}</span>
+                            </span>
+                            <span className="mt-1 inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#2563eb] px-1.5 text-[10px] font-bold text-white">
+                              {item.unreadCount > 99 ? '99+' : item.unreadCount}
+                            </span>
+                          </Link>
+                        ))
+                      )}
+                    </div>
+                    <Link
+                      href="/admin/chat"
+                      onClick={() => setNotificationsOpen(false)}
+                      className="block border-t border-[#e4e0d6] px-4 py-3 text-center text-xs font-semibold text-[#2563eb] hover:bg-[#eeece5]"
+                    >
+                      채팅 관리로 이동
+                    </Link>
+                  </div>
+                )}
+              </div>
               <div className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.06] py-1 pl-1 pr-3">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2b2b38] text-white">
                   <UserCircle className="h-5 w-5" />
