@@ -181,6 +181,15 @@ function PaymentRequestModal({ roomId, userId, onClose, onSent }: {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
   const handleSubmit = async () => {
     if (!title.trim() || !amount) return
     const numAmount = parseInt(amount.replace(/,/g, ''))
@@ -217,58 +226,82 @@ function PaymentRequestModal({ roomId, userId, onClose, onSent }: {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/20 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-background border border-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold flex items-center gap-2">
-            <CreditCard className="w-4 h-4 text-blue-700" /> 결제 요청
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-neutral-950/45 p-4 backdrop-blur-[3px]"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="payment-request-title"
+    >
+      <form
+        className="admin-modal-panel w-full max-w-lg rounded-2xl border p-6 shadow-2xl md:p-7"
+        onClick={(e) => e.stopPropagation()}
+        onSubmit={(e) => {
+          e.preventDefault()
+          void handleSubmit()
+        }}
+      >
+        <div className="mb-6 flex items-center justify-between">
+          <h3 id="payment-request-title" className="flex items-center gap-3 text-xl font-bold text-foreground">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700 ring-1 ring-blue-100">
+              <CreditCard className="h-5 w-5" />
+            </span>
+            결제 요청
           </h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground cursor-pointer"><X className="w-4 h-4" /></button>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="결제 요청 창 닫기"
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-5">
           <div>
-            <label className="text-xs font-medium text-muted-foreground">상품명 *</label>
+            <label className="mb-2 block text-sm font-semibold text-[#4a4238]">상품명 *</label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+              className="h-12 w-full rounded-xl border px-4 text-base text-foreground placeholder:text-[#8c8479] focus:outline-none focus:ring-4 focus:ring-blue-500/15"
               placeholder="커스텀 제안서 패키지"
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">설명</label>
+            <label className="mb-2 block text-sm font-semibold text-[#4a4238]">설명</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/30 resize-none"
-              rows={2}
+              className="w-full resize-none rounded-xl border px-4 py-3 text-base text-foreground placeholder:text-[#8c8479] focus:outline-none focus:ring-4 focus:ring-blue-500/15"
+              rows={3}
               placeholder="상세 설명 (선택)"
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">금액 (원) *</label>
+            <label className="mb-2 block text-sm font-semibold text-[#4a4238]">금액 (원) *</label>
             <input
               value={amount}
               onChange={(e) => setAmount(e.target.value.replace(/[^0-9,]/g, ''))}
-              className="mt-1 w-full border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+              className="h-12 w-full rounded-xl border px-4 text-base tabular-nums text-foreground placeholder:text-[#8c8479] focus:outline-none focus:ring-4 focus:ring-blue-500/15"
               placeholder="99,000"
+              inputMode="numeric"
             />
           </div>
           {error && (
-            <div className="flex items-center gap-2 text-red-500 text-xs">
-              <AlertTriangle className="w-3.5 h-3.5" /> {error}
+            <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              <AlertTriangle className="h-4 w-4 shrink-0" /> {error}
             </div>
           )}
           <button
-            onClick={handleSubmit}
+            type="submit"
             disabled={!title.trim() || !amount || sending}
-            className="w-full py-2.5 bg-blue-700 text-white text-sm font-medium rounded-lg hover:bg-blue-800 transition-colors cursor-pointer disabled:opacity-50"
+            className="h-12 w-full rounded-xl bg-blue-700 text-base font-semibold text-white shadow-lg shadow-blue-700/20 hover:bg-blue-800 active:scale-[0.99] transition-all cursor-pointer disabled:cursor-not-allowed disabled:bg-blue-700/45 disabled:shadow-none"
           >
             {sending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : '결제 요청 보내기'}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   )
 }
