@@ -565,6 +565,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <Link
                       key={section.key}
                       href={section.href}
+                      onClick={(event) => {
+                        if (!isActive) return
+                        event.preventDefault()
+                        toggleGlobalNav()
+                      }}
+                      aria-expanded={isActive ? globalNavExpanded : undefined}
                       className={`relative flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
                         isActive
                           ? 'bg-white text-[#17171f]'
