@@ -4,52 +4,139 @@ import './admin-theme.css'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, ChevronLeft, ChevronRight, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail, History, Coins, Bell, BookOpen } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail, History, Coins, Bell, BookOpen, Search, UserCircle, Sparkles } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
-type NavItem = { href: string; icon: typeof LayoutDashboard; label: string } | { divider: true; label: string }
+type AdminNavItem = {
+  href: string
+  icon: typeof LayoutDashboard
+  label: string
+  description: string
+}
 
-const adminNav: NavItem[] = [
-  // 핵심
-  { href: '/admin', icon: LayoutDashboard, label: '대시보드' },
-  { href: '/admin/products', icon: Package, label: '상품 관리' },
-  { href: '/admin/orders', icon: ShoppingCart, label: '주문 관리' },
-  { href: '/admin/members', icon: Users, label: '회원 관리' },
+type AdminSection = {
+  key: string
+  label: string
+  shortLabel: string
+  summary: string
+  href: string
+  icon: typeof LayoutDashboard
+  items: AdminNavItem[]
+}
 
-  // 콘텐츠
-  { divider: true, label: '콘텐츠' },
-  { href: '/admin/announcements', icon: Megaphone, label: '공고 관리' },
-  { href: '/admin/feeds', icon: Rss, label: 'IT피드 관리' },
-  { href: '/admin/ai-proposal-guide', icon: BookOpen, label: 'AI 제안서 작성법' },
-  { href: '/admin/notices', icon: Bell, label: '공지사항' },
-  { href: '/admin/faq', icon: HelpCircle, label: 'FAQ 관리' },
-
-  // 마케팅
-  { divider: true, label: '마케팅' },
-  { href: '/admin/morning-brief', icon: Mail, label: '모닝브리프 기록' },
-  { href: '/admin/coupons', icon: Tag, label: '쿠폰 관리' },
-  { href: '/admin/discount-matches', icon: Link2, label: '할인 매칭' },
-  { href: '/admin/reviews', icon: Star, label: '리뷰 관리' },
-
-  // 운영
-  { divider: true, label: '운영' },
-  { href: '/admin/chat', icon: MessageCircle, label: '채팅 관리' },
-  { href: '/admin/consulting', icon: MessageSquare, label: '컨설팅 신청' },
-  { href: '/admin/downloads', icon: Download, label: '다운로드 관리' },
-  { href: '/admin/analytics', icon: BarChart3, label: '통계 분석' },
-  { href: '/admin/settings', icon: Settings, label: '사이트 설정' },
-  { href: '/admin/settings/rewards', icon: Coins, label: '적립금' },
-  { href: '/admin/work-history', icon: History, label: '작업 히스토리' },
+const adminSections: AdminSection[] = [
+  {
+    key: 'home',
+    label: '홈',
+    shortLabel: 'Home',
+    summary: '전체 운영 현황',
+    href: '/admin',
+    icon: LayoutDashboard,
+    items: [
+      { href: '/admin', icon: LayoutDashboard, label: '대시보드', description: '핵심 지표와 최근 활동' },
+      { href: '/admin/work-history', icon: History, label: '작업 히스토리', description: '운영 변경 이력' },
+    ],
+  },
+  {
+    key: 'sales',
+    label: '판매',
+    shortLabel: 'Sales',
+    summary: '상품과 주문 관리',
+    href: '/admin/products',
+    icon: ShoppingCart,
+    items: [
+      { href: '/admin/products', icon: Package, label: '상품 관리', description: '상품 등록과 수정' },
+      { href: '/admin/orders', icon: ShoppingCart, label: '주문 관리', description: '결제와 주문 상태' },
+      { href: '/admin/downloads', icon: Download, label: '다운로드 관리', description: '파일 다운로드 기록' },
+      { href: '/admin/reviews', icon: Star, label: '리뷰 관리', description: '후기 승인과 노출' },
+    ],
+  },
+  {
+    key: 'content',
+    label: '콘텐츠',
+    shortLabel: 'Content',
+    summary: '공고와 문서 콘텐츠',
+    href: '/admin/announcements',
+    icon: BookOpen,
+    items: [
+      { href: '/admin/announcements', icon: Megaphone, label: '공고 관리', description: '수집 공고 검수' },
+      { href: '/admin/feeds', icon: Rss, label: 'IT피드 관리', description: '외부 피드 운영' },
+      { href: '/admin/ai-proposal-guide', icon: BookOpen, label: 'AI 제안서 작성법', description: '가이드 콘텐츠' },
+      { href: '/admin/notices', icon: Bell, label: '공지사항', description: '사이트 공지 작성' },
+      { href: '/admin/faq', icon: HelpCircle, label: 'FAQ 관리', description: '자주 묻는 질문' },
+      { href: '/admin/morning-brief', icon: Mail, label: '모닝브리프 기록', description: '메일 브리프 발송 이력' },
+    ],
+  },
+  {
+    key: 'customers',
+    label: '고객',
+    shortLabel: 'Customers',
+    summary: '회원과 상담 대응',
+    href: '/admin/members',
+    icon: Users,
+    items: [
+      { href: '/admin/members', icon: Users, label: '회원 관리', description: '가입 회원과 권한' },
+      { href: '/admin/chat', icon: MessageCircle, label: '채팅 관리', description: '고객 문의 응대' },
+      { href: '/admin/consulting', icon: MessageSquare, label: '컨설팅 신청', description: '컨설팅 접수 현황' },
+    ],
+  },
+  {
+    key: 'insights',
+    label: '인사이트',
+    shortLabel: 'Insights',
+    summary: '통계와 마케팅',
+    href: '/admin/analytics',
+    icon: BarChart3,
+    items: [
+      { href: '/admin/analytics', icon: BarChart3, label: '통계 분석', description: '방문과 매출 흐름' },
+      { href: '/admin/coupons', icon: Tag, label: '쿠폰 관리', description: '프로모션 코드' },
+      { href: '/admin/discount-matches', icon: Link2, label: '할인 매칭', description: '할인 상품 연결' },
+    ],
+  },
+  {
+    key: 'system',
+    label: '시스템',
+    shortLabel: 'System',
+    summary: '환경과 정책 설정',
+    href: '/admin/settings',
+    icon: Settings,
+    items: [
+      { href: '/admin/settings', icon: Settings, label: '사이트 설정', description: '기본 운영 설정' },
+      { href: '/admin/settings/rewards', icon: Coins, label: '적립금', description: '리워드 정책' },
+    ],
+  },
 ]
+
+const allAdminItems = adminSections.flatMap((section) => section.items)
+
+function isHrefActive(pathname: string | null, href: string) {
+  if (!pathname) return href === '/admin'
+  if (href === '/admin') return pathname === '/admin'
+  return pathname === href || pathname.startsWith(`${href}/`)
+}
+
+function getActiveItem(pathname: string | null) {
+  return [...allAdminItems]
+    .sort((a, b) => b.href.length - a.href.length)
+    .find((item) => isHrefActive(pathname, item.href)) || allAdminItems[0]
+}
+
+function getActiveSection(pathname: string | null) {
+  return adminSections.find((section) =>
+    section.items.some((item) => isHrefActive(pathname, item.href)),
+  ) || adminSections[0]
+}
+
+function getBadgeCountForSection(section: AdminSection, badges: Record<string, number>) {
+  return section.items.reduce((sum, item) => sum + (badges[item.href] || 0), 0)
+}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const [collapsed, setCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem('admin-sidebar-collapsed') === 'true'
-  })
   const [mobileOpen, setMobileOpen] = useState(false)
   const [badges, setBadges] = useState<Record<string, number>>({})
+  const activeSection = getActiveSection(pathname)
+  const activeItem = getActiveItem(pathname)
 
   // 사이드바 뱃지 카운트 로드 (middleware가 admin 권한 보장)
   const [ready, setReady] = useState(false)
@@ -136,98 +223,121 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [ready])
 
-  const toggle = () => {
-    const next = !collapsed
-    setCollapsed(next)
-    localStorage.setItem('admin-sidebar-collapsed', String(next))
+  const renderBadge = (count: number, tone: 'dark' | 'light' = 'dark') => {
+    if (count <= 0) return null
+    return (
+      <span
+        className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold ${
+          tone === 'light'
+            ? 'bg-[#c8ff2e] text-[#17171f]'
+            : 'bg-[#2563eb] text-white'
+        }`}
+      >
+        {count > 999 ? '999+' : count}
+      </span>
+    )
   }
 
-  const sidebarContent = (isMobile: boolean) => (
+  const sectionMenu = (isMobile: boolean) => (
     <>
-      {/* Header */}
-      <div className={`${!isMobile && collapsed ? 'p-3' : 'px-5 py-5'} border-b border-white/10 transition-all duration-300`}>
-        <div className="flex items-center justify-between">
-          {(isMobile || !collapsed) && (
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Presales Admin</p>
-          )}
+      <div className="border-b border-[#ece9e2] px-4 py-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-mono text-[10px] font-semibold uppercase text-[#8a867f]">
+              {activeSection.shortLabel}
+            </p>
+            <h2 className="mt-1 text-lg font-semibold tracking-[-0.02em] text-[#17171f]">
+              {activeSection.label}
+            </h2>
+            <p className="mt-1 text-xs text-[#767268]">{activeSection.summary}</p>
+          </div>
           {isMobile && (
-            <button type="button" title="사이드바 닫기" onClick={() => setMobileOpen(false)} className="text-zinc-400 hover:text-white p-1">
+            <button
+              type="button"
+              title="메뉴 닫기"
+              onClick={() => setMobileOpen(false)}
+              className="rounded-full border border-[#e2ded5] bg-white p-2 text-[#5f5b52] hover:bg-[#f2f0eb]"
+            >
               <X className="w-5 h-5" />
             </button>
           )}
         </div>
-        <div className={`flex items-center mt-4 ${!isMobile && collapsed ? 'justify-center' : 'gap-2.5'}`}>
-          <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
-            <span className="text-primary-foreground text-xs font-bold">PS</span>
-          </div>
-          {(isMobile || !collapsed) && (
-            <div>
-              <p className="font-bold text-sm text-white tracking-tight">프리세일즈</p>
-              <p className="text-[10px] text-zinc-400">관리자</p>
-            </div>
-          )}
-        </div>
       </div>
 
-      {/* Nav */}
-      <nav className={`flex-1 ${!isMobile && collapsed ? 'p-2' : 'p-3'} space-y-0.5 transition-all duration-300 overflow-y-auto`}>
-        {adminNav.map((item, idx) => {
-          if ('divider' in item) {
-            if (!isMobile && collapsed) {
-              return <div key={`div-${idx}`} className="my-2 border-t border-white/10" />
-            }
-            return (
-              <div key={`div-${idx}`} className="pt-3 pb-1 px-3">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">{item.label}</p>
-              </div>
-            )
-          }
-          const exactOnly = item.href === '/admin/settings'
-          const isActive = pathname === item.href ||
-            (!exactOnly && item.href !== '/admin' && pathname?.startsWith(item.href))
+      {isMobile && (
+        <nav className="border-b border-[#ece9e2] p-3">
+          <p className="px-2 pb-2 font-mono text-[10px] font-semibold uppercase text-[#8a867f]">Global</p>
+          <div className="grid grid-cols-2 gap-2">
+            {adminSections.map((section) => {
+              const Icon = section.icon
+              const isActive = section.key === activeSection.key
+              const badgeCount = getBadgeCountForSection(section, badges)
+              return (
+                <Link
+                  key={section.key}
+                  href={section.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-2 rounded-[16px] border px-3 py-2 text-sm font-semibold ${
+                    isActive
+                      ? 'border-[#17171f] bg-[#17171f] text-white'
+                      : 'border-[#e4e0d7] bg-white text-[#35332e]'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="flex-1">{section.label}</span>
+                  {renderBadge(badgeCount, isActive ? 'light' : 'dark')}
+                </Link>
+              )
+            })}
+          </div>
+        </nav>
+      )}
+
+      <nav className="flex-1 space-y-1.5 overflow-y-auto p-3">
+        <p className="px-2 pb-2 font-mono text-[10px] font-semibold uppercase text-[#8a867f]">Section</p>
+        {activeSection.items.map((item) => {
+          const Icon = item.icon
+          const isActive = activeItem.href === item.href
           const badgeCount = badges[item.href] || 0
-          const isChat = item.href === '/admin/chat'
-          const isConsulting = item.href === '/admin/consulting'
-          const isOpsAlert = item.href === '/admin/orders' || item.href === '/admin/members'
-          const isRedBadge = isChat || isConsulting || isOpsAlert
           return (
             <Link
               key={item.href}
               href={item.href}
               onClick={isMobile ? () => setMobileOpen(false) : undefined}
-              title={!isMobile && collapsed ? item.label : undefined}
-              className={`flex items-center ${!isMobile && collapsed ? 'justify-center px-2' : 'gap-3 px-3'} py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
+              className={`group flex items-center gap-3 rounded-[18px] border px-3 py-3 transition-all ${
                 isActive
-                  ? 'bg-primary text-white shadow-md shadow-primary/20'
-                  : 'text-zinc-300 hover:bg-white/5 hover:text-white'
+                  ? 'border-[#17171f] bg-[#17171f] text-white shadow-[0_16px_34px_-28px_rgba(23,23,31,0.8)]'
+                  : 'border-transparent text-[#5f5b52] hover:border-[#e4e0d7] hover:bg-white'
               }`}
             >
-              <item.icon className={`w-[18px] h-[18px] shrink-0 ${isActive ? 'text-white' : 'text-zinc-400'}`} />
-              {(isMobile || !collapsed) && (
-                <span className="flex-1">{item.label}</span>
-              )}
-              {(isMobile || !collapsed) && badgeCount > 0 && (
-                <span className={`min-w-[22px] h-5 flex items-center justify-center rounded-full text-[10px] font-bold px-1.5 ${
-                  isRedBadge
-                    ? 'bg-red-500 text-white'
-                    : 'bg-blue-500 text-white'
-                }`}>
-                  {badgeCount > 999 ? '999+' : badgeCount}
+              <span
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[14px] ${
+                  isActive
+                    ? 'bg-[#c8ff2e] text-[#17171f]'
+                    : 'bg-[#f1f0eb] text-[#17171f] group-hover:bg-[#e8e5dd]'
+                }`}
+              >
+                <Icon className="h-[17px] w-[17px]" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-sm font-semibold">{item.label}</span>
+                <span className={`mt-0.5 block truncate text-xs ${isActive ? 'text-white/[0.62]' : 'text-[#8a867f]'}`}>
+                  {item.description}
                 </span>
-              )}
+              </span>
+              {renderBadge(badgeCount, isActive ? 'light' : 'dark')}
             </Link>
           )
         })}
       </nav>
-
     </>
   )
 
   return (
-    <div className="admin-tone min-h-[100dvh] flex bg-background">
+    <div className="admin-tone min-h-[100dvh] bg-background text-foreground">
       {/* Mobile top bar */}
-      <div className="fixed top-0 left-0 right-0 h-14 bg-card border-b border-border/50 flex items-center px-4 z-40 md:hidden">
-        <button type="button" title="메뉴 열기" onClick={() => setMobileOpen(true)} className="p-1.5 rounded-xl hover:bg-muted transition-colors">
+      <div className="fixed top-0 left-0 right-0 z-40 flex h-14 items-center border-b border-border/50 bg-card px-4 md:hidden">
+        <button type="button" title="메뉴 열기" onClick={() => setMobileOpen(true)} className="rounded-xl p-1.5 transition-colors hover:bg-muted">
           <Menu className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2 ml-3">
@@ -248,34 +358,91 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Mobile sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 w-64 bg-zinc-900 border-r border-white/10 flex flex-col z-50 transform transition-transform duration-500 md:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[min(340px,88vw)] transform flex-col border-r border-[#ddd8ce] bg-[#f7f6f0] shadow-2xl transition-transform duration-500 md:hidden ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {sidebarContent(true)}
+        {sectionMenu(true)}
       </aside>
 
-      {/* Desktop sidebar */}
-      <aside className={`${collapsed ? 'w-16' : 'w-60'} bg-zinc-900 border-r border-white/10 hidden md:flex flex-col shrink-0 transition-all duration-300 relative`}>
-        <button
-          type="button"
-          title={collapsed ? '사이드바 펼치기' : '사이드바 접기'}
-          onClick={toggle}
-          className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-zinc-900 border border-white/20 flex items-center justify-center text-zinc-400 hover:text-white hover:border-primary transition-all z-10"
-        >
-          {collapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
-        </button>
-        {sidebarContent(false)}
-      </aside>
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-[1720px] flex-col px-3 pb-4 pt-16 md:px-5 md:py-5">
+        <header className="admin-global-bar hidden overflow-hidden rounded-[30px] border border-[#262634] bg-[#191922] text-white shadow-[0_34px_80px_-56px_rgba(0,0,0,0.72)] md:block">
+          <div className="flex h-[72px] items-center gap-4 px-5 py-4">
+            <Link href="/admin" className="flex w-[245px] shrink-0 items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#c8ff2e] text-sm font-black text-[#17171f]">
+                PS
+              </span>
+              <span>
+                <span className="block text-sm font-semibold tracking-[-0.01em]">프리세일즈</span>
+                <span className="block text-[11px] text-white/[0.45]">ADMIN CONSOLE</span>
+              </span>
+            </Link>
 
-      {/* Main */}
-      <main className="flex-1 min-w-0">
-        <div className="pt-14 md:pt-0">
-          <div className="admin-content p-4 md:p-8">
-            {children}
+            <div className="flex min-w-0 flex-1 items-center gap-3 rounded-full border border-white/[0.08] bg-black/[0.22] px-4 py-3 text-white/[0.45]">
+              <Search className="h-4 w-4 shrink-0" />
+              <span className="truncate text-sm">운영 메뉴와 데이터를 빠르게 탐색하세요</span>
+            </div>
+
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.06] px-3 py-2 text-xs font-semibold text-white/[0.72]">
+                <Sparkles className="h-3.5 w-3.5 text-[#c8ff2e]" />
+                Live
+              </span>
+              <button type="button" title="알림" className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.06] text-white/[0.72] hover:bg-white/10">
+                <Bell className="h-4 w-4" />
+              </button>
+              <div className="flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.06] py-1 pl-1 pr-3">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2b2b38] text-white">
+                  <UserCircle className="h-5 w-5" />
+                </span>
+                <span>
+                  <span className="block text-xs font-semibold">관리자</span>
+                  <span className="block text-[10px] text-white/[0.45]">presales.co.kr</span>
+                </span>
+              </div>
+            </div>
           </div>
+
+          <nav className="flex items-center gap-1 border-t border-white/[0.08] px-5 py-2">
+            {adminSections.map((section) => {
+              const Icon = section.icon
+              const isActive = section.key === activeSection.key
+              const badgeCount = getBadgeCountForSection(section, badges)
+              return (
+                <Link
+                  key={section.key}
+                  href={section.href}
+                  className={`relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+                    isActive
+                      ? 'bg-white text-[#17171f]'
+                      : 'text-white/[0.62] hover:bg-white/[0.08] hover:text-white'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span>{section.label}</span>
+                  <span className={`text-[10px] font-medium ${isActive ? 'text-[#5f5b52]' : 'text-white/[0.36]'}`}>
+                    {section.shortLabel}
+                  </span>
+                  {renderBadge(badgeCount, isActive ? 'dark' : 'light')}
+                  {isActive && <span className="absolute -bottom-2 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full bg-[#c8ff2e]" />}
+                </Link>
+              )
+            })}
+          </nav>
+        </header>
+
+        <div className="flex min-h-0 flex-1 gap-4 md:pt-4">
+          <aside className="admin-section-rail hidden w-[286px] shrink-0 flex-col overflow-hidden rounded-[30px] border border-[#ddd8ce] bg-[#f7f6f0] md:flex">
+            {sectionMenu(false)}
+          </aside>
+
+          <main className="min-w-0 flex-1">
+            <div className="admin-content p-0">
+              {children}
+            </div>
+          </main>
         </div>
-      </main>
+      </div>
     </div>
   )
 }

@@ -1,23 +1,25 @@
 .admin-tone {
-  --background: #f6f2ea;
-  --foreground: #1a1814;
-  --card: rgba(255, 255, 255, 0.92);
-  --card-foreground: #1a1814;
-  --popover: #fcfbf8;
-  --popover-foreground: #1a1814;
-  --secondary: #f3ede4;
-  --secondary-foreground: #1a1814;
-  --muted: #f3ede4;
-  --muted-foreground: #7b7468;
-  --accent: #edf4ff;
-  --accent-foreground: #1e40af;
-  --border: #ddd6ca;
-  --input: #ddd6ca;
+  --background: #deded9;
+  --foreground: #17171f;
+  --card: rgba(249, 248, 243, 0.92);
+  --card-foreground: #17171f;
+  --popover: #fbfaf5;
+  --popover-foreground: #17171f;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --secondary: #eeece5;
+  --secondary-foreground: #17171f;
+  --muted: #eeece5;
+  --muted-foreground: #726e65;
+  --accent: #eaff99;
+  --accent-foreground: #17171f;
+  --border: #d8d4cb;
+  --input: #d8d4cb;
   --ring: rgba(37, 99, 235, 0.2);
   background:
-    radial-gradient(circle at 0% 0%, rgba(37, 99, 235, 0.14), transparent 28%),
-    radial-gradient(circle at 100% 0%, rgba(148, 163, 184, 0.14), transparent 26%),
-    linear-gradient(180deg, #f7f4ee 0%, #f3efe6 100%);
+    radial-gradient(circle at 18% 0%, rgba(200, 255, 46, 0.18), transparent 24%),
+    radial-gradient(circle at 94% 10%, rgba(37, 99, 235, 0.1), transparent 28%),
+    linear-gradient(180deg, #e5e5e1 0%, #d9d8d2 100%);
   color: var(--foreground);
   position: relative;
 }
@@ -27,23 +29,36 @@
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.4;
+  opacity: 0.42;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.18) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.18) 1px, transparent 1px);
-  background-size: 28px 28px;
-  mask-image: radial-gradient(circle at center, black 45%, transparent 90%);
+    linear-gradient(rgba(255, 255, 255, 0.28) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.28) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: radial-gradient(circle at center, black 42%, transparent 88%);
 }
 
 .admin-tone .admin-content {
   position: relative;
   z-index: 1;
-  max-width: 1480px;
+  width: 100%;
+  max-width: none;
+}
+
+.admin-tone .admin-global-bar,
+.admin-tone .admin-section-rail {
+  position: relative;
+  z-index: 2;
+}
+
+.admin-tone .admin-section-rail {
+  box-shadow:
+    0 28px 70px -56px rgba(23, 23, 31, 0.58),
+    inset 0 1px 0 rgba(255, 255, 255, 0.74);
 }
 
 .admin-tone main {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0)),
     transparent;
 }
 
@@ -55,44 +70,38 @@
 .admin-tone .bg-muted,
 .admin-tone .bg-muted\/30,
 .admin-tone .bg-muted\/50 {
-  background-color: rgba(243, 237, 228, 0.88) !important;
+  background-color: rgba(238, 236, 229, 0.9) !important;
 }
 
 .admin-tone .bg-card,
 .admin-tone .bg-white,
 .admin-tone .bg-white\/95,
 .admin-tone .bg-white\/90 {
-  background-color: rgba(255, 255, 255, 0.9) !important;
+  background-color: rgba(250, 249, 245, 0.92) !important;
 }
 
 .admin-tone .border-border,
 .admin-tone .border-border\/50,
 .admin-tone .divide-gray-200\/60 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #ddd6ca !important;
+  border-color: #d8d4cb !important;
 }
 
 .admin-tone .text-muted-foreground {
-  color: #7b7468 !important;
+  color: #726e65 !important;
 }
 
 .admin-tone .text-foreground {
-  color: #1a1814 !important;
+  color: #17171f !important;
 }
 
-.admin-tone :is(.rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-lg).border,
-.admin-tone :is(.rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-lg).shadow-xl,
-.admin-tone :is(.rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-lg).shadow-2xl,
-.admin-tone :is(.rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-lg).shadow-lg,
-.admin-tone .bg-card,
-.admin-tone .bg-white {
-  box-shadow:
-    0 24px 60px -42px rgba(37, 99, 235, 0.24),
-    0 10px 30px -22px rgba(29, 23, 17, 0.18);
-}
-
-.admin-tone h1 {
-  letter-spacing: -0.04em;
+.admin-tone h1,
+.admin-tone h2,
+.admin-tone h3 {
+  letter-spacing: 0;
+  line-height: 1.18;
   text-wrap: balance;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .admin-tone h1.text-2xl {
@@ -100,43 +109,38 @@
   font-weight: 700;
 }
 
-.admin-tone h2,
-.admin-tone h3 {
-  letter-spacing: -0.03em;
-}
-
 .admin-tone table {
   font-variant-numeric: tabular-nums;
 }
 
 .admin-tone thead tr {
-  background-color: rgba(243, 237, 228, 0.86) !important;
+  background-color: rgba(238, 236, 229, 0.9) !important;
 }
 
 .admin-tone tbody tr:hover {
-  background-color: rgba(252, 251, 248, 0.92) !important;
+  background-color: rgba(250, 249, 245, 0.94) !important;
 }
 
 .admin-tone input:not([type="checkbox"]):not([type="radio"]),
 .admin-tone textarea,
 .admin-tone select {
-  background-color: rgba(255, 255, 255, 0.78) !important;
-  border-color: #d7d0c4 !important;
+  background-color: rgba(255, 255, 255, 0.82) !important;
+  border-color: #d4d0c6 !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.75),
-    0 1px 3px rgba(29, 23, 17, 0.06);
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 1px 3px rgba(23, 23, 31, 0.06);
 }
 
 .admin-tone input::placeholder,
 .admin-tone textarea::placeholder {
-  color: #9c968a !important;
+  color: #969188 !important;
 }
 
 .admin-tone input:focus,
 .admin-tone textarea:focus,
 .admin-tone select:focus {
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.86),
     0 0 0 4px rgba(37, 99, 235, 0.12) !important;
 }
 
@@ -164,39 +168,23 @@
 
 .admin-tone .hover\:bg-muted:hover,
 .admin-tone .hover\:bg-muted\/50:hover {
-  background-color: rgba(243, 237, 228, 0.96) !important;
-}
-
-.admin-tone .hover\:bg-white\/5:hover {
-  background-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: rgba(238, 236, 229, 0.96) !important;
 }
 
 .admin-tone .shadow-sm,
 .admin-tone .shadow-md {
   box-shadow:
-    0 14px 34px -28px rgba(37, 99, 235, 0.24),
-    0 4px 14px -10px rgba(29, 23, 17, 0.12) !important;
+    0 14px 34px -28px rgba(37, 99, 235, 0.22),
+    0 4px 14px -10px rgba(23, 23, 31, 0.12) !important;
 }
 
-.admin-tone aside.bg-zinc-900 {
-  background:
-    linear-gradient(180deg, rgba(39, 28, 21, 0.97) 0%, rgba(27, 19, 15, 0.99) 55%, rgba(19, 13, 10, 1) 100%) !important;
-}
-
-.admin-tone aside.border-r.border-white\/10 {
-  border-right-color: rgba(226, 206, 186, 0.14) !important;
+.admin-tone :is(.rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-lg).border,
+.admin-tone :is(.rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-lg).shadow-xl,
+.admin-tone :is(.rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-lg).shadow-2xl,
+.admin-tone :is(.rounded-xl, .rounded-2xl, .rounded-3xl, .rounded-lg).shadow-lg {
   box-shadow:
-    inset -1px 0 0 rgba(255, 255, 255, 0.02),
-    24px 0 50px -42px rgba(42, 24, 13, 0.75);
-}
-
-.admin-tone aside .border-white\/10 {
-  border-color: rgba(226, 206, 186, 0.14) !important;
-}
-
-.admin-tone .bg-zinc-900.border.border-white\/20 {
-  background-color: rgba(32, 22, 17, 0.98) !important;
-  border-color: rgba(229, 211, 191, 0.22) !important;
+    0 26px 64px -48px rgba(23, 23, 31, 0.28),
+    0 10px 30px -24px rgba(23, 23, 31, 0.18);
 }
 
 .admin-tone .admin-modal-panel {
@@ -223,8 +211,8 @@
 }
 
 .admin-tone .fixed.top-0.left-0.right-0.h-14 {
-  background-color: rgba(247, 244, 238, 0.84) !important;
-  border-bottom-color: #ddd6ca !important;
+  background-color: rgba(247, 246, 240, 0.9) !important;
+  border-bottom-color: #d8d4cb !important;
   backdrop-filter: blur(12px);
 }
 
