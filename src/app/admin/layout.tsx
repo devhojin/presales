@@ -4,7 +4,7 @@ import './admin-theme.css'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail, History, Coins, Bell, BookOpen, Search, UserCircle, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail, History, Coins, Bell, BookOpen, Search, UserCircle, Sparkles, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
 type AdminNavItem = {
@@ -137,6 +137,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (typeof window === 'undefined') return false
     return localStorage.getItem('admin-section-rail-collapsed') === 'true'
   })
+  const [globalNavExpanded, setGlobalNavExpanded] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return localStorage.getItem('admin-global-nav-expanded') === 'true'
+  })
   const [mobileOpen, setMobileOpen] = useState(false)
   const [badges, setBadges] = useState<Record<string, number>>({})
   const activeSection = getActiveSection(pathname)
@@ -235,7 +239,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold ${
           tone === 'light'
             ? 'bg-[#c8ff2e] text-[#17171f]'
-            : 'bg-[#2563eb] text-white'
+            : 'bg-[#17171f] text-[#c8ff2e]'
         }`}
       >
         {count > 999 ? '999+' : count}
@@ -247,6 +251,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setSectionRailCollapsed((current) => {
       const next = !current
       localStorage.setItem('admin-section-rail-collapsed', String(next))
+      return next
+    })
+  }
+
+  const toggleGlobalNav = () => {
+    setGlobalNavExpanded((current) => {
+      const next = !current
+      localStorage.setItem('admin-global-nav-expanded', String(next))
       return next
     })
   }
@@ -461,32 +473,97 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
           </div>
 
-          <nav className="flex items-center gap-1 border-t border-white/[0.08] px-5 py-2">
-            {adminSections.map((section) => {
-              const Icon = section.icon
-              const isActive = section.key === activeSection.key
-              const badgeCount = getBadgeCountForSection(section, badges)
-              return (
-                <Link
-                  key={section.key}
-                  href={section.href}
-                  className={`relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
-                    isActive
-                      ? 'bg-white text-[#17171f]'
-                      : 'text-white/[0.62] hover:bg-white/[0.08] hover:text-white'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{section.label}</span>
-                  <span className={`text-[10px] font-medium ${isActive ? 'text-[#5f5b52]' : 'text-white/[0.36]'}`}>
-                    {section.shortLabel}
-                  </span>
-                  {renderBadge(badgeCount, isActive ? 'dark' : 'light')}
-                  {isActive && <span className="absolute -bottom-2 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full bg-[#c8ff2e]" />}
-                </Link>
-              )
-            })}
-          </nav>
+          <div className="border-t border-white/[0.08] px-5 py-2">
+            <nav className="flex items-center gap-1">
+              <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto pb-1">
+                {adminSections.map((section) => {
+                  const Icon = section.icon
+                  const isActive = section.key === activeSection.key
+                  const badgeCount = getBadgeCountForSection(section, badges)
+                  return (
+                    <Link
+                      key={section.key}
+                      href={section.href}
+                      className={`relative flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+                        isActive
+                          ? 'bg-white text-[#17171f]'
+                          : 'text-white/[0.62] hover:bg-white/[0.08] hover:text-white'
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{section.label}</span>
+                      <span className={`text-[10px] font-medium ${isActive ? 'text-[#5f5b52]' : 'text-white/[0.36]'}`}>
+                        {section.shortLabel}
+                      </span>
+                      {renderBadge(badgeCount, isActive ? 'dark' : 'light')}
+                      {isActive && <span className="absolute -bottom-2 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full bg-[#c8ff2e]" />}
+                    </Link>
+                  )
+                })}
+              </div>
+              <button
+                type="button"
+                title={globalNavExpanded ? '상단 메뉴 접기' : '상단 메뉴 펼치기'}
+                aria-label={globalNavExpanded ? '상단 메뉴 접기' : '상단 메뉴 펼치기'}
+                aria-expanded={globalNavExpanded}
+                onClick={toggleGlobalNav}
+                className="ml-2 inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.06] px-3 text-xs font-semibold text-white/[0.72] hover:bg-white/[0.1] hover:text-white"
+              >
+                {globalNavExpanded ? '접기' : '펼치기'}
+                {globalNavExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </button>
+            </nav>
+
+            {globalNavExpanded && (
+              <div className="mt-3 grid grid-cols-[repeat(6,minmax(160px,1fr))] gap-2 overflow-x-auto pb-2">
+                {adminSections.map((section) => {
+                  const SectionIcon = section.icon
+                  const sectionActive = section.key === activeSection.key
+                  return (
+                    <div
+                      key={section.key}
+                      className={`min-w-[160px] rounded-[18px] border p-2 ${
+                        sectionActive
+                          ? 'border-[#c8ff2e]/45 bg-white/[0.08]'
+                          : 'border-white/[0.08] bg-black/[0.12]'
+                      }`}
+                    >
+                      <Link
+                        href={section.href}
+                        className="flex items-center gap-2 rounded-[14px] px-2 py-2 text-sm font-semibold text-white hover:bg-white/[0.08]"
+                      >
+                        <SectionIcon className="h-4 w-4 text-[#c8ff2e]" />
+                        <span className="min-w-0 flex-1 truncate">{section.label}</span>
+                        <span className="text-[10px] font-medium text-white/[0.38]">{section.shortLabel}</span>
+                      </Link>
+                      <div className="mt-1 space-y-1">
+                        {section.items.map((item) => {
+                          const ItemIcon = item.icon
+                          const isActive = activeItem.href === item.href
+                          const badgeCount = badges[item.href] || 0
+                          return (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              className={`flex items-center gap-2 rounded-[12px] px-2 py-1.5 text-xs transition-colors ${
+                                isActive
+                                  ? 'bg-[#c8ff2e] font-semibold text-[#17171f]'
+                                  : 'text-white/[0.6] hover:bg-white/[0.08] hover:text-white'
+                              }`}
+                            >
+                              <ItemIcon className="h-3.5 w-3.5 shrink-0" />
+                              <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                              {renderBadge(badgeCount, isActive ? 'dark' : 'light')}
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </header>
 
         <div className="flex min-h-0 flex-1 gap-4 md:pt-4">
