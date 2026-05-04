@@ -463,7 +463,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-[1720px] flex-col px-1.5 pb-4 pt-16 md:px-2.5 md:pb-5 md:pt-2.5">
-        <header className="admin-global-bar hidden overflow-hidden rounded-[30px] border border-[#262634] bg-[#191922] text-white shadow-[0_34px_80px_-56px_rgba(0,0,0,0.72)] md:block">
+        <header className="admin-global-bar hidden overflow-visible rounded-[30px] border border-[#262634] bg-[#191922] text-white shadow-[0_34px_80px_-56px_rgba(0,0,0,0.72)] md:block">
           <div className="flex h-[72px] items-center gap-4 px-5 py-4">
             <Link href="/admin" className="flex w-[245px] shrink-0 items-center gap-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#c8ff2e] text-sm font-black text-[#17171f]">
