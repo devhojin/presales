@@ -1475,6 +1475,7 @@ export default function AdminMembers() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [filterTab, setFilterTab] = useState<FilterTab>('all')
+  const [groupSidebarCollapsed, setGroupSidebarCollapsed] = useState(false)
   const [pageSize, setPageSize] = useState(100)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedMember, setSelectedMember] = useState<Profile | null>(null)
@@ -1488,6 +1489,10 @@ export default function AdminMembers() {
 
   useEffect(() => {
     loadMembers()
+  }, [])
+
+  useEffect(() => {
+    setGroupSidebarCollapsed(localStorage.getItem('admin-member-groups-collapsed') === 'true')
   }, [])
 
   async function loadMembers() {
@@ -1684,6 +1689,14 @@ export default function AdminMembers() {
     })
   }
 
+  function toggleGroupSidebar() {
+    setGroupSidebarCollapsed((current) => {
+      const next = !current
+      localStorage.setItem('admin-member-groups-collapsed', String(next))
+      return next
+    })
+  }
+
   const sidebarGroups: { key: FilterTab; label: string; count: number; icon: React.ReactNode }[] = [
     { key: 'all', label: '전체 사용자', count: totalCount, icon: <Users className="w-4 h-4" /> },
     { key: 'new', label: '신규회원', count: newCount, icon: <PlusCircle className="w-4 h-4" /> },
@@ -1696,44 +1709,73 @@ export default function AdminMembers() {
     <div className="min-h-screen bg-muted">
       <div className="flex max-w-[1400px] mx-auto">
         {/* Left Sidebar */}
-        <div className="w-[200px] flex-shrink-0 p-4 pt-3">
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-3">
-            회원 그룹
-          </h2>
+        <div
+          className={`flex-shrink-0 pt-3 transition-[width] duration-200 ${
+            groupSidebarCollapsed ? 'w-[64px] px-2' : 'w-[200px] p-4'
+          }`}
+        >
+          <div
+            className={`mb-3 flex items-center ${
+              groupSidebarCollapsed ? 'justify-center' : 'justify-between px-3'
+            }`}
+          >
+            {!groupSidebarCollapsed && (
+              <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                회원 그룹
+              </h2>
+            )}
+            <button
+              type="button"
+              onClick={toggleGroupSidebar}
+              title={groupSidebarCollapsed ? '회원 그룹 펼치기' : '회원 그룹 접기'}
+              aria-label={groupSidebarCollapsed ? '회원 그룹 펼치기' : '회원 그룹 접기'}
+              aria-expanded={!groupSidebarCollapsed}
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-border bg-white text-muted-foreground shadow-sm hover:text-foreground cursor-pointer"
+            >
+              {groupSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </button>
+          </div>
           <nav className="space-y-1">
             {sidebarGroups.map((g) => (
               <button
                 key={g.key}
                 onClick={() => setFilterTab(g.key)}
-                className={`cursor-pointer w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                title={groupSidebarCollapsed ? `${g.label} ${g.count}` : undefined}
+                className={`cursor-pointer w-full flex items-center rounded-xl text-sm font-medium transition-colors ${
+                  groupSidebarCollapsed ? 'h-11 justify-center px-0' : 'justify-between px-3 py-2.5'
+                } ${
                   filterTab === g.key
                     ? 'bg-primary/8 text-primary'
                     : 'text-muted-foreground hover:bg-muted'
                 }`}
               >
-                <span className="flex items-center gap-2">
+                <span className={`flex items-center ${groupSidebarCollapsed ? 'justify-center' : 'gap-2'}`}>
                   {g.icon}
-                  {g.label}
+                  {!groupSidebarCollapsed && g.label}
                 </span>
-                <span
-                  className={`text-xs font-normal ${
-                    filterTab === g.key ? 'text-primary' : 'text-muted-foreground'
-                  }`}
-                >
-                  {g.count}
-                </span>
+                {!groupSidebarCollapsed && (
+                  <span
+                    className={`text-xs font-normal ${
+                      filterTab === g.key ? 'text-primary' : 'text-muted-foreground'
+                    }`}
+                  >
+                    {g.count}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
-          <div className="mt-4 px-3">
-            <button
-              disabled
-              className="w-full text-left text-xs text-muted-foreground py-2 flex items-center gap-1.5 opacity-60"
-              title="준비 중"
-            >
-              <span className="text-base leading-none">+</span> 새 그룹 만들기
-            </button>
-          </div>
+          {!groupSidebarCollapsed && (
+            <div className="mt-4 px-3">
+              <button
+                disabled
+                className="w-full text-left text-xs text-muted-foreground py-2 flex items-center gap-1.5 opacity-60"
+                title="준비 중"
+              >
+                <span className="text-base leading-none">+</span> 새 그룹 만들기
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Main Content */}
