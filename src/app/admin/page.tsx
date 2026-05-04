@@ -146,6 +146,11 @@ interface AdminMembersResponse {
 
 const PERIODS: Period[] = ['7일', '30일', '90일', '전체']
 const ADMIN_ANALYTICS_LAUNCH_START_ISO = '2026-04-30T15:00:00.000Z'
+const DASH_INK = '#17171f'
+const DASH_LIME = '#c8ff2e'
+const DASH_SAGE = '#6f7f2a'
+const DASH_OLIVE = '#8aa400'
+const DASH_LINE = '#e7e3d8'
 const inflightDashboardLoads = new Map<Period, Promise<void>>()
 let inflightMemberRequest: Promise<AdminMemberSummary[]> | null = null
 const EMPTY_FUNNEL: AdminAnalyticsFunnel = {
@@ -313,7 +318,7 @@ function RevenueChartTooltip({ active, payload, label }: { active?: boolean; pay
       <p className="font-bold text-zinc-800 mb-1.5">{String(label).replace(/-/g, '.')}</p>
       {payload.map((p, i) => (
         <div key={i} className="flex items-center gap-2">
-          <span className={`w-3 h-3 rounded-sm inline-block ${p.dataKey === 'revenue' ? 'bg-blue-400' : 'bg-zinc-300'}`} />
+          <span className={`w-3 h-3 rounded-sm inline-block ${p.dataKey === 'revenue' ? 'bg-[#17171f]' : 'bg-[#d8d4cb]'}`} />
           <span className="text-zinc-600">{p.dataKey === 'revenue' ? '주문 완료' : '주문취소'}</span>
           <span className="font-semibold text-zinc-900 ml-auto pl-4">{p.value.toLocaleString()}</span>
         </div>
@@ -357,15 +362,15 @@ function RevenueChart({ data, period }: { data: DailyRevenue[]; period: Period }
       {/* Header: Legend + Toggle */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-5 text-xs text-zinc-500">
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-blue-400 inline-block" /> 주문 완료</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-[#17171f] inline-block" /> 주문 완료</span>
           <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm bg-zinc-200 inline-block" /> 주문취소</span>
         </div>
         {period !== '전체' && (
-          <div className="flex items-center gap-0.5 text-xs text-primary">
+          <div className="flex items-center gap-0.5 text-xs text-[#5f6f20]">
             {(['daily', 'monthly'] as const).map(m => (
               <button key={m} onClick={() => setViewMode(m)}
                 className={`px-2 py-1 rounded font-medium transition-colors cursor-pointer ${
-                  viewMode === m ? 'text-primary underline underline-offset-4' : 'text-zinc-400 hover:text-zinc-600'
+                  viewMode === m ? 'text-[#5f6f20] underline underline-offset-4' : 'text-zinc-400 hover:text-zinc-600'
                 }`}>
                 {m === 'daily' ? '일별' : '월별'}
               </button>
@@ -376,26 +381,26 @@ function RevenueChart({ data, period }: { data: DailyRevenue[]; period: Period }
 
       <ResponsiveContainer width="100%" height={340}>
         <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }} barCategoryGap="20%">
-          <CartesianGrid stroke="#f0f0f0" vertical={false} />
+          <CartesianGrid stroke={DASH_LINE} vertical={false} />
           <XAxis
             dataKey="date"
             tickFormatter={(v: string) => viewMode === 'monthly' || period === '전체' ? v : v.slice(5).replace('-', '/')}
-            tick={{ fontSize: 12, fill: '#999' }}
-            axisLine={{ stroke: '#e5e5e5' }}
+            tick={{ fontSize: 12, fill: '#8a867f' }}
+            axisLine={{ stroke: DASH_LINE }}
             tickLine={false}
             dy={8}
           />
           <YAxis
             tickFormatter={formatYAxis}
-            tick={{ fontSize: 12, fill: '#999' }}
+            tick={{ fontSize: 12, fill: '#8a867f' }}
             axisLine={false}
             tickLine={false}
             width={65}
           />
-          <Tooltip content={<RevenueChartTooltip />} cursor={{ fill: '#f5f5f5' }} />
+          <Tooltip content={<RevenueChartTooltip />} cursor={{ fill: '#f0eee7' }} />
           <Bar
             dataKey="revenue"
-            fill="#6ee7b7"
+            fill={DASH_INK}
             radius={[3, 3, 0, 0]}
             maxBarSize={48}
             animationDuration={600}
@@ -423,7 +428,7 @@ function VisitorChartTooltip({
         <div key={item.dataKey} className="flex items-center gap-2">
           <span
             className={`inline-block h-3 w-3 rounded-sm ${
-              item.dataKey === 'visitors' ? 'bg-blue-600' : 'bg-sky-200'
+              item.dataKey === 'visitors' ? 'bg-[#17171f]' : 'bg-[#c8ff2e]'
             }`}
           />
           <span className="text-zinc-600">{item.dataKey === 'visitors' ? '방문자' : '페이지뷰'}</span>
@@ -455,11 +460,11 @@ function VisitorTrendChart({ data }: { data: AdminAnalyticsDayStat[] }) {
     <div>
       <div className="mb-4 flex items-center gap-5 text-xs text-zinc-500">
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-3 rounded-sm bg-sky-200" />
+          <span className="inline-block h-3 w-3 rounded-sm bg-[#c8ff2e]" />
           페이지뷰
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-3 rounded-sm bg-blue-600" />
+          <span className="inline-block h-3 w-3 rounded-sm bg-[#17171f]" />
           방문자
         </span>
       </div>
@@ -467,31 +472,31 @@ function VisitorTrendChart({ data }: { data: AdminAnalyticsDayStat[] }) {
         <ComposedChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
           <defs>
             <linearGradient id="dashboardVisitorPageViews" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#93c5fd" stopOpacity={0.48} />
-              <stop offset="95%" stopColor="#93c5fd" stopOpacity={0.05} />
+              <stop offset="5%" stopColor={DASH_LIME} stopOpacity={0.42} />
+              <stop offset="95%" stopColor={DASH_LIME} stopOpacity={0.04} />
             </linearGradient>
           </defs>
-          <CartesianGrid stroke="#f0f0f0" vertical={false} />
+          <CartesianGrid stroke={DASH_LINE} vertical={false} />
           <XAxis
             dataKey="date"
             tickFormatter={(value: string) => value.slice(5).replace('-', '/')}
-            tick={{ fontSize: 12, fill: '#999' }}
-            axisLine={{ stroke: '#e5e5e5' }}
+            tick={{ fontSize: 12, fill: '#8a867f' }}
+            axisLine={{ stroke: DASH_LINE }}
             tickLine={false}
             dy={8}
           />
           <YAxis
             tickFormatter={formatYAxis}
-            tick={{ fontSize: 12, fill: '#999' }}
+            tick={{ fontSize: 12, fill: '#8a867f' }}
             axisLine={false}
             tickLine={false}
             width={50}
           />
-          <Tooltip content={<VisitorChartTooltip />} cursor={{ stroke: '#e5e7eb' }} />
+          <Tooltip content={<VisitorChartTooltip />} cursor={{ stroke: DASH_LINE }} />
           <Area
             type="monotone"
             dataKey="pageViews"
-            stroke="#93c5fd"
+            stroke={DASH_LIME}
             fill="url(#dashboardVisitorPageViews)"
             strokeWidth={1.5}
             name="페이지뷰"
@@ -499,10 +504,10 @@ function VisitorTrendChart({ data }: { data: AdminAnalyticsDayStat[] }) {
           <Line
             type="monotone"
             dataKey="visitors"
-            stroke="#2563eb"
+            stroke={DASH_INK}
             strokeWidth={2.4}
-            dot={{ r: 3, fill: '#2563eb' }}
-            activeDot={{ r: 5 }}
+            dot={{ r: 3, fill: DASH_LIME, stroke: DASH_INK, strokeWidth: 1.5 }}
+            activeDot={{ r: 5, fill: DASH_LIME, stroke: DASH_INK }}
             name="방문자"
           />
         </ComposedChart>
@@ -513,12 +518,12 @@ function VisitorTrendChart({ data }: { data: AdminAnalyticsDayStat[] }) {
 
 function ConversionFunnel({ data }: { data: AdminAnalyticsFunnel }) {
   const steps = [
-    { label: '방문자', detail: 'page_views 세션', value: data.visitors, accent: '#2563eb' },
-    { label: '문서스토어/상품 조회', detail: '/store 접속 세션', value: data.storeViews, accent: '#4f46e5' },
-    { label: '장바구니 진입', detail: '/cart 접속 세션', value: data.cartViews, accent: '#0284c7' },
-    { label: '결제 진입', detail: '/checkout 접속 세션', value: data.checkoutViews, accent: '#f59e0b' },
-    { label: '주문 생성', detail: '취소/환불 제외 주문', value: data.orders, accent: '#ea580c' },
-    { label: '구매 완료', detail: 'paid/completed 주문', value: data.completed, accent: '#059669' },
+    { label: '방문자', detail: 'page_views 세션', value: data.visitors, accent: DASH_INK },
+    { label: '문서스토어/상품 조회', detail: '/store 접속 세션', value: data.storeViews, accent: DASH_SAGE },
+    { label: '장바구니 진입', detail: '/cart 접속 세션', value: data.cartViews, accent: DASH_OLIVE },
+    { label: '결제 진입', detail: '/checkout 접속 세션', value: data.checkoutViews, accent: '#d7a51f' },
+    { label: '주문 생성', detail: '취소/환불 제외 주문', value: data.orders, accent: '#b35c27' },
+    { label: '구매 완료', detail: 'paid/completed 주문', value: data.completed, accent: '#0f9f6e' },
   ]
   const max = Math.max(data.visitors, 1)
 
@@ -532,7 +537,7 @@ function ConversionFunnel({ data }: { data: AdminAnalyticsFunnel }) {
         return (
           <div
             key={step.label}
-            className="relative overflow-hidden rounded-[18px] border border-[#e6e0d6] bg-[#fcfbf8] p-4"
+            className="relative overflow-hidden rounded-[18px] border border-[#e1ddd3] bg-[#fffdf8] p-4"
           >
             <div
               className="absolute inset-x-0 bottom-0 h-1"
@@ -540,10 +545,10 @@ function ConversionFunnel({ data }: { data: AdminAnalyticsFunnel }) {
             />
             <div className="mb-5 flex items-start justify-between gap-3">
               <span
-                className="flex h-8 w-8 items-center justify-center rounded-[10px] font-mono text-xs font-bold text-white"
+                className="flex h-8 w-8 items-center justify-center rounded-[10px] font-mono text-xs font-bold"
                 style={{ backgroundColor: step.accent }}
               >
-                {index + 1}
+                <span style={{ color: index === 0 ? DASH_LIME : '#ffffff' }}>{index + 1}</span>
               </span>
               <span className="font-mono text-[11px] font-semibold text-[#6b665c]">{pct}%</span>
             </div>
@@ -569,7 +574,7 @@ function ConversionFunnel({ data }: { data: AdminAnalyticsFunnel }) {
 function AvatarInitial({ name }: { name: string }) {
   const initial = (name || '?')[0].toUpperCase()
   return (
-    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-semibold shrink-0">
+    <div className="w-8 h-8 rounded-full bg-[#f1ffd2] text-[#5f6f20] flex items-center justify-center text-sm font-semibold shrink-0">
       {initial}
     </div>
   )
@@ -614,9 +619,9 @@ function DashboardPanel({
 }) {
   return (
     <section
-      className={`relative overflow-hidden rounded-[24px] border border-[#ddd6ca] bg-white/90 p-5 shadow-[0_20px_60px_-42px_rgba(37,99,235,0.35)] backdrop-blur ${className}`}
+      className={`relative overflow-hidden rounded-[24px] border border-[#d8d4cb] bg-[#fffdf8]/95 p-5 shadow-[0_22px_62px_-48px_rgba(23,23,31,0.26)] ${className}`}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#2563eb]/35 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#c8ff2e]/75 to-transparent" />
       <div className="mb-5 flex items-end justify-between gap-4">
         <div>
           <p className="font-mono text-[10px] font-semibold uppercase tracking-[0.22em] text-[#7b7468]">
@@ -630,7 +635,7 @@ function DashboardPanel({
         {action ?? (href ? (
           <Link
             href={href}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-[#2563eb] transition-colors hover:text-[#1d4ed8]"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-[#5f6f20] transition-colors hover:text-[#17171f]"
           >
             전체보기 <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
@@ -662,7 +667,7 @@ function DashboardKpiCard({
   return (
     <Link
       href={href}
-      className="group relative overflow-hidden rounded-[20px] border border-[#ddd6ca] bg-white/95 p-4 shadow-[0_16px_40px_-36px_rgba(37,99,235,0.45)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#cfc6b9] hover:shadow-[0_24px_56px_-34px_rgba(37,99,235,0.30)]"
+      className="group relative overflow-hidden rounded-[20px] border border-[#d8d4cb] bg-[#fffdf8]/95 p-4 shadow-[0_18px_44px_-38px_rgba(23,23,31,0.30)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#c8c1b4] hover:bg-white hover:shadow-[0_26px_58px_-40px_rgba(23,23,31,0.28)]"
     >
       <div
         className="absolute inset-x-0 top-0 h-1 opacity-80"
@@ -703,7 +708,7 @@ function DashboardKpiCard({
             <span className="text-[11px] text-[#8b8578]">{subtext || '집계 기준 확인'}</span>
           )}
         </div>
-        <span className="text-[11px] font-medium text-[#6b665c] transition-colors group-hover:text-[#2563eb]">
+        <span className="text-[11px] font-medium text-[#6b665c] transition-colors group-hover:text-[#5f6f20]">
           이동
         </span>
       </div>
@@ -721,7 +726,7 @@ function NotificationIcon({ type }: { type: Notification['type'] | ActivityFeedI
   }
   if (type === 'consulting') {
     return (
-      <div className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-sky-200 bg-sky-50 text-sky-700">
+      <div className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-[#d8dfbe] bg-[#f2f5e7] text-[#6f7f2a]">
         <MessageSquare className="h-4 w-4" />
       </div>
     )
@@ -734,7 +739,7 @@ function NotificationIcon({ type }: { type: Notification['type'] | ActivityFeedI
     )
   }
   return (
-    <div className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-blue-200 bg-blue-50 text-blue-700">
+    <div className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-[#d5e78b] bg-[#f1ffd2] text-[#5f6f20]">
       <Download className="h-4 w-4" />
     </div>
   )
@@ -1328,7 +1333,7 @@ export default function AdminDashboard() {
       icon: Megaphone,
       label: '오늘 배포 공고',
       value: `${todayAnnCount}건`,
-      color: 'bg-blue-600',
+      color: 'bg-[#8aa400]',
       href: '/admin/announcements',
       emphasis: false,
       change: null,
@@ -1381,7 +1386,7 @@ export default function AdminDashboard() {
       icon: Rss,
       label: '오늘 배포 피드',
       value: `${todayFeedCount}건`,
-      color: 'bg-orange-500',
+      color: 'bg-[#6f7f2a]',
       href: '/admin/feeds',
       emphasis: false,
       change: null,
@@ -1454,9 +1459,9 @@ export default function AdminDashboard() {
 
   return (
     <>
-      <div className="relative overflow-hidden rounded-[28px] border border-[#ddd6ca] bg-[#faf9f7] shadow-[0_30px_80px_-54px_rgba(37,99,235,0.45)]">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.08),transparent_38%)]" />
-        <div className="pointer-events-none absolute inset-0 opacity-[0.04] [background-image:linear-gradient(rgba(37,99,235,0.35)_1px,transparent_1px),linear-gradient(90deg,rgba(37,99,235,0.35)_1px,transparent_1px)] [background-size:46px_46px]" />
+      <div className="relative overflow-hidden rounded-[28px] border border-[#d8d4cb] bg-[#f6f5ef] shadow-[0_32px_82px_-58px_rgba(23,23,31,0.36)]">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(200,255,46,0.18),transparent_34%),radial-gradient(circle_at_88%_0%,rgba(23,23,31,0.08),transparent_32%)]" />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.045] [background-image:linear-gradient(rgba(23,23,31,0.24)_1px,transparent_1px),linear-gradient(90deg,rgba(23,23,31,0.24)_1px,transparent_1px)] [background-size:46px_46px]" />
 
         <div className="relative space-y-6 p-4 md:p-8">
           <header className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -1485,7 +1490,7 @@ export default function AdminDashboard() {
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 href="/admin/products/new"
-                className="inline-flex items-center gap-2 rounded-[12px] bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_12px_30px_-16px_rgba(37,99,235,0.7)] transition-all hover:-translate-y-0.5 hover:bg-[#1d4ed8]"
+                className="inline-flex items-center gap-2 rounded-[12px] bg-[#17171f] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_16px_34px_-22px_rgba(23,23,31,0.62)] transition-all hover:-translate-y-0.5 hover:bg-[#262634]"
               >
                 <PlusCircle className="h-4 w-4" />
                 새 상품 등록
@@ -1505,7 +1510,7 @@ export default function AdminDashboard() {
               >
                 <Bell className="h-4.5 w-4.5" />
                 {notifications.length > 0 && (
-                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#1e40af] px-1 text-[10px] font-bold text-white">
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#17171f] px-1 text-[10px] font-bold text-[#c8ff2e]">
                     {notifications.length}
                   </span>
                 )}
@@ -1526,7 +1531,7 @@ export default function AdminDashboard() {
                     onClick={() => setPeriod(p)}
                     className={`rounded-[10px] px-3 py-1.5 text-sm font-medium transition-colors ${
                       period === p
-                        ? 'bg-[#2563eb] text-white shadow-[0_8px_18px_-12px_rgba(37,99,235,0.75)]'
+                        ? 'bg-[#17171f] text-[#c8ff2e] shadow-[0_10px_20px_-14px_rgba(23,23,31,0.7)]'
                         : 'text-[#6b665c] hover:text-[#1a1814]'
                     }`}
                   >
@@ -1554,11 +1559,11 @@ export default function AdminDashboard() {
                   href={card.href}
                   icon={card.icon}
                   accent={
-                    card.label.includes('매출') ? '#1e40af'
-                      : card.label.includes('공고') ? '#0891b2'
-                      : card.label.includes('피드') ? '#60a5fa'
-                      : card.label.includes('다운로드') ? '#10b981'
-                      : '#2563eb'
+                    card.label.includes('매출') ? DASH_INK
+                      : card.label.includes('공고') ? DASH_OLIVE
+                      : card.label.includes('피드') ? DASH_SAGE
+                      : card.label.includes('다운로드') ? '#0f9f6e'
+                      : DASH_INK
                   }
                   change={card.change}
                   subtext={card.subtext || (period === '전체' ? '전체 기간' : `최근 ${period}`)}
@@ -1640,7 +1645,7 @@ export default function AdminDashboard() {
                             onClick={() => router.push(`/admin/orders?search=${encodeURIComponent(order.order_number)}`)}
                             className="cursor-pointer border-b border-[#f1ece4] text-[#3d3a35] transition-colors hover:bg-[#fbf8f3]"
                           >
-                            <td className="px-2 py-4 font-mono text-[12px] font-semibold text-[#1e40af]">{order.order_number}</td>
+                            <td className="px-2 py-4 font-mono text-[12px] font-semibold text-[#5f6f20]">{order.order_number}</td>
                             <td className="px-2 py-4">{profile?.name || '-'}</td>
                             <td className="px-2 py-4 text-right font-mono font-semibold text-[#1a1814]">{formatAmount(order.total_amount)}원</td>
                             <td className="px-2 py-4 text-center">
@@ -1670,7 +1675,7 @@ export default function AdminDashboard() {
                       onClick={() => router.push(`/admin/products/${product.id}`)}
                       className="flex w-full items-center gap-3 rounded-[16px] border border-transparent px-1 py-2 text-left transition-colors hover:border-[#e6e0d6] hover:bg-[#fcfbf8]"
                     >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-blue-200 bg-blue-50 font-mono text-sm font-bold text-[#1e40af]">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-[12px] border border-[#d5e78b] bg-[#f1ffd2] font-mono text-sm font-bold text-[#5f6f20]">
                         {index + 1}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -1850,7 +1855,7 @@ export default function AdminDashboard() {
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className="rounded-[18px] border border-[#ddd6ca] bg-white/95 p-4 shadow-[0_18px_34px_-30px_rgba(37,99,235,0.35)]"
+                      className="rounded-[18px] border border-[#d8d4cb] bg-[#fffdf8]/95 p-4 shadow-[0_18px_34px_-30px_rgba(23,23,31,0.26)]"
                     >
                       <div className="flex items-start gap-3">
                         <NotificationIcon type={notification.type} />
