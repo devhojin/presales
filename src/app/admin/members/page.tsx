@@ -1696,7 +1696,7 @@ export default function AdminMembers() {
     <div className="min-h-screen bg-muted">
       <div className="flex max-w-[1400px] mx-auto">
         {/* Left Sidebar */}
-        <div className="w-[200px] flex-shrink-0 p-4 pt-8">
+        <div className="w-[200px] flex-shrink-0 p-4 pt-3">
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-3">
             회원 그룹
           </h2>

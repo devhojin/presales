@@ -133,19 +133,18 @@ function getBadgeCountForSection(section: AdminSection, badges: Record<string, n
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const [sectionRailCollapsed, setSectionRailCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem('admin-section-rail-collapsed') === 'true'
-  })
-  const [globalNavExpanded, setGlobalNavExpanded] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem('admin-global-nav-expanded') === 'true'
-  })
+  const [sectionRailCollapsed, setSectionRailCollapsed] = useState(false)
+  const [globalNavExpanded, setGlobalNavExpanded] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [badges, setBadges] = useState<Record<string, number>>({})
   const activeSection = getActiveSection(pathname)
   const activeItem = getActiveItem(pathname)
   const ActiveSectionIcon = activeSection.icon
+
+  useEffect(() => {
+    setSectionRailCollapsed(localStorage.getItem('admin-section-rail-collapsed') === 'true')
+    setGlobalNavExpanded(localStorage.getItem('admin-global-nav-expanded') === 'true')
+  }, [])
 
   // 사이드바 뱃지 카운트 로드 (middleware가 admin 권한 보장)
   const [ready, setReady] = useState(false)
