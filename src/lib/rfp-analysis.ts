@@ -709,7 +709,7 @@ export function buildReportHtml(
     .eyebrow { color:#93c5fd; font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
     h1 { margin:10px 0 8px; font-size:30px; line-height:1.25; }
     .meta { color:#cbd5e1; font-size:13px; }
-    .grid { display:grid; grid-template-columns: 1fr 1.15fr; gap:0; background:white; border:1px solid var(--line); border-top:0; }
+    .grid { display:grid; grid-template-columns: minmax(0, 1.18fr) minmax(320px, .82fr); gap:0; background:white; border:1px solid var(--line); border-top:0; }
     .panel { padding: 24px; border-right:1px solid var(--line); }
     .panel:last-child { border-right:0; }
     h2 { margin:0 0 16px; font-size:18px; }
@@ -721,10 +721,26 @@ export function buildReportHtml(
     .source span { display:inline-block; margin-right:6px; color:var(--blue); font-weight:700; }
     .source small { display:block; margin-top:4px; font-size:11px; line-height:1.45; }
     .section { background:white; border:1px solid var(--line); border-top:0; padding:24px; }
-    .eval th { width:auto; }
-    .eval .score { width:64px; text-align:center; font-weight:800; color:var(--blue); }
-    .eval .pages { width:86px; text-align:center; font-weight:800; color:#047857; }
-    .page-basis { margin: -4px 0 12px; padding:10px 12px; border:1px solid #bbf7d0; border-radius:10px; background:#f0fdf4; color:#166534; font-size:12px; line-height:1.55; }
+    .focus-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; }
+    .focus-card { border:1px solid var(--line); border-radius:12px; background:var(--soft); padding:14px; }
+    .focus-card strong { display:block; margin-bottom:8px; font-size:13px; color:#334155; }
+    .eval-section { padding:28px 24px 30px; }
+    .eval-head { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:14px; }
+    .eval-head h2 { margin:0; }
+    .eval-wrap { width:100%; overflow-x:auto; border:1px solid var(--line); }
+    .eval-wrap .eval { border:0; }
+    .eval { table-layout:auto; min-width:1040px; }
+    .eval th, .eval td { border-top:0; }
+    .eval th:first-child, .eval td:first-child { border-left:0; }
+    .eval th:last-child, .eval td:last-child { border-right:0; }
+    .eval tbody tr:last-child td { border-bottom:0; }
+    .eval .category { width:13%; }
+    .eval .section-col { width:15%; }
+    .eval .item-col { width:18%; }
+    .eval .criterion-col { width:34%; }
+    .eval .score { width:8%; min-width:72px; text-align:center; font-weight:800; color:var(--blue); }
+    .eval .pages { width:12%; min-width:96px; text-align:center; font-weight:800; color:#047857; }
+    .page-basis { flex:1; max-width:620px; margin:0; padding:10px 12px; border:1px solid #bbf7d0; border-radius:10px; background:#f0fdf4; color:#166534; font-size:12px; line-height:1.55; }
     .cards { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; }
     .mini-card, .promo-card, blockquote { border:1px solid var(--line); border-radius:12px; background:var(--soft); padding:14px; }
     .mini-card strong, .promo-card strong { display:block; font-size:14px; margin-bottom:6px; }
@@ -738,7 +754,7 @@ export function buildReportHtml(
     .empty { color:var(--muted); font-size:13px; margin:0; }
     footer { background: var(--navy); color:#cbd5e1; padding:20px 30px; border-radius:0 0 18px 18px; font-size:12px; line-height:1.7; }
     footer strong { color:white; }
-    @media (max-width: 900px) { .page { padding:12px; } .grid, .promo { grid-template-columns:1fr; } .panel { border-right:0; border-bottom:1px solid var(--line); } .cards { grid-template-columns:1fr; } }
+    @media (max-width: 900px) { .page { padding:12px; } .grid, .promo { grid-template-columns:1fr; } .panel { border-right:0; border-bottom:1px solid var(--line); } .focus-grid { grid-template-columns:1fr; } .eval-head { display:block; } .page-basis { max-width:none; margin-top:10px; } .cards { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
@@ -762,10 +778,6 @@ export function buildReportHtml(
             <tr><th>사업금액</th><td>${evidenceCell(result.budget)}</td></tr>
             <tr><th>입찰방법</th><td>${evidenceCell(result.bidMethod)}</td></tr>
             <tr><th>계약방법</th><td>${evidenceCell(result.contractMethod)}</td></tr>
-            <tr><th>참가자격</th><td>${evidenceCell(result.eligibility)}</td></tr>
-            <tr><th>사업 배경/목적</th><td>${evidenceCell(result.backgroundPurpose)}</td></tr>
-            <tr><th>사업범위</th><td>${evidenceCell(result.scope)}</td></tr>
-            <tr><th>공동수급</th><td>${evidenceCell(result.consortium)}</td></tr>
           </tbody>
         </table>
       </section>
@@ -783,10 +795,27 @@ export function buildReportHtml(
           </tbody>
         </table>
 
-        <h2 style="margin-top:24px">평가 항목/배점</h2>
+      </section>
+    </div>
+
+    <section class="section">
+      <h2>사업 범위/참여 조건</h2>
+      <div class="focus-grid">
+        <div class="focus-card"><strong>참가자격</strong>${evidenceCell(result.eligibility)}</div>
+        <div class="focus-card"><strong>사업 배경/목적</strong>${evidenceCell(result.backgroundPurpose)}</div>
+        <div class="focus-card"><strong>사업범위</strong>${evidenceCell(result.scope)}</div>
+        <div class="focus-card"><strong>공동수급</strong>${evidenceCell(result.consortium)}</div>
+      </div>
+    </section>
+
+    <section class="section eval-section">
+      <div class="eval-head">
+        <h2>평가 항목/배점</h2>
         ${pageAllocation.pageLimit && pageAllocation.totalScore > 0 ? `<div class="page-basis">정성적평가 제안서 ${pageAllocation.pageLimit}쪽 이내 기준 · 정성평가 ${pageAllocation.totalScore}점 배점 비례 권장 페이지수</div>` : '<div class="page-basis">정성적평가 제안서 페이지수 기준을 원문에서 확인하지 못해 권장 페이지수를 산정하지 않았습니다.</div>'}
+      </div>
+      <div class="eval-wrap">
         <table class="eval">
-          <thead><tr><th>구분</th><th>제안서 장/절</th><th>평가항목</th><th>평가기준</th><th class="score">배점</th><th class="pages">권장쪽수</th></tr></thead>
+          <thead><tr><th class="category">구분</th><th class="section-col">제안서 장/절</th><th class="item-col">평가항목</th><th class="criterion-col">평가기준</th><th class="score">배점</th><th class="pages">권장쪽수</th></tr></thead>
           <tbody>
             ${result.evaluationItems.length > 0 ? result.evaluationItems.map((item, index) => {
               const pages = pageAllocation.allocations.get(index)
@@ -802,8 +831,8 @@ export function buildReportHtml(
             `}).join('') : '<tr><td colspan="6" class="empty">근거가 확인된 평가항목을 찾지 못했습니다.</td></tr>'}
           </tbody>
         </table>
-      </section>
-    </div>
+      </div>
+    </section>
 
     <section class="section">
       <h2>주요 과업 요구사항</h2>

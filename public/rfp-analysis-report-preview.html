@@ -14,7 +14,7 @@
     h1 { margin:10px 0 8px; font-size:30px; line-height:1.25; }
     .meta { color:#cbd5e1; font-size:13px; }
     .notice { margin-top:14px; display:inline-block; border:1px solid rgba(147,197,253,.45); border-radius:999px; padding:6px 10px; color:#dbeafe; font-size:12px; }
-    .grid { display:grid; grid-template-columns: 1fr 1.15fr; gap:0; background:white; border:1px solid var(--line); border-top:0; }
+    .grid { display:grid; grid-template-columns: minmax(0, 1.18fr) minmax(320px, .82fr); gap:0; background:white; border:1px solid var(--line); border-top:0; }
     .panel { padding: 24px; border-right:1px solid var(--line); }
     .panel:last-child { border-right:0; }
     h2 { margin:0 0 16px; font-size:18px; }
@@ -26,10 +26,26 @@
     .source span { display:inline-block; margin-right:6px; color:var(--blue); font-weight:700; }
     .source small { display:block; margin-top:4px; font-size:11px; line-height:1.45; }
     .section { background:white; border:1px solid var(--line); border-top:0; padding:24px; }
-    .eval th { width:auto; }
-    .eval .score { width:64px; text-align:center; font-weight:800; color:var(--blue); }
-    .eval .pages { width:86px; text-align:center; font-weight:800; color:#047857; }
-    .page-basis { margin: -4px 0 12px; padding:10px 12px; border:1px solid #bbf7d0; border-radius:10px; background:#f0fdf4; color:#166534; font-size:12px; line-height:1.55; }
+    .focus-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; }
+    .focus-card { border:1px solid var(--line); border-radius:12px; background:var(--soft); padding:14px; }
+    .focus-card strong { display:block; margin-bottom:8px; font-size:13px; color:#334155; }
+    .eval-section { padding:28px 24px 30px; }
+    .eval-head { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:14px; }
+    .eval-head h2 { margin:0; }
+    .eval-wrap { width:100%; overflow-x:auto; border:1px solid var(--line); }
+    .eval-wrap .eval { border:0; }
+    .eval { table-layout:auto; min-width:1040px; }
+    .eval th, .eval td { border-top:0; }
+    .eval th:first-child, .eval td:first-child { border-left:0; }
+    .eval th:last-child, .eval td:last-child { border-right:0; }
+    .eval tbody tr:last-child td { border-bottom:0; }
+    .eval .category { width:13%; }
+    .eval .section-col { width:15%; }
+    .eval .item-col { width:18%; }
+    .eval .criterion-col { width:34%; }
+    .eval .score { width:8%; min-width:72px; text-align:center; font-weight:800; color:var(--blue); }
+    .eval .pages { width:12%; min-width:96px; text-align:center; font-weight:800; color:#047857; }
+    .page-basis { flex:1; max-width:620px; margin:0; padding:10px 12px; border:1px solid #bbf7d0; border-radius:10px; background:#f0fdf4; color:#166534; font-size:12px; line-height:1.55; }
     .cards { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; }
     .mini-card, .promo-card, blockquote { border:1px solid var(--line); border-radius:12px; background:var(--soft); padding:14px; }
     .mini-card strong, .promo-card strong { display:block; font-size:14px; margin-bottom:6px; }
@@ -43,7 +59,7 @@
     .empty { color:var(--muted); font-size:13px; margin:0; }
     footer { background: var(--navy); color:#cbd5e1; padding:20px 30px; border-radius:0 0 18px 18px; font-size:12px; line-height:1.7; }
     footer strong { color:white; }
-    @media (max-width: 900px) { .page { padding:12px; } .grid, .promo { grid-template-columns:1fr; } .panel { border-right:0; border-bottom:1px solid var(--line); } .cards { grid-template-columns:1fr; } }
+    @media (max-width: 900px) { .page { padding:12px; } .grid, .promo { grid-template-columns:1fr; } .panel { border-right:0; border-bottom:1px solid var(--line); } .focus-grid { grid-template-columns:1fr; } .eval-head { display:block; } .page-basis { max-width:none; margin-top:10px; } .cards { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
@@ -69,10 +85,6 @@
             <tr><th>사업금액</th><td><div class="value">원문에서 확인 불가</div><div class="source"></div></td></tr>
             <tr><th>입찰방법</th><td><div class="value">협상에 의한 계약체결 방식 적용</div><div class="source"><span>RFP p.25</span><small>예시 원문 근거: 지방계약법 시행령에 따른 협상에 의한 계약체결 방식 적용.</small></div></td></tr>
             <tr><th>계약방법</th><td><div class="value">총액입찰, 협상에 의한 계약</div><div class="source"><span>RFP p.3</span><small>예시 원문 근거: 계약방법은 총액입찰 및 협상에 의한 계약으로 표기됨.</small></div></td></tr>
-            <tr><th>참가자격</th><td><div class="value">관련 법령상 입찰참가자격을 갖추고, 정보시스템 구축 및 소프트웨어사업 관련 등록 요건을 충족한 사업자</div><div class="source"><span>RFP p.6</span><small>예시 원문 근거: 소프트웨어사업자 및 정보통신 관련 자격 보유 요건이 제시됨.</small></div></td></tr>
-            <tr><th>사업 배경/목적</th><td><div class="value">생활안전 데이터를 통합 관리하고 시민 체감형 서비스를 제공하기 위한 데이터 기반 운영체계 고도화</div><div class="source"><span>RFP p.3, TASK p.4</span><small>예시 원문 근거: 분산된 생활안전 데이터를 통합하고 운영 효율을 높이는 것을 목적으로 함.</small></div></td></tr>
-            <tr><th>사업범위</th><td><div class="value">데이터 허브 구축, 대민 서비스 화면 개선, 통합 관제 기능, 보안 체계, 교육 및 안정화 지원</div><div class="source"><span>RFP p.4, TASK p.8</span><small>예시 원문 근거: 수집·연계·관제·운영지원 범위가 과업 범위에 포함됨.</small></div></td></tr>
-            <tr><th>공동수급</th><td><div class="value">공동이행 또는 분담이행 방식 허용, 구성원 수와 지분율은 원문 조건 준수 필요</div><div class="source"><span>RFP p.7</span><small>예시 원문 근거: 공동수급체 구성 방식과 최소 지분율 조건이 명시됨.</small></div></td></tr>
           </tbody>
         </table>
       </section>
@@ -90,10 +102,27 @@
           </tbody>
         </table>
 
-        <h2 style="margin-top:24px">평가 항목/배점</h2>
+      </section>
+    </div>
+
+    <section class="section">
+      <h2>사업 범위/참여 조건</h2>
+      <div class="focus-grid">
+        <div class="focus-card"><strong>참가자격</strong><div class="value">관련 법령상 입찰참가자격을 갖추고, 정보시스템 구축 및 소프트웨어사업 관련 등록 요건을 충족한 사업자</div><div class="source"><span>RFP p.6</span><small>예시 원문 근거: 소프트웨어사업자 및 정보통신 관련 자격 보유 요건이 제시됨.</small></div></div>
+        <div class="focus-card"><strong>사업 배경/목적</strong><div class="value">생활안전 데이터를 통합 관리하고 시민 체감형 서비스를 제공하기 위한 데이터 기반 운영체계 고도화</div><div class="source"><span>RFP p.3, TASK p.4</span><small>예시 원문 근거: 분산된 생활안전 데이터를 통합하고 운영 효율을 높이는 것을 목적으로 함.</small></div></div>
+        <div class="focus-card"><strong>사업범위</strong><div class="value">데이터 허브 구축, 대민 서비스 화면 개선, 통합 관제 기능, 보안 체계, 교육 및 안정화 지원</div><div class="source"><span>RFP p.4, TASK p.8</span><small>예시 원문 근거: 수집·연계·관제·운영지원 범위가 과업 범위에 포함됨.</small></div></div>
+        <div class="focus-card"><strong>공동수급</strong><div class="value">공동이행 또는 분담이행 방식 허용, 구성원 수와 지분율은 원문 조건 준수 필요</div><div class="source"><span>RFP p.7</span><small>예시 원문 근거: 공동수급체 구성 방식과 최소 지분율 조건이 명시됨.</small></div></div>
+      </div>
+    </section>
+
+    <section class="section eval-section">
+      <div class="eval-head">
+        <h2>평가 항목/배점</h2>
         <div class="page-basis">정성적평가 제안서 250쪽 이내 기준 · 정성평가 70점 배점 비례 권장 페이지수</div>
+      </div>
+      <div class="eval-wrap">
         <table class="eval">
-          <thead><tr><th>구분</th><th>제안서 장/절</th><th>평가항목</th><th>평가기준</th><th class="score">배점</th><th class="pages">권장쪽수</th></tr></thead>
+          <thead><tr><th class="category">구분</th><th class="section-col">제안서 장/절</th><th class="item-col">평가항목</th><th class="criterion-col">평가기준</th><th class="score">배점</th><th class="pages">권장쪽수</th></tr></thead>
           <tbody>
               <tr>
                 <td>가격평가</td>
@@ -225,8 +254,8 @@
               </tr>
           </tbody>
         </table>
-      </section>
-    </div>
+      </div>
+    </section>
 
     <section class="section">
       <h2>주요 과업 요구사항</h2>
