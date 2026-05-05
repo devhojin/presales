@@ -299,6 +299,7 @@ export default function FeedsClient() {
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">IT피드</h1>
         </div>
         <p className="text-muted-foreground">스타트업, IT, 정책 뉴스를 매일 업데이트합니다</p>
+        <p className="mt-2 text-sm font-medium text-primary">AI가 매일 새벽 최신 뉴스를 불러와서 보여드립니다.</p>
       </div>
 
       {/* Search + Filters */}

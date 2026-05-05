@@ -396,6 +396,7 @@ export default function AnnouncementsClient() {
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">공고 사업</h1>
         </div>
         <p className="text-muted-foreground">정부 지원사업 공고 정보를 확인하세요</p>
+        <p className="mt-2 text-sm font-medium text-primary">AI가 매일 새벽 최신 공고를 불러와서 보여드립니다.</p>
       </div>
 
       {/* Search + Filters */}
