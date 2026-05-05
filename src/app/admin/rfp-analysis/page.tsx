@@ -1,0 +1,424 @@
+'use client'
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Badge } from '@/components/ui/badge'
+import {
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  FileSearch,
+  Loader2,
+  RefreshCw,
+  Search,
+} from 'lucide-react'
+
+type RfpStatus = 'all' | 'created' | 'extracting' | 'analyzing' | 'rendering' | 'completed' | 'failed'
+
+type AdminRfpJob = {
+  id: string
+  userId: string
+  user: {
+    id: string
+    email: string | null
+    name: string | null
+    company: string | null
+  } | null
+  status: string
+  progress: number
+  step: string | null
+  rfpFileName: string
+  taskFileName: string | null
+  projectTitle: string | null
+  reportHtmlPath: string | null
+  errorMessage: string | null
+  openaiResponseId: string | null
+  sourcePageCount: number | null
+  createdAt: string
+  completedAt: string | null
+  downloadCount: number
+  summary: {
+    projectTitle: string | null
+    organization: string | null
+    period: string | null
+    budget: string | null
+    evaluationMethod: string | null
+    quantitativeScore: string | null
+    qualitativeScore: string | null
+    priceScore: string | null
+    keyRequirementsCount: number
+    questionsCount: number
+  }
+}
+
+type JobsResponse = {
+  jobs: AdminRfpJob[]
+  pagination: {
+    page: number
+    pageSize: number
+    totalCount: number
+    totalPages: number
+  }
+}
+
+const PAGE_SIZE = 20
+
+const statusOptions: Array<{ value: RfpStatus; label: string }> = [
+  { value: 'all', label: '전체' },
+  { value: 'created', label: '업로드 대기' },
+  { value: 'extracting', label: '원문 추출' },
+  { value: 'analyzing', label: 'AI 분석중' },
+  { value: 'rendering', label: 'HTML 생성' },
+  { value: 'completed', label: '완료' },
+  { value: 'failed', label: '실패' },
+]
+
+const statusMap: Record<string, { label: string; className: string }> = {
+  created: { label: '업로드 대기', className: 'border-slate-200 bg-slate-50 text-slate-700' },
+  extracting: { label: '원문 추출', className: 'border-blue-200 bg-blue-50 text-blue-800' },
+  analyzing: { label: 'AI 분석중', className: 'border-blue-200 bg-blue-50 text-blue-800' },
+  rendering: { label: 'HTML 생성', className: 'border-blue-200 bg-blue-50 text-blue-800' },
+  completed: { label: '완료', className: 'border-emerald-200 bg-emerald-50 text-emerald-700' },
+  failed: { label: '실패', className: 'border-red-200 bg-red-50 text-red-700' },
+}
+
+function formatDateTime(value: string | null) {
+  if (!value) return '-'
+  return new Date(value).toLocaleString('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function triggerBrowserDownload(url: string, fileName?: string) {
+  const anchor = document.createElement('a')
+  anchor.href = url
+  if (fileName) anchor.download = fileName
+  anchor.rel = 'noopener noreferrer'
+  anchor.style.display = 'none'
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+}
+
+function compactText(value: string | null, fallback = '-') {
+  return value && value !== '원문에서 확인 불가' ? value : fallback
+}
+
+function userLabel(job: AdminRfpJob) {
+  return job.user?.name || job.user?.email || job.userId
+}
+
+export default function AdminRfpAnalysisPage() {
+  const [jobs, setJobs] = useState<AdminRfpJob[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [page, setPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const [totalPages, setTotalPages] = useState(1)
+  const [status, setStatus] = useState<RfpStatus>('all')
+  const [searchInput, setSearchInput] = useState('')
+  const [search, setSearch] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
+
+  const loadJobs = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(PAGE_SIZE),
+      status,
+    })
+    if (search) params.set('q', search)
+    if (dateFrom) params.set('dateFrom', dateFrom)
+    if (dateTo) params.set('dateTo', dateTo)
+
+    try {
+      const res = await fetch(`/api/admin/rfp-analysis/jobs?${params.toString()}`, {
+        cache: 'no-store',
+        credentials: 'same-origin',
+      })
+      const data = await res.json().catch(() => ({})) as Partial<JobsResponse> & { error?: string }
+      if (!res.ok) {
+        setError(data.error || 'AI 분석 목록을 불러오지 못했습니다')
+        setJobs([])
+        setTotalCount(0)
+        setTotalPages(1)
+        return
+      }
+      setJobs(data.jobs || [])
+      setTotalCount(data.pagination?.totalCount || 0)
+      setTotalPages(data.pagination?.totalPages || 1)
+    } catch {
+      setError('AI 분석 목록 조회 중 오류가 발생했습니다')
+      setJobs([])
+      setTotalCount(0)
+      setTotalPages(1)
+    } finally {
+      setLoading(false)
+    }
+  }, [dateFrom, dateTo, page, search, status])
+
+  useEffect(() => {
+    void loadJobs()
+  }, [loadJobs])
+
+  const completedCount = useMemo(() => jobs.filter((job) => job.status === 'completed').length, [jobs])
+  const failedCount = useMemo(() => jobs.filter((job) => job.status === 'failed').length, [jobs])
+
+  function handleSearchSubmit(event: React.FormEvent) {
+    event.preventDefault()
+    setPage(1)
+    setSearch(searchInput.trim())
+  }
+
+  function handleStatusChange(nextStatus: RfpStatus) {
+    setPage(1)
+    setStatus(nextStatus)
+  }
+
+  async function handleDownload(jobId: string) {
+    setDownloadingId(jobId)
+    try {
+      const res = await fetch(`/api/admin/rfp-analysis/jobs/${jobId}/report`, {
+        cache: 'no-store',
+        credentials: 'same-origin',
+      })
+      const data = await res.json().catch(() => ({})) as { url?: string; fileName?: string; error?: string }
+      if (!res.ok || !data.url) {
+        setError(data.error || '리포트 다운로드 URL을 만들지 못했습니다')
+        return
+      }
+      triggerBrowserDownload(data.url, data.fileName)
+      await loadJobs()
+    } catch {
+      setError('리포트 다운로드 중 오류가 발생했습니다')
+    } finally {
+      setDownloadingId(null)
+    }
+  }
+
+  function renderStatus(job: AdminRfpJob) {
+    const statusInfo = statusMap[job.status] || { label: job.status, className: 'border-border bg-muted text-muted-foreground' }
+    return <Badge className={`border ${statusInfo.className}`}>{statusInfo.label}</Badge>
+  }
+
+  function renderResultSummary(job: AdminRfpJob) {
+    if (job.status === 'failed') {
+      return (
+        <p className="line-clamp-2 text-xs leading-relaxed text-red-600">
+          {job.errorMessage || '분석 실패'}
+        </p>
+      )
+    }
+
+    const score = [job.summary.quantitativeScore, job.summary.qualitativeScore, job.summary.priceScore]
+      .map((item) => compactText(item, ''))
+      .filter(Boolean)
+      .join(' · ')
+
+    return (
+      <div className="space-y-1 text-xs leading-relaxed text-[#514d46]">
+        <p><span className="font-semibold text-[#17171f]">사업명</span> {compactText(job.summary.projectTitle || job.projectTitle)}</p>
+        <p><span className="font-semibold text-[#17171f]">발주기관</span> {compactText(job.summary.organization)}</p>
+        <p><span className="font-semibold text-[#17171f]">기간/금액</span> {compactText(job.summary.period)} / {compactText(job.summary.budget)}</p>
+        <p><span className="font-semibold text-[#17171f]">평가</span> {score || compactText(job.summary.evaluationMethod)}</p>
+        <p className="text-[#767268]">
+          원문 {job.sourcePageCount ?? '-'}쪽 · 주요 요구사항 {job.summary.keyRequirementsCount}건 · 질의 후보 {job.summary.questionsCount}건
+        </p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-[18px] bg-[#17171f] text-[#c8ff2e]">
+            <FileSearch className="h-5 w-5" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-[-0.02em] text-[#17171f]">AI 분석 관리</h1>
+          <p className="mt-1 text-sm text-[#767268]">
+            언제 누가 어떤 RFP를 올렸고, 어떤 분석 결과가 생성됐는지 확인합니다.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void loadJobs()}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-[#ddd8ce] bg-white px-4 text-sm font-semibold text-[#35332e] hover:bg-[#f2f0eb]"
+        >
+          <RefreshCw className="h-4 w-4" />
+          새로고침
+        </button>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <div className="rounded-[20px] border border-[#e1ddd4] bg-white p-5">
+          <p className="text-xs font-semibold text-[#767268]">전체 분석 건수</p>
+          <p className="mt-2 text-3xl font-bold text-[#17171f]">{totalCount.toLocaleString('ko-KR')}</p>
+        </div>
+        <div className="rounded-[20px] border border-[#e1ddd4] bg-white p-5">
+          <p className="text-xs font-semibold text-[#767268]">현재 페이지 완료</p>
+          <p className="mt-2 text-3xl font-bold text-emerald-700">{completedCount.toLocaleString('ko-KR')}</p>
+        </div>
+        <div className="rounded-[20px] border border-[#e1ddd4] bg-white p-5">
+          <p className="text-xs font-semibold text-[#767268]">현재 페이지 실패</p>
+          <p className="mt-2 text-3xl font-bold text-red-600">{failedCount.toLocaleString('ko-KR')}</p>
+        </div>
+      </div>
+
+      <div className="rounded-[24px] border border-[#e1ddd4] bg-white p-4">
+        <form onSubmit={handleSearchSubmit} className="grid gap-3 lg:grid-cols-[1fr_150px_150px_auto]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8a867f]" />
+            <input
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="회원명, 이메일, 회사명, 사업명, RFP 파일명 검색"
+              className="h-11 w-full rounded-xl border border-[#ddd8ce] bg-white pl-9 pr-3 text-sm outline-none focus:border-[#17171f]"
+            />
+          </div>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(event) => { setPage(1); setDateFrom(event.target.value) }}
+            className="h-11 rounded-xl border border-[#ddd8ce] bg-white px-3 text-sm outline-none focus:border-[#17171f]"
+            title="시작일"
+          />
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(event) => { setPage(1); setDateTo(event.target.value) }}
+            className="h-11 rounded-xl border border-[#ddd8ce] bg-white px-3 text-sm outline-none focus:border-[#17171f]"
+            title="종료일"
+          />
+          <button
+            type="submit"
+            className="h-11 rounded-xl bg-[#17171f] px-5 text-sm font-semibold text-white hover:bg-[#272733]"
+          >
+            검색
+          </button>
+        </form>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {statusOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => handleStatusChange(option.value)}
+              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                status === option.value
+                  ? 'border-[#17171f] bg-[#17171f] text-white'
+                  : 'border-[#ddd8ce] bg-white text-[#5f5b52] hover:bg-[#f2f0eb]'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 rounded-[18px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="h-4 w-4" />
+          {error}
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-[24px] border border-[#e1ddd4] bg-white">
+        <div className="border-b border-[#e8e4dc] px-5 py-4">
+          <h2 className="text-sm font-bold text-[#17171f]">RFP 분석 작업 목록</h2>
+          <p className="mt-1 text-xs text-[#767268]">총 {totalCount.toLocaleString('ko-KR')}건 · {page}/{totalPages}페이지</p>
+        </div>
+
+        {loading ? (
+          <div className="flex min-h-[280px] items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-[#767268]" />
+          </div>
+        ) : jobs.length === 0 ? (
+          <div className="flex min-h-[280px] flex-col items-center justify-center text-center text-[#767268]">
+            <FileSearch className="mb-3 h-10 w-10 opacity-35" />
+            <p className="text-sm">조건에 맞는 AI 분석 작업이 없습니다.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-[#ece9e2]">
+            {jobs.map((job) => {
+              const canDownload = job.status === 'completed' && Boolean(job.reportHtmlPath)
+              return (
+                <div key={job.id} className="grid gap-4 p-5 xl:grid-cols-[190px_230px_minmax(220px,1fr)_minmax(320px,1.4fr)_150px]">
+                  <div>
+                    <p className="text-xs font-semibold text-[#767268]">접수일</p>
+                    <p className="mt-1 text-sm font-semibold text-[#17171f]">{formatDateTime(job.createdAt)}</p>
+                    <p className="mt-1 text-xs text-[#767268]">완료 {formatDateTime(job.completedAt)}</p>
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-[#767268]">회원</p>
+                    <p className="mt-1 truncate text-sm font-semibold text-[#17171f]">{userLabel(job)}</p>
+                    <p className="truncate text-xs text-[#767268]">{job.user?.email || '-'}</p>
+                    <p className="truncate text-xs text-[#767268]">{job.user?.company || '-'}</p>
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="mb-2 flex items-center gap-2">
+                      {renderStatus(job)}
+                      <span className="text-xs text-[#767268]">{job.progress}%</span>
+                    </div>
+                    <p className="line-clamp-2 break-words text-sm font-semibold text-[#17171f]">
+                      {job.projectTitle || job.summary.projectTitle || job.rfpFileName}
+                    </p>
+                    <p className="mt-1 line-clamp-2 break-words text-xs text-[#767268]">RFP: {job.rfpFileName}</p>
+                    {job.taskFileName && <p className="mt-0.5 line-clamp-1 break-words text-xs text-[#767268]">과업: {job.taskFileName}</p>}
+                  </div>
+
+                  <div>{renderResultSummary(job)}</div>
+
+                  <div className="flex flex-col gap-2 xl:items-end">
+                    <p className="text-xs text-[#767268]">다운로드 {job.downloadCount.toLocaleString('ko-KR')}회</p>
+                    <button
+                      type="button"
+                      disabled={!canDownload || downloadingId === job.id}
+                      onClick={() => void handleDownload(job.id)}
+                      className="inline-flex h-10 items-center justify-center gap-1.5 rounded-xl bg-[#17171f] px-4 text-xs font-semibold text-white hover:bg-[#272733] disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      {downloadingId === job.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                      HTML 다운로드
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between border-t border-[#e8e4dc] px-5 py-4">
+          <button
+            type="button"
+            disabled={page <= 1 || loading}
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#ddd8ce] bg-white px-3 text-xs font-semibold text-[#35332e] hover:bg-[#f2f0eb] disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            이전
+          </button>
+          <span className="text-xs text-[#767268]">{page} / {totalPages}</span>
+          <button
+            type="button"
+            disabled={page >= totalPages || loading}
+            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+            className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-[#ddd8ce] bg-white px-3 text-xs font-semibold text-[#35332e] hover:bg-[#f2f0eb] disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            다음
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}

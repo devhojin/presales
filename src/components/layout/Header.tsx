@@ -12,6 +12,7 @@ const navLinks = [
   { href: '/us', label: '우리는' },
   { href: '/store', label: '문서 스토어' },
   { href: '/consulting', label: '컨설팅' },
+  { href: '/ai-analysis', label: 'AI 분석' },
   { href: '/ai-proposal-guide', label: 'AI 제안서 작성법' },
   { href: '/announcements', label: '입찰 공고' },
   { href: '/feeds', label: 'IT피드' },

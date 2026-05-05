@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator'
 import {
   FileText, Download, User, Loader2, Mail, Phone, Building, Pencil, Save, X,
   Lock, Eye, EyeOff, ChevronDown, ShoppingBag, AlertTriangle, Clock, Bookmark,
-  ExternalLink, Megaphone, Rss, Package, ArrowRight, Store,
+  ExternalLink, Megaphone, Rss, Package, ArrowRight, Store, FileSearch,
   ArrowLeft, MessageCircle, HelpCircle, Tag, Copy, Check, Coins,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
@@ -86,7 +86,7 @@ interface DownloadLog {
 }
 
 interface ActivityItem {
-  type: 'order' | 'download' | 'bookmark'
+  type: 'order' | 'download' | 'bookmark' | 'analysis' | 'analysis_download'
   text: string
   time: string
   raw: Date
@@ -113,6 +113,27 @@ interface ConsultingRequest {
   status: string
   created_at: string
   message: string | null
+}
+
+interface RfpAnalysisJob {
+  id: string
+  status: string
+  progress: number
+  step: string | null
+  rfp_file_name: string
+  task_file_name: string | null
+  project_title: string | null
+  report_html_path: string | null
+  error_message: string | null
+  created_at: string
+  completed_at: string | null
+}
+
+interface RfpAnalysisDownload {
+  id: number
+  job_id: string
+  downloaded_at: string
+  rfp_analysis_jobs?: { project_title: string | null; rfp_file_name: string } | { project_title: string | null; rfp_file_name: string }[] | null
 }
 
 interface RewardLedgerItem {
@@ -148,8 +169,28 @@ const consultingStatusMap: Record<string, { label: string; class: string }> = {
   cancelled: { label: '취소', class: 'bg-red-50 text-red-700 border-red-200' },
 }
 
+const rfpAnalysisStatusMap: Record<string, { label: string; class: string }> = {
+  created: { label: '업로드 대기', class: 'bg-slate-50 text-slate-700 border-slate-200' },
+  extracting: { label: '원문 추출', class: 'bg-blue-50 text-blue-800 border-blue-200' },
+  analyzing: { label: 'AI 분석중', class: 'bg-blue-50 text-blue-800 border-blue-200' },
+  rendering: { label: 'HTML 생성', class: 'bg-blue-50 text-blue-800 border-blue-200' },
+  completed: { label: '완료', class: 'bg-green-50 text-green-700 border-green-200' },
+  failed: { label: '실패', class: 'bg-red-50 text-red-700 border-red-200' },
+}
+
 const formatPrice = (price: number) => new Intl.NumberFormat('ko-KR').format(price) + '원'
 const formatDate = (date: string) => new Date(date).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })
+
+function triggerBrowserDownload(url: string, fileName?: string) {
+  const anchor = document.createElement('a')
+  anchor.href = url
+  if (fileName) anchor.download = fileName
+  anchor.rel = 'noopener noreferrer'
+  anchor.style.display = 'none'
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+}
 
 function getOrderItemProduct(item: OrderItem) {
   return Array.isArray(item.products) ? item.products[0] : item.products
@@ -217,9 +258,12 @@ export default function MyConsolePage() {
   const [showCouponModal, setShowCouponModal] = useState(false)
   const [consultingRequests, setConsultingRequests] = useState<ConsultingRequest[]>([])
   const [rewardLedger, setRewardLedger] = useState<RewardLedgerItem[]>([])
+  const [rfpAnalysisJobs, setRfpAnalysisJobs] = useState<RfpAnalysisJob[]>([])
+  const [rfpAnalysisDownloads, setRfpAnalysisDownloads] = useState<RfpAnalysisDownload[]>([])
+  const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null)
 
   // KPI counts
-  const [kpi, setKpi] = useState({ orders: 0, bookmarks: 0, downloads: 0, chats: 0 })
+  const [kpi, setKpi] = useState({ orders: 0, bookmarks: 0, downloads: 0, chats: 0, analyses: 0 })
 
   // UI state
   const [overlay, setOverlay] = useState<'profile' | null>(null)
@@ -283,6 +327,8 @@ export default function MyConsolePage() {
         { data: annBmData },
         { data: feedBmData },
         { data: rewardLedgerData },
+        { data: rfpJobsData },
+        { data: rfpDownloadsData },
       ] = await Promise.all([
         supabase.from('profiles').select('name, email, phone, company, reward_balance, role, created_at').eq('id', user.id).single(),
         supabase.from('orders').select('id, order_number, total_amount, status, created_at, paid_at, payment_method, cash_receipt_url, refund_reason, coupon_discount, reward_discount, order_items(id, price, original_price, discount_amount, discount_reason, discount_source_product_id, products(id, title, price, is_free))').eq('user_id', user.id).order('created_at', { ascending: false }),
@@ -290,6 +336,8 @@ export default function MyConsolePage() {
         supabase.from('announcement_bookmarks').select('announcement_id').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('feed_bookmarks').select('post_id').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('reward_point_ledger').select('id, amount, balance_after, type, status, memo, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
+        supabase.from('rfp_analysis_jobs').select('id, status, progress, step, rfp_file_name, task_file_name, project_title, report_html_path, error_message, created_at, completed_at').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('rfp_analysis_report_downloads').select('id, job_id, downloaded_at, rfp_analysis_jobs(project_title, rfp_file_name)').eq('user_id', user.id).order('downloaded_at', { ascending: false }).limit(10),
       ])
 
       // Purchased products
@@ -367,10 +415,13 @@ export default function MyConsolePage() {
       setOrders(normalizedOrders)
       setDownloadLogs((logsData || []) as DownloadLog[])
       setRewardLedger((rewardLedgerData || []) as RewardLedgerItem[])
+      setRfpAnalysisJobs((rfpJobsData || []) as RfpAnalysisJob[])
+      setRfpAnalysisDownloads((rfpDownloadsData || []) as RfpAnalysisDownload[])
       setKpi({
         orders: ordersData?.length || 0,
         bookmarks: (annBmData?.length || 0) + (feedBmData?.length || 0),
         downloads: logsData?.length || 0,
+        analyses: rfpJobsData?.length || 0,
         chats: 0,
       })
       setLoading(false)
@@ -449,6 +500,34 @@ export default function MyConsolePage() {
     })
   }
 
+  async function handleRfpReportDownload(jobId: string) {
+    setDownloadingReportId(jobId)
+    try {
+      const res = await fetch(`/api/rfp-analysis/jobs/${jobId}/report`)
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        addToast(data.error || 'AI 리포트 다운로드 실패', 'error')
+        return
+      }
+      triggerBrowserDownload(data.url, data.fileName)
+
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: newDownloads } = await supabase
+        .from('rfp_analysis_report_downloads')
+        .select('id, job_id, downloaded_at, rfp_analysis_jobs(project_title, rfp_file_name)')
+        .eq('user_id', user.id)
+        .order('downloaded_at', { ascending: false })
+        .limit(10)
+      setRfpAnalysisDownloads((newDownloads || []) as RfpAnalysisDownload[])
+    } catch {
+      addToast('AI 리포트 다운로드 중 오류가 발생했습니다', 'error')
+    } finally {
+      setDownloadingReportId(null)
+    }
+  }
+
   async function handleRefundRequest(orderId: number, reason: string) {
     setRefundSubmitting(true)
     try {
@@ -510,8 +589,20 @@ export default function MyConsolePage() {
       const title = Array.isArray(l.products) ? l.products[0]?.title : l.products?.title
       items.push({ type: 'download', text: `다운로드 — ${title || l.file_name}`, time: relativeTime(new Date(l.downloaded_at)), raw: new Date(l.downloaded_at) })
     })
+    rfpAnalysisJobs.slice(0, 5).forEach(job => {
+      const title = job.project_title || job.rfp_file_name
+      items.push({ type: 'analysis', text: `AI 분석 요청 — ${title}`, time: relativeTime(new Date(job.created_at)), raw: new Date(job.created_at) })
+      if (job.status === 'completed' && job.completed_at) {
+        items.push({ type: 'analysis', text: `AI 분석 완료 — ${title}`, time: relativeTime(new Date(job.completed_at)), raw: new Date(job.completed_at) })
+      }
+    })
+    rfpAnalysisDownloads.slice(0, 5).forEach(download => {
+      const job = Array.isArray(download.rfp_analysis_jobs) ? download.rfp_analysis_jobs[0] : download.rfp_analysis_jobs
+      const title = job?.project_title || job?.rfp_file_name || 'AI RFP 분석 리포트'
+      items.push({ type: 'analysis_download', text: `AI 리포트 다운로드 — ${title}`, time: relativeTime(new Date(download.downloaded_at)), raw: new Date(download.downloaded_at) })
+    })
     return items.sort((a, b) => b.raw.getTime() - a.raw.getTime()).slice(0, 8)
-  }, [orders, downloadLogs])
+  }, [orders, downloadLogs, rfpAnalysisJobs, rfpAnalysisDownloads])
 
   const orderCounts = useMemo(() => {
     const paid = orders.filter(order => !isFreeOrder(order)).length
@@ -776,7 +867,7 @@ export default function MyConsolePage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
+      <div className="grid grid-cols-2 gap-4 mb-6 lg:grid-cols-4 xl:grid-cols-7">
         {/* 내 쿠폰 (맨 앞, 버튼) */}
         <button
           type="button"
@@ -800,6 +891,7 @@ export default function MyConsolePage() {
         {[
           { label: '내 주문', value: kpi.orders, icon: Package, color: 'text-primary bg-primary/10', href: '#orders' },
           { label: '다운로드', value: kpi.downloads, icon: Download, color: 'text-orange-600 bg-orange-50', href: '#orders' },
+          { label: 'AI 분석', value: kpi.analyses, icon: FileSearch, color: 'text-blue-700 bg-blue-50', href: '#ai-analysis-reports' },
           { label: '공고 즐겨찾기', value: annBookmarks.length, icon: Megaphone, color: 'text-blue-600 bg-blue-50', href: '#bookmarks' },
           { label: '피드 즐겨찾기', value: feedBookmarks.length, icon: Rss, color: 'text-blue-700 bg-blue-50', href: '#bookmarks' },
         ].map(card => (
@@ -882,6 +974,71 @@ export default function MyConsolePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* LEFT Column (2/3) */}
         <div className="lg:col-span-2 space-y-6">
+
+          {/* AI RFP Analysis Reports */}
+          <div id="ai-analysis-reports" className="scroll-mt-24 bg-card border border-border/50 rounded-2xl p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <FileSearch className="w-4 h-4 text-primary" />
+                <h2 className="font-semibold">내 AI 분석 리포트</h2>
+                <span className="text-xs text-muted-foreground">{rfpAnalysisJobs.length}건</span>
+              </div>
+              <Link href="/ai-analysis" className="hidden rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted sm:inline-flex">
+                새 분석
+              </Link>
+            </div>
+
+            {rfpAnalysisJobs.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground">
+                <FileSearch className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p className="text-sm">AI 분석 리포트가 없습니다</p>
+                <Link href="/ai-analysis" className="inline-block mt-3 text-xs text-primary hover:underline">RFP 분석 시작하기</Link>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[420px] overflow-y-auto">
+                {rfpAnalysisJobs.map(report => {
+                  const statusInfo = rfpAnalysisStatusMap[report.status] || { label: report.status, class: 'bg-muted text-muted-foreground border-border' }
+                  const canDownload = report.status === 'completed' && Boolean(report.report_html_path)
+                  const title = report.project_title || report.rfp_file_name
+                  return (
+                    <div key={report.id} className="rounded-xl border border-border/50 p-4 transition-colors hover:bg-muted/20">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                          <div className="mb-1 flex flex-wrap items-center gap-2">
+                            <p className="line-clamp-1 break-words text-sm font-semibold text-foreground">{title}</p>
+                            <Badge className={`text-xs border ${statusInfo.class}`}>{statusInfo.label}</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            RFP: {report.rfp_file_name}{report.task_file_name ? ` · 과업: ${report.task_file_name}` : ''}
+                          </p>
+                          <p className="mt-1 text-[11px] text-muted-foreground">
+                            생성일 {formatDate(report.created_at)}{report.completed_at ? ` · 완료 ${formatDate(report.completed_at)}` : ''}
+                          </p>
+                          {report.status !== 'completed' && report.status !== 'failed' && (
+                            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted">
+                              <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.max(5, report.progress || 0)}%` }} />
+                            </div>
+                          )}
+                          {report.error_message && (
+                            <p className="mt-2 line-clamp-2 text-xs text-red-600">{report.error_message}</p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          disabled={!canDownload || downloadingReportId === report.id}
+                          onClick={() => handleRfpReportDownload(report.id)}
+                          className="flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {downloadingReportId === report.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                          HTML 다운로드
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
 
           {/* Orders Section */}
           <div id="orders" className="bg-card border border-border/50 rounded-2xl p-6">
@@ -1050,8 +1207,8 @@ export default function MyConsolePage() {
               <div className="space-y-3">
                 {activities.map((a, i) => (
                   <div key={i} className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${a.type === 'order' ? 'bg-primary/10 text-primary' : a.type === 'download' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-700'}`}>
-                      {a.type === 'order' ? <Package className="w-4 h-4" /> : a.type === 'download' ? <Download className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${a.type === 'order' ? 'bg-primary/10 text-primary' : a.type === 'download' ? 'bg-orange-50 text-orange-600' : a.type === 'analysis' ? 'bg-blue-50 text-blue-700' : a.type === 'analysis_download' ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'}`}>
+                      {a.type === 'order' ? <Package className="w-4 h-4" /> : a.type === 'download' ? <Download className="w-4 h-4" /> : a.type === 'analysis' ? <FileSearch className="w-4 h-4" /> : a.type === 'analysis_download' ? <Download className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
                     </div>
                     <p className="text-sm text-foreground flex-1 truncate">{a.text}</p>
                     <span className="text-xs text-muted-foreground shrink-0">{a.time}</span>
@@ -1101,6 +1258,7 @@ export default function MyConsolePage() {
               {[
                 { label: '스토어', href: '/store', icon: Store, color: 'from-primary to-blue-700' },
                 { label: '컨설팅', href: '/consulting', icon: HelpCircle, color: 'from-violet-500 to-violet-600' },
+                { label: 'AI 분석', href: '/ai-analysis', icon: FileSearch, color: 'from-sky-500 to-blue-600' },
                 { label: '공고사업', href: '/announcements', icon: Megaphone, color: 'from-blue-500 to-blue-600' },
                 { label: 'IT피드', href: '/feeds', icon: Rss, color: 'from-orange-400 to-orange-500' },
               ].map(link => (

@@ -12,6 +12,7 @@ const FOOTER_GROUPS = [
       { href: '/store', label: '문서 스토어' },
       { href: '/store?price=free', label: '무료 자료' },
       { href: '/consulting', label: '전문가 컨설팅' },
+      { href: '/ai-analysis', label: 'AI RFP 분석' },
       { href: '/solutions', label: '수주 전략 허브' },
       { href: '/announcements', label: '입찰 공고' },
     ],

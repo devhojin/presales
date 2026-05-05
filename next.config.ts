@@ -11,6 +11,7 @@ const scriptSrc = [
   "https://www.googletagmanager.com",
   "https://www.google-analytics.com",
   "https://www.clarity.ms",
+  "https://scripts.clarity.ms",
   "https://t1.kakaocdn.net",
 ].join(" ");
 

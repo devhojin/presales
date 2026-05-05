@@ -4,7 +4,7 @@ import './admin-theme.css'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail, History, Coins, Bell, BookOpen, UserCircle, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail, History, Coins, Bell, BookOpen, UserCircle, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, FileSearch } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 
 type AdminNavItem = {
@@ -98,6 +98,7 @@ const adminSections: AdminSection[] = [
     icon: BarChart3,
     items: [
       { href: '/admin/analytics', icon: BarChart3, label: '통계 분석', description: '방문과 매출 흐름' },
+      { href: '/admin/rfp-analysis', icon: FileSearch, label: 'AI 분석 관리', description: 'RFP 분석 작업과 리포트' },
       { href: '/admin/coupons', icon: Tag, label: '쿠폰 관리', description: '프로모션 코드' },
       { href: '/admin/discount-matches', icon: Link2, label: '할인 매칭', description: '할인 상품 연결' },
     ],
