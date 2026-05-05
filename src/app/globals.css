@@ -366,6 +366,15 @@ input[type="checkbox"], input[type="radio"], select, label[for],
   }
 }
 
+@keyframes presales-review-marquee-left {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
 .presales-payment-ticker {
   width: max-content;
   animation: presales-payment-ticker 22s linear infinite;
@@ -483,6 +492,23 @@ input[type="checkbox"], input[type="radio"], select, label[for],
   animation-play-state: paused;
 }
 
+.presales-review-marquee-wrap {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+
+.presales-review-marquee {
+  display: flex;
+  width: max-content;
+  gap: 1rem;
+  animation: presales-review-marquee-left 46s linear infinite;
+  will-change: transform;
+}
+
+.presales-review-marquee-wrap:hover .presales-review-marquee {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .presales-reveal,
   .presales-hero-main,
@@ -490,7 +516,8 @@ input[type="checkbox"], input[type="radio"], select, label[for],
   .presales-hero-search,
   .presales-floating-note,
   .presales-payment-ticker,
-  .presales-product-rail {
+  .presales-product-rail,
+  .presales-review-marquee {
     animation: none !important;
   }
 }

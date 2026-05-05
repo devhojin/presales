@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { type DbProduct, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
-import { FileText, Download, Globe, Handshake, ArrowRight, ShoppingCart, Check, Star, Quote, ChevronRight, Search, BookOpen, Presentation, Briefcase, TrendingUp, Wrench, AlertTriangle } from 'lucide-react'
+import { FileText, Download, Globe, Handshake, ArrowRight, ShoppingCart, Check, Star, Quote, Search, BookOpen, Presentation, Briefcase, TrendingUp, Wrench, AlertTriangle } from 'lucide-react'
 
 interface StatsData {
   productCount: number
@@ -17,10 +17,29 @@ interface StatsData {
 }
 
 interface ReviewData {
+  id: number
+  productId: number
+  productTitle: string
   text: string
   author: string
-  role: string
   rating: number
+  createdAt: string | null
+}
+
+interface ReviewProductData {
+  id: number
+  title: string
+  is_published: boolean | null
+}
+
+interface ReviewQueryRow {
+  id: number
+  product_id: number
+  content: string | null
+  rating: number
+  reviewer_name: string | null
+  created_at: string | null
+  products: ReviewProductData | ReviewProductData[] | null
 }
 
 interface CategoryCount {
@@ -208,6 +227,62 @@ function ProductRail({
   )
 }
 
+function getReviewProduct(product: ReviewQueryRow['products']) {
+  return Array.isArray(product) ? product[0] || null : product
+}
+
+function ReviewMarquee({ reviews }: { reviews: ReviewData[] }) {
+  const marqueeReviews = [...reviews, ...reviews]
+
+  return (
+    <div className="presales-review-marquee-wrap overflow-hidden py-2">
+      <div className="presales-review-marquee">
+        {marqueeReviews.map((review, index) => (
+          <Link
+            key={`review-${review.id}-${index}`}
+            href={`/store/${review.productId}`}
+            className="group inline-flex min-h-[210px] w-[340px] shrink-0 flex-col justify-between rounded-2xl border border-gray-200/80 bg-white p-6 text-left shadow-[0_12px_34px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_18px_46px_rgba(37,99,235,0.13)] active:scale-[0.99] md:w-[410px]"
+          >
+            <div>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, starIndex) => (
+                    <Star
+                      key={starIndex}
+                      className={`h-3.5 w-3.5 ${
+                        starIndex < review.rating
+                          ? 'fill-amber-400 text-amber-400'
+                          : 'fill-gray-200 text-gray-200'
+                      }`}
+                    />
+                  ))}
+                </div>
+                <Quote className="h-6 w-6 text-blue-100 transition-colors group-hover:text-blue-200" />
+              </div>
+              <p className="line-clamp-4 text-sm leading-relaxed text-gray-800">
+                {review.text}
+              </p>
+            </div>
+
+            <div className="mt-6 border-t border-gray-100 pt-4">
+              <p className="line-clamp-1 text-sm font-bold text-gray-950 transition-colors group-hover:text-blue-700">
+                {review.productTitle}
+              </p>
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold text-gray-500">{review.author}</span>
+                <span className="inline-flex items-center text-xs font-bold text-blue-600">
+                  상품 보기
+                  <ArrowRight className="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Home() {
   const [products, setProducts] = useState<DbProduct[]>([])
   const [categories, setCategories] = useState<{ id: number; name: string }[]>([])
@@ -235,11 +310,12 @@ export default function Home() {
         supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_published', true),
         supabase
           .from('reviews')
-          .select('content, rating, reviewer_name')
+          .select('id, product_id, content, rating, reviewer_name, created_at, products!inner(id, title, is_published)')
           .gte('rating', 4)
           .eq('is_published', true)
+          .eq('products.is_published', true)
           .order('created_at', { ascending: false })
-          .limit(3),
+          .limit(10),
       ])
 
       setCategories(catData || [])
@@ -278,15 +354,19 @@ export default function Home() {
       setCategoryCounts(dynamicCats)
 
       if (reviewsData && reviewsData.length > 0) {
-        const mapped: ReviewData[] = reviewsData.map((r: Record<string, unknown>) => {
-          const name = (r.reviewer_name as string | null) || '익명'
+        const mapped: ReviewData[] = (reviewsData as unknown as ReviewQueryRow[]).map((r) => {
+          const name = r.reviewer_name || '익명'
+          const product = getReviewProduct(r.products)
           return {
-            text: (r.content as string) || '',
+            id: r.id,
+            productId: r.product_id,
+            productTitle: product?.title || '프리세일즈 상품',
+            text: r.content || '',
             author: name.length > 1 ? name[0] + 'OO' : name,
-            role: '고객',
-            rating: r.rating as number,
+            rating: r.rating,
+            createdAt: r.created_at,
           }
-        }).filter((r: ReviewData) => r.text.length > 0)
+        }).filter((r: ReviewData) => r.text.length > 0 && r.productId > 0)
         setReviews(mapped)
       }
 
@@ -640,28 +720,7 @@ export default function Home() {
               <h2 className="text-2xl md:text-3xl font-bold tracking-tight">낙찰 후기</h2>
               <p className="text-muted-foreground mt-2">&quot;이 제안서로 실제 수주했습니다&quot;</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {reviews.map((t, i) => (
-                <div key={i} className="relative bg-background border border-border/50 rounded-2xl p-7 hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-500">
-                  <Quote className="w-8 h-8 text-primary/10 mb-5" />
-                  <p className="text-sm leading-relaxed text-foreground mb-6">{t.text}</p>
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-primary/8 flex items-center justify-center text-sm font-bold text-primary">
-                      {t.author[0]}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-sm">{t.author}</p>
-                      <p className="text-xs text-muted-foreground">{t.role}</p>
-                    </div>
-                    <div className="ml-auto flex items-center gap-0.5">
-                      {[...Array(5)].map((_, si) => (
-                        <Star key={si} className={`w-3.5 h-3.5 ${si < t.rating ? 'fill-amber-400 text-amber-400' : 'fill-muted text-muted'}`} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ReviewMarquee reviews={reviews} />
           </div>
         </section>
       )}
