@@ -101,6 +101,7 @@ const NOT_FOUND = '원문에서 확인 불가'
 const PDFJS_WORKER_SRC = pathToFileURL(
   path.join(process.cwd(), 'node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs'),
 ).href
+let pdfJsDomGlobalsReady: Promise<void> | null = null
 const SOURCE_KEYWORDS = [
   '사업명',
   '과업명',
@@ -190,7 +191,36 @@ export function getRfpAnalysisReportFileName(title: string | null, fallback: str
   return `${base || 'rfp-analysis-report'}.html`
 }
 
+function defineMissingGlobal(name: 'DOMMatrix' | 'ImageData' | 'Path2D', value: unknown) {
+  if (typeof globalThis[name] !== 'undefined') return
+  Object.defineProperty(globalThis, name, {
+    configurable: true,
+    writable: true,
+    value,
+  })
+}
+
+async function ensurePdfJsDomGlobals() {
+  pdfJsDomGlobalsReady ??= (async () => {
+    if (
+      typeof globalThis.DOMMatrix !== 'undefined' &&
+      typeof globalThis.ImageData !== 'undefined' &&
+      typeof globalThis.Path2D !== 'undefined'
+    ) {
+      return
+    }
+
+    const canvas = await import('@napi-rs/canvas')
+    defineMissingGlobal('DOMMatrix', canvas.DOMMatrix)
+    defineMissingGlobal('ImageData', canvas.ImageData)
+    defineMissingGlobal('Path2D', canvas.Path2D)
+  })()
+
+  return pdfJsDomGlobalsReady
+}
+
 export async function extractPdfText(buffer: ArrayBuffer, fileName: string, label: 'RFP' | 'TASK'): Promise<ExtractedPdf> {
+  await ensurePdfJsDomGlobals()
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs')
   pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_SRC
   const doc = await pdfjs.getDocument({

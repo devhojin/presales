@@ -76,6 +76,7 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  serverExternalPackages: ["@napi-rs/canvas"],
   images: {
     remotePatterns: [
       {
