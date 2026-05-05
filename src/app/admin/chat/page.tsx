@@ -324,7 +324,7 @@ function DeleteConfirmModal({ roomName, onCancel, onConfirm }: {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/20 backdrop-blur-sm" onClick={onCancel}>
-      <div className="bg-background border border-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+      <div className="admin-delete-modal-panel border rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold flex items-center gap-2">
             <Trash2 className="w-4 h-4 text-red-500" /> 채팅방 삭제
@@ -342,7 +342,7 @@ function DeleteConfirmModal({ roomName, onCancel, onConfirm }: {
           <button
             onClick={() => handleClick('hide')}
             disabled={deleting !== null}
-            className="w-full p-4 border border-border rounded-xl hover:bg-muted/50 transition-colors text-left cursor-pointer disabled:opacity-50"
+            className="admin-delete-modal-option w-full p-4 border border-border rounded-xl transition-colors text-left cursor-pointer disabled:opacity-50"
           >
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-lg bg-yellow-50 text-yellow-600 flex items-center justify-center shrink-0">
@@ -360,7 +360,7 @@ function DeleteConfirmModal({ roomName, onCancel, onConfirm }: {
           <button
             onClick={() => handleClick('full')}
             disabled={deleting !== null}
-            className="w-full p-4 border border-red-200 rounded-xl hover:bg-red-50 transition-colors text-left cursor-pointer disabled:opacity-50"
+            className="admin-delete-modal-option admin-delete-modal-option-danger w-full p-4 border rounded-xl transition-colors text-left cursor-pointer disabled:opacity-50"
           >
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center shrink-0">

@@ -214,6 +214,32 @@
   opacity: 1;
 }
 
+.admin-tone .admin-delete-modal-panel {
+  background: #ffffff !important;
+  border-color: #ded4c7 !important;
+  color: #17171f;
+  box-shadow:
+    0 36px 90px -44px rgba(29, 23, 17, 0.42),
+    0 18px 50px -34px rgba(37, 99, 235, 0.18) !important;
+}
+
+.admin-tone .admin-delete-modal-option {
+  background: #ffffff !important;
+  border-color: #d8d4cb !important;
+}
+
+.admin-tone .admin-delete-modal-option:hover {
+  background: #f7f6f0 !important;
+}
+
+.admin-tone .admin-delete-modal-option-danger {
+  border-color: #fecaca !important;
+}
+
+.admin-tone .admin-delete-modal-option-danger:hover {
+  background: #fef2f2 !important;
+}
+
 .admin-tone .fixed.top-0.left-0.right-0.h-14 {
   background-color: rgba(247, 246, 240, 0.9) !important;
   border-bottom-color: #d8d4cb !important;
