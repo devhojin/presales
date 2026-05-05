@@ -469,7 +469,9 @@ export function AiAnalysisClient() {
               <div>
                 <p className="font-semibold">비회원도 AI 분석을 이용할 수 있습니다.</p>
                 <p className="mt-1 text-xs leading-5 text-blue-700">
-                  비회원 리포트는 완료 화면에서 바로 다운로드해주세요. 로그인하면 이후 리포트가 나의콘솔에 보관됩니다.
+                  비회원 리포트는 현재 화면에서 다운로드할 수 있습니다.
+                  <br />
+                  회원만 나의콘솔에 분석결과가 보관됩니다.
                 </p>
                 <Link href="/auth/login?redirect=/ai-analysis" className="mt-1 inline-flex text-xs font-semibold text-blue-900 underline">
                   로그인하고 보관하기
@@ -598,7 +600,13 @@ export function AiAnalysisClient() {
           <p className="mt-4 text-xs leading-6 text-slate-400">
             {userEmail
               ? '완성된 리포트는 나의콘솔의 내 AI 분석 리포트에서도 다시 다운로드할 수 있습니다.'
-              : '비회원 리포트는 현재 화면에서 다운로드할 수 있습니다. 나의콘솔 보관은 로그인 회원에게 제공됩니다.'}
+              : (
+                <>
+                  비회원 리포트는 현재 화면에서 다운로드할 수 있습니다.
+                  <br />
+                  회원만 나의콘솔에 분석결과가 보관됩니다.
+                </>
+              )}
           </p>
           </div>
         </aside>
