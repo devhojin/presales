@@ -8,8 +8,15 @@ import { createBrowserClient } from '@supabase/ssr'
  * null 가드 업데이트가 필요해 점진적 적용 (다음 세션에서 파일별로).
  */
 export function createClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    throw new Error('Supabase browser client environment variables are not configured')
+  }
+
   return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    supabaseUrl,
+    supabaseAnonKey
   )
 }
