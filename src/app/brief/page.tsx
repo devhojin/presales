@@ -141,23 +141,28 @@ export default function BriefPage() {
               구독 완료
             </div>
           ) : (
-            <div className="flex gap-2 w-full md:w-auto md:min-w-[360px]">
-              <input
-                type="email"
-                value={subscribeEmail}
-                onChange={(e) => setSubscribeEmail(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleSubscribe() }}
-                placeholder="your@email.com"
-                disabled={subscribing}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50"
-              />
-              <button
-                onClick={handleSubscribe}
-                disabled={subscribing || !subscribeEmail.trim()}
-                className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 cursor-pointer whitespace-nowrap"
-              >
-                {subscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : '구독하기'}
-              </button>
+            <div className="w-full md:w-auto md:min-w-[360px]">
+              <div className="flex gap-2">
+                <input
+                  type="email"
+                  value={subscribeEmail}
+                  onChange={(e) => setSubscribeEmail(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSubscribe() }}
+                  placeholder="your@email.com"
+                  disabled={subscribing}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary disabled:opacity-50"
+                />
+                <button
+                  onClick={handleSubscribe}
+                  disabled={subscribing || !subscribeEmail.trim()}
+                  className="px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 disabled:opacity-50 cursor-pointer whitespace-nowrap"
+                >
+                  {subscribing ? <Loader2 className="w-4 h-4 animate-spin" /> : '구독하기'}
+                </button>
+              </div>
+              <p className="mt-2 text-xs font-medium text-muted-foreground">
+                광고메일을 보내지 않습니다.
+              </p>
             </div>
           )}
         </div>
