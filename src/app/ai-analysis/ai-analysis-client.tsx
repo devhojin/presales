@@ -25,6 +25,7 @@ const MAX_TOTAL_SIZE = 50 * 1024 * 1024
 const MAX_TOTAL_SIZE_LABEL = '50MB'
 const GUEST_ID_STORAGE_KEY = 'presales:rfp-analysis:guest-id'
 const GUEST_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const PDF_CONVERSION_NOTICE = 'HWP/HWPX는 PDF 변환 후 업로드'
 
 type Slot = 'rfp' | 'task'
 type StepKey = 'idle' | 'uploading' | 'extracting' | 'analyzing' | 'rendering' | 'completed' | 'failed'
@@ -140,6 +141,7 @@ function FileDropZone({ slot, title, description, required, file, disabled, onSe
             {required && <span className="rounded-md bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600">필수</span>}
           </div>
           <p className="mt-1 text-xs leading-6 text-muted-foreground">{description}</p>
+          <p className="mt-5 text-center text-xs font-medium text-slate-500">{PDF_CONVERSION_NOTICE}</p>
           {file ? (
             <div className="mt-4 flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-white px-3 py-3 shadow-[0_10px_30px_-24px_rgba(37,99,235,0.85)]">
               <div className="min-w-0">
@@ -489,10 +491,6 @@ export function AiAnalysisClient() {
                     이 영역은 PDF 원문을 받는 접수대입니다. PDF 원문에서 확인된 문장과 페이지 근거가 있는 항목만 리포트에 표시합니다.
                   </p>
                 </div>
-              </div>
-              <div className="flex w-fit items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
-                <FileText className="h-4 w-4" />
-                HWP/HWPX는 PDF 변환 후 업로드
               </div>
             </div>
             <div className="grid flex-1 gap-4">
