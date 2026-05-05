@@ -474,7 +474,7 @@ export default function AdminRfpAnalysisPage() {
               const softDeleting = mutatingJobId === `${job.id}:soft`
               const hardDeleting = mutatingJobId === `${job.id}:hard`
               return (
-                <div key={job.id} className="grid gap-4 p-5 xl:grid-cols-[180px_210px_minmax(220px,1fr)_minmax(300px,1.25fr)_220px]">
+                <div key={job.id} className="grid gap-4 p-5 xl:grid-cols-[130px_150px_minmax(220px,1fr)_minmax(300px,1.45fr)_190px] 2xl:grid-cols-[150px_170px_minmax(340px,1.1fr)_minmax(540px,1.8fr)_210px]">
                   <div>
                     <p className="text-xs font-semibold text-[#767268]">접수일</p>
                     <p className="mt-1 text-sm font-semibold text-[#17171f]">{formatDateTime(job.createdAt)}</p>
@@ -512,9 +512,9 @@ export default function AdminRfpAnalysisPage() {
                     {job.taskFileName && <p className="mt-0.5 line-clamp-1 break-words text-xs text-[#767268]">과업: {job.taskFileName}</p>}
                   </div>
 
-                  <div>{renderResultSummary(job)}</div>
+                  <div className="min-w-0">{renderResultSummary(job)}</div>
 
-                  <div className="flex flex-col gap-2">
+                  <div className="flex min-w-0 flex-col gap-2">
                     <p className="text-xs text-[#767268] xl:text-right">다운로드 {job.downloadCount.toLocaleString('ko-KR')}회</p>
                     <button
                       type="button"
