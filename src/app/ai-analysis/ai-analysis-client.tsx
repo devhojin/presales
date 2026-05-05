@@ -330,6 +330,7 @@ export function AiAnalysisClient() {
               <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">AI RFP 분석</h1>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
                 RFP 제안요청서를 PDF로 변환해 업로드하면 원문 근거 기반 HTML 분석 리포트를 생성합니다.
+                본 분석결과는 프리세일즈의 전문가 노하우가 적용된 AI 가 분석하여 파일을 제공해드립니다.
               </p>
             </div>
             <Link
