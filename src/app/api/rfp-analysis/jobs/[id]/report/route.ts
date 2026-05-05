@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { requireActiveUser } from '@/lib/require-active-user'
+import { getRfpAnalysisActor, isRfpAnalysisJobOwnedByActor } from '@/lib/rfp-analysis-access'
 import {
   getRfpAnalysisReportFileName,
   getRfpAnalysisServiceClient,
@@ -9,17 +9,18 @@ import {
 export const dynamic = 'force-dynamic'
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requireActiveUser()
-  if (!auth.ok) return auth.response
+  const actorResult = await getRfpAnalysisActor(request)
+  if (!actorResult.ok) return actorResult.response
+  const { actor } = actorResult
 
   const { id } = await params
   const supabase = getRfpAnalysisServiceClient()
   const { data: job, error } = await supabase
     .from('rfp_analysis_jobs')
-    .select('id, user_id, status, rfp_file_name, project_title, report_html_path')
+    .select('id, user_id, status, rfp_file_name, project_title, report_html_path, result_json')
     .eq('id', id)
     .maybeSingle()
 
@@ -29,7 +30,7 @@ export async function GET(
   if (!job) {
     return NextResponse.json({ error: 'AI 분석 리포트를 찾을 수 없습니다' }, { status: 404 })
   }
-  if (job.user_id !== auth.user.id) {
+  if (!isRfpAnalysisJobOwnedByActor(actor, job)) {
     return NextResponse.json({ error: 'AI 분석 리포트 다운로드 권한이 없습니다' }, { status: 403 })
   }
   if (job.status !== 'completed' || !job.report_html_path) {
@@ -47,7 +48,7 @@ export async function GET(
 
   await supabase.from('rfp_analysis_report_downloads').insert({
     job_id: job.id,
-    user_id: auth.user.id,
+    user_id: actor.kind === 'user' ? actor.user.id : job.user_id,
   })
 
   return NextResponse.json({ url: signed.signedUrl, fileName })

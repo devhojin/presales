@@ -21,7 +21,9 @@ type RfpStatus = 'all' | 'created' | 'extracting' | 'analyzing' | 'rendering' | 
 
 type AdminRfpJob = {
   id: string
-  userId: string
+  userId: string | null
+  guestId: string | null
+  isGuest: boolean
   user: AdminRfpUser | null
   status: string
   progress: number
@@ -123,6 +125,7 @@ function formatWon(value: number | null) {
 function roleLabel(value: string | null) {
   if (value === 'admin') return '관리자'
   if (value === 'user') return '일반 회원'
+  if (value === 'guest') return '비회원'
   return value || '-'
 }
 
@@ -142,12 +145,27 @@ function compactText(value: string | null, fallback = '-') {
 }
 
 function userLabel(job: AdminRfpJob) {
-  return job.user?.name || job.user?.email || job.userId
+  if (job.isGuest) return '비회원'
+  return job.user?.name || job.user?.email || job.userId || '-'
 }
 
 function userForModal(job: AdminRfpJob): AdminRfpUser {
+  if (job.isGuest) {
+    return {
+      id: job.guestId || job.id,
+      email: null,
+      name: '비회원',
+      company: null,
+      phone: null,
+      role: 'guest',
+      rewardBalance: null,
+      createdAt: job.createdAt,
+      deletedAt: null,
+    }
+  }
+
   return job.user || {
-    id: job.userId,
+    id: job.userId || job.id,
     email: null,
     name: null,
     company: null,
@@ -491,8 +509,12 @@ export default function AdminRfpAnalysisPage() {
                       <UserRound className="h-3.5 w-3.5 shrink-0" />
                       <span className="truncate">{userLabel(job)}</span>
                     </button>
-                    <p className="truncate text-xs text-[#767268]">{job.user?.email || '-'}</p>
-                    <p className="truncate text-xs text-[#767268]">{job.user?.company || '-'}</p>
+                    <p className="truncate text-xs text-[#767268]">
+                      {job.isGuest ? '비회원 분석 요청' : job.user?.email || '-'}
+                    </p>
+                    <p className="truncate text-xs text-[#767268]">
+                      {job.isGuest ? `Guest ${job.guestId?.slice(0, 8) || '-'}` : job.user?.company || '-'}
+                    </p>
                   </div>
 
                   <div className="min-w-0">

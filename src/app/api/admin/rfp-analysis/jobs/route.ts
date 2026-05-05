@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { requireAdminService } from '@/lib/require-admin'
-import { getRfpAnalysisUserDeletedAt } from '@/lib/rfp-analysis'
+import { getRfpAnalysisGuestId, getRfpAnalysisUserDeletedAt } from '@/lib/rfp-analysis'
 
 export const dynamic = 'force-dynamic'
 
@@ -195,7 +195,11 @@ export async function GET(request: Request) {
   }
 
   const jobs = (data || []) as JobRecord[]
-  const userIds = Array.from(new Set(jobs.map((job) => job.user_id).filter(Boolean)))
+  const guestJobIds = new Set(jobs.filter((job) => getRfpAnalysisGuestId(job.result_json)).map((job) => job.id))
+  const userIds = Array.from(new Set(jobs
+    .filter((job) => !guestJobIds.has(job.id))
+    .map((job) => job.user_id)
+    .filter((userId): userId is string => Boolean(userId))))
   const jobIds = jobs.map((job) => job.id)
 
   const [profilesRes, downloadsRes] = await Promise.all([
@@ -247,30 +251,35 @@ export async function GET(request: Request) {
   }
 
   return NextResponse.json({
-    jobs: jobs.map((job) => ({
-      id: job.id,
-      userId: job.user_id,
-      user: serializeProfile(profiles.get(job.user_id)),
-      status: job.status,
-      progress: job.progress,
-      step: job.step,
-      rfpFileName: job.rfp_file_name,
-      rfpFileSize: job.rfp_file_size,
-      hasRfpFile: Boolean(job.rfp_file_path),
-      taskFileName: job.task_file_name,
-      taskFileSize: job.task_file_size,
-      hasTaskFile: Boolean(job.task_file_path),
-      projectTitle: job.project_title,
-      reportHtmlPath: job.report_html_path,
-      errorMessage: job.error_message,
-      openaiResponseId: job.openai_response_id,
-      sourcePageCount: job.source_page_count,
-      createdAt: job.created_at,
-      completedAt: job.completed_at,
-      downloadCount: downloadCounts.get(job.id) || 0,
-      userDeletedAt: getRfpAnalysisUserDeletedAt(job.result_json),
-      summary: buildSummary(job.result_json),
-    })),
+    jobs: jobs.map((job) => {
+      const guestId = getRfpAnalysisGuestId(job.result_json)
+      return {
+        id: job.id,
+        userId: guestId ? null : job.user_id,
+        guestId,
+        isGuest: Boolean(guestId),
+        user: guestId ? null : serializeProfile(profiles.get(job.user_id)),
+        status: job.status,
+        progress: job.progress,
+        step: job.step,
+        rfpFileName: job.rfp_file_name,
+        rfpFileSize: job.rfp_file_size,
+        hasRfpFile: Boolean(job.rfp_file_path),
+        taskFileName: job.task_file_name,
+        taskFileSize: job.task_file_size,
+        hasTaskFile: Boolean(job.task_file_path),
+        projectTitle: job.project_title,
+        reportHtmlPath: job.report_html_path,
+        errorMessage: job.error_message,
+        openaiResponseId: job.openai_response_id,
+        sourcePageCount: job.source_page_count,
+        createdAt: job.created_at,
+        completedAt: job.completed_at,
+        downloadCount: downloadCounts.get(job.id) || 0,
+        userDeletedAt: getRfpAnalysisUserDeletedAt(job.result_json),
+        summary: buildSummary(job.result_json),
+      }
+    }),
     pagination: {
       page,
       pageSize,

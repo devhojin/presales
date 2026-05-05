@@ -1,11 +1,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { GLOBAL_FREE_USER_LIMIT, GLOBAL_FREE_USER_LIMIT_ERROR } from '@/lib/free-access-policy'
 import { logger } from '@/lib/logger'
+import { getRfpAnalysisGuestId } from '@/lib/rfp-analysis'
 
 const FREE_USER_SCAN_LIMIT = 5000
 
 type FreeUsageRow = {
   user_id: string | null
+  result_json?: unknown
 }
 
 type FreeProductDownloadRow = {
@@ -27,6 +29,10 @@ export type FreeUserLimitResult = {
 
 function addUserId(target: Set<string>, value: string | null | undefined) {
   if (typeof value === 'string' && value.trim()) target.add(value)
+}
+
+function addGuestId(target: Set<string>, value: string | null | undefined) {
+  if (typeof value === 'string' && value.trim()) target.add(`guest:${value}`)
 }
 
 function hasRows(data: ExistingUsageRow[] | null): boolean {
@@ -69,6 +75,17 @@ async function hasExistingFreeUsage(supabase: SupabaseClient, userId: string) {
     || hasRows(analyses.data as ExistingUsageRow[] | null)
 }
 
+async function hasExistingGuestFreeUsage(supabase: SupabaseClient, guestId: string) {
+  const { data, error } = await supabase
+    .from('rfp_analysis_jobs')
+    .select('id')
+    .contains('result_json', { _guestId: guestId })
+    .limit(1)
+
+  if (error) throw error
+  return hasRows(data as ExistingUsageRow[] | null)
+}
+
 async function collectFreeUserIds(supabase: SupabaseClient) {
   const [orders, downloads, analyses] = await Promise.all([
     supabase
@@ -84,7 +101,7 @@ async function collectFreeUserIds(supabase: SupabaseClient) {
       .limit(FREE_USER_SCAN_LIMIT),
     supabase
       .from('rfp_analysis_jobs')
-      .select('user_id')
+      .select('user_id, result_json')
       .limit(FREE_USER_SCAN_LIMIT),
   ])
 
@@ -101,7 +118,9 @@ async function collectFreeUserIds(supabase: SupabaseClient) {
     if (product?.is_free === true) addUserId(userIds, row.user_id)
   }
   for (const row of (analyses.data ?? []) as FreeUsageRow[]) {
-    addUserId(userIds, row.user_id)
+    const guestId = getRfpAnalysisGuestId(row.result_json)
+    if (guestId) addGuestId(userIds, guestId)
+    else addUserId(userIds, row.user_id)
   }
 
   return userIds
@@ -137,6 +156,46 @@ export async function checkGlobalFreeUserLimit(
   } catch (error) {
     const message = error instanceof Error ? error.message : 'unknown'
     logger.error('무료 이용자 제한 조회 실패', 'free-user-limit', { error: message })
+    return {
+      allowed: false,
+      limit: GLOBAL_FREE_USER_LIMIT,
+      used: 0,
+      isExistingFreeUser: false,
+      error: '무료 이용 가능 여부를 확인하지 못했습니다. 잠시 후 다시 시도해주세요.',
+    }
+  }
+}
+
+export async function checkGlobalFreeGuestLimit(
+  supabase: SupabaseClient,
+  guestId: string,
+): Promise<FreeUserLimitResult> {
+  try {
+    const isExistingFreeUser = await hasExistingGuestFreeUsage(supabase, guestId)
+    if (isExistingFreeUser) {
+      const userIds = await collectFreeUserIds(supabase)
+      return {
+        allowed: true,
+        limit: GLOBAL_FREE_USER_LIMIT,
+        used: userIds.size,
+        isExistingFreeUser: true,
+      }
+    }
+
+    const userIds = await collectFreeUserIds(supabase)
+    const used = userIds.size
+    const allowed = used < GLOBAL_FREE_USER_LIMIT
+
+    return {
+      allowed,
+      limit: GLOBAL_FREE_USER_LIMIT,
+      used,
+      isExistingFreeUser: false,
+      error: allowed ? undefined : GLOBAL_FREE_USER_LIMIT_ERROR,
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'unknown'
+    logger.error('비회원 무료 이용자 제한 조회 실패', 'free-user-limit', { error: message })
     return {
       allowed: false,
       limit: GLOBAL_FREE_USER_LIMIT,

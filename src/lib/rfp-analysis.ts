@@ -96,6 +96,7 @@ export interface ReportReview {
 }
 
 const USER_DELETED_AT_KEY = '_userDeletedAt'
+const GUEST_ID_KEY = '_guestId'
 const PDF_EXT_RE = /\.pdf$/i
 const SAFE_FILE_RE = /[^a-zA-Z0-9._-]+/g
 const NOT_FOUND = '원문에서 확인 불가'
@@ -149,6 +150,23 @@ export function getRfpAnalysisUserDeletedAt(resultJson: unknown) {
   if (!resultJson || typeof resultJson !== 'object' || Array.isArray(resultJson)) return null
   const value = (resultJson as Record<string, unknown>)[USER_DELETED_AT_KEY]
   return typeof value === 'string' && value.trim() ? value : null
+}
+
+export function getRfpAnalysisGuestId(resultJson: unknown) {
+  if (!resultJson || typeof resultJson !== 'object' || Array.isArray(resultJson)) return null
+  const value = (resultJson as Record<string, unknown>)[GUEST_ID_KEY]
+  return typeof value === 'string' && value.trim() ? value : null
+}
+
+export function withRfpAnalysisGuestId(resultJson: unknown, guestId: string) {
+  const base = resultJson && typeof resultJson === 'object' && !Array.isArray(resultJson)
+    ? resultJson as Record<string, unknown>
+    : {}
+
+  return {
+    ...base,
+    [GUEST_ID_KEY]: guestId,
+  }
 }
 
 export function withRfpAnalysisUserDeletedAt(resultJson: unknown, deletedAt: string) {

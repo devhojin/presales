@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAdminService } from '@/lib/require-admin'
 import {
+  getRfpAnalysisGuestId,
   getRfpAnalysisUserDeletedAt,
   RFP_ANALYSIS_BUCKET,
   withRfpAnalysisUserDeletedAt,
@@ -63,7 +64,7 @@ export async function DELETE(
   const { id } = await params
   const { data: job, error } = await admin.service
     .from('rfp_analysis_jobs')
-    .select('id, rfp_file_path, task_file_path, report_html_path')
+    .select('id, user_id, rfp_file_path, task_file_path, report_html_path, result_json')
     .eq('id', id)
     .maybeSingle()
 
@@ -106,6 +107,10 @@ export async function DELETE(
 
   if (deleteError) {
     return NextResponse.json({ error: 'AI 분석 작업 완전삭제에 실패했습니다' }, { status: 500 })
+  }
+
+  if (getRfpAnalysisGuestId(job.result_json) && job.user_id) {
+    await admin.service.auth.admin.deleteUser(job.user_id)
   }
 
   return NextResponse.json({ ok: true, removedFiles: storagePaths.length })

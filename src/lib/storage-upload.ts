@@ -24,6 +24,7 @@ export interface UploadOptions {
   file: File
   contentType?: string
   upsert?: boolean
+  signedToken?: string
   onProgress?: (percent: number) => void
 }
 
@@ -35,7 +36,18 @@ export type UploadResult =
  * 파일 업로드 — 크기에 따라 standard/TUS resumable 자동 선택
  */
 export async function uploadFile(opts: UploadOptions): Promise<UploadResult> {
-  const { bucket, path, file, contentType, upsert = false, onProgress } = opts
+  const { bucket, path, file, contentType, upsert = false, signedToken, onProgress } = opts
+
+  if (signedToken) {
+    const supabase = createClient()
+    const { error } = await supabase.storage.from(bucket).uploadToSignedUrl(path, signedToken, file, {
+      contentType: contentType || file.type,
+      upsert,
+    })
+    if (error) return { ok: false, error: error.message }
+    onProgress?.(100)
+    return { ok: true, path }
+  }
 
   // 작은 파일 → standard upload (빠름)
   if (file.size <= RESUMABLE_THRESHOLD) {

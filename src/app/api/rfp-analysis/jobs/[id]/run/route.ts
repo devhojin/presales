@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { requireActiveUser } from '@/lib/require-active-user'
 import { logger } from '@/lib/logger'
+import { getRfpAnalysisActor, isRfpAnalysisJobOwnedByActor } from '@/lib/rfp-analysis-access'
 import {
   buildReportHtml,
   buildSourceBundle,
@@ -8,10 +8,12 @@ import {
   extractPdfText,
   fetchReportPromotions,
   getRfpAnalysisFailureMessage,
+  getRfpAnalysisGuestId,
   getRfpAnalysisServiceClient,
   getRfpAnalysisUserDeletedAt,
   RFP_ANALYSIS_BUCKET,
   runOpenAiRfpAnalysis,
+  withRfpAnalysisGuestId,
   withRfpAnalysisUserDeletedAt,
 } from '@/lib/rfp-analysis'
 
@@ -39,11 +41,12 @@ async function downloadStorageFile(
 }
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const auth = await requireActiveUser()
-  if (!auth.ok) return auth.response
+  const actorResult = await getRfpAnalysisActor(request)
+  if (!actorResult.ok) return actorResult.response
+  const { actor } = actorResult
 
   const { id } = await params
   const supabase = getRfpAnalysisServiceClient()
@@ -51,13 +54,12 @@ export async function POST(
     .from('rfp_analysis_jobs')
     .select('*')
     .eq('id', id)
-    .eq('user_id', auth.user.id)
     .maybeSingle()
 
   if (jobError) {
     return NextResponse.json({ error: 'AI 분석 작업 조회에 실패했습니다' }, { status: 500 })
   }
-  if (!job) {
+  if (!job || !isRfpAnalysisJobOwnedByActor(actor, job)) {
     return NextResponse.json({ error: 'AI 분석 작업을 찾을 수 없습니다' }, { status: 404 })
   }
   if (job.status === 'completed') {
@@ -94,7 +96,7 @@ export async function POST(
 
     const { products, reviews } = await fetchReportPromotions(supabase)
     const html = buildReportHtml(result, products, reviews)
-    const reportPath = buildStoragePath(auth.user.id, id, 'report', 'rfp-analysis-report.html')
+    const reportPath = buildStoragePath(actor.storageOwnerId, id, 'report', 'rfp-analysis-report.html')
 
     const { error: uploadError } = await supabase.storage
       .from(RFP_ANALYSIS_BUCKET)
@@ -109,7 +111,9 @@ export async function POST(
     const projectTitle = result.projectTitle.confidenceState === 'found' ? result.projectTitle.value : job.rfp_file_name
     const completedAt = new Date().toISOString()
     const userDeletedAt = getRfpAnalysisUserDeletedAt(job.result_json)
-    const resultJson = userDeletedAt ? withRfpAnalysisUserDeletedAt(result, userDeletedAt) : result
+    const guestId = getRfpAnalysisGuestId(job.result_json)
+    const resultWithGuest = guestId ? withRfpAnalysisGuestId(result, guestId) : result
+    const resultJson = userDeletedAt ? withRfpAnalysisUserDeletedAt(resultWithGuest, userDeletedAt) : resultWithGuest
     const { data: completedJob, error: completeError } = await supabase
       .from('rfp_analysis_jobs')
       .update({

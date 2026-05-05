@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import {
   AlertTriangle,
   ArrowRight,
@@ -11,8 +10,8 @@ import {
   Eye,
   FileSearch,
   FileText,
+  Info,
   Loader2,
-  Lock,
   ShieldCheck,
   Upload,
   X,
@@ -24,6 +23,8 @@ import { useToastStore } from '@/stores/toast-store'
 
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024
 const MAX_TOTAL_SIZE_LABEL = '50MB'
+const GUEST_ID_STORAGE_KEY = 'presales:rfp-analysis:guest-id'
+const GUEST_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 type Slot = 'rfp' | 'task'
 type StepKey = 'idle' | 'uploading' | 'extracting' | 'analyzing' | 'rendering' | 'completed' | 'failed'
@@ -69,6 +70,16 @@ function triggerBrowserDownload(url: string, fileName?: string) {
 
 function isPdfFile(file: File) {
   return file.name.toLowerCase().endsWith('.pdf') && (!file.type || file.type === 'application/pdf')
+}
+
+function createGuestId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (char) => {
+    const value = Number(char)
+    return (value ^ (Math.random() * 16 >> value / 4)).toString(16)
+  })
 }
 
 function FileDropZone({ slot, title, description, required, file, disabled, onSelect, onRemove }: DropZoneProps) {
@@ -172,10 +183,10 @@ const steps: Array<{ key: StepKey; label: string; progress: number }> = [
 ]
 
 export function AiAnalysisClient() {
-  const router = useRouter()
   const { addToast } = useToastStore()
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
+  const [guestId, setGuestId] = useState<string | null>(null)
   const [rfpFile, setRfpFile] = useState<File | null>(null)
   const [taskFile, setTaskFile] = useState<File | null>(null)
   const [step, setStep] = useState<StepKey>('idle')
@@ -196,6 +207,18 @@ export function AiAnalysisClient() {
       setUserEmail(user?.email ?? null)
       setAuthLoading(false)
     })
+  }, [])
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(GUEST_ID_STORAGE_KEY)
+    if (stored && GUEST_ID_RE.test(stored)) {
+      setGuestId(stored.toLowerCase())
+      return
+    }
+
+    const nextGuestId = createGuestId().toLowerCase()
+    window.localStorage.setItem(GUEST_ID_STORAGE_KEY, nextGuestId)
+    setGuestId(nextGuestId)
   }, [])
 
   useEffect(() => {
@@ -268,7 +291,9 @@ export function AiAnalysisClient() {
   }, [analysisCompleted])
 
   async function refreshJob(jobId: string) {
-    const res = await fetch(`/api/rfp-analysis/jobs/${jobId}`)
+    const res = await fetch(`/api/rfp-analysis/jobs/${jobId}`, {
+      headers: guestId ? { 'x-rfp-analysis-guest-id': guestId } : undefined,
+    })
     if (!res.ok) return
     const data = await res.json()
     if (data.job) {
@@ -287,7 +312,9 @@ export function AiAnalysisClient() {
   }
 
   async function downloadReport(jobId: string) {
-    const res = await fetch(`/api/rfp-analysis/jobs/${jobId}/report`)
+    const res = await fetch(`/api/rfp-analysis/jobs/${jobId}/report`, {
+      headers: guestId ? { 'x-rfp-analysis-guest-id': guestId } : undefined,
+    })
     const data = await res.json().catch(() => ({}))
     if (!res.ok) {
       addToast(data.error || '리포트 다운로드 URL 생성에 실패했습니다', 'error')
@@ -297,12 +324,13 @@ export function AiAnalysisClient() {
   }
 
   async function handleAnalyze() {
-    if (!userEmail) {
-      router.push('/auth/login?redirect=/ai-analysis')
-      return
-    }
+    const currentGuestId = guestId
     if (!rfpFile) {
       setError('RFP 제안요청서 PDF를 업로드해주세요.')
+      return
+    }
+    if (authLoading || (!userEmail && !currentGuestId)) {
+      setError('분석 준비 중입니다. 잠시 후 다시 시도해주세요.')
       return
     }
     if (running) return
@@ -319,10 +347,14 @@ export function AiAnalysisClient() {
     try {
       const createRes = await fetch('/api/rfp-analysis/jobs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(currentGuestId ? { 'x-rfp-analysis-guest-id': currentGuestId } : {}),
+        },
         body: JSON.stringify({
           rfpFile: { name: rfpFile.name, size: rfpFile.size, type: rfpFile.type },
           taskFile: taskFile ? { name: taskFile.name, size: taskFile.size, type: taskFile.type } : null,
+          guestId: currentGuestId,
         }),
       })
       const created = await createRes.json()
@@ -336,6 +368,7 @@ export function AiAnalysisClient() {
         path: created.upload.rfpPath,
         file: rfpFile,
         contentType: 'application/pdf',
+        signedToken: created.upload.rfpToken,
         upsert: true,
         onProgress: (percent) => setProgress(10 + Math.round(percent * 0.16)),
       })
@@ -348,6 +381,7 @@ export function AiAnalysisClient() {
           path: created.upload.taskPath,
           file: taskFile,
           contentType: 'application/pdf',
+          signedToken: created.upload.taskToken,
           upsert: true,
           onProgress: (percent) => setProgress(26 + Math.round(percent * 0.08)),
         })
@@ -359,7 +393,10 @@ export function AiAnalysisClient() {
       setStatusText('업로드 완료. 원문 추출을 시작합니다.')
       poll = setInterval(() => { void refreshJob(jobId) }, 1500)
 
-      const runRes = await fetch(`/api/rfp-analysis/jobs/${jobId}/run`, { method: 'POST' })
+      const runRes = await fetch(`/api/rfp-analysis/jobs/${jobId}/run`, {
+        method: 'POST',
+        headers: currentGuestId ? { 'x-rfp-analysis-guest-id': currentGuestId } : undefined,
+      })
       const runData = await runRes.json().catch(() => ({}))
       if (!runRes.ok) throw new Error(runData.error || 'AI 분석에 실패했습니다')
 
@@ -381,7 +418,8 @@ export function AiAnalysisClient() {
     }
   }
 
-  const canSubmit = Boolean(rfpFile && userEmail && !running && !analysisCompleted)
+  const actorReady = !authLoading && Boolean(userEmail || guestId)
+  const canSubmit = Boolean(rfpFile && actorReady && !running && !analysisCompleted)
   const activeProgress = step === 'failed' ? 100 : Math.max(progress, steps.find((item) => item.key === step)?.progress ?? 0)
 
   return (
@@ -392,7 +430,7 @@ export function AiAnalysisClient() {
             <div>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary">
                 <FileSearch className="h-3.5 w-3.5" />
-                회원 무료 AI 분석 · 선착순 {GLOBAL_FREE_USER_LIMIT}명
+                회원/비회원 무료 AI 분석 · 선착순 {GLOBAL_FREE_USER_LIMIT}명
               </div>
               <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">AI RFP 분석</h1>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">
@@ -424,12 +462,15 @@ export function AiAnalysisClient() {
       <section className="mx-auto grid max-w-7xl items-stretch gap-6 px-4 py-6 md:px-8 lg:grid-cols-[1fr_420px]">
         <div className="flex min-h-0 flex-col gap-5">
           {!authLoading && !userEmail && (
-            <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-              <Lock className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-800">
+              <Info className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
-                <p className="font-semibold">로그인 후 이용할 수 있습니다.</p>
-                <Link href="/auth/login?redirect=/ai-analysis" className="mt-1 inline-flex text-xs font-semibold text-amber-900 underline">
-                  로그인하기
+                <p className="font-semibold">비회원도 AI 분석을 이용할 수 있습니다.</p>
+                <p className="mt-1 text-xs leading-5 text-blue-700">
+                  비회원 리포트는 완료 화면에서 바로 다운로드해주세요. 로그인하면 이후 리포트가 나의콘솔에 보관됩니다.
+                </p>
+                <Link href="/auth/login?redirect=/ai-analysis" className="mt-1 inline-flex text-xs font-semibold text-blue-900 underline">
+                  로그인하고 보관하기
                 </Link>
               </div>
             </div>
@@ -557,7 +598,9 @@ export function AiAnalysisClient() {
           )}
 
           <p className="mt-4 text-xs leading-6 text-slate-400">
-            완성된 리포트는 나의콘솔의 내 AI 분석 리포트에서도 다시 다운로드할 수 있습니다.
+            {userEmail
+              ? '완성된 리포트는 나의콘솔의 내 AI 분석 리포트에서도 다시 다운로드할 수 있습니다.'
+              : '비회원 리포트는 현재 화면에서 다운로드할 수 있습니다. 나의콘솔 보관은 로그인 회원에게 제공됩니다.'}
           </p>
           </div>
         </aside>
