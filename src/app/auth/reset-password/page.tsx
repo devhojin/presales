@@ -129,6 +129,7 @@ function ResetPasswordForm() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
+                  autoComplete="new-password"
                   placeholder="10자 이상, 영문 대/소문자·숫자·특수문자 포함"
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError('') }}
@@ -175,6 +176,7 @@ function ResetPasswordForm() {
                 <input
                   type="password"
                   required
+                  autoComplete="new-password"
                   placeholder="비밀번호를 다시 입력하세요"
                   value={passwordConfirm}
                   onChange={(e) => { setPasswordConfirm(e.target.value); setError('') }}

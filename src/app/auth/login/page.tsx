@@ -180,6 +180,7 @@ function LoginForm() {
                 <input
                   type="email"
                   required
+                  autoComplete="email"
                   placeholder="name@company.com"
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); setError('') }}
@@ -195,6 +196,7 @@ function LoginForm() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
+                  autoComplete="current-password"
                   placeholder="비밀번호를 입력하세요"
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError('') }}

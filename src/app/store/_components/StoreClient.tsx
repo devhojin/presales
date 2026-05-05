@@ -79,12 +79,14 @@ function ProductCard({
   onTagClick,
   categoryNames,
   searchQuery,
+  eagerLoad = false,
 }: {
   product: DbProduct
   onFileTypeClick: (type: string) => void
   onTagClick: (tag: string) => void
   categoryNames: string[]
   searchQuery?: string
+  eagerLoad?: boolean
 }) {
   const discount = product.original_price > 0
     ? Math.round((1 - product.price / product.original_price) * 100)
@@ -113,7 +115,14 @@ function ProductCard({
       <div className="border border-border/50 rounded-2xl overflow-hidden bg-card hover:border-border hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transition-all duration-300">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {product.thumbnail_url ? (
-            <Image src={product.thumbnail_url} alt={product.title} width={400} height={300} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+            <Image
+              src={product.thumbnail_url}
+              alt={product.title}
+              width={400}
+              height={300}
+              loading={eagerLoad ? 'eager' : 'lazy'}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-blue-950 to-blue-800 flex items-center justify-center">
               <FileText className="w-12 h-12 text-blue-100 opacity-60" />
@@ -735,7 +744,7 @@ export default function StoreClient() {
       ) : products.length > 0 ? (
         <>
           <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 ${totalPages <= 1 ? 'mb-20 md:mb-24' : ''}`}>
-            {products.map((product) => (
+            {products.map((product, index) => (
               <ProductCard
                 key={product.id}
                 product={product}
@@ -743,6 +752,7 @@ export default function StoreClient() {
                 onTagClick={handleTagClick}
                 categoryNames={getCategoryNames(product)}
                 searchQuery={searchQuery}
+                eagerLoad={currentPage === 1 && index < 4}
               />
             ))}
           </div>

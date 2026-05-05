@@ -85,6 +85,7 @@ export default function ForgotPasswordPage() {
                   <input
                     type="email"
                     required
+                    autoComplete="email"
                     placeholder="name@company.com"
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); setError('') }}

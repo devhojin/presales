@@ -242,6 +242,7 @@ function SignupForm() {
                 <input
                   type="text"
                   required
+                  autoComplete="name"
                   placeholder="홍길동"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -257,6 +258,7 @@ function SignupForm() {
                 <input
                   type="email"
                   required
+                  autoComplete="email"
                   placeholder="name@company.com"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -272,6 +274,7 @@ function SignupForm() {
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
+                  autoComplete="new-password"
                   placeholder="10자 이상, 영문 대/소문자·숫자·특수문자 포함"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
@@ -317,6 +320,7 @@ function SignupForm() {
                 <input
                   type="password"
                   required
+                  autoComplete="new-password"
                   placeholder="비밀번호를 다시 입력하세요"
                   value={form.passwordConfirm}
                   onChange={(e) => setForm({ ...form, passwordConfirm: e.target.value })}
@@ -334,6 +338,7 @@ function SignupForm() {
                 <Building className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 <input
                   type="text"
+                  autoComplete="organization"
                   placeholder="(주)OO기업"
                   value={form.company}
                   onChange={(e) => setForm({ ...form, company: e.target.value })}
@@ -348,6 +353,7 @@ function SignupForm() {
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 <input
                   type="tel"
+                  autoComplete="tel"
                   placeholder="010-0000-0000"
                   value={form.phone}
                   onChange={(e) => {
