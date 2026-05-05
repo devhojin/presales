@@ -7,10 +7,14 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  FileDown,
   FileSearch,
   Loader2,
   RefreshCw,
   Search,
+  Trash2,
+  UserRound,
+  X,
 } from 'lucide-react'
 
 type RfpStatus = 'all' | 'created' | 'extracting' | 'analyzing' | 'rendering' | 'completed' | 'failed'
@@ -18,17 +22,16 @@ type RfpStatus = 'all' | 'created' | 'extracting' | 'analyzing' | 'rendering' | 
 type AdminRfpJob = {
   id: string
   userId: string
-  user: {
-    id: string
-    email: string | null
-    name: string | null
-    company: string | null
-  } | null
+  user: AdminRfpUser | null
   status: string
   progress: number
   step: string | null
   rfpFileName: string
+  rfpFileSize: number | null
+  hasRfpFile: boolean
   taskFileName: string | null
+  taskFileSize: number | null
+  hasTaskFile: boolean
   projectTitle: string | null
   reportHtmlPath: string | null
   errorMessage: string | null
@@ -50,6 +53,18 @@ type AdminRfpJob = {
     keyRequirementsCount: number
     questionsCount: number
   }
+}
+
+type AdminRfpUser = {
+  id: string
+  email: string | null
+  name: string | null
+  company: string | null
+  phone: string | null
+  role: string | null
+  rewardBalance: number | null
+  createdAt: string | null
+  deletedAt: string | null
 }
 
 type JobsResponse = {
@@ -95,6 +110,22 @@ function formatDateTime(value: string | null) {
   })
 }
 
+function formatFileSize(bytes: number | null) {
+  if (typeof bytes !== 'number' || !Number.isFinite(bytes) || bytes <= 0) return '-'
+  if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024).toLocaleString('ko-KR')}KB`
+  return `${(bytes / 1024 / 1024).toFixed(1)}MB`
+}
+
+function formatWon(value: number | null) {
+  return `${Math.max(0, Number(value || 0)).toLocaleString('ko-KR')}원`
+}
+
+function roleLabel(value: string | null) {
+  if (value === 'admin') return '관리자'
+  if (value === 'user') return '일반 회원'
+  return value || '-'
+}
+
 function triggerBrowserDownload(url: string, fileName?: string) {
   const anchor = document.createElement('a')
   anchor.href = url
@@ -114,6 +145,20 @@ function userLabel(job: AdminRfpJob) {
   return job.user?.name || job.user?.email || job.userId
 }
 
+function userForModal(job: AdminRfpJob): AdminRfpUser {
+  return job.user || {
+    id: job.userId,
+    email: null,
+    name: null,
+    company: null,
+    phone: null,
+    role: null,
+    rewardBalance: null,
+    createdAt: null,
+    deletedAt: null,
+  }
+}
+
 export default function AdminRfpAnalysisPage() {
   const [jobs, setJobs] = useState<AdminRfpJob[]>([])
   const [loading, setLoading] = useState(true)
@@ -127,6 +172,9 @@ export default function AdminRfpAnalysisPage() {
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const [inputDownloadingId, setInputDownloadingId] = useState<string | null>(null)
+  const [mutatingJobId, setMutatingJobId] = useState<string | null>(null)
+  const [selectedUser, setSelectedUser] = useState<AdminRfpUser | null>(null)
 
   const loadJobs = useCallback(async () => {
     setLoading(true)
@@ -202,6 +250,78 @@ export default function AdminRfpAnalysisPage() {
       setError('리포트 다운로드 중 오류가 발생했습니다')
     } finally {
       setDownloadingId(null)
+    }
+  }
+
+  async function handleInputDownload(jobId: string) {
+    setInputDownloadingId(jobId)
+    setError('')
+    try {
+      const res = await fetch(`/api/admin/rfp-analysis/jobs/${jobId}/input?kind=rfp`, {
+        cache: 'no-store',
+        credentials: 'same-origin',
+      })
+      const data = await res.json().catch(() => ({})) as { url?: string; fileName?: string; error?: string }
+      if (!res.ok || !data.url) {
+        setError(data.error || 'RFP 다운로드 URL을 만들지 못했습니다')
+        return
+      }
+      triggerBrowserDownload(data.url, data.fileName)
+    } catch {
+      setError('RFP 다운로드 중 오류가 발생했습니다')
+    } finally {
+      setInputDownloadingId(null)
+    }
+  }
+
+  async function handleSoftDelete(job: AdminRfpJob) {
+    if (job.userDeletedAt) return
+    const confirmed = window.confirm('이 분석 건을 사용자 페이지에서 삭제 처리할까요? 관리자 목록과 데이터는 유지됩니다.')
+    if (!confirmed) return
+
+    setMutatingJobId(`${job.id}:soft`)
+    setError('')
+    try {
+      const res = await fetch(`/api/admin/rfp-analysis/jobs/${job.id}`, {
+        method: 'PATCH',
+        cache: 'no-store',
+        credentials: 'same-origin',
+      })
+      const data = await res.json().catch(() => ({})) as { error?: string }
+      if (!res.ok) {
+        setError(data.error || '사용자 삭제 처리에 실패했습니다')
+        return
+      }
+      await loadJobs()
+    } catch {
+      setError('사용자 삭제 처리 중 오류가 발생했습니다')
+    } finally {
+      setMutatingJobId(null)
+    }
+  }
+
+  async function handleHardDelete(job: AdminRfpJob) {
+    const confirmed = window.confirm('이 분석 건과 관련 DB 데이터, 업로드 PDF, 생성 HTML을 완전삭제할까요? 이 작업은 되돌릴 수 없습니다.')
+    if (!confirmed) return
+
+    setMutatingJobId(`${job.id}:hard`)
+    setError('')
+    try {
+      const res = await fetch(`/api/admin/rfp-analysis/jobs/${job.id}`, {
+        method: 'DELETE',
+        cache: 'no-store',
+        credentials: 'same-origin',
+      })
+      const data = await res.json().catch(() => ({})) as { error?: string }
+      if (!res.ok) {
+        setError(data.error || '완전삭제에 실패했습니다')
+        return
+      }
+      await loadJobs()
+    } catch {
+      setError('완전삭제 중 오류가 발생했습니다')
+    } finally {
+      setMutatingJobId(null)
     }
   }
 
@@ -351,8 +471,10 @@ export default function AdminRfpAnalysisPage() {
           <div className="divide-y divide-[#ece9e2]">
             {jobs.map((job) => {
               const canDownload = job.status === 'completed' && Boolean(job.reportHtmlPath)
+              const softDeleting = mutatingJobId === `${job.id}:soft`
+              const hardDeleting = mutatingJobId === `${job.id}:hard`
               return (
-                <div key={job.id} className="grid gap-4 p-5 xl:grid-cols-[190px_230px_minmax(220px,1fr)_minmax(320px,1.4fr)_150px]">
+                <div key={job.id} className="grid gap-4 p-5 xl:grid-cols-[180px_210px_minmax(220px,1fr)_minmax(300px,1.25fr)_220px]">
                   <div>
                     <p className="text-xs font-semibold text-[#767268]">접수일</p>
                     <p className="mt-1 text-sm font-semibold text-[#17171f]">{formatDateTime(job.createdAt)}</p>
@@ -361,7 +483,14 @@ export default function AdminRfpAnalysisPage() {
 
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-[#767268]">회원</p>
-                    <p className="mt-1 truncate text-sm font-semibold text-[#17171f]">{userLabel(job)}</p>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedUser(userForModal(job))}
+                      className="mt-1 flex max-w-full items-center gap-1.5 truncate text-left text-sm font-semibold text-[#17171f] underline-offset-4 hover:text-blue-700 hover:underline"
+                    >
+                      <UserRound className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{userLabel(job)}</span>
+                    </button>
                     <p className="truncate text-xs text-[#767268]">{job.user?.email || '-'}</p>
                     <p className="truncate text-xs text-[#767268]">{job.user?.company || '-'}</p>
                   </div>
@@ -377,14 +506,25 @@ export default function AdminRfpAnalysisPage() {
                     <p className="line-clamp-2 break-words text-sm font-semibold text-[#17171f]">
                       {job.projectTitle || job.summary.projectTitle || job.rfpFileName}
                     </p>
-                    <p className="mt-1 line-clamp-2 break-words text-xs text-[#767268]">RFP: {job.rfpFileName}</p>
+                    <p className="mt-1 line-clamp-2 break-words text-xs text-[#767268]">
+                      RFP: {job.rfpFileName} · {formatFileSize(job.rfpFileSize)}
+                    </p>
                     {job.taskFileName && <p className="mt-0.5 line-clamp-1 break-words text-xs text-[#767268]">과업: {job.taskFileName}</p>}
                   </div>
 
                   <div>{renderResultSummary(job)}</div>
 
-                  <div className="flex flex-col gap-2 xl:items-end">
-                    <p className="text-xs text-[#767268]">다운로드 {job.downloadCount.toLocaleString('ko-KR')}회</p>
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs text-[#767268] xl:text-right">다운로드 {job.downloadCount.toLocaleString('ko-KR')}회</p>
+                    <button
+                      type="button"
+                      disabled={!job.hasRfpFile || inputDownloadingId === job.id}
+                      onClick={() => void handleInputDownload(job.id)}
+                      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-[#ddd8ce] bg-white px-3 text-xs font-semibold text-[#35332e] hover:bg-[#f2f0eb] disabled:cursor-not-allowed disabled:opacity-45"
+                    >
+                      {inputDownloadingId === job.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />}
+                      RFP 다운로드
+                    </button>
                     <button
                       type="button"
                       disabled={!canDownload || downloadingId === job.id}
@@ -394,6 +534,26 @@ export default function AdminRfpAnalysisPage() {
                       {downloadingId === job.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                       HTML 다운로드
                     </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        disabled={Boolean(job.userDeletedAt) || softDeleting || hardDeleting}
+                        onClick={() => void handleSoftDelete(job)}
+                        className="inline-flex h-9 items-center justify-center gap-1 rounded-xl border border-amber-200 bg-amber-50 px-2 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-45"
+                      >
+                        {softDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                        {job.userDeletedAt ? '삭제됨' : '삭제'}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={softDeleting || hardDeleting}
+                        onClick={() => void handleHardDelete(job)}
+                        className="inline-flex h-9 items-center justify-center gap-1 rounded-xl border border-red-200 bg-red-50 px-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-45"
+                      >
+                        {hardDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                        완전삭제
+                      </button>
+                    </div>
                   </div>
                 </div>
               )
@@ -423,6 +583,57 @@ export default function AdminRfpAnalysisPage() {
           </button>
         </div>
       </div>
+
+      {selectedUser && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="rfp-analysis-user-modal-title"
+          onMouseDown={() => setSelectedUser(null)}
+        >
+          <div
+            className="w-full max-w-lg rounded-[24px] border border-[#e1ddd4] bg-white p-6 shadow-2xl"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#767268]">회원정보</p>
+                <h2 id="rfp-analysis-user-modal-title" className="mt-1 text-xl font-bold text-[#17171f]">
+                  {selectedUser.name || selectedUser.email || selectedUser.id}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedUser(null)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#ddd8ce] text-[#5f5b52] hover:bg-[#f2f0eb]"
+                aria-label="회원정보 닫기"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-3 text-sm">
+              {[
+                ['회원 ID', selectedUser.id],
+                ['이름', selectedUser.name || '-'],
+                ['이메일', selectedUser.email || '-'],
+                ['회사명', selectedUser.company || '-'],
+                ['연락처', selectedUser.phone || '-'],
+                ['권한', roleLabel(selectedUser.role)],
+                ['적립금', formatWon(selectedUser.rewardBalance)],
+                ['가입일', formatDateTime(selectedUser.createdAt)],
+                ['탈퇴일', formatDateTime(selectedUser.deletedAt)],
+              ].map(([label, value]) => (
+                <div key={label} className="grid gap-2 rounded-xl border border-[#eeeae2] bg-[#fbfaf7] px-4 py-3 sm:grid-cols-[96px_1fr]">
+                  <p className="text-xs font-semibold text-[#767268]">{label}</p>
+                  <p className="min-w-0 break-words font-medium text-[#17171f]">{value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

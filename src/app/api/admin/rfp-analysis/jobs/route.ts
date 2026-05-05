@@ -32,7 +32,11 @@ type JobRecord = {
   progress: number
   step: string | null
   rfp_file_name: string
+  rfp_file_path: string | null
+  rfp_file_size: number | null
   task_file_name: string | null
+  task_file_path: string | null
+  task_file_size: number | null
   project_title: string | null
   result_json: unknown
   report_html_path: string | null
@@ -48,6 +52,11 @@ type ProfileRecord = {
   email: string | null
   name: string | null
   company: string | null
+  phone: string | null
+  role: string | null
+  reward_balance: number | null
+  created_at: string | null
+  deleted_at: string | null
 }
 
 function parsePositiveInt(value: string | null, fallback: number, max?: number) {
@@ -98,6 +107,21 @@ function buildSummary(result: unknown) {
     priceScore: evidenceText(result, 'priceScore'),
     keyRequirementsCount: isResultRecord(result) ? arrayLength(result.keyRequirements) : 0,
     questionsCount: isResultRecord(result) ? arrayLength(result.questions) : 0,
+  }
+}
+
+function serializeProfile(profile: ProfileRecord | null | undefined) {
+  if (!profile) return null
+  return {
+    id: profile.id,
+    email: profile.email,
+    name: profile.name,
+    company: profile.company,
+    phone: profile.phone,
+    role: profile.role,
+    rewardBalance: profile.reward_balance,
+    createdAt: profile.created_at,
+    deletedAt: profile.deleted_at,
   }
 }
 
@@ -157,7 +181,7 @@ export async function GET(request: Request) {
   const to = from + pageSize - 1
   let dataQuery = admin.service
     .from('rfp_analysis_jobs')
-    .select('id, user_id, status, progress, step, rfp_file_name, task_file_name, project_title, result_json, report_html_path, error_message, openai_response_id, source_page_count, created_at, completed_at')
+    .select('id, user_id, status, progress, step, rfp_file_name, rfp_file_path, rfp_file_size, task_file_name, task_file_path, task_file_size, project_title, result_json, report_html_path, error_message, openai_response_id, source_page_count, created_at, completed_at')
     .order('created_at', { ascending: false })
     .range(from, to)
   if (status && status !== 'all') dataQuery = dataQuery.eq('status', status)
@@ -176,7 +200,7 @@ export async function GET(request: Request) {
 
   const [profilesRes, downloadsRes] = await Promise.all([
     userIds.length > 0
-      ? admin.service.from('profiles').select('id, email, name, company').in('id', userIds)
+      ? admin.service.from('profiles').select('id, email, name, company, phone, role, reward_balance, created_at, deleted_at').in('id', userIds)
       : Promise.resolve({ data: [] as ProfileRecord[], error: null }),
     jobIds.length > 0
       ? admin.service.from('rfp_analysis_report_downloads').select('job_id').in('job_id', jobIds)
@@ -208,6 +232,11 @@ export async function GET(request: Request) {
         email: authUser.data.user.email ?? null,
         name: readMetadataName(authUser.data.user.user_metadata),
         company: null,
+        phone: null,
+        role: null,
+        reward_balance: null,
+        created_at: authUser.data.user.created_at ?? null,
+        deleted_at: null,
       })
     })
   }
@@ -221,12 +250,16 @@ export async function GET(request: Request) {
     jobs: jobs.map((job) => ({
       id: job.id,
       userId: job.user_id,
-      user: profiles.get(job.user_id) || null,
+      user: serializeProfile(profiles.get(job.user_id)),
       status: job.status,
       progress: job.progress,
       step: job.step,
       rfpFileName: job.rfp_file_name,
+      rfpFileSize: job.rfp_file_size,
+      hasRfpFile: Boolean(job.rfp_file_path),
       taskFileName: job.task_file_name,
+      taskFileSize: job.task_file_size,
+      hasTaskFile: Boolean(job.task_file_path),
       projectTitle: job.project_title,
       reportHtmlPath: job.report_html_path,
       errorMessage: job.error_message,
