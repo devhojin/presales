@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/generate-work-history.js",
     "codex:doctor": "node scripts/codex-doctor.mjs",
     "mcp:telegram": "node scripts/telegram-mcp.mjs",
     "products:remediate": "node scripts/remediate-product-catalog.mjs",
@@ -11,7 +10,6 @@
     "products:intro-images": "node scripts/generate-original-product-intro-images.mjs",
     "products:thumbnails": "node scripts/generate-thumbnails.js",
     "dev": "next dev",
-    "prebuild": "node scripts/generate-work-history.js",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
