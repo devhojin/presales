@@ -4,6 +4,7 @@ import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { escapeHtml } from '@/lib/html-escape'
 import { SITE_URL } from '@/lib/constants'
+import { BUSINESS_INFO } from '@/lib/business-info'
 
 export const RFP_ANALYSIS_BUCKET = 'rfp-analysis'
 export const RFP_ANALYSIS_MAX_TOTAL_SIZE = 50 * 1024 * 1024
@@ -92,6 +93,7 @@ export interface ReportReview {
   content: string
   rating: number
   reviewer_name: string | null
+  product_id: number
   product_title: string | null
 }
 
@@ -604,6 +606,13 @@ function wonLabel(price: number | null, isFree: boolean | null) {
   return `${new Intl.NumberFormat('ko-KR').format(price)}원`
 }
 
+function maskReviewerName(name: string | null | undefined) {
+  const normalized = name?.trim()
+  if (!normalized) return '익명'
+  const first = Array.from(normalized)[0]
+  return `${first}OO`
+}
+
 function numericScore(score: string) {
   const match = score.replace(/,/g, '').match(/\d+(?:\.\d+)?/)
   return match ? Number(match[0]) : 0
@@ -695,7 +704,7 @@ export function buildReportHtml(
   const pageAllocation = buildQualitativePageAllocation(result)
   const productItems = products.length > 0
     ? products.map((product) => `
-      <a class="promo-card" href="${SITE_URL}/store/${product.id}">
+      <a class="promo-card" href="${SITE_URL}/store/${product.id}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(`${product.title} 새창 열기`)}">
         <strong>${escapeHtml(product.title)}</strong>
         <span>${escapeHtml(wonLabel(product.price, product.is_free))}</span>
         ${product.description ? `<p>${escapeHtml(product.description).slice(0, 120)}</p>` : ''}
@@ -704,11 +713,13 @@ export function buildReportHtml(
     : '<p class="empty">현재 연결할 공개 추천 문서가 없습니다.</p>'
   const reviewItems = reviews.length > 0
     ? reviews.map((review) => `
-      <blockquote>
-        <div class="stars">${'★'.repeat(Math.max(1, Math.min(5, Number(review.rating) || 1)))}</div>
-        <p>${escapeHtml(review.content).slice(0, 180)}</p>
-        <cite>${escapeHtml(review.reviewer_name || '프리세일즈 회원')}${review.product_title ? ` · ${escapeHtml(review.product_title)}` : ''}</cite>
-      </blockquote>
+      <a class="review-card" href="${SITE_URL}/store/${review.product_id}" target="_blank" rel="noopener noreferrer" aria-label="${escapeHtml(`${review.product_title || '프리세일즈 문서'} 사용후기 새창 열기`)}">
+        <blockquote>
+          <div class="stars">${'★'.repeat(Math.max(1, Math.min(5, Number(review.rating) || 1)))}</div>
+          <p>${escapeHtml(review.content).slice(0, 180)}</p>
+          <cite>${escapeHtml(maskReviewerName(review.reviewer_name))}${review.product_title ? ` · ${escapeHtml(review.product_title)}` : ''}</cite>
+        </blockquote>
+      </a>
     `).join('')
     : '<p class="empty">현재 공개된 사용후기가 없습니다.</p>'
 
@@ -764,15 +775,23 @@ export function buildReportHtml(
     .mini-card strong, .promo-card strong { display:block; font-size:14px; margin-bottom:6px; }
     .mini-card p, .promo-card p, blockquote p { margin:0; color:#475569; font-size:12px; line-height:1.6; }
     .promo-card { display:block; color:inherit; text-decoration:none; background:#fff; }
+    .promo-card:hover, .review-card:hover blockquote { border-color:#93c5fd; box-shadow:0 12px 30px -24px rgba(29,78,216,.45); }
     .promo-card span { display:inline-block; margin:4px 0 8px; font-size:12px; font-weight:800; color:var(--blue); }
     .promo { display:grid; grid-template-columns: 1fr 1fr; gap:18px; }
     blockquote { margin:0; }
+    .review-card { display:block; color:inherit; text-decoration:none; }
     .stars { color:#f59e0b; letter-spacing:.08em; font-size:12px; }
     cite { display:block; margin-top:10px; color:#64748b; font-size:11px; font-style:normal; }
     .empty { color:var(--muted); font-size:13px; margin:0; }
     footer { background: var(--navy); color:#cbd5e1; padding:20px 30px; border-radius:0 0 18px 18px; font-size:12px; line-height:1.7; }
     footer strong { color:white; }
+    .company-footer { display:grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap:12px; margin-top:18px; padding-top:18px; border-top:1px solid rgba(203,213,225,.18); }
+    .company-footer div, .company-footer a { display:block; min-width:0; color:inherit; text-decoration:none; }
+    .company-footer span { display:block; color:#94a3b8; font-size:11px; font-weight:700; }
+    .company-footer b { display:block; margin-top:2px; color:white; font-size:12px; font-weight:700; overflow-wrap:anywhere; }
+    .company-footer a:hover b { color:#bfdbfe; }
     @media (max-width: 900px) { .page { padding:12px; } .grid, .promo { grid-template-columns:1fr; } .panel { border-right:0; border-bottom:1px solid var(--line); } .focus-grid { grid-template-columns:1fr; } .eval-head { display:block; } .page-basis { max-width:none; margin-top:10px; } .cards { grid-template-columns:1fr; } }
+    @media (max-width: 900px) { .company-footer { grid-template-columns:1fr 1fr; } }
   </style>
 </head>
 <body>
@@ -885,6 +904,13 @@ export function buildReportHtml(
       <strong>중요 안내</strong><br />
       이 리포트는 업로드된 원문에서 확인된 문장과 페이지 근거를 기준으로 자동 생성되었습니다.
       원문 근거가 없는 값은 표시하지 않으며, 최종 입찰 참여 여부·제출 조건·가격·법적 판단은 반드시 담당자가 원문과 나라장터 제출 화면에서 다시 확인해야 합니다.
+      <div class="company-footer" aria-label="프리세일즈 사업자 정보">
+        <div><span>브랜드</span><b>프리세일즈</b></div>
+        <div><span>사업자등록번호</span><b>${escapeHtml(BUSINESS_INFO.businessNumber)}</b></div>
+        <div><span>통신판매신고번호</span><b>${escapeHtml(BUSINESS_INFO.commerceNumber)}</b></div>
+        <div><span>출판사신고번호</span><b>${escapeHtml(BUSINESS_INFO.publisherNumber)}</b></div>
+        <a href="${SITE_URL}/faq" target="_blank" rel="noopener noreferrer" aria-label="고객지원 새창 열기"><span>고객지원</span><b>문의하기</b></a>
+      </div>
     </footer>
   </div>
 </body>
@@ -902,7 +928,7 @@ export async function fetchReportPromotions(supabase: SupabaseClient) {
       .limit(3),
     supabase
       .from('reviews')
-      .select('title, content, rating, reviewer_name, products(title)')
+      .select('title, content, rating, reviewer_name, product_id, products(id, title)')
       .eq('is_published', true)
       .order('created_at', { ascending: false })
       .limit(3),
@@ -915,6 +941,7 @@ export async function fetchReportPromotions(supabase: SupabaseClient) {
       content: review.content,
       rating: review.rating,
       reviewer_name: review.reviewer_name ?? null,
+      product_id: review.product_id,
       product_title: product?.title ?? null,
     }
   })

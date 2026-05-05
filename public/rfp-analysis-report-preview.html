@@ -51,15 +51,23 @@
     .mini-card strong, .promo-card strong { display:block; font-size:14px; margin-bottom:6px; }
     .mini-card p, .promo-card p, blockquote p { margin:0; color:#475569; font-size:12px; line-height:1.6; }
     .promo-card { display:block; color:inherit; text-decoration:none; background:#fff; }
+    .promo-card:hover, .review-card:hover blockquote { border-color:#93c5fd; box-shadow:0 12px 30px -24px rgba(29,78,216,.45); }
     .promo-card span { display:inline-block; margin:4px 0 8px; font-size:12px; font-weight:800; color:var(--blue); }
     .promo { display:grid; grid-template-columns: 1fr 1fr; gap:18px; }
     blockquote { margin:0; }
+    .review-card { display:block; color:inherit; text-decoration:none; }
     .stars { color:#f59e0b; letter-spacing:.08em; font-size:12px; }
     cite { display:block; margin-top:10px; color:#64748b; font-size:11px; font-style:normal; }
     .empty { color:var(--muted); font-size:13px; margin:0; }
     footer { background: var(--navy); color:#cbd5e1; padding:20px 30px; border-radius:0 0 18px 18px; font-size:12px; line-height:1.7; }
     footer strong { color:white; }
+    .company-footer { display:grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap:12px; margin-top:18px; padding-top:18px; border-top:1px solid rgba(203,213,225,.18); }
+    .company-footer div, .company-footer a { display:block; min-width:0; color:inherit; text-decoration:none; }
+    .company-footer span { display:block; color:#94a3b8; font-size:11px; font-weight:700; }
+    .company-footer b { display:block; margin-top:2px; color:white; font-size:12px; font-weight:700; overflow-wrap:anywhere; }
+    .company-footer a:hover b { color:#bfdbfe; }
     @media (max-width: 900px) { .page { padding:12px; } .grid, .promo { grid-template-columns:1fr; } .panel { border-right:0; border-bottom:1px solid var(--line); } .focus-grid { grid-template-columns:1fr; } .eval-head { display:block; } .page-basis { max-width:none; margin-top:10px; } .cards { grid-template-columns:1fr; } }
+    @media (max-width: 900px) { .company-footer { grid-template-columns:1fr 1fr; } }
   </style>
 </head>
 <body>
@@ -281,17 +289,24 @@
     <section class="section promo">
       <div>
         <h2>참조하기 좋은 프리세일즈 문서</h2>
-        <a class="promo-card" href="https://presales.co.kr/store"><strong>공공 정보화 제안서 템플릿</strong><span>자료 보기</span><p>RFP 분석 결과를 제안서 목차와 평가 대응표로 옮길 때 참고할 수 있는 문서입니다.</p></a>
+        <a class="promo-card" href="https://presales.co.kr/store" target="_blank" rel="noopener noreferrer" aria-label="공공 정보화 제안서 템플릿 새창 열기"><strong>공공 정보화 제안서 템플릿</strong><span>자료 보기</span><p>RFP 분석 결과를 제안서 목차와 평가 대응표로 옮길 때 참고할 수 있는 문서입니다.</p></a>
       </div>
       <div>
         <h2>사용후기</h2>
-        <blockquote><div class="stars">★★★★★</div><p>평가표 중심으로 제안서 분량을 배분하는 데 도움이 됐습니다.</p><cite>프리세일즈 회원 · 공공 정보화 제안 준비</cite></blockquote>
+        <a class="review-card" href="https://presales.co.kr/store" target="_blank" rel="noopener noreferrer" aria-label="공공 정보화 제안 준비 사용후기 새창 열기"><blockquote><div class="stars">★★★★★</div><p>평가표 중심으로 제안서 분량을 배분하는 데 도움이 됐습니다.</p><cite>프OO · 공공 정보화 제안 준비</cite></blockquote></a>
       </div>
     </section>
 
     <footer>
       <strong>중요 안내</strong><br />
       이 예시 리포트는 화면 미리보기를 위한 가상 데이터입니다. 실제 분석 리포트는 업로드된 원문에서 확인된 문장과 페이지 근거를 기준으로 자동 생성됩니다.
+      <div class="company-footer" aria-label="프리세일즈 사업자 정보">
+        <div><span>브랜드</span><b>프리세일즈</b></div>
+        <div><span>사업자등록번호</span><b>682-53-00808</b></div>
+        <div><span>통신판매신고번호</span><b>제2023-수원권선-0773호</b></div>
+        <div><span>출판사신고번호</span><b>제 2023-000074호</b></div>
+        <a href="https://presales.co.kr/faq" target="_blank" rel="noopener noreferrer" aria-label="고객지원 새창 열기"><span>고객지원</span><b>문의하기</b></a>
+      </div>
     </footer>
   </div>
 </body>
