@@ -421,8 +421,8 @@ export function AiAnalysisClient() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:px-8 lg:grid-cols-[1fr_420px]">
-        <div className="space-y-5">
+      <section className="mx-auto grid max-w-7xl items-stretch gap-6 px-4 py-6 md:px-8 lg:grid-cols-[1fr_420px]">
+        <div className="flex min-h-0 flex-col gap-5">
           {!authLoading && !userEmail && (
             <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
               <Lock className="mt-0.5 h-4 w-4 shrink-0" />
@@ -435,7 +435,7 @@ export function AiAnalysisClient() {
             </div>
           )}
 
-          <div className="rounded-[32px] border border-blue-100 bg-white p-5 shadow-[0_24px_70px_-48px_rgba(37,99,235,0.55)]">
+          <div className="flex min-h-[560px] flex-1 flex-col rounded-[32px] border border-blue-100 bg-white p-5 shadow-[0_24px_70px_-48px_rgba(37,99,235,0.55)]">
             <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div className="flex items-start gap-3">
                 <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-[0_14px_28px_-18px_rgba(37,99,235,0.9)]">
@@ -454,7 +454,7 @@ export function AiAnalysisClient() {
                 HWP/HWPX는 PDF 변환 후 업로드
               </div>
             </div>
-            <div className="grid gap-4">
+            <div className="grid flex-1 gap-4">
               <FileDropZone
                 slot="rfp"
                 title="RFP 제안요청서"
@@ -484,7 +484,7 @@ export function AiAnalysisClient() {
           </div>
         </div>
 
-        <aside className="rounded-[32px] border border-slate-800 bg-[#101827] p-5 text-white shadow-[0_30px_90px_-55px_rgba(15,23,42,0.95)] ring-1 ring-white/10 lg:sticky lg:top-20 lg:self-start">
+        <aside className="flex min-h-[560px] flex-col rounded-[32px] border border-slate-800 bg-[#101827] p-5 text-white shadow-[0_30px_90px_-55px_rgba(15,23,42,0.95)] ring-1 ring-white/10 lg:sticky lg:top-20 lg:h-full lg:self-stretch">
           <div className="mb-5 flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
@@ -534,11 +534,12 @@ export function AiAnalysisClient() {
             })}
           </div>
 
+          <div className="mt-auto pt-6">
           <button
             type="button"
             disabled={!canSubmit}
             onClick={handleAnalyze}
-            className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-500 text-sm font-semibold text-white shadow-[0_18px_36px_-24px_rgba(59,130,246,0.95)] transition-all hover:bg-blue-400 active:translate-y-px disabled:cursor-not-allowed disabled:bg-white/18 disabled:text-white/55 disabled:shadow-none"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-500 text-sm font-semibold text-white shadow-[0_18px_36px_-24px_rgba(59,130,246,0.95)] transition-all hover:bg-blue-400 active:translate-y-px disabled:cursor-not-allowed disabled:bg-white/18 disabled:text-white/55 disabled:shadow-none"
           >
             {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSearch className="h-4 w-4" />}
             {running ? '분석 중' : 'AI 분석 시작'}
@@ -558,6 +559,7 @@ export function AiAnalysisClient() {
           <p className="mt-4 text-xs leading-6 text-slate-400">
             완성된 리포트는 나의콘솔의 내 AI 분석 리포트에서도 다시 다운로드할 수 있습니다.
           </p>
+          </div>
         </aside>
       </section>
 
