@@ -102,17 +102,6 @@ const adminSections: AdminSection[] = [
     ],
   },
   {
-    key: 'insights',
-    label: '인사이트',
-    shortLabel: 'Insights',
-    summary: '통계와 마케팅',
-    href: '/admin/analytics',
-    icon: BarChart3,
-    items: [
-      { href: '/admin/analytics', icon: BarChart3, label: '통계 분석', description: '방문과 매출 흐름' },
-    ],
-  },
-  {
     key: 'system',
     label: '시스템',
     shortLabel: 'System',
@@ -121,6 +110,7 @@ const adminSections: AdminSection[] = [
     icon: Settings,
     items: [
       { href: '/admin/settings', icon: Settings, label: '사이트 설정', description: '기본 운영 설정' },
+      { href: '/admin/analytics', icon: BarChart3, label: '이용현황', description: '방문과 매출 흐름' },
       { href: '/admin/settings/rewards', icon: Coins, label: '적립금', description: '리워드 정책' },
     ],
   },

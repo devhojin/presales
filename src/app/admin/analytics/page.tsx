@@ -530,8 +530,8 @@ export default function AnalyticsPage() {
       <header className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-sm font-medium text-slate-500">analytics console</p>
-            <h1 className="mt-2 text-3xl font-semibold text-slate-950">통계 분석</h1>
+            <p className="text-sm font-medium text-slate-500">usage console</p>
+            <h1 className="mt-2 text-3xl font-semibold text-slate-950">이용현황</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
               방문자는 자체 page_views 로그의 고유 세션 기준입니다. 관리자 페이지와 봇성 user-agent는 수집 단계에서 제외됩니다.
             </p>
