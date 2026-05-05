@@ -74,6 +74,7 @@ function isPdfFile(file: File) {
 function FileDropZone({ slot, title, description, required, file, disabled, onSelect, onRemove }: DropZoneProps) {
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const isRequiredSlot = slot === 'rfp'
 
   const handleFiles = useCallback((files: FileList | null) => {
     const selected = files?.[0]
@@ -92,14 +93,20 @@ function FileDropZone({ slot, title, description, required, file, disabled, onSe
         setDragging(false)
         if (!disabled) handleFiles(event.dataTransfer.files)
       }}
-      className={`rounded-2xl border border-dashed p-5 transition-colors ${
+      className={`group relative min-h-[168px] overflow-hidden rounded-[28px] border-2 border-dashed p-5 transition-all duration-300 ${
         dragging
-          ? 'border-primary bg-primary/5'
+          ? 'border-blue-500 bg-blue-50 shadow-[0_24px_54px_-34px_rgba(37,99,235,0.65)]'
           : file
-            ? 'border-blue-200 bg-blue-50/60'
-            : 'border-border bg-card'
-      } ${disabled ? 'opacity-60' : ''}`}
+            ? 'border-blue-300 bg-blue-50/80 shadow-[0_18px_48px_-38px_rgba(37,99,235,0.7)]'
+            : isRequiredSlot
+              ? 'border-blue-200 bg-[linear-gradient(135deg,#ffffff_0%,#f3f7ff_100%)] hover:border-blue-300 hover:shadow-[0_18px_48px_-38px_rgba(37,99,235,0.55)]'
+              : 'border-slate-200 bg-[linear-gradient(135deg,#ffffff_0%,#f8fafc_100%)] hover:border-slate-300 hover:shadow-[0_18px_48px_-38px_rgba(15,23,42,0.35)]'
+      } ${disabled ? 'opacity-60' : 'hover:-translate-y-0.5'}`}
+      aria-disabled={disabled}
     >
+      <div className="pointer-events-none absolute right-5 top-5 rounded-lg border border-slate-200/70 bg-white/70 px-2 py-1 text-[10px] font-semibold text-slate-500 shadow-sm">
+        {isRequiredSlot ? 'REQUIRED PDF' : 'OPTIONAL PDF'}
+      </div>
       <input
         ref={inputRef}
         type="file"
@@ -109,17 +116,21 @@ function FileDropZone({ slot, title, description, required, file, disabled, onSe
         onChange={(event) => handleFiles(event.target.files)}
       />
       <div className="flex items-start gap-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border shadow-sm ${
+          isRequiredSlot
+            ? 'border-blue-200 bg-blue-600 text-white'
+            : 'border-slate-200 bg-white text-slate-700'
+        }`}>
           <Upload className="h-5 w-5" />
         </div>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 pr-20">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-            {required && <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600">필수</span>}
+            {required && <span className="rounded-md bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-600">필수</span>}
           </div>
           <p className="mt-1 text-xs leading-6 text-muted-foreground">{description}</p>
           {file ? (
-            <div className="mt-4 flex min-w-0 items-center justify-between gap-3 rounded-xl border border-blue-200 bg-white px-3 py-3">
+            <div className="mt-4 flex min-w-0 items-center justify-between gap-3 rounded-2xl border border-blue-200 bg-white px-3 py-3 shadow-[0_10px_30px_-24px_rgba(37,99,235,0.85)]">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-foreground">{file.name}</p>
                 <p className="mt-0.5 text-xs text-muted-foreground">{formatBytes(file.size)}</p>
@@ -139,7 +150,7 @@ function FileDropZone({ slot, title, description, required, file, disabled, onSe
               type="button"
               disabled={disabled}
               onClick={() => inputRef.current?.click()}
-              className="mt-4 inline-flex h-10 items-center gap-2 rounded-xl border border-border px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed"
+              className="mt-4 inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition-all hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 active:translate-y-px disabled:cursor-not-allowed"
             >
               <FileText className="h-4 w-4" />
               PDF 선택
@@ -424,14 +435,23 @@ export function AiAnalysisClient() {
             </div>
           )}
 
-          <div className="rounded-2xl border border-border/50 bg-card p-5">
-            <div className="mb-5 flex items-start gap-3">
-              <ShieldCheck className="mt-1 h-5 w-5 shrink-0 text-primary" />
-              <div>
-                <h2 className="text-base font-semibold text-foreground">분석 기준</h2>
-                <p className="mt-1 text-xs leading-6 text-muted-foreground">
-                  PDF 원문에서 확인된 문장과 페이지 근거가 있는 항목만 리포트에 표시합니다. HWP/HWPX 파일은 PDF로 변환한 뒤 업로드해주세요.
-                </p>
+          <div className="rounded-[32px] border border-blue-100 bg-white p-5 shadow-[0_24px_70px_-48px_rgba(37,99,235,0.55)]">
+            <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-[0_14px_28px_-18px_rgba(37,99,235,0.9)]">
+                  <ShieldCheck className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-600">Upload desk</p>
+                  <h2 className="mt-1 text-lg font-semibold tracking-tight text-foreground">파일 접수</h2>
+                  <p className="mt-1 max-w-2xl text-xs leading-6 text-muted-foreground">
+                    이 영역은 PDF 원문을 받는 접수대입니다. PDF 원문에서 확인된 문장과 페이지 근거가 있는 항목만 리포트에 표시합니다.
+                  </p>
+                </div>
+              </div>
+              <div className="flex w-fit items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
+                <FileText className="h-4 w-4" />
+                HWP/HWPX는 PDF 변환 후 업로드
               </div>
             </div>
             <div className="grid gap-4">
@@ -464,20 +484,30 @@ export function AiAnalysisClient() {
           </div>
         </div>
 
-        <aside className="rounded-2xl border border-border/50 bg-card p-5 lg:sticky lg:top-20 lg:self-start">
-          <div className="mb-5 flex items-center gap-2">
-            <FileSearch className="h-5 w-5 text-primary" />
-            <h2 className="font-semibold text-foreground">분석 진행상태</h2>
+        <aside className="rounded-[32px] border border-slate-800 bg-[#101827] p-5 text-white shadow-[0_30px_90px_-55px_rgba(15,23,42,0.95)] ring-1 ring-white/10 lg:sticky lg:top-20 lg:self-start">
+          <div className="mb-5 flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+                <FileSearch className="h-5 w-5 text-blue-200" />
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-200">Analysis engine</p>
+                <h2 className="mt-1 font-semibold text-white">분석 진행상태</h2>
+              </div>
+            </div>
+            <span className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-semibold text-slate-300">
+              LIVE
+            </span>
           </div>
 
           <div className="mb-5">
-            <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
-              <span>{statusText}</span>
-              <span>{activeProgress}%</span>
+            <div className="mb-2 flex items-start justify-between gap-3 text-xs text-slate-300">
+              <span className="leading-5">{statusText}</span>
+              <span className="font-mono text-sm font-semibold text-white">{activeProgress}%</span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div className="h-2 overflow-hidden rounded-full bg-white/10">
               <div
-                className={`h-full rounded-full transition-all duration-500 ${step === 'failed' ? 'bg-red-500' : 'bg-primary'}`}
+                className={`h-full rounded-full transition-all duration-500 ${step === 'failed' ? 'bg-red-400' : 'bg-blue-400'}`}
                 style={{ width: `${activeProgress}%` }}
               />
             </div>
@@ -489,10 +519,16 @@ export function AiAnalysisClient() {
               const current = item.key === step
               return (
                 <div key={item.key} className="flex items-center gap-3">
-                  <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${reached ? 'bg-primary text-primary-foreground' : current ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                  <div className={`flex h-9 w-9 items-center justify-center rounded-xl border ${
+                    reached
+                      ? 'border-blue-400 bg-blue-400 text-[#08111f]'
+                      : current
+                        ? 'border-blue-300/50 bg-blue-300/10 text-blue-100'
+                        : 'border-white/10 bg-white/5 text-slate-500'
+                  }`}>
                     {current && running ? <Loader2 className="h-4 w-4 animate-spin" /> : reached ? <CheckCircle2 className="h-4 w-4" /> : <span className="h-2 w-2 rounded-full bg-current" />}
                   </div>
-                  <span className={`text-sm ${current ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>{item.label}</span>
+                  <span className={`text-sm ${current ? 'font-semibold text-white' : reached ? 'text-blue-100' : 'text-slate-400'}`}>{item.label}</span>
                 </div>
               )
             })}
@@ -502,7 +538,7 @@ export function AiAnalysisClient() {
             type="button"
             disabled={!canSubmit}
             onClick={handleAnalyze}
-            className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-500 text-sm font-semibold text-white shadow-[0_18px_36px_-24px_rgba(59,130,246,0.95)] transition-all hover:bg-blue-400 active:translate-y-px disabled:cursor-not-allowed disabled:bg-white/18 disabled:text-white/55 disabled:shadow-none"
           >
             {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSearch className="h-4 w-4" />}
             {running ? '분석 중' : 'AI 분석 시작'}
@@ -512,14 +548,14 @@ export function AiAnalysisClient() {
             <button
               type="button"
               onClick={() => downloadReport(job.id)}
-              className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+              className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-blue-300/40 bg-white text-sm font-semibold text-slate-900 transition-colors hover:bg-blue-50"
             >
               <Download className="h-4 w-4" />
               HTML 보고서 다운로드
             </button>
           )}
 
-          <p className="mt-4 text-xs leading-6 text-muted-foreground">
+          <p className="mt-4 text-xs leading-6 text-slate-400">
             완성된 리포트는 나의콘솔의 내 AI 분석 리포트에서도 다시 다운로드할 수 있습니다.
           </p>
         </aside>
