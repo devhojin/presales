@@ -1,7 +1,7 @@
 'use client'
 
 import './admin-theme.css'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, MessageCircle, Star, Download, BarChart3, Menu, X, Settings, Tag, HelpCircle, Link2, Megaphone, Rss, Mail, Coins, Bell, BookOpen, UserCircle, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, FileSearch } from 'lucide-react'
@@ -161,6 +161,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [badges, setBadges] = useState<Record<string, number>>({})
   const [chatNotifications, setChatNotifications] = useState<ChatNotification[]>([])
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const globalNavMenuRef = useRef<HTMLDivElement | null>(null)
   const activeSection = getActiveSection(pathname)
   const activeItem = getActiveItem(pathname)
   const ActiveSectionIcon = activeSection.icon
@@ -287,6 +288,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       return next
     })
   }
+
+  useEffect(() => {
+    if (!globalNavExpanded) return
+
+    const closeOnOutsidePointerDown = (event: PointerEvent) => {
+      const target = event.target
+      if (!(target instanceof Node)) return
+      if (globalNavMenuRef.current?.contains(target)) return
+
+      setGlobalNavExpanded(false)
+      localStorage.setItem('admin-global-nav-expanded', 'false')
+    }
+
+    document.addEventListener('pointerdown', closeOnOutsidePointerDown)
+    return () => document.removeEventListener('pointerdown', closeOnOutsidePointerDown)
+  }, [globalNavExpanded])
 
   const chatUnreadCount = badges['/admin/chat'] || 0
 
@@ -554,7 +571,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
           </div>
 
-          <div className="border-t border-white/[0.08] px-5 py-2">
+          <div ref={globalNavMenuRef} className="border-t border-white/[0.08] px-5 py-2">
             <nav className="flex items-center gap-1">
               <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto pb-1">
                 {adminSections.map((section) => {
