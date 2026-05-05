@@ -8,6 +8,7 @@ import {
   ArrowRight,
   CheckCircle2,
   Download,
+  Eye,
   FileSearch,
   FileText,
   Loader2,
@@ -171,6 +172,10 @@ export function AiAnalysisClient() {
   const [error, setError] = useState('')
   const [job, setJob] = useState<JobStatus | null>(null)
   const [running, setRunning] = useState(false)
+  const [showExamplePreview, setShowExamplePreview] = useState(false)
+  const [exampleHtml, setExampleHtml] = useState('')
+  const [exampleLoading, setExampleLoading] = useState(false)
+  const [exampleError, setExampleError] = useState('')
 
   useEffect(() => {
     const supabase = createClient()
@@ -179,6 +184,42 @@ export function AiAnalysisClient() {
       setAuthLoading(false)
     })
   }, [])
+
+  useEffect(() => {
+    if (!showExamplePreview) return
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowExamplePreview(false)
+    }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [showExamplePreview])
+
+  useEffect(() => {
+    if (!showExamplePreview || exampleHtml) return
+
+    let cancelled = false
+    setExampleLoading(true)
+    setExampleError('')
+
+    fetch('/rfp-analysis-report-preview.html', { cache: 'no-store' })
+      .then(async (res) => {
+        if (!res.ok) throw new Error('분석결과 예시를 불러오지 못했습니다.')
+        return res.text()
+      })
+      .then((html) => {
+        if (!cancelled) setExampleHtml(html)
+      })
+      .catch((err) => {
+        if (!cancelled) setExampleError(err instanceof Error ? err.message : '분석결과 예시를 불러오지 못했습니다.')
+      })
+      .finally(() => {
+        if (!cancelled) setExampleLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [showExamplePreview, exampleHtml])
 
   const validateAndSetFile = useCallback((slot: Slot, file: File) => {
     setError('')
@@ -333,13 +374,23 @@ export function AiAnalysisClient() {
                 본 분석결과는 프리세일즈의 전문가 노하우가 적용된 AI 가 분석하여 파일을 제공해드립니다.
               </p>
             </div>
-            <Link
-              href="/mypage"
-              className="inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-            >
-              나의콘솔
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => setShowExamplePreview(true)}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-100"
+              >
+                <Eye className="h-4 w-4" />
+                분석결과 예시
+              </button>
+              <Link
+                href="/mypage"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+              >
+                나의콘솔
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -458,6 +509,62 @@ export function AiAnalysisClient() {
           </p>
         </aside>
       </section>
+
+      {showExamplePreview && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm md:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="rfp-analysis-example-title"
+          onClick={() => setShowExamplePreview(false)}
+        >
+          <div
+            className="flex h-[88vh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 md:px-5">
+              <div className="min-w-0">
+                <h2 id="rfp-analysis-example-title" className="truncate text-sm font-semibold text-foreground md:text-base">
+                  분석결과 예시
+                </h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  실제 발주기관, 담당자, 연락처, 사업 내용은 모두 가상화한 샘플입니다.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowExamplePreview(false)}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                aria-label="분석결과 예시 닫기"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="relative flex min-h-0 flex-1 bg-[#eef2f7]">
+              {exampleLoading && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/90 text-sm text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  분석결과 예시를 불러오는 중입니다.
+                </div>
+              )}
+              {exampleError ? (
+                <div className="flex w-full items-center justify-center p-6">
+                  <div className="max-w-sm rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+                    {exampleError}
+                  </div>
+                </div>
+              ) : (
+                <iframe
+                  title="분석결과 예시 리포트"
+                  srcDoc={exampleHtml}
+                  sandbox=""
+                  className="h-full w-full flex-1 border-0 bg-[#eef2f7]"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
