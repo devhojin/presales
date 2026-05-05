@@ -6,6 +6,7 @@ import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/client-ip'
 import { recomputeExpectedAmount } from '@/lib/payment-recompute'
+import { checkGlobalFreeUserLimit } from '@/lib/free-user-limit'
 import {
   confirmRewardPoints,
   grantPurchaseRewardForOrder,
@@ -98,6 +99,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: '0원 주문 처리 가능한 주문이 아닙니다. 장바구니에서 다시 진행해주세요.' },
         { status: 400 },
+      )
+    }
+
+    const freeLimit = await checkGlobalFreeUserLimit(supabase, user.id)
+    if (!freeLimit.allowed) {
+      return NextResponse.json(
+        { error: freeLimit.error, limit: freeLimit.limit, used: freeLimit.used },
+        { status: 403 },
       )
     }
 

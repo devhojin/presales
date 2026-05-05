@@ -5,6 +5,7 @@ import { cookies, headers } from 'next/headers'
 import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/client-ip'
+import { checkGlobalFreeUserLimit } from '@/lib/free-user-limit'
 
 /**
  * 무료 상품 주문 처리 (service_role 사용).
@@ -97,6 +98,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: '무료로 받을 수 있는 상품이 없습니다' },
         { status: 400 },
+      )
+    }
+
+    const freeLimit = await checkGlobalFreeUserLimit(supabase, user.id)
+    if (!freeLimit.allowed) {
+      return NextResponse.json(
+        { error: freeLimit.error, limit: freeLimit.limit, used: freeLimit.used },
+        { status: 403 },
       )
     }
 

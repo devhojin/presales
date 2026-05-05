@@ -20,6 +20,7 @@ import {
   loadRewardBalance,
   loadRewardSettings,
 } from '@/lib/reward-points'
+import { GLOBAL_FREE_USER_LIMIT } from '@/lib/free-access-policy'
 
 interface OwnedCoupon {
   id: string
@@ -698,6 +699,11 @@ export default function CartPage() {
             <p className="text-[11px] text-muted-foreground text-center">
               디지털 콘텐츠 특성상 다운로드 후 환불이 제한될 수 있습니다
             </p>
+            {hasFreeItems && (
+              <p className="text-center text-[11px] font-medium text-blue-700">
+                무료 이용은 전체 선착순 {GLOBAL_FREE_USER_LIMIT}명까지 제공됩니다
+              </p>
+            )}
           </div>
         </div>
       )}

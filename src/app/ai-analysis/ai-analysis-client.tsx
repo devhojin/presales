@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { uploadFile } from '@/lib/storage-upload'
+import { GLOBAL_FREE_USER_LIMIT } from '@/lib/free-access-policy'
 import { useToastStore } from '@/stores/toast-store'
 
 const MAX_TOTAL_SIZE = 50 * 1024 * 1024
@@ -380,7 +381,7 @@ export function AiAnalysisClient() {
             <div>
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-xs font-semibold text-primary">
                 <FileSearch className="h-3.5 w-3.5" />
-                회원 무료 AI 분석
+                회원 무료 AI 분석 · 선착순 {GLOBAL_FREE_USER_LIMIT}명
               </div>
               <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">AI RFP 분석</h1>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-muted-foreground">

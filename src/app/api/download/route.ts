@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/logger'
+import { checkGlobalFreeUserLimit } from '@/lib/free-user-limit'
 
 export async function POST(request: NextRequest) {
   // 1. Supabase Auth로 로그인 유저 확인
@@ -96,6 +97,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: '구매 후 다운로드 가능합니다' },
         { status: 403 }
+      )
+    }
+  }
+
+  if (product.is_free && !isAdmin) {
+    const freeLimit = await checkGlobalFreeUserLimit(supabase, user.id)
+    if (!freeLimit.allowed) {
+      return NextResponse.json(
+        { error: freeLimit.error, limit: freeLimit.limit, used: freeLimit.used },
+        { status: 403 },
       )
     }
   }

@@ -1,6 +1,7 @@
 import { headers } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { getClientIp } from '@/lib/client-ip'
+import { checkGlobalFreeUserLimit } from '@/lib/free-user-limit'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
 import { requireActiveUser } from '@/lib/require-active-user'
 import {
@@ -97,6 +98,14 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = getRfpAnalysisServiceClient()
+  const freeLimit = await checkGlobalFreeUserLimit(supabase, auth.user.id)
+  if (!freeLimit.allowed) {
+    return NextResponse.json(
+      { error: freeLimit.error, limit: freeLimit.limit, used: freeLimit.used },
+      { status: 403 },
+    )
+  }
+
   const jobId = crypto.randomUUID()
   const rfpPath = buildStoragePath(auth.user.id, jobId, 'rfp', rfpFile.name)
   const taskPath = taskFile ? buildStoragePath(auth.user.id, jobId, 'task', taskFile.name) : null

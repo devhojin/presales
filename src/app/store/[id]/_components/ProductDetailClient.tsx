@@ -22,6 +22,7 @@ import { SITE_URL } from '@/lib/constants'
 import { shareToKakao } from '@/lib/kakao-share'
 import { buildProductTagSearchHref } from '@/lib/product-tags'
 import { formatProductFileSize, formatProductFileTypes, normalizeProductFileSizeBytes, summarizeProductFiles } from '@/lib/product-file-metadata'
+import { GLOBAL_FREE_USER_LIMIT } from '@/lib/free-access-policy'
 
 type TabId = 'info' | 'video' | 'review'
 type ProductDetail = DbProduct & { has_preview_pdf?: boolean }
@@ -791,6 +792,11 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
               </button>
             )}
           </div>
+          {product.is_free && (
+            <p className="hidden text-center text-xs font-medium text-blue-700 sm:block">
+              무료 이용은 전체 선착순 {GLOBAL_FREE_USER_LIMIT}명까지 제공됩니다
+            </p>
+          )}
 
           {/* PDF 상품 안내 */}
           {displayFormat.toLowerCase().includes('pdf') && !product.is_free && (
@@ -1214,6 +1220,11 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
           )}
           {displayFormat.toLowerCase().includes('pdf') && !product.is_free && (
             <p className="text-[10px] text-blue-600 text-center mt-1">PDF 구매 후 PPT 원본 구매 시 구매 이력 할인 적용</p>
+          )}
+          {product.is_free && (
+            <p className="mt-1 text-center text-[10px] font-medium text-blue-700">
+              무료 이용은 전체 선착순 {GLOBAL_FREE_USER_LIMIT}명까지 제공됩니다
+            </p>
           )}
         </div>
       </div>
