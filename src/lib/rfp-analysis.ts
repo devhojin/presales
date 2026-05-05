@@ -102,6 +102,9 @@ const GUEST_ID_KEY = '_guestId'
 const PDF_EXT_RE = /\.pdf$/i
 const SAFE_FILE_RE = /[^a-zA-Z0-9._-]+/g
 const NOT_FOUND = '원문에서 확인 불가'
+const REPORT_FILE_PREFIX = '프리세일즈-AI 사업분석'
+const REPORT_TITLE_EXT_RE = /\.(pdf|hwp|hwpx|docx?|pptx?|xlsx?|html?)$/i
+const REPORT_FILE_UNSAFE_RE = /[\\/:*?"<>|\u0000-\u001f]+/g
 const PDFJS_WORKER_SRC = pathToFileURL(
   path.join(process.cwd(), 'node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs'),
 ).href
@@ -158,6 +161,18 @@ export function getRfpAnalysisGuestId(resultJson: unknown) {
   if (!resultJson || typeof resultJson !== 'object' || Array.isArray(resultJson)) return null
   const value = (resultJson as Record<string, unknown>)[GUEST_ID_KEY]
   return typeof value === 'string' && value.trim() ? value : null
+}
+
+function getRfpAnalysisResultProjectTitle(resultJson: unknown) {
+  if (!resultJson || typeof resultJson !== 'object' || Array.isArray(resultJson)) return null
+  const projectTitle = (resultJson as Record<string, unknown>).projectTitle
+  if (!projectTitle || typeof projectTitle !== 'object' || Array.isArray(projectTitle)) return null
+
+  const row = projectTitle as Record<string, unknown>
+  if (row.confidenceState !== 'found') return null
+
+  const value = row.value
+  return typeof value === 'string' ? value : null
 }
 
 export function withRfpAnalysisGuestId(resultJson: unknown, guestId: string) {
@@ -220,13 +235,30 @@ export function buildStoragePath(userId: string, jobId: string, role: 'rfp' | 't
   return `${userId}/${jobId}/input/${role}-${sanitizeFileName(fileName)}`
 }
 
-export function getRfpAnalysisReportFileName(title: string | null, fallback: string) {
-  const base = (title || fallback || 'rfp-analysis-report')
+function normalizeReportTitleForFileName(value: string | null | undefined) {
+  const base = (value || '')
     .normalize('NFC')
-    .replace(/[\\/:*?"<>|]+/g, '_')
-    .replace(/\s+/g, '_')
-    .slice(0, 80)
-  return `${base || 'rfp-analysis-report'}.html`
+    .replace(REPORT_TITLE_EXT_RE, '')
+    .replace(REPORT_FILE_UNSAFE_RE, '_')
+    .replace(/\s+/g, ' ')
+    .replace(/_+/g, '_')
+    .replace(/^[\s._-]+|[\s._-]+$/g, '')
+    .slice(0, 100)
+
+  if (!base || base === NOT_FOUND) return null
+  return base
+}
+
+export function getRfpAnalysisReportFileName(title: string | null, fallback: string, resultJson?: unknown) {
+  const titleCandidate = normalizeReportTitleForFileName(title)
+  const fallbackCandidate = normalizeReportTitleForFileName(fallback)
+  const resultTitleCandidate = normalizeReportTitleForFileName(getRfpAnalysisResultProjectTitle(resultJson))
+  const titleIsFallback = Boolean(titleCandidate && fallbackCandidate && titleCandidate === fallbackCandidate)
+  const projectTitle = titleIsFallback
+    ? resultTitleCandidate || titleCandidate
+    : titleCandidate || resultTitleCandidate || fallbackCandidate || 'RFP 분석 리포트'
+
+  return `${REPORT_FILE_PREFIX}-${projectTitle}.html`
 }
 
 function defineMissingGlobal(name: 'DOMMatrix' | 'ImageData' | 'Path2D', value: unknown) {

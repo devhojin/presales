@@ -37,7 +37,7 @@ export async function GET(
     return NextResponse.json({ error: '아직 다운로드 가능한 리포트가 없습니다' }, { status: 409 })
   }
 
-  const fileName = getRfpAnalysisReportFileName(job.project_title, job.rfp_file_name)
+  const fileName = getRfpAnalysisReportFileName(job.project_title, job.rfp_file_name, job.result_json)
   const { data: signed, error: signError } = await supabase.storage
     .from(RFP_ANALYSIS_BUCKET)
     .createSignedUrl(job.report_html_path, 60, { download: fileName })
