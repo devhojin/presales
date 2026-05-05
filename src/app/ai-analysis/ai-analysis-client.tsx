@@ -176,6 +176,7 @@ export function AiAnalysisClient() {
   const [exampleHtml, setExampleHtml] = useState('')
   const [exampleLoading, setExampleLoading] = useState(false)
   const [exampleError, setExampleError] = useState('')
+  const analysisCompleted = job?.status === 'completed' || step === 'completed'
 
   useEffect(() => {
     const supabase = createClient()
@@ -223,6 +224,12 @@ export function AiAnalysisClient() {
 
   const validateAndSetFile = useCallback((slot: Slot, file: File) => {
     setError('')
+    if (analysisCompleted) {
+      setJob(null)
+      setStep('idle')
+      setProgress(0)
+      setStatusText('RFP 제안요청서 PDF를 업로드하면 분석을 시작할 수 있습니다.')
+    }
     if (!isPdfFile(file)) {
       setError(`${slot === 'rfp' ? 'RFP 제안요청서' : '과업지시서'}는 PDF만 업로드할 수 있습니다. HWP/HWPX/DOCX 파일은 PDF로 변환해주세요.`)
       return
@@ -234,13 +241,19 @@ export function AiAnalysisClient() {
     }
     if (slot === 'rfp') setRfpFile(file)
     else setTaskFile(file)
-  }, [rfpFile, taskFile])
+  }, [analysisCompleted, rfpFile, taskFile])
 
   const removeFile = useCallback((slot: Slot) => {
     if (slot === 'rfp') setRfpFile(null)
     else setTaskFile(null)
     setError('')
-  }, [])
+    if (analysisCompleted) {
+      setJob(null)
+      setStep('idle')
+      setProgress(0)
+      setStatusText('RFP 제안요청서 PDF를 업로드하면 분석을 시작할 수 있습니다.')
+    }
+  }, [analysisCompleted])
 
   async function refreshJob(jobId: string) {
     const res = await fetch(`/api/rfp-analysis/jobs/${jobId}`)
@@ -281,6 +294,7 @@ export function AiAnalysisClient() {
       return
     }
     if (running) return
+    if (analysisCompleted) return
 
     setRunning(true)
     setError('')
@@ -355,7 +369,7 @@ export function AiAnalysisClient() {
     }
   }
 
-  const canSubmit = Boolean(rfpFile && userEmail && !running)
+  const canSubmit = Boolean(rfpFile && userEmail && !running && !analysisCompleted)
   const activeProgress = step === 'failed' ? 100 : Math.max(progress, steps.find((item) => item.key === step)?.progress ?? 0)
 
   return (
