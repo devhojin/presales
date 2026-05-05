@@ -6,6 +6,7 @@ import { requireActiveUser } from '@/lib/require-active-user'
 import {
   buildStoragePath,
   getRfpAnalysisServiceClient,
+  getRfpAnalysisUserDeletedAt,
   RFP_ANALYSIS_MAX_TOTAL_SIZE,
   RFP_ANALYSIS_MAX_TOTAL_SIZE_LABEL,
   validatePdfMeta,
@@ -33,7 +34,7 @@ export async function GET() {
   const supabase = getRfpAnalysisServiceClient()
   const { data, error } = await supabase
     .from('rfp_analysis_jobs')
-    .select('id, status, progress, step, rfp_file_name, task_file_name, project_title, report_html_path, error_message, created_at, completed_at')
+    .select('id, status, progress, step, rfp_file_name, task_file_name, project_title, report_html_path, error_message, result_json, created_at, completed_at')
     .eq('user_id', auth.user.id)
     .order('created_at', { ascending: false })
 
@@ -41,7 +42,11 @@ export async function GET() {
     return NextResponse.json({ error: 'AI 분석 이력 조회에 실패했습니다' }, { status: 500 })
   }
 
-  return NextResponse.json({ jobs: data ?? [] })
+  return NextResponse.json({
+    jobs: (data ?? [])
+      .filter((job) => !getRfpAnalysisUserDeletedAt(job.result_json))
+      .map(({ result_json: _resultJson, ...job }) => job),
+  })
 }
 
 export async function POST(request: NextRequest) {

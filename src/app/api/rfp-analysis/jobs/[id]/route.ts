@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { requireActiveUser } from '@/lib/require-active-user'
-import { getRfpAnalysisServiceClient } from '@/lib/rfp-analysis'
+import {
+  getRfpAnalysisServiceClient,
+  getRfpAnalysisUserDeletedAt,
+  withRfpAnalysisUserDeletedAt,
+} from '@/lib/rfp-analysis'
 
 export const dynamic = 'force-dynamic'
 
@@ -28,4 +32,48 @@ export async function GET(
   }
 
   return NextResponse.json({ job: data })
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const auth = await requireActiveUser()
+  if (!auth.ok) return auth.response
+
+  const { id } = await params
+  const supabase = getRfpAnalysisServiceClient()
+  const { data: job, error } = await supabase
+    .from('rfp_analysis_jobs')
+    .select('id, user_id, result_json')
+    .eq('id', id)
+    .eq('user_id', auth.user.id)
+    .maybeSingle()
+
+  if (error) {
+    return NextResponse.json({ error: 'AI 분석 리포트 삭제 처리에 실패했습니다' }, { status: 500 })
+  }
+  if (!job) {
+    return NextResponse.json({ error: 'AI 분석 작업을 찾을 수 없습니다' }, { status: 404 })
+  }
+
+  const existingDeletedAt = getRfpAnalysisUserDeletedAt(job.result_json)
+  if (existingDeletedAt) {
+    return NextResponse.json({ ok: true, userDeletedAt: existingDeletedAt })
+  }
+
+  const userDeletedAt = new Date().toISOString()
+  const { error: updateError } = await supabase
+    .from('rfp_analysis_jobs')
+    .update({
+      result_json: withRfpAnalysisUserDeletedAt(job.result_json, userDeletedAt),
+    })
+    .eq('id', id)
+    .eq('user_id', auth.user.id)
+
+  if (updateError) {
+    return NextResponse.json({ error: 'AI 분석 리포트 삭제 처리에 실패했습니다' }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true, userDeletedAt })
 }

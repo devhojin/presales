@@ -95,6 +95,7 @@ export interface ReportReview {
   product_title: string | null
 }
 
+const USER_DELETED_AT_KEY = '_userDeletedAt'
 const PDF_EXT_RE = /\.pdf$/i
 const SAFE_FILE_RE = /[^a-zA-Z0-9._-]+/g
 const NOT_FOUND = '원문에서 확인 불가'
@@ -142,6 +143,23 @@ export function getRfpAnalysisServiceClient() {
     throw new Error('Supabase service role 설정이 없습니다')
   }
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
+}
+
+export function getRfpAnalysisUserDeletedAt(resultJson: unknown) {
+  if (!resultJson || typeof resultJson !== 'object' || Array.isArray(resultJson)) return null
+  const value = (resultJson as Record<string, unknown>)[USER_DELETED_AT_KEY]
+  return typeof value === 'string' && value.trim() ? value : null
+}
+
+export function withRfpAnalysisUserDeletedAt(resultJson: unknown, deletedAt: string) {
+  const base = resultJson && typeof resultJson === 'object' && !Array.isArray(resultJson)
+    ? resultJson as Record<string, unknown>
+    : {}
+
+  return {
+    ...base,
+    [USER_DELETED_AT_KEY]: deletedAt,
+  }
 }
 
 export function validatePdfMeta(file: FileMetaInput, label: string): string | null {

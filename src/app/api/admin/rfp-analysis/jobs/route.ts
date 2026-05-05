@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { requireAdminService } from '@/lib/require-admin'
+import { getRfpAnalysisUserDeletedAt } from '@/lib/rfp-analysis'
 
 export const dynamic = 'force-dynamic'
 
@@ -234,6 +235,7 @@ export async function GET(request: Request) {
       createdAt: job.created_at,
       completedAt: job.completed_at,
       downloadCount: downloadCounts.get(job.id) || 0,
+      userDeletedAt: getRfpAnalysisUserDeletedAt(job.result_json),
       summary: buildSummary(job.result_json),
     })),
     pagination: {

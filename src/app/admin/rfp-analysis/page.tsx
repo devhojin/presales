@@ -37,6 +37,7 @@ type AdminRfpJob = {
   createdAt: string
   completedAt: string | null
   downloadCount: number
+  userDeletedAt: string | null
   summary: {
     projectTitle: string | null
     organization: string | null
@@ -368,6 +369,9 @@ export default function AdminRfpAnalysisPage() {
                   <div className="min-w-0">
                     <div className="mb-2 flex items-center gap-2">
                       {renderStatus(job)}
+                      {job.userDeletedAt && (
+                        <Badge className="border border-amber-200 bg-amber-50 text-amber-700">(사용자 삭제처리)</Badge>
+                      )}
                       <span className="text-xs text-[#767268]">{job.progress}%</span>
                     </div>
                     <p className="line-clamp-2 break-words text-sm font-semibold text-[#17171f]">

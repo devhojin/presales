@@ -11,6 +11,7 @@ import {
   Lock, Eye, EyeOff, ChevronDown, ShoppingBag, AlertTriangle, Clock, Bookmark,
   ExternalLink, Megaphone, Rss, Package, ArrowRight, Store, FileSearch,
   ArrowLeft, MessageCircle, HelpCircle, Tag, Copy, Check, Coins,
+  Trash2,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import { getPasswordAuthErrorMessage, validatePassword } from '@/lib/password-policy'
@@ -125,6 +126,7 @@ interface RfpAnalysisJob {
   project_title: string | null
   report_html_path: string | null
   error_message: string | null
+  result_json?: unknown
   created_at: string
   completed_at: string | null
 }
@@ -190,6 +192,12 @@ function triggerBrowserDownload(url: string, fileName?: string) {
   document.body.appendChild(anchor)
   anchor.click()
   anchor.remove()
+}
+
+function isRfpAnalysisUserDeleted(job: { result_json?: unknown } | null | undefined) {
+  if (!job?.result_json || typeof job.result_json !== 'object' || Array.isArray(job.result_json)) return false
+  const deletedAt = (job.result_json as Record<string, unknown>)._userDeletedAt
+  return typeof deletedAt === 'string' && deletedAt.trim().length > 0
 }
 
 function getOrderItemProduct(item: OrderItem) {
@@ -261,6 +269,7 @@ export default function MyConsolePage() {
   const [rfpAnalysisJobs, setRfpAnalysisJobs] = useState<RfpAnalysisJob[]>([])
   const [rfpAnalysisDownloads, setRfpAnalysisDownloads] = useState<RfpAnalysisDownload[]>([])
   const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null)
+  const [deletingReportId, setDeletingReportId] = useState<string | null>(null)
 
   // KPI counts
   const [kpi, setKpi] = useState({ orders: 0, bookmarks: 0, downloads: 0, chats: 0, analyses: 0 })
@@ -336,7 +345,7 @@ export default function MyConsolePage() {
         supabase.from('announcement_bookmarks').select('announcement_id').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('feed_bookmarks').select('post_id').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('reward_point_ledger').select('id, amount, balance_after, type, status, memo, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(8),
-        supabase.from('rfp_analysis_jobs').select('id, status, progress, step, rfp_file_name, task_file_name, project_title, report_html_path, error_message, created_at, completed_at').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('rfp_analysis_jobs').select('id, status, progress, step, rfp_file_name, task_file_name, project_title, report_html_path, error_message, result_json, created_at, completed_at').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('rfp_analysis_report_downloads').select('id, job_id, downloaded_at, rfp_analysis_jobs(project_title, rfp_file_name)').eq('user_id', user.id).order('downloaded_at', { ascending: false }).limit(10),
       ])
 
@@ -415,13 +424,15 @@ export default function MyConsolePage() {
       setOrders(normalizedOrders)
       setDownloadLogs((logsData || []) as DownloadLog[])
       setRewardLedger((rewardLedgerData || []) as RewardLedgerItem[])
-      setRfpAnalysisJobs((rfpJobsData || []) as RfpAnalysisJob[])
-      setRfpAnalysisDownloads((rfpDownloadsData || []) as RfpAnalysisDownload[])
+      const visibleRfpJobs = ((rfpJobsData || []) as RfpAnalysisJob[]).filter((job) => !isRfpAnalysisUserDeleted(job))
+      const visibleRfpJobIds = new Set(visibleRfpJobs.map((job) => job.id))
+      setRfpAnalysisJobs(visibleRfpJobs)
+      setRfpAnalysisDownloads(((rfpDownloadsData || []) as RfpAnalysisDownload[]).filter((download) => visibleRfpJobIds.has(download.job_id)))
       setKpi({
         orders: ordersData?.length || 0,
         bookmarks: (annBmData?.length || 0) + (feedBmData?.length || 0),
         downloads: logsData?.length || 0,
-        analyses: rfpJobsData?.length || 0,
+        analyses: visibleRfpJobs.length,
         chats: 0,
       })
       setLoading(false)
@@ -520,11 +531,40 @@ export default function MyConsolePage() {
         .eq('user_id', user.id)
         .order('downloaded_at', { ascending: false })
         .limit(10)
-      setRfpAnalysisDownloads((newDownloads || []) as RfpAnalysisDownload[])
+      setRfpAnalysisDownloads(((newDownloads || []) as RfpAnalysisDownload[]).filter((download) => (
+        rfpAnalysisJobs.some((job) => job.id === download.job_id)
+      )))
     } catch {
       addToast('AI 리포트 다운로드 중 오류가 발생했습니다', 'error')
     } finally {
       setDownloadingReportId(null)
+    }
+  }
+
+  async function handleRfpAnalysisDelete(jobId: string) {
+    const confirmed = window.confirm('이 AI 분석 리포트를 나의콘솔에서 삭제할까요? 관리자 기록과 리포트 파일은 유지됩니다.')
+    if (!confirmed) return
+
+    setDeletingReportId(jobId)
+    try {
+      const res = await fetch(`/api/rfp-analysis/jobs/${jobId}`, {
+        method: 'DELETE',
+        credentials: 'same-origin',
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        addToast(data.error || 'AI 분석 리포트 삭제 처리에 실패했습니다', 'error')
+        return
+      }
+
+      setRfpAnalysisJobs((prev) => prev.filter((job) => job.id !== jobId))
+      setRfpAnalysisDownloads((prev) => prev.filter((download) => download.job_id !== jobId))
+      setKpi((prev) => ({ ...prev, analyses: Math.max(0, prev.analyses - 1) }))
+      addToast('나의콘솔에서 삭제했습니다', 'success')
+    } catch {
+      addToast('AI 분석 리포트 삭제 처리 중 오류가 발생했습니다', 'error')
+    } finally {
+      setDeletingReportId(null)
     }
   }
 
@@ -1023,15 +1063,26 @@ export default function MyConsolePage() {
                             <p className="mt-2 line-clamp-2 text-xs text-red-600">{report.error_message}</p>
                           )}
                         </div>
-                        <button
-                          type="button"
-                          disabled={!canDownload || downloadingReportId === report.id}
-                          onClick={() => handleRfpReportDownload(report.id)}
-                          className="flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {downloadingReportId === report.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-                          HTML 다운로드
-                        </button>
+                        <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:shrink-0 sm:grid-cols-none sm:flex">
+                          <button
+                            type="button"
+                            disabled={deletingReportId === report.id}
+                            onClick={() => void handleRfpAnalysisDelete(report.id)}
+                            className="flex h-10 items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-white px-4 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {deletingReportId === report.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                            삭제
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!canDownload || downloadingReportId === report.id}
+                            onClick={() => handleRfpReportDownload(report.id)}
+                            className="flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {downloadingReportId === report.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                            HTML 다운로드
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )

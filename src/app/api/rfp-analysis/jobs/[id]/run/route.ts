@@ -9,8 +9,10 @@ import {
   fetchReportPromotions,
   getRfpAnalysisFailureMessage,
   getRfpAnalysisServiceClient,
+  getRfpAnalysisUserDeletedAt,
   RFP_ANALYSIS_BUCKET,
   runOpenAiRfpAnalysis,
+  withRfpAnalysisUserDeletedAt,
 } from '@/lib/rfp-analysis'
 
 export const dynamic = 'force-dynamic'
@@ -106,6 +108,8 @@ export async function POST(
 
     const projectTitle = result.projectTitle.confidenceState === 'found' ? result.projectTitle.value : job.rfp_file_name
     const completedAt = new Date().toISOString()
+    const userDeletedAt = getRfpAnalysisUserDeletedAt(job.result_json)
+    const resultJson = userDeletedAt ? withRfpAnalysisUserDeletedAt(result, userDeletedAt) : result
     const { data: completedJob, error: completeError } = await supabase
       .from('rfp_analysis_jobs')
       .update({
@@ -113,7 +117,7 @@ export async function POST(
         progress: 100,
         step: '완료',
         project_title: projectTitle,
-        result_json: result,
+        result_json: resultJson,
         report_html_path: reportPath,
         openai_response_id: responseId,
         completed_at: completedAt,
