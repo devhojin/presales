@@ -42,7 +42,7 @@ const cspDirectives = [
   "default-src 'self'",
   `script-src ${scriptSrc}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "img-src 'self' data: blob: https://vswkrbemigyclgjrpgqt.supabase.co https://*.supabase.co https://www.google-analytics.com https://www.clarity.ms https://*.clarity.ms https://c.bing.com https://img.youtube.com https://i.ytimg.com",
+  "img-src 'self' data: blob: https://vswkrbemigyclgjrpgqt.supabase.co https://*.supabase.co https://www.googletagmanager.com https://www.google-analytics.com https://www.clarity.ms https://*.clarity.ms https://c.bing.com https://img.youtube.com https://i.ytimg.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   `connect-src ${connectSrc}`,
   "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://js.tosspayments.com https://*.portone.io https://*.kakao.com",
