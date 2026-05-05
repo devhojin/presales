@@ -48,9 +48,9 @@ const adminSections: AdminSection[] = [
   },
   {
     key: 'sales',
-    label: '판매',
+    label: '영업',
     shortLabel: 'Sales',
-    summary: '상품과 주문 관리',
+    summary: '상품, 주문, 프로모션',
     href: '/admin/products',
     icon: ShoppingCart,
     items: [
@@ -58,6 +58,20 @@ const adminSections: AdminSection[] = [
       { href: '/admin/orders', icon: ShoppingCart, label: '주문 관리', description: '결제와 주문 상태' },
       { href: '/admin/downloads', icon: Download, label: '다운로드 관리', description: '파일 다운로드 기록' },
       { href: '/admin/reviews', icon: Star, label: '리뷰 관리', description: '후기 승인과 노출' },
+      { href: '/admin/coupons', icon: Tag, label: '쿠폰 관리', description: '프로모션 코드' },
+      { href: '/admin/discount-matches', icon: Link2, label: '할인 매칭', description: '할인 상품 연결' },
+    ],
+  },
+  {
+    key: 'projects',
+    label: '프로젝트',
+    shortLabel: 'Projects',
+    summary: '컨설팅과 RFP 분석',
+    href: '/admin/consulting',
+    icon: FileSearch,
+    items: [
+      { href: '/admin/consulting', icon: MessageSquare, label: '컨설팅 신청', description: '프로젝트 상담 접수' },
+      { href: '/admin/rfp-analysis', icon: FileSearch, label: 'AI 분석 관리', description: 'RFP 분석 작업과 리포트' },
     ],
   },
   {
@@ -86,7 +100,6 @@ const adminSections: AdminSection[] = [
     items: [
       { href: '/admin/members', icon: Users, label: '회원 관리', description: '가입 회원과 권한' },
       { href: '/admin/chat', icon: MessageCircle, label: '채팅 관리', description: '고객 문의 응대' },
-      { href: '/admin/consulting', icon: MessageSquare, label: '컨설팅 신청', description: '컨설팅 접수 현황' },
     ],
   },
   {
@@ -98,9 +111,6 @@ const adminSections: AdminSection[] = [
     icon: BarChart3,
     items: [
       { href: '/admin/analytics', icon: BarChart3, label: '통계 분석', description: '방문과 매출 흐름' },
-      { href: '/admin/rfp-analysis', icon: FileSearch, label: 'AI 분석 관리', description: 'RFP 분석 작업과 리포트' },
-      { href: '/admin/coupons', icon: Tag, label: '쿠폰 관리', description: '프로모션 코드' },
-      { href: '/admin/discount-matches', icon: Link2, label: '할인 매칭', description: '할인 상품 연결' },
     ],
   },
   {
@@ -363,7 +373,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {isMobile && (
         <nav className="border-b border-[#ece9e2] p-3">
-          <p className="px-2 pb-2 font-mono text-[10px] font-semibold uppercase text-[#8a867f]">Global</p>
+          <p className="px-2 pb-2 font-mono text-[10px] font-semibold uppercase text-[#8a867f]">1Depth</p>
           <div className="grid grid-cols-2 gap-2">
             {adminSections.map((section) => {
               const Icon = section.icon
@@ -391,7 +401,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       <nav className="flex-1 space-y-1.5 overflow-y-auto p-3">
-        <p className="px-2 pb-2 font-mono text-[10px] font-semibold uppercase text-[#8a867f]">Section</p>
+        <p className="px-2 pb-2 font-mono text-[10px] font-semibold uppercase text-[#8a867f]">2Depth</p>
         {activeSection.items.map((item) => {
           const Icon = item.icon
           const isActive = activeItem.href === item.href
@@ -602,8 +612,37 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </button>
             </nav>
 
+            <div className="mt-2 flex items-center gap-2 overflow-x-auto rounded-[22px] border border-white/[0.08] bg-black/[0.12] p-2">
+              <div className="flex shrink-0 items-center gap-2 rounded-[14px] px-2 py-1.5 text-[11px] font-semibold text-white/[0.48]">
+                <ActiveSectionIcon className="h-3.5 w-3.5 text-[#c8ff2e]" />
+                <span>{activeSection.label} 메뉴</span>
+              </div>
+              <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+                {activeSection.items.map((item) => {
+                  const ItemIcon = item.icon
+                  const isActive = activeItem.href === item.href
+                  const badgeCount = badges[item.href] || 0
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`flex shrink-0 items-center gap-2 rounded-[14px] px-3 py-2 text-xs font-semibold transition-all ${
+                        isActive
+                          ? 'bg-[#c8ff2e] text-[#17171f] shadow-[0_16px_34px_-24px_rgba(200,255,46,0.8)]'
+                          : 'text-white/[0.62] hover:bg-white/[0.08] hover:text-white'
+                      }`}
+                    >
+                      <ItemIcon className="h-3.5 w-3.5" />
+                      <span>{item.label}</span>
+                      {renderBadge(badgeCount, isActive ? 'dark' : 'light')}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+
             {globalNavExpanded && (
-              <div className="mt-3 grid grid-cols-[repeat(6,minmax(160px,1fr))] gap-2 overflow-x-auto pb-2">
+              <div className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-2 overflow-x-auto pb-2">
                 {adminSections.map((section) => {
                   const SectionIcon = section.icon
                   const sectionActive = section.key === activeSection.key
