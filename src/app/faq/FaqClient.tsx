@@ -97,12 +97,12 @@ export function FaqClient() {
           <HelpCircle className="w-7 h-7 text-primary" />
           <h1 className="text-3xl md:text-4xl font-bold tracking-tight">고객지원</h1>
         </div>
-        <p className="text-muted-foreground mb-6">
+        <p className="max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
           무엇을 도와드릴까요? <span className="text-foreground font-medium">{totalFaqs}개</span>의 자주 묻는 질문을 확인하세요
         </p>
 
         {/* Search */}
-        <div className="relative max-w-xl">
+        <div className="relative mt-6 max-w-xl">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
@@ -121,7 +121,7 @@ export function FaqClient() {
       </div>
 
       {/* 2-column: Left sidebar + Right content */}
-      <div className="flex gap-8 pb-16">
+      <div className="flex flex-col gap-6 pb-16 md:flex-row md:gap-8">
         {/* Left sidebar — category nav (desktop) */}
         <aside className="hidden md:block w-56 shrink-0">
           <nav className="sticky top-24 space-y-0.5">
@@ -155,26 +155,28 @@ export function FaqClient() {
         </aside>
 
         {/* Mobile category pills */}
-        <div className="md:hidden flex flex-wrap gap-2 mb-6 w-full">
-          <button
-            onClick={() => setSelectedCategoryId(null)}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium border cursor-pointer ${
-              !selectedCategoryId ? 'bg-primary text-primary-foreground border-primary' : 'border-border/50 text-muted-foreground'
-            }`}
-          >
-            전체
-          </button>
-          {categories.map((cat) => (
+        <div className="md:hidden -mx-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-w-full gap-2">
             <button
-              key={cat.id}
-              onClick={() => setSelectedCategoryId(selectedCategoryId === cat.id ? null : cat.id)}
-              className={`px-3.5 py-1.5 rounded-full text-xs font-medium border cursor-pointer ${
-                selectedCategoryId === cat.id ? 'bg-primary text-primary-foreground border-primary' : 'border-border/50 text-muted-foreground'
+              onClick={() => setSelectedCategoryId(null)}
+              className={`h-9 shrink-0 rounded-full border px-4 text-sm font-semibold transition-colors cursor-pointer ${
+                !selectedCategoryId ? 'bg-primary text-primary-foreground border-primary' : 'border-border/60 bg-background text-muted-foreground'
               }`}
             >
-              {cat.name}
+              전체
             </button>
-          ))}
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategoryId(selectedCategoryId === cat.id ? null : cat.id)}
+                className={`h-9 shrink-0 rounded-full border px-4 text-sm font-semibold transition-colors cursor-pointer ${
+                  selectedCategoryId === cat.id ? 'bg-primary text-primary-foreground border-primary' : 'border-border/60 bg-background text-muted-foreground'
+                }`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Right content */}
@@ -214,18 +216,18 @@ export function FaqClient() {
           )}
 
           {/* CTA */}
-          <div className="mt-12 rounded-2xl bg-zinc-900 p-8 md:p-10 text-center text-white">
+          <div className="mt-12 rounded-2xl bg-zinc-900 p-6 text-center text-white md:p-10">
             <MessageCircle className="w-10 h-10 text-blue-400 mx-auto mb-4" />
             <h3 className="text-lg font-bold tracking-tight mb-2">원하는 답변을 찾지 못하셨나요?</h3>
             <p className="text-sm text-zinc-400 mb-6">전문 컨설턴트가 직접 도와드립니다</p>
-            <div className="flex items-center justify-center gap-3">
+            <div className="flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
               <button
                 onClick={openChat}
-                className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-full text-sm font-medium transition-all active:scale-[0.98] cursor-pointer border border-white/20"
+                className="inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-full text-sm font-medium transition-all active:scale-[0.98] cursor-pointer border border-white/20"
               >
                 <MessageCircle className="w-4 h-4" /> 채팅 문의하기
               </button>
-              <Link href="/consulting" className="inline-flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white px-6 py-3 rounded-full text-sm font-medium transition-all active:scale-[0.98] cursor-pointer">
+              <Link href="/consulting" className="inline-flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-400 text-white px-6 py-3 rounded-full text-sm font-medium transition-all active:scale-[0.98] cursor-pointer">
                 <Headphones className="w-4 h-4" /> 컨설팅 문의하기
               </Link>
             </div>
