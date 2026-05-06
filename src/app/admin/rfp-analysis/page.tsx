@@ -140,6 +140,28 @@ function triggerBrowserDownload(url: string, fileName?: string) {
   anchor.remove()
 }
 
+function readDownloadFileName(header: string | null) {
+  if (!header) return null
+
+  const encodedMatch = /filename\*=UTF-8''([^;]+)/i.exec(header)
+  if (encodedMatch?.[1]) {
+    try {
+      return decodeURIComponent(encodedMatch[1])
+    } catch {
+      return null
+    }
+  }
+
+  const quotedMatch = /filename="([^"]+)"/i.exec(header)
+  return quotedMatch?.[1] || null
+}
+
+function triggerBlobDownload(blob: Blob, fileName: string) {
+  const url = window.URL.createObjectURL(blob)
+  triggerBrowserDownload(url, fileName)
+  window.setTimeout(() => window.URL.revokeObjectURL(url), 1000)
+}
+
 function compactText(value: string | null, fallback = '-') {
   return value && value !== '원문에서 확인 불가' ? value : fallback
 }
@@ -295,12 +317,15 @@ export default function AdminRfpAnalysisPage() {
         cache: 'no-store',
         credentials: 'same-origin',
       })
-      const data = await res.json().catch(() => ({})) as { url?: string; fileName?: string; error?: string }
-      if (!res.ok || !data.url) {
-        setError(data.error || '리포트 다운로드 URL을 만들지 못했습니다')
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { error?: string }
+        setError(data.error || '리포트 파일을 다운로드하지 못했습니다')
         return
       }
-      triggerBrowserDownload(data.url, data.fileName)
+
+      const blob = await res.blob()
+      const fileName = readDownloadFileName(res.headers.get('Content-Disposition')) || '프리세일즈-AI 사업분석.html'
+      triggerBlobDownload(blob, fileName)
       await loadJobs()
     } catch {
       setError('리포트 다운로드 중 오류가 발생했습니다')

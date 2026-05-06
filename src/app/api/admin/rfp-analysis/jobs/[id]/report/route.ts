@@ -7,6 +7,16 @@ import {
 
 export const dynamic = 'force-dynamic'
 
+function encodeHeaderFileName(fileName: string) {
+  return encodeURIComponent(fileName).replace(/['()*]/g, (char) =>
+    `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+  )
+}
+
+function buildContentDisposition(fileName: string) {
+  return `attachment; filename="presales-ai-rfp-report.html"; filename*=UTF-8''${encodeHeaderFileName(fileName)}`
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -32,12 +42,12 @@ export async function GET(
   }
 
   const fileName = getRfpAnalysisReportFileName(job.project_title, job.rfp_file_name, job.result_json)
-  const { data: signed, error: signError } = await admin.service.storage
+  const { data: report, error: downloadError } = await admin.service.storage
     .from(RFP_ANALYSIS_BUCKET)
-    .createSignedUrl(job.report_html_path, 60, { download: fileName })
+    .download(job.report_html_path)
 
-  if (signError || !signed?.signedUrl) {
-    return NextResponse.json({ error: '리포트 다운로드 URL 생성에 실패했습니다' }, { status: 500 })
+  if (downloadError || !report) {
+    return NextResponse.json({ error: '리포트 파일을 불러오지 못했습니다' }, { status: 500 })
   }
 
   await admin.service.from('rfp_analysis_report_downloads').insert({
@@ -45,5 +55,13 @@ export async function GET(
     user_id: admin.user.id,
   })
 
-  return NextResponse.json({ url: signed.signedUrl, fileName })
+  return new Response(report, {
+    headers: {
+      'Cache-Control': 'no-store',
+      'Content-Disposition': buildContentDisposition(fileName),
+      'Content-Length': String(report.size),
+      'Content-Type': 'text/html; charset=utf-8',
+      'X-Content-Type-Options': 'nosniff',
+    },
+  })
 }
