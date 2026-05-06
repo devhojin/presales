@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { morningBriefAnon, type SourceSite } from './supabase'
+import { morningBriefService, type SourceSite } from './supabase'
 
 export type SubscribeResult =
   | { ok: true; created: boolean; resubscribed: boolean }
@@ -21,7 +21,7 @@ export async function subscribeEmail(
     return { ok: false, error: '올바른 이메일 주소가 아닙니다' }
   }
 
-  const sb = morningBriefAnon()
+  const sb = morningBriefService()
 
   const { data: existing, error: selErr } = await sb
     .from('subscribers')
@@ -75,9 +75,9 @@ export async function unsubscribeByToken(
   token: string,
 ): Promise<{ ok: true; email: string } | { ok: false; error: string }> {
   if (!token) return { ok: false, error: '토큰이 필요합니다' }
-  const sb = morningBriefAnon()
+  const sb = morningBriefService()
 
-  // 1) 토큰으로 본인 확인 (헤더 기반 RLS)
+  // 1) 토큰으로 본인 확인. 공개 클라이언트 직접 접근은 막고 서버에서만 처리한다.
   const { data: me, error: selErr } = await sb
     .from('subscribers')
     .select('id, email')

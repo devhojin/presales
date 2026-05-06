@@ -26,13 +26,16 @@
 ## 환경변수 (presales 안에서 사용)
 
 ```bash
-# 모닝브리프 마스터 DB (anon 키 — 사이트 공통)
+# 모닝브리프 마스터 DB
 MORNING_BRIEF_SUPABASE_URL=https://ynvirceyybekzyqbzbxz.supabase.co
-MORNING_BRIEF_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIs...   # 또는 sb_publishable_...
+MORNING_BRIEF_SUPABASE_SERVICE_KEY=eyJhbGciOi...          # 서버 전용, 클라이언트 노출 금지
 MORNING_BRIEF_SOURCE=presales
 
+# 중앙 API를 쓰는 사이트는 아래 두 값을 우선 사용하고 DB 키를 직접 쓰지 않는다.
+MORNING_BRIEF_API_URL=https://...
+MORNING_BRIEF_INGEST_SECRET=<server-only-secret>
+
 # 발송용 (presales 프로젝트만 필요, Cron Route 안에서)
-MORNING_BRIEF_SUPABASE_SERVICE_KEY=eyJhbGciOi...
 MB_CRON_SECRET=<random-string> # 전용 키를 쓰는 경우
 # 또는 Vercel Cron 기본 헤더용 CRON_SECRET 사용
 ANTHROPIC_API_KEY=<claude-haiku용>
