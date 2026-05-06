@@ -1,20 +1,11 @@
 import { NextResponse } from 'next/server'
 import { requireAdminService } from '@/lib/require-admin'
-import {
-  getRfpAnalysisReportFileName,
-  RFP_ANALYSIS_BUCKET,
-} from '@/lib/rfp-analysis'
+import { RFP_ANALYSIS_BUCKET } from '@/lib/rfp-analysis'
 
 export const dynamic = 'force-dynamic'
 
-function encodeHeaderFileName(fileName: string) {
-  return encodeURIComponent(fileName).replace(/['()*]/g, (char) =>
-    `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
-  )
-}
-
-function buildContentDisposition(fileName: string) {
-  return `attachment; filename="presales-ai-rfp-report.html"; filename*=UTF-8''${encodeHeaderFileName(fileName)}`
+function buildDownloadFileName(jobId: string) {
+  return `presales-ai-rfp-${jobId.slice(0, 8)}.html`
 }
 
 export async function GET(
@@ -41,7 +32,6 @@ export async function GET(
     return NextResponse.json({ error: '아직 다운로드 가능한 리포트가 없습니다' }, { status: 409 })
   }
 
-  const fileName = getRfpAnalysisReportFileName(job.project_title, job.rfp_file_name, job.result_json)
   const { data: report, error: downloadError } = await admin.service.storage
     .from(RFP_ANALYSIS_BUCKET)
     .download(job.report_html_path)
@@ -58,7 +48,7 @@ export async function GET(
   return new Response(report, {
     headers: {
       'Cache-Control': 'no-store',
-      'Content-Disposition': buildContentDisposition(fileName),
+      'Content-Disposition': `attachment; filename="${buildDownloadFileName(job.id)}"`,
       'Content-Length': String(report.size),
       'Content-Type': 'text/html; charset=utf-8',
       'X-Content-Type-Options': 'nosniff',
