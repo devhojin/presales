@@ -83,6 +83,7 @@ with check (
 create or replace function public.set_reward_ledger_updated_at()
 returns trigger
 language plpgsql
+set search_path = public, pg_temp
 as $$
 begin
   new.updated_at = now();

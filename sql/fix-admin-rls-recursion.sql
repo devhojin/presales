@@ -4,11 +4,17 @@
 -- ============================================
 
 -- ① SECURITY DEFINER 함수 생성 (RLS 우회해서 역할 확인)
-CREATE OR REPLACE FUNCTION public.is_admin()
+-- 공개 RPC 노출을 피하기 위해 public이 아닌 private 스키마에서 사용한다.
+CREATE SCHEMA IF NOT EXISTS private;
+REVOKE ALL ON SCHEMA private FROM public;
+GRANT USAGE ON SCHEMA private TO anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION private.is_admin()
 RETURNS BOOLEAN
 LANGUAGE sql
 SECURITY DEFINER
 STABLE
+SET search_path = public, pg_temp
 AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.profiles
@@ -16,31 +22,34 @@ AS $$
   );
 $$;
 
+REVOKE ALL ON FUNCTION private.is_admin() FROM public;
+GRANT EXECUTE ON FUNCTION private.is_admin() TO anon, authenticated, service_role;
+
 -- ② 재귀 정책 삭제 후 재생성 (is_admin() 사용)
 DROP POLICY IF EXISTS "Admins can view all profiles" ON profiles;
 CREATE POLICY "Admins can view all profiles" ON profiles
-  FOR SELECT USING (public.is_admin());
+  FOR SELECT USING (private.is_admin());
 
 DROP POLICY IF EXISTS "Admins can update all profiles" ON profiles;
 CREATE POLICY "Admins can update all profiles" ON profiles
-  FOR UPDATE USING (public.is_admin()) WITH CHECK (public.is_admin());
+  FOR UPDATE USING (private.is_admin()) WITH CHECK (private.is_admin());
 
 DROP POLICY IF EXISTS "Admins can delete profiles" ON profiles;
 CREATE POLICY "Admins can delete profiles" ON profiles
-  FOR DELETE USING (public.is_admin());
+  FOR DELETE USING (private.is_admin());
 
 -- ③ 다른 테이블도 동일 함수로 교체 (일관성)
 DROP POLICY IF EXISTS "Admin full access" ON coupons;
 CREATE POLICY "Admin full access" ON coupons
-  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+  FOR ALL USING (private.is_admin()) WITH CHECK (private.is_admin());
 
 DROP POLICY IF EXISTS "Admins can view all orders" ON orders;
 CREATE POLICY "Admins can view all orders" ON orders
-  FOR SELECT USING (public.is_admin());
+  FOR SELECT USING (private.is_admin());
 
 DROP POLICY IF EXISTS "Admins can view all reviews" ON reviews;
 CREATE POLICY "Admins can view all reviews" ON reviews
-  FOR SELECT USING (public.is_admin());
+  FOR SELECT USING (private.is_admin());
 
 -- 확인 쿼리 (실행 결과로 admin 계정이 정상 조회되는지 확인)
 -- SELECT id, email, role FROM profiles WHERE email = 'admin@amarans.co.kr';

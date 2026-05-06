@@ -106,6 +106,7 @@ create policy "rfp_analysis_owner_delete"
 create or replace function public.set_rfp_analysis_jobs_updated_at()
 returns trigger
 language plpgsql
+set search_path = public, pg_temp
 as $$
 begin
   new.updated_at = now();

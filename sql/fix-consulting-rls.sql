@@ -13,4 +13,4 @@ CREATE POLICY "Users can view own consulting requests" ON consulting_requests
 
 DROP POLICY IF EXISTS "Admins manage consulting requests" ON consulting_requests;
 CREATE POLICY "Admins manage consulting requests" ON consulting_requests
-  FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+  FOR ALL USING (private.is_admin()) WITH CHECK (private.is_admin());

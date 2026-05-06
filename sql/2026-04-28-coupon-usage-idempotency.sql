@@ -115,5 +115,5 @@ $$;
 
 revoke all on function public.increment_coupon_usage(uuid, uuid, bigint, bigint) from public, anon, authenticated;
 revoke all on function public.rollback_coupon_usage(uuid, uuid, bigint) from public, anon, authenticated;
-grant execute on function public.increment_coupon_usage(uuid, uuid, bigint, bigint) to authenticated, service_role;
+grant execute on function public.increment_coupon_usage(uuid, uuid, bigint, bigint) to service_role;
 grant execute on function public.rollback_coupon_usage(uuid, uuid, bigint) to service_role;

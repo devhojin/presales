@@ -36,7 +36,7 @@ RETURNS void AS $$
 BEGIN
   UPDATE reviews SET helpful_count = helpful_count + 1 WHERE id = rid;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 -- 5. RPC: decrement helpful count
 CREATE OR REPLACE FUNCTION decrement_helpful(rid bigint)
@@ -44,7 +44,12 @@ RETURNS void AS $$
 BEGIN
   UPDATE reviews SET helpful_count = GREATEST(helpful_count - 1, 0) WHERE id = rid;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
+
+REVOKE EXECUTE ON FUNCTION increment_helpful(bigint) FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION decrement_helpful(bigint) FROM public, anon, authenticated;
+GRANT EXECUTE ON FUNCTION increment_helpful(bigint) TO service_role;
+GRANT EXECUTE ON FUNCTION decrement_helpful(bigint) TO service_role;
 
 -- 6. Create storage bucket for review images
 INSERT INTO storage.buckets (id, name, public) VALUES ('review-images', 'review-images', true)
@@ -56,11 +61,7 @@ ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (bucket_id = 'review-images');
 
--- 8. Storage policy: allow public read
-CREATE POLICY "Public can read review images"
-ON storage.objects FOR SELECT
-TO public
-USING (bucket_id = 'review-images');
+-- 8. Public bucket URLs are readable without a broad storage.objects SELECT policy.
 
 -- 9. RLS policies for reviews
 ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;

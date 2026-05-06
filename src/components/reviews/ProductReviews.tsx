@@ -233,38 +233,38 @@ export function ProductReviews({ productId, onCountChange }: ProductReviewsProps
 
   async function toggleHelpful(reviewId: number) {
     if (!user) return
-    const supabase = createClient()
     const isHelpful = helpfulSet.has(reviewId)
 
+    const response = await fetch('/api/reviews/helpful', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ reviewId, helpful: !isHelpful }),
+    })
+    const result = await response.json().catch(() => null) as {
+      ok?: boolean
+      error?: string
+      helpfulCount?: number
+    } | null
+
+    if (!response.ok || !result?.ok) {
+      alert(`도움됨 처리 실패: ${result?.error ?? 'unknown_error'}`)
+      return
+    }
+
     if (isHelpful) {
-      const { error } = await supabase
-        .from('review_helpful')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('review_id', reviewId)
-      if (error) { alert(`도움됨 취소 실패: ${error.message}`); return }
       setHelpfulSet((prev) => {
         const next = new Set(prev)
         next.delete(reviewId)
         return next
       })
-      const { error: rpcErr } = await supabase.rpc('decrement_helpful', { rid: reviewId })
-      if (rpcErr) console.warn('[reviews] helpful_count 감소 실패:', rpcErr.message)
     } else {
-      const { error } = await supabase
-        .from('review_helpful')
-        .insert({ user_id: user.id, review_id: reviewId })
-      if (error) { alert(`도움됨 등록 실패: ${error.message}`); return }
       setHelpfulSet((prev) => new Set(prev).add(reviewId))
-      const { error: rpcErr } = await supabase.rpc('increment_helpful', { rid: reviewId })
-      if (rpcErr) console.warn('[reviews] helpful_count 증가 실패:', rpcErr.message)
     }
 
-    // Update local state
     setReviews((prev) =>
       prev.map((r) =>
         r.id === reviewId
-          ? { ...r, helpful_count: r.helpful_count + (isHelpful ? -1 : 1) }
+          ? { ...r, helpful_count: result.helpfulCount ?? r.helpful_count + (isHelpful ? -1 : 1) }
           : r
       )
     )
