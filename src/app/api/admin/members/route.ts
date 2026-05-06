@@ -51,7 +51,7 @@ export async function GET() {
   const [{ data: membersData, error: membersError }, { data: statsData, error: statsError }] = await Promise.all([
     service
       .from('profiles')
-      .select('id, email, name, phone, company, role, admin_memo, reward_balance, created_at')
+      .select('id, email, name, phone, company, role, admin_memo, reward_balance, created_at, deleted_at, deletion_reason')
       .order('created_at', { ascending: false })
       .limit(MEMBER_LIST_LIMIT),
     service
@@ -72,11 +72,7 @@ export async function GET() {
     console.warn(`[admin/members] reached limit ${MEMBER_LIST_LIMIT} — pagination 도입 권고`)
   }
 
-  const rows = (membersData || []).map((member) => ({
-    ...member,
-    deleted_at: null,
-    deletion_reason: null,
-  }))
+  const rows = membersData || []
   const statRows = statsData || []
   const members = rows
   const stats: Record<string, { order_count: number; total_spent: number; review_count: number }> = {}
