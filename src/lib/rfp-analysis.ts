@@ -235,6 +235,82 @@ export function buildStoragePath(userId: string, jobId: string, role: 'rfp' | 't
   return `${userId}/${jobId}/input/${role}-${sanitizeFileName(fileName)}`
 }
 
+type RfpAnalysisHardDeleteJob = {
+  id: string
+  user_id: string | null
+  rfp_file_path: string | null
+  task_file_path: string | null
+  report_html_path: string | null
+  result_json: unknown
+}
+
+export type RfpAnalysisHardDeleteResult =
+  | { ok: true; removedFiles: number }
+  | { ok: false; status: number; error: string }
+
+function compactStoragePaths(paths: Array<string | null | undefined>) {
+  return Array.from(new Set(paths.filter((path): path is string => Boolean(path))))
+}
+
+export async function deleteRfpAnalysisJobPermanently(
+  service: SupabaseClient,
+  jobId: string,
+): Promise<RfpAnalysisHardDeleteResult> {
+  const { data: job, error } = await service
+    .from('rfp_analysis_jobs')
+    .select('id, user_id, rfp_file_path, task_file_path, report_html_path, result_json')
+    .eq('id', jobId)
+    .maybeSingle()
+
+  if (error) {
+    return { ok: false, status: 500, error: 'AI 분석 작업 조회에 실패했습니다' }
+  }
+  if (!job) {
+    return { ok: false, status: 404, error: 'AI 분석 작업을 찾을 수 없습니다' }
+  }
+
+  const record = job as RfpAnalysisHardDeleteJob
+  const storagePaths = compactStoragePaths([
+    record.rfp_file_path,
+    record.task_file_path,
+    record.report_html_path,
+  ])
+
+  if (storagePaths.length > 0) {
+    const { error: storageError } = await service.storage
+      .from(RFP_ANALYSIS_BUCKET)
+      .remove(storagePaths)
+
+    if (storageError) {
+      return { ok: false, status: 500, error: '업로드/리포트 파일 삭제에 실패했습니다' }
+    }
+  }
+
+  const { error: downloadsError } = await service
+    .from('rfp_analysis_report_downloads')
+    .delete()
+    .eq('job_id', jobId)
+
+  if (downloadsError) {
+    return { ok: false, status: 500, error: '리포트 다운로드 이력 삭제에 실패했습니다' }
+  }
+
+  const { error: deleteError } = await service
+    .from('rfp_analysis_jobs')
+    .delete()
+    .eq('id', jobId)
+
+  if (deleteError) {
+    return { ok: false, status: 500, error: 'AI 분석 작업 완전삭제에 실패했습니다' }
+  }
+
+  if (getRfpAnalysisGuestId(record.result_json) && record.user_id) {
+    await service.auth.admin.deleteUser(record.user_id)
+  }
+
+  return { ok: true, removedFiles: storagePaths.length }
+}
+
 function normalizeReportTitleForFileName(value: string | null | undefined) {
   const base = (value || '')
     .normalize('NFC')

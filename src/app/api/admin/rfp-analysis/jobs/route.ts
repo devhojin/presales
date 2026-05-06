@@ -1,12 +1,17 @@
 import { NextResponse } from 'next/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { requireAdminService } from '@/lib/require-admin'
-import { getRfpAnalysisGuestId, getRfpAnalysisUserDeletedAt } from '@/lib/rfp-analysis'
+import {
+  deleteRfpAnalysisJobPermanently,
+  getRfpAnalysisGuestId,
+  getRfpAnalysisUserDeletedAt,
+} from '@/lib/rfp-analysis'
 
 export const dynamic = 'force-dynamic'
 
 const PAGE_SIZE_DEFAULT = 20
 const PAGE_SIZE_MAX = 50
+const BULK_DELETE_MAX = 50
 
 type EvidenceRecord = {
   value?: unknown
@@ -152,6 +157,19 @@ function buildSearchFilter(search: string, profileIds: string[]) {
   return parts.join(',')
 }
 
+function parseBulkDeleteIds(body: unknown) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return []
+  const ids = (body as Record<string, unknown>).ids
+  if (!Array.isArray(ids)) return []
+
+  return Array.from(new Set(
+    ids
+      .filter((id): id is string => typeof id === 'string')
+      .map((id) => id.trim())
+      .filter(Boolean),
+  ))
+}
+
 export async function GET(request: Request) {
   const admin = await requireAdminService()
   if (!admin.ok) return admin.response
@@ -287,4 +305,43 @@ export async function GET(request: Request) {
       totalPages: Math.max(1, Math.ceil((count || 0) / pageSize)),
     },
   })
+}
+
+export async function DELETE(request: Request) {
+  const admin = await requireAdminService()
+  if (!admin.ok) return admin.response
+
+  const body = await request.json().catch(() => null) as unknown
+  const ids = parseBulkDeleteIds(body)
+  if (ids.length === 0) {
+    return NextResponse.json({ error: '완전삭제할 AI 분석 작업을 선택해주세요' }, { status: 400 })
+  }
+  if (ids.length > BULK_DELETE_MAX) {
+    return NextResponse.json({ error: `한 번에 ${BULK_DELETE_MAX}건까지만 완전삭제할 수 있습니다` }, { status: 400 })
+  }
+
+  let deletedCount = 0
+  let removedFiles = 0
+  const failed: Array<{ id: string; error: string; status: number }> = []
+
+  for (const id of ids) {
+    const result = await deleteRfpAnalysisJobPermanently(admin.service, id)
+    if (!result.ok) {
+      failed.push({ id, error: result.error, status: result.status })
+      continue
+    }
+    deletedCount += 1
+    removedFiles += result.removedFiles
+  }
+
+  if (failed.length > 0) {
+    return NextResponse.json({
+      error: '일부 AI 분석 작업 완전삭제에 실패했습니다',
+      deletedCount,
+      removedFiles,
+      failed,
+    }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true, deletedCount, removedFiles })
 }

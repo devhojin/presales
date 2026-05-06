@@ -192,6 +192,8 @@ export default function AdminRfpAnalysisPage() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
   const [inputDownloadingId, setInputDownloadingId] = useState<string | null>(null)
   const [mutatingJobId, setMutatingJobId] = useState<string | null>(null)
+  const [selectedJobIds, setSelectedJobIds] = useState<Set<string>>(() => new Set())
+  const [bulkDeleting, setBulkDeleting] = useState(false)
   const [selectedUser, setSelectedUser] = useState<AdminRfpUser | null>(null)
 
   const loadJobs = useCallback(async () => {
@@ -238,6 +240,22 @@ export default function AdminRfpAnalysisPage() {
 
   const completedCount = useMemo(() => jobs.filter((job) => job.status === 'completed').length, [jobs])
   const failedCount = useMemo(() => jobs.filter((job) => job.status === 'failed').length, [jobs])
+  const visibleJobIds = useMemo(() => jobs.map((job) => job.id), [jobs])
+  const selectedVisibleCount = useMemo(
+    () => visibleJobIds.filter((id) => selectedJobIds.has(id)).length,
+    [selectedJobIds, visibleJobIds],
+  )
+  const allVisibleSelected = jobs.length > 0 && selectedVisibleCount === jobs.length
+
+  useEffect(() => {
+    setSelectedJobIds((current) => {
+      if (current.size === 0) return current
+
+      const visible = new Set(visibleJobIds)
+      const next = new Set(Array.from(current).filter((id) => visible.has(id)))
+      return next.size === current.size ? current : next
+    })
+  }, [visibleJobIds])
 
   function handleSearchSubmit(event: React.FormEvent) {
     event.preventDefault()
@@ -248,6 +266,26 @@ export default function AdminRfpAnalysisPage() {
   function handleStatusChange(nextStatus: RfpStatus) {
     setPage(1)
     setStatus(nextStatus)
+  }
+
+  function toggleJobSelection(jobId: string, checked: boolean) {
+    setSelectedJobIds((current) => {
+      const next = new Set(current)
+      if (checked) next.add(jobId)
+      else next.delete(jobId)
+      return next
+    })
+  }
+
+  function toggleVisibleJobsSelection(checked: boolean) {
+    setSelectedJobIds((current) => {
+      const next = new Set(current)
+      for (const jobId of visibleJobIds) {
+        if (checked) next.add(jobId)
+        else next.delete(jobId)
+      }
+      return next
+    })
   }
 
   async function handleDownload(jobId: string) {
@@ -340,6 +378,41 @@ export default function AdminRfpAnalysisPage() {
       setError('완전삭제 중 오류가 발생했습니다')
     } finally {
       setMutatingJobId(null)
+    }
+  }
+
+  async function handleBulkHardDelete() {
+    const ids = Array.from(selectedJobIds)
+    if (ids.length === 0) return
+
+    const confirmed = window.confirm(`선택한 AI 분석 ${ids.length.toLocaleString('ko-KR')}건과 관련 DB 데이터, 업로드 PDF, 생성 HTML을 완전삭제할까요? 이 작업은 되돌릴 수 없습니다.`)
+    if (!confirmed) return
+
+    setBulkDeleting(true)
+    setError('')
+    try {
+      const res = await fetch('/api/admin/rfp-analysis/jobs', {
+        method: 'DELETE',
+        cache: 'no-store',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      })
+      const data = await res.json().catch(() => ({})) as { error?: string; deletedCount?: number }
+      if (!res.ok) {
+        const partialMessage = data.deletedCount
+          ? ` (${data.deletedCount.toLocaleString('ko-KR')}건 삭제 후 중단)`
+          : ''
+        setError(`${data.error || '선택 완전삭제에 실패했습니다'}${partialMessage}`)
+        await loadJobs()
+        return
+      }
+      setSelectedJobIds(new Set())
+      await loadJobs()
+    } catch {
+      setError('선택 완전삭제 중 오류가 발생했습니다')
+    } finally {
+      setBulkDeleting(false)
     }
   }
 
@@ -471,9 +544,32 @@ export default function AdminRfpAnalysisPage() {
       )}
 
       <div className="overflow-hidden rounded-[24px] border border-[#e1ddd4] bg-white">
-        <div className="border-b border-[#e8e4dc] px-5 py-4">
-          <h2 className="text-sm font-bold text-[#17171f]">RFP 분석 작업 목록</h2>
-          <p className="mt-1 text-xs text-[#767268]">총 {totalCount.toLocaleString('ko-KR')}건 · {page}/{totalPages}페이지</p>
+        <div className="flex flex-col gap-3 border-b border-[#e8e4dc] px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-sm font-bold text-[#17171f]">RFP 분석 작업 목록</h2>
+            <p className="mt-1 text-xs text-[#767268]">총 {totalCount.toLocaleString('ko-KR')}건 · {page}/{totalPages}페이지</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-xl border border-[#ddd8ce] bg-white px-3 text-xs font-semibold text-[#35332e] hover:bg-[#f2f0eb]">
+              <input
+                type="checkbox"
+                checked={allVisibleSelected}
+                disabled={loading || jobs.length === 0 || bulkDeleting}
+                onChange={(event) => toggleVisibleJobsSelection(event.target.checked)}
+                className="h-4 w-4 rounded border-[#cfc8bd] text-[#17171f] accent-[#17171f]"
+              />
+              현재 페이지 선택
+            </label>
+            <button
+              type="button"
+              disabled={selectedJobIds.size === 0 || bulkDeleting || loading}
+              onClick={() => void handleBulkHardDelete()}
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              {bulkDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+              선택 완전삭제 {selectedJobIds.size > 0 ? `${selectedJobIds.size.toLocaleString('ko-KR')}건` : ''}
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -492,7 +588,18 @@ export default function AdminRfpAnalysisPage() {
               const softDeleting = mutatingJobId === `${job.id}:soft`
               const hardDeleting = mutatingJobId === `${job.id}:hard`
               return (
-                <div key={job.id} className="grid gap-4 p-5 xl:grid-cols-[130px_150px_minmax(220px,1fr)_minmax(300px,1.45fr)_190px] 2xl:grid-cols-[150px_170px_minmax(340px,1.1fr)_minmax(540px,1.8fr)_210px]">
+                <div key={job.id} className="grid gap-4 p-5 xl:grid-cols-[32px_130px_150px_minmax(220px,1fr)_minmax(300px,1.45fr)_190px] 2xl:grid-cols-[32px_150px_170px_minmax(340px,1.1fr)_minmax(540px,1.8fr)_210px]">
+                  <div className="flex items-start">
+                    <input
+                      type="checkbox"
+                      checked={selectedJobIds.has(job.id)}
+                      disabled={bulkDeleting || softDeleting || hardDeleting}
+                      onChange={(event) => toggleJobSelection(job.id, event.target.checked)}
+                      aria-label={`${job.projectTitle || job.summary.projectTitle || job.rfpFileName} 선택`}
+                      className="mt-1 h-4 w-4 rounded border-[#cfc8bd] text-[#17171f] accent-[#17171f]"
+                    />
+                  </div>
+
                   <div>
                     <p className="text-xs font-semibold text-[#767268]">접수일</p>
                     <p className="mt-1 text-sm font-semibold text-[#17171f]">{formatDateTime(job.createdAt)}</p>
@@ -559,7 +666,7 @@ export default function AdminRfpAnalysisPage() {
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
-                        disabled={Boolean(job.userDeletedAt) || softDeleting || hardDeleting}
+                        disabled={Boolean(job.userDeletedAt) || softDeleting || hardDeleting || bulkDeleting}
                         onClick={() => void handleSoftDelete(job)}
                         className="inline-flex h-9 items-center justify-center gap-1 rounded-xl border border-amber-200 bg-amber-50 px-2 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-45"
                       >
@@ -568,7 +675,7 @@ export default function AdminRfpAnalysisPage() {
                       </button>
                       <button
                         type="button"
-                        disabled={softDeleting || hardDeleting}
+                        disabled={softDeleting || hardDeleting || bulkDeleting}
                         onClick={() => void handleHardDelete(job)}
                         className="inline-flex h-9 items-center justify-center gap-1 rounded-xl border border-red-200 bg-red-50 px-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-45"
                       >
