@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { isMemberAdminUnread, isOrderAdminUnread } from '@/lib/admin-read-state'
+import { getKstStartOfDayIso } from '@/lib/kst-date'
 import { logger } from '@/lib/logger'
 
 type ChatNotification = {
@@ -51,9 +52,7 @@ export async function GET() {
     if ('response' in context) return context.response
     const { service } = context
 
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const todayIso = today.toISOString()
+    const todayIso = getKstStartOfDayIso()
 
     const [annRes, feedRes, chatRes, consultRes, ordersRes, membersRes] = await Promise.all([
       service

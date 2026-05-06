@@ -8,6 +8,7 @@ import {
   AlertCircle, Rss, ArrowLeft, Clock,
 } from 'lucide-react'
 import { getSourceBadgeStyle, getSourceName, getCategoryLabel, getCategoryColor, FEED_CATEGORIES } from '@/lib/feed-sources'
+import { isOnOrAfterKstStartOfToday } from '@/lib/kst-date'
 import DOMPurify from 'dompurify'
 
 interface FeedItem {
@@ -26,8 +27,12 @@ interface FeedItem {
 type PublishTab = 'all' | 'published' | 'unpublished'
 type ModalType = 'delete' | 'permanentDelete' | null
 
-function ConfirmModal({ type, count, onConfirm, onCancel }: {
-  type: ModalType; count: number; onConfirm: () => void; onCancel: () => void
+function isNewFeed(feed: FeedItem) {
+  return feed.is_published && isOnOrAfterKstStartOfToday(feed.created_at)
+}
+
+function ConfirmModal({ type, count, pending = false, onConfirm, onCancel }: {
+  type: ModalType; count: number; pending?: boolean; onConfirm: () => void; onCancel: () => void
 }) {
   const { handleMouseDown, modalStyle } = useDraggableModal()
   useEffect(() => {
@@ -47,8 +52,10 @@ function ConfirmModal({ type, count, onConfirm, onCancel }: {
           {isPerma && <span className="block text-red-600 mt-1">완전삭제된 피드는 다시 수집되지 않습니다.</span>}
         </p>
         <div className="flex justify-end gap-2">
-          <button onClick={onCancel} className="px-4 py-2 text-sm bg-muted rounded-xl cursor-pointer">취소</button>
-          <button onClick={onConfirm} className="px-4 py-2 text-sm text-white bg-red-600 rounded-xl cursor-pointer">{isPerma ? '완전삭제' : '삭제'}</button>
+          <button onClick={onCancel} disabled={pending} className="px-4 py-2 text-sm bg-muted rounded-xl cursor-pointer disabled:opacity-50">취소</button>
+          <button onClick={onConfirm} disabled={pending} className="px-4 py-2 text-sm text-white bg-red-600 rounded-xl cursor-pointer disabled:opacity-50">
+            {pending ? '처리 중...' : isPerma ? '완전삭제' : '삭제'}
+          </button>
         </div>
       </div>
     </div>
@@ -319,6 +326,7 @@ export default function AdminFeedsPage() {
             <div className="divide-y divide-border/50">
               {pagedFeeds.map(feed => {
                 const isActive = feed.id === selectedId
+                const isNew = isNewFeed(feed)
                 return (
                   <div key={feed.id} className={`flex items-start gap-3 px-4 py-3 transition-colors cursor-pointer ${isActive ? 'bg-primary/5 border-l-2 border-l-primary' : 'hover:bg-muted/50 border-l-2 border-l-transparent'}`}>
                     <input type="checkbox" checked={selectedIds.has(feed.id)} onChange={() => toggleSelect(feed.id)}
@@ -327,6 +335,11 @@ export default function AdminFeedsPage() {
                       <div className="flex items-center gap-1.5 mb-1">
                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${getCategoryColor(feed.category)}`}>{getCategoryLabel(feed.category)}</span>
                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${getSourceBadgeStyle(feed.source)}`}>{getSourceName(feed.source)}</span>
+                        {isNew && (
+                          <span className="rounded-full bg-[#b7ff2a] px-2 py-0.5 text-[10px] font-extrabold leading-none text-zinc-950 shadow-[0_0_0_1px_rgba(24,24,27,0.08)]">
+                            NEW
+                          </span>
+                        )}
                         <button onClick={(e) => { e.stopPropagation(); handleTogglePublish(feed.id, !feed.is_published) }}
                           className={`ml-auto text-[10px] px-1.5 py-0.5 rounded font-semibold cursor-pointer ${feed.is_published ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
                           {feed.is_published ? '공개' : '비공개'}
@@ -370,6 +383,7 @@ export default function AdminFeedsPage() {
       )}
 
       <ConfirmModal type={modalType} count={selectedIds.size}
+        pending={deleting}
         onConfirm={modalType === 'permanentDelete' ? handlePermanentDelete : handleDelete}
         onCancel={() => setModalType(null)} />
 
