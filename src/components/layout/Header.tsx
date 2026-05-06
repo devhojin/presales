@@ -12,8 +12,8 @@ const navLinks = [
   { href: '/us', label: '우리는' },
   { href: '/store', label: '문서 스토어' },
   { href: '/consulting', label: '컨설팅' },
-  { href: '/ai-analysis', label: 'AI 분석', featured: true },
-  { href: '/ai-proposal-guide', label: 'AI 제안서 작성법', featured: true },
+  { href: '/ai-analysis', label: 'AI 분석' },
+  { href: '/ai-proposal-guide', label: 'AI 제안서 작성법' },
   { href: '/announcements', label: '입찰 공고' },
   { href: '/feeds', label: 'IT피드' },
   { href: '/brief', label: '모닝 브리프' },
@@ -128,20 +128,14 @@ export function Header() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`relative whitespace-nowrap text-[13px] xl:text-sm font-semibold transition-all duration-300 active:scale-[0.98] ${
-                    link.featured
-                      ? isActive
-                        ? 'rounded-full bg-primary px-3.5 py-2 text-primary-foreground shadow-[0_10px_24px_rgba(37,99,235,0.22)] ring-1 ring-primary/25 hover:bg-primary/95'
-                        : 'rounded-full bg-primary px-3.5 py-2 text-primary-foreground shadow-[0_10px_24px_rgba(37,99,235,0.18)] ring-1 ring-primary/20 hover:-translate-y-0.5 hover:bg-primary/95 hover:shadow-[0_14px_28px_rgba(37,99,235,0.24)]'
-                      : `rounded-lg px-2.5 py-2 xl:px-3 2xl:px-4 ${
-                          isActive
-                            ? 'text-primary'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                        }`
+                  className={`relative whitespace-nowrap rounded-lg px-2.5 py-2 text-[13px] font-semibold transition-all duration-300 active:scale-[0.98] xl:px-3 xl:text-sm 2xl:px-4 ${
+                    isActive
+                      ? 'text-primary'
+                      : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
                   }`}
                 >
                   {link.label}
-                  {isActive && !link.featured && (
+                  {isActive && (
                     <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-primary rounded-full" />
                   )}
                 </Link>
@@ -249,16 +243,14 @@ export function Header() {
                 href={link.href}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={`flex items-center justify-between text-lg font-medium min-h-[52px] px-2 rounded-xl transition-all duration-300 ${
-                  link.featured
-                    ? 'my-2 bg-primary px-4 text-primary-foreground shadow-[0_12px_26px_rgba(37,99,235,0.18)] hover:bg-primary/95'
-                    : pathname === link.href
-                      ? 'text-primary bg-primary/5'
-                      : 'text-foreground hover:bg-muted/50'
+                  pathname === link.href
+                    ? 'text-primary bg-primary/5'
+                    : 'text-foreground hover:bg-muted/50'
                 }`}
                 style={{ transitionDelay: isMobileMenuOpen ? `${i * 50}ms` : '0ms' }}
               >
                 {link.label}
-                <ChevronRight className={`w-4 h-4 ${link.featured ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </Link>
             ))}
           </nav>
