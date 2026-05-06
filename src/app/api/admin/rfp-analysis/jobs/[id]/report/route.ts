@@ -1,11 +1,20 @@
 import { NextResponse } from 'next/server'
 import { requireAdminService } from '@/lib/require-admin'
-import { RFP_ANALYSIS_BUCKET } from '@/lib/rfp-analysis'
+import {
+  getRfpAnalysisReportFileName,
+  RFP_ANALYSIS_BUCKET,
+} from '@/lib/rfp-analysis'
 
 export const dynamic = 'force-dynamic'
 
-function buildDownloadFileName(jobId: string) {
+function buildAsciiFallbackFileName(jobId: string) {
   return `presales-ai-rfp-${jobId.slice(0, 8)}.html`
+}
+
+function encodeRfc5987FileName(fileName: string) {
+  return encodeURIComponent(fileName)
+    .replace(/['()]/g, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`)
+    .replace(/\*/g, '%2A')
 }
 
 export async function GET(
@@ -45,10 +54,12 @@ export async function GET(
     user_id: admin.user.id,
   })
 
+  const fileName = getRfpAnalysisReportFileName(job.project_title, job.rfp_file_name, job.result_json)
+
   return new Response(report, {
     headers: {
       'Cache-Control': 'no-store',
-      'Content-Disposition': `attachment; filename="${buildDownloadFileName(job.id)}"`,
+      'Content-Disposition': `attachment; filename="${buildAsciiFallbackFileName(job.id)}"; filename*=UTF-8''${encodeRfc5987FileName(fileName)}`,
       'Content-Length': String(report.size),
       'Content-Type': 'text/html; charset=utf-8',
       'X-Content-Type-Options': 'nosniff',

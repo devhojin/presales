@@ -140,10 +140,6 @@ function triggerBrowserDownload(url: string, fileName?: string) {
   anchor.remove()
 }
 
-function buildAdminRfpHtmlFileName(jobId: string) {
-  return `presales-ai-rfp-${jobId.slice(0, 8)}.html`
-}
-
 function compactText(value: string | null, fallback = '-') {
   return value && value !== '원문에서 확인 불가' ? value : fallback
 }
@@ -295,7 +291,7 @@ export default function AdminRfpAnalysisPage() {
   async function handleDownload(jobId: string) {
     setDownloadingId(jobId)
     try {
-      triggerBrowserDownload(`/api/admin/rfp-analysis/jobs/${jobId}/report`, buildAdminRfpHtmlFileName(jobId))
+      triggerBrowserDownload(`/api/admin/rfp-analysis/jobs/${jobId}/report`)
       window.setTimeout(() => {
         void loadJobs()
       }, 1200)
