@@ -5,6 +5,7 @@ import Link from 'next/link'
 import {
   Search, MessageCircle, Loader2, HelpCircle,
   ShoppingCart, Download, FileText, CreditCard, RefreshCw, Headphones,
+  Bot, FileSearch, Mail, Newspaper,
 } from 'lucide-react'
 import {
   Accordion,
@@ -33,7 +34,8 @@ interface FaqCategory {
 const ICON_MAP: Record<string, typeof HelpCircle> = {
   'ShoppingCart': ShoppingCart, 'Download': Download, 'FileText': FileText,
   'CreditCard': CreditCard, 'RefreshCw': RefreshCw, 'Headphones': Headphones,
-  'MessageCircle': MessageCircle, 'HelpCircle': HelpCircle,
+  'MessageCircle': MessageCircle, 'HelpCircle': HelpCircle, 'Bot': Bot,
+  'FileSearch': FileSearch, 'Mail': Mail, 'Newspaper': Newspaper,
 }
 
 function getCategoryIcon(iconName: string) { return ICON_MAP[iconName] || HelpCircle }
