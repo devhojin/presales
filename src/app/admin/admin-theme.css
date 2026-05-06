@@ -50,6 +50,15 @@
   z-index: 2;
 }
 
+.admin-tone .admin-scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.admin-tone .admin-scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 .admin-tone .admin-section-rail {
   transition:
     width 240ms ease,

@@ -573,7 +573,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           <div ref={globalNavMenuRef} className="border-t border-white/[0.08] px-5 py-2">
             <nav className="flex items-center gap-1">
-              <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto pb-1">
+              <div className="admin-scrollbar-none flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overflow-y-hidden pb-1">
                 {adminSections.map((section) => {
                   const Icon = section.icon
                   const isActive = section.key === activeSection.key
@@ -618,12 +618,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </button>
             </nav>
 
-            <div className="mt-2 flex items-center gap-2 overflow-x-auto rounded-[22px] border border-white/[0.08] bg-black/[0.12] p-2">
+            <div className="admin-scrollbar-none mt-2 flex items-center gap-2 overflow-x-auto overflow-y-hidden rounded-[22px] border border-white/[0.08] bg-black/[0.12] p-2">
               <div className="flex shrink-0 items-center gap-2 rounded-[14px] px-2 py-1.5 text-[11px] font-semibold text-white/[0.48]">
                 <ActiveSectionIcon className="h-3.5 w-3.5 text-[#c8ff2e]" />
                 <span>{activeSection.label} 메뉴</span>
               </div>
-              <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+              <div className="admin-scrollbar-none flex min-w-0 flex-1 items-center gap-1 overflow-x-auto overflow-y-hidden">
                 {activeSection.items.map((item) => {
                   const ItemIcon = item.icon
                   const isActive = activeItem.href === item.href
@@ -648,7 +648,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
 
             {globalNavExpanded && (
-              <div className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-2 overflow-x-auto pb-2">
+              <div className="admin-scrollbar-none mt-3 grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-2 overflow-x-auto overflow-y-hidden pb-2">
                 {adminSections.map((section) => {
                   const SectionIcon = section.icon
                   const sectionActive = section.key === activeSection.key
