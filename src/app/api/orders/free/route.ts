@@ -6,6 +6,7 @@ import { logger } from '@/lib/logger'
 import { checkRateLimitAsync } from '@/lib/rate-limit'
 import { getClientIp } from '@/lib/client-ip'
 import { checkGlobalFreeUserLimit } from '@/lib/free-user-limit'
+import { generateOrderNumber } from '@/lib/utils'
 
 /**
  * 무료 상품 주문 처리 (service_role 사용).
@@ -110,19 +111,28 @@ export async function POST(request: NextRequest) {
     }
 
     // orders insert (status='paid', payment_method='free')
-    //   order_number 는 BEFORE INSERT 트리거 set_order_number 가 자동 채움.
+    //   order_number 는 순번/날짜가 드러나지 않는 14자리 숫자 난수로 직접 지정한다.
     const paidAt = new Date().toISOString()
-    const { data: order, error: orderErr } = await supabase
-      .from('orders')
-      .insert({
-        user_id: user.id,
-        total_amount: 0,
-        status: 'paid',
-        payment_method: 'free',
-        paid_at: paidAt,
-      })
-      .select('id')
-      .single()
+    let order: { id: number } | null = null
+    let orderErr: { code?: string; message?: string } | null = null
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const result = await supabase
+        .from('orders')
+        .insert({
+          order_number: generateOrderNumber(),
+          user_id: user.id,
+          total_amount: 0,
+          status: 'paid',
+          payment_method: 'free',
+          paid_at: paidAt,
+        })
+        .select('id')
+        .single()
+
+      order = result.data
+      orderErr = result.error
+      if (!orderErr || orderErr.code !== '23505') break
+    }
 
     if (orderErr || !order) {
       logger.error('무료 주문 생성 실패', 'orders/free', { error: orderErr?.message })

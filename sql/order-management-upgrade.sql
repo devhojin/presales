@@ -7,19 +7,17 @@
 CREATE OR REPLACE FUNCTION generate_order_number()
 RETURNS TRIGGER AS $$
 DECLARE
-  today_str TEXT;
-  seq_num INT;
+  candidate TEXT;
 BEGIN
-  today_str := to_char(NOW(), 'YYYYMMDD');
+  LOOP
+    candidate := (floor(random() * 9) + 1)::INT::TEXT
+      || lpad(floor(random() * 10000000000000)::BIGINT::TEXT, 13, '0');
+    EXIT WHEN NOT EXISTS (
+      SELECT 1 FROM orders WHERE order_number = candidate
+    );
+  END LOOP;
 
-  SELECT COALESCE(MAX(
-    CAST(split_part(order_number, '-', 2) AS INT)
-  ), 0) + 1
-  INTO seq_num
-  FROM orders
-  WHERE order_number LIKE today_str || '-%';
-
-  NEW.order_number := today_str || '-' || lpad(seq_num::TEXT, 6, '0');
+  NEW.order_number := candidate;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -36,11 +34,25 @@ CREATE TRIGGER set_order_number
   EXECUTE FUNCTION generate_order_number();
 
 -- 기존 주문에 번호 소급 적용
-UPDATE orders
-SET order_number = to_char(created_at, 'YYYYMMDD') || '-' || lpad(
-  ROW_NUMBER() OVER (PARTITION BY to_char(created_at, 'YYYYMMDD') ORDER BY created_at)::TEXT, 6, '0'
-)
-WHERE order_number IS NULL;
+DO $$
+DECLARE
+  order_row RECORD;
+  candidate TEXT;
+BEGIN
+  FOR order_row IN SELECT id FROM orders WHERE order_number IS NULL LOOP
+    LOOP
+      candidate := (floor(random() * 9) + 1)::INT::TEXT
+        || lpad(floor(random() * 10000000000000)::BIGINT::TEXT, 13, '0');
+      EXIT WHEN NOT EXISTS (
+        SELECT 1 FROM orders WHERE order_number = candidate
+      );
+    END LOOP;
+
+    UPDATE orders
+    SET order_number = candidate
+    WHERE id = order_row.id;
+  END LOOP;
+END $$;
 
 -- 2. 관리자 메모 테이블
 CREATE TABLE IF NOT EXISTS order_memos (

@@ -12,6 +12,7 @@ import {
   loadRewardBalance,
   loadRewardSettings,
 } from '@/lib/reward-points'
+import { generateOrderNumber } from '@/lib/utils'
 
 const PURCHASE_HISTORY_DISCOUNT_REASON = '구매 이력 할인'
 
@@ -271,6 +272,7 @@ export default function CheckoutPage() {
         const { data: order, error: orderError } = await supabase
           .from('orders')
           .insert({
+            order_number: generateOrderNumber(),
             user_id: user.id,
             total_amount: chatAmount,
             status: 'pending',
@@ -541,6 +543,7 @@ export default function CheckoutPage() {
         const { data: order, error: orderError } = await supabase
           .from('orders')
           .insert({
+            order_number: generateOrderNumber(),
             user_id: user.id,
             ...orderUpdateFields,
             status: 'pending',
