@@ -15,20 +15,16 @@ import {
 } from '@/lib/reward-points'
 
 const DANAL_SDK_SRC = 'https://static.danalpay.com/d1/sdk/index.js'
-const DANAL_CLIENT_KEY = process.env.NEXT_PUBLIC_DANAL_CLIENT_KEY ?? ''
-const DANAL_MERCHANT_ID = process.env.NEXT_PUBLIC_DANAL_MERCHANT_ID ?? ''
-const DANAL_DISABLED_BY_FLAG = process.env.NEXT_PUBLIC_DANAL_ENABLED === 'false'
-const DANAL_ENABLED = !DANAL_DISABLED_BY_FLAG
-  && Boolean(DANAL_CLIENT_KEY)
-  && Boolean(DANAL_MERCHANT_ID)
-const CARD_PAYMENTS_DISABLED = !DANAL_ENABLED
-const DANAL_METHODS = (process.env.NEXT_PUBLIC_DANAL_METHODS ?? 'CARD,VACCOUNT,TRANSFER,KAKAO,NAVER,PAYCO')
-  .split(',')
-  .map((method) => method.trim().toUpperCase())
-  .filter(Boolean)
 const PURCHASE_HISTORY_DISCOUNT_REASON = '구매 이력 할인'
 
 type PaymentMethod = 'card' | 'bank_transfer'
+
+type DanalClientConfig = {
+  enabled: boolean
+  clientKey: string
+  merchantId: string
+  methods: string[]
+}
 
 type DanalPaymentsInstance = {
   requestPayment(params: Record<string, unknown>): Promise<void>
@@ -40,9 +36,9 @@ declare global {
   }
 }
 
-function buildDanalMethods(notiUrl: string) {
+function buildDanalMethods(methodsList: string[], notiUrl: string) {
   const methods: Record<string, Record<string, unknown>> = {}
-  for (const method of DANAL_METHODS) {
+  for (const method of methodsList) {
     if (method === 'CARD') methods.CARD = {}
     if (method === 'VACCOUNT' || method === 'VIRTUAL_ACCOUNT') methods.VACCOUNT = { notiUrl }
     if (method === 'TRANSFER') methods.TRANSFER = {}
@@ -74,8 +70,11 @@ export default function CheckoutPage() {
   const [orderId, setOrderId] = useState<string | null>(null)
   const [dbOrderId, setDbOrderId] = useState<number | null>(null)
   const [paying, setPaying] = useState(false)
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>(() => CARD_PAYMENTS_DISABLED ? 'bank_transfer' : 'card')
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('bank_transfer')
+  const [danalConfig, setDanalConfig] = useState<DanalClientConfig | null>(null)
+  const [danalConfigLoaded, setDanalConfigLoaded] = useState(false)
   const [danalSdkReady, setDanalSdkReady] = useState(false)
+  const cardPaymentsDisabled = !danalConfig?.enabled
   // 다날 가상계좌/현금영수증 SMS/이메일 발송에 필요
   const customerRef = useRef<{ name?: string; email?: string; phone?: string }>({})
   const currentUserIdRef = useRef<string | null>(null)
@@ -101,10 +100,35 @@ export default function CheckoutPage() {
   const isZeroAmountOrder = !isChatPayment && finalAmount <= 0
 
   useEffect(() => {
-    if (CARD_PAYMENTS_DISABLED && selectedMethod === 'card') {
+    let cancelled = false
+
+    async function loadDanalConfig() {
+      try {
+        const res = await fetch('/api/payment/danal/config', { cache: 'no-store' })
+        const config = await res.json() as DanalClientConfig
+        if (cancelled) return
+        setDanalConfig(config)
+        setSelectedMethod(config.enabled ? 'card' : 'bank_transfer')
+      } catch (err) {
+        console.error('[checkout] Danal config load failed', err)
+        if (!cancelled) {
+          setDanalConfig({ enabled: false, clientKey: '', merchantId: '', methods: [] })
+          setSelectedMethod('bank_transfer')
+        }
+      } finally {
+        if (!cancelled) setDanalConfigLoaded(true)
+      }
+    }
+
+    loadDanalConfig()
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    if (cardPaymentsDisabled && selectedMethod === 'card') {
       setSelectedMethod('bank_transfer')
     }
-  }, [selectedMethod])
+  }, [cardPaymentsDisabled, selectedMethod])
 
   useEffect(() => {
     if (isZeroAmountOrder && taxInvoiceRequested) {
@@ -244,6 +268,8 @@ export default function CheckoutPage() {
   }
 
   useEffect(() => {
+    if (!danalConfigLoaded) return
+
     // 채팅 결제: 장바구니 비어있어도 통과
     if (!isChatPayment && paidItems.length === 0) {
       router.replace('/cart')
@@ -268,7 +294,7 @@ export default function CheckoutPage() {
         }
         currentUserIdRef.current = user.id
 
-        if (CARD_PAYMENTS_DISABLED) {
+        if (cardPaymentsDisabled) {
           addToast('상담 결제는 메시지로 문의주세요.', 'error')
           setLoading(false)
           return
@@ -542,7 +568,7 @@ export default function CheckoutPage() {
         const hasPayableAmount = expectedTotalAmount > 0
         const wantsTaxInvoice = hasPayableAmount && Boolean(taxInfo.tax_invoice_requested)
         const draftPaymentMethod = hasPayableAmount
-          ? (CARD_PAYMENTS_DISABLED ? 'bank_transfer' : 'card')
+          ? (cardPaymentsDisabled ? 'bank_transfer' : 'card')
           : appliedRewardDiscount > 0
             ? 'reward'
             : 'discount'
@@ -682,10 +708,10 @@ export default function CheckoutPage() {
     }
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [danalConfigLoaded])
 
   async function handleCardPayment() {
-    if (CARD_PAYMENTS_DISABLED) {
+    if (cardPaymentsDisabled || !danalConfig?.clientKey || !danalConfig.merchantId) {
       addToast('현재 선택할 수 없는 결제 수단입니다. 무통장 입금을 선택해주세요.', 'error')
       setSelectedMethod('bank_transfer')
       return
@@ -718,19 +744,19 @@ export default function CheckoutPage() {
           : `${paidItems[0].title} 외 ${paidItems.length - 1}건`
 
       const customer = customerRef.current
-      const danalPayments = window.DanalPayments(DANAL_CLIENT_KEY)
+      const danalPayments = window.DanalPayments(danalConfig.clientKey)
       await danalPayments.requestPayment({
         orderId,
         orderName,
         amount: finalAmount,
-        merchantId: DANAL_MERCHANT_ID,
+        merchantId: danalConfig.merchantId,
         userId: compactDanalUserId(currentUserIdRef.current ?? 'presales-user'),
         successUrl,
         failUrl,
         userName: customer.name,
         userEmail: customer.email,
         paymentsMethod: 'INTEGRATED',
-        methods: buildDanalMethods(`${window.location.origin}/api/payment/danal/noti`),
+        methods: buildDanalMethods(danalConfig.methods, `${window.location.origin}/api/payment/danal/noti`),
       })
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string }
@@ -863,7 +889,7 @@ export default function CheckoutPage() {
 
       <h1 className="text-2xl font-bold mb-8">결제하기</h1>
 
-      {!CARD_PAYMENTS_DISABLED && (
+      {!cardPaymentsDisabled && (
         <Script
           src={DANAL_SDK_SRC}
           strategy="afterInteractive"
@@ -1083,8 +1109,8 @@ export default function CheckoutPage() {
       {!isChatPayment && !isZeroAmountOrder && (
         <div className="mb-6">
           <h2 className="font-semibold text-sm mb-3">결제 수단 선택</h2>
-          <div className={`grid gap-3 ${CARD_PAYMENTS_DISABLED ? 'grid-cols-1' : 'grid-cols-2'}`}>
-            {!CARD_PAYMENTS_DISABLED && (
+          <div className={`grid gap-3 ${cardPaymentsDisabled ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            {!cardPaymentsDisabled && (
               <button
                 type="button"
                 onClick={() => setSelectedMethod('card')}
@@ -1133,7 +1159,7 @@ export default function CheckoutPage() {
       )}
 
       {/* 다날 결제 SDK 로딩 상태 */}
-      {!CARD_PAYMENTS_DISABLED && (isChatPayment || selectedMethod === 'card') && finalAmount > 0 && !danalSdkReady && (
+      {!cardPaymentsDisabled && (isChatPayment || selectedMethod === 'card') && finalAmount > 0 && !danalSdkReady && (
         <div className="mb-6 flex items-center justify-center rounded-xl border border-border bg-muted/30 py-5 text-sm text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin mr-2" />
           다날 결제 모듈을 불러오는 중...
@@ -1144,7 +1170,7 @@ export default function CheckoutPage() {
       {((!isChatPayment && selectedMethod === 'bank_transfer') || ready) && (
         <button
           onClick={handlePayment}
-          disabled={paying || (!CARD_PAYMENTS_DISABLED && (isChatPayment || selectedMethod === 'card') && finalAmount > 0 && !danalSdkReady)}
+          disabled={paying || (!cardPaymentsDisabled && (isChatPayment || selectedMethod === 'card') && finalAmount > 0 && !danalSdkReady)}
           className="w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {paying ? (
