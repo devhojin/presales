@@ -133,6 +133,37 @@ async function resolveExpectedAmount(
   return { amount, error: amount === null ? 'ORDER_RECOMPUTE_FAILED' : null }
 }
 
+async function removeDuplicatePendingOrderItems(supabase: SupabaseClient, orderId: number) {
+  const { data: items, error } = await supabase
+    .from('order_items')
+    .select('id, product_id, created_at')
+    .eq('order_id', orderId)
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+
+  if (error || !items) {
+    return { ok: false, error: error?.message ?? 'ORDER_ITEMS_LOAD_FAILED' }
+  }
+
+  const seen = new Set<number>()
+  const duplicateIds: number[] = []
+  for (const item of items as Array<{ id: number; product_id: number }>) {
+    if (seen.has(item.product_id)) duplicateIds.push(item.id)
+    else seen.add(item.product_id)
+  }
+
+  if (duplicateIds.length === 0) return { ok: true, error: null }
+
+  const { error: deleteError } = await supabase
+    .from('order_items')
+    .delete()
+    .eq('order_id', orderId)
+    .in('id', duplicateIds)
+
+  if (deleteError) return { ok: false, error: deleteError.message }
+  return { ok: true, error: null }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const config = getDanalCardConfig()
@@ -164,6 +195,15 @@ export async function POST(request: NextRequest) {
     if (!order) return NextResponse.json({ error: 'ORDER_NOT_FOUND' }, { status: 404 })
     if (order.user_id !== user.id) return NextResponse.json({ error: 'ORDER_OWNER_MISMATCH' }, { status: 403 })
     if (order.status !== 'pending') return NextResponse.json({ error: 'ORDER_STATUS_INVALID' }, { status: 409 })
+
+    const dedupe = await removeDuplicatePendingOrderItems(supabase, order.id)
+    if (!dedupe.ok) {
+      logger.error('다날 카드 Ready 주문 상품 중복 정리 실패', 'payment/danal/ready', {
+        orderId: order.id,
+        error: dedupe.error,
+      })
+      return NextResponse.json({ error: 'ORDER_ITEMS_NORMALIZE_FAILED' }, { status: 500 })
+    }
 
     const chatPaymentId = body.chatPaymentId || null
     const { amount, error } = await resolveExpectedAmount(supabase, order, chatPaymentId)

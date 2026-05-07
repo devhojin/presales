@@ -500,21 +500,6 @@ export default function CheckoutPage() {
         setCouponCode(appliedCouponInfo?.code || null)
         setRewardDiscount(appliedRewardDiscount)
 
-        // 2. 주문 생성 또는 재사용 (pending 상태)
-        // 기존 pending 주문 확인
-        // 중복 pending 이 있을 경우 .single() 이 throw 하므로 limit(1) + maybeSingle() 로 방어
-        const { data: existingOrder } = await supabase
-          .from('orders')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('status', 'pending')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-
-        let order
-        let orderError
-
         // 세금계산서/추가정보 (cart 에서 sessionStorage 에 저장됨)
         let taxInfo: {
           tax_contact_info?: string
@@ -551,47 +536,17 @@ export default function CheckoutPage() {
           payment_method: draftPaymentMethod,
         }
 
-        if (existingOrder) {
-          // 기존 pending 주문 재사용: total_amount 업데이트 및 order_items 재생성
-          const { error: updateError } = await supabase
-            .from('orders')
-            .update(orderUpdateFields)
-            .eq('id', existingOrder.id)
-            .eq('user_id', user.id)
-
-          if (updateError) {
-            addToast('주문 금액 업데이트에 실패했습니다.', 'error')
-            router.replace('/cart')
-            return
-          }
-
-          // 기존 order_items 삭제 후 재생성
-          const { error: delItemsError } = await supabase
-            .from('order_items')
-            .delete()
-            .eq('order_id', existingOrder.id)
-          if (delItemsError) {
-            addToast('기존 주문 상품 정리에 실패했습니다. 다시 시도해주세요.', 'error')
-            router.replace('/cart')
-            return
-          }
-          order = existingOrder
-          orderError = null
-        } else {
-          // 새 pending 주문 생성
-          const insertResult = await supabase
-            .from('orders')
-            .insert({
-              user_id: user.id,
-              ...orderUpdateFields,
-              status: 'pending',
-            })
-            .select('id')
-            .single()
-
-          order = insertResult.data
-          orderError = insertResult.error
-        }
+        // 2. 주문 생성 (pending 상태)
+        // 기존 pending 주문의 order_items 삭제가 RLS로 no-op 될 수 있어 재사용하지 않는다.
+        const { data: order, error: orderError } = await supabase
+          .from('orders')
+          .insert({
+            user_id: user.id,
+            ...orderUpdateFields,
+            status: 'pending',
+          })
+          .select('id')
+          .single()
 
         if (orderError || !order) {
           addToast('주문 생성에 실패했습니다.', 'error')
