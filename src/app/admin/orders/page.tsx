@@ -155,6 +155,8 @@ const PAYMENT_METHOD_LABEL: Record<string, string> = {
   card: '카드결제',
   bank_transfer: '무통장입금',
   virtual_account: '가상계좌',
+  transfer: '계좌이체',
+  easy_pay: '간편결제',
   phone: '휴대폰결제',
   free: '무료',
   reward: '적립금',

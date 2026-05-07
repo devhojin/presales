@@ -52,12 +52,33 @@ export default function CheckoutSuccessPage() {
   const [cashReceiptUrl, setCashReceiptUrl] = useState<string | null>(null)
   const [checkoutOrder, setCheckoutOrder] = useState<ReceiptOrder | null>(null)
   const [profile, setProfile] = useState<ReceiptProfile | null>(null)
+  const [isDanalPendingTransfer, setIsDanalPendingTransfer] = useState(false)
 
   useEffect(() => {
+    const provider = searchParams.get('provider')
     const paymentKey = searchParams.get('paymentKey')
     const orderId = searchParams.get('orderId')
     const amount = searchParams.get('amount')
     const chatPaymentId = searchParams.get('chat_payment_id')
+    const providerStatus = searchParams.get('status')
+
+    const danalOrderId = provider === 'danal' && orderId ? Number(orderId) : null
+    if (danalOrderId && Number.isInteger(danalOrderId) && danalOrderId > 0) {
+      setConfirmedOrderId(danalOrderId)
+      setIsDanalPendingTransfer(providerStatus === 'pending_transfer')
+      setStatus('success')
+      loadOrderDocument(danalOrderId)
+      clearCart()
+      sessionStorage.removeItem('presales-applied-coupon')
+      sessionStorage.removeItem('presales-reward-use')
+      sessionStorage.removeItem('presales-tax-info')
+      if (providerStatus !== 'pending_transfer') {
+        addToast('결제가 완료되었습니다!', 'success')
+      } else {
+        addToast('가상계좌가 발급되었습니다.', 'success')
+      }
+      return
+    }
 
     const rewardOnlyOrderId = !paymentKey && orderId && !amount ? Number(orderId) : null
     if (rewardOnlyOrderId && Number.isInteger(rewardOnlyOrderId) && rewardOnlyOrderId > 0) {
@@ -243,6 +264,43 @@ export default function CheckoutSuccessPage() {
             <p>• 입금 후 나의콘솔에서 다운로드 가능하며 안내 이메일이 발송됩니다</p>
             <p>• 기한 내 미입금 시 주문이 자동 취소됩니다</p>
           </div>
+          <div className="mt-8 flex gap-3 justify-center">
+            <Link
+              href="/mypage#orders"
+              className="h-11 px-6 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors inline-flex items-center"
+            >
+              주문 내역 확인
+            </Link>
+            <Link
+              href="/"
+              className="h-11 px-6 rounded-lg border border-border font-medium hover:bg-muted transition-colors inline-flex items-center"
+            >
+              홈으로
+            </Link>
+          </div>
+        </div>
+        {checkoutOrder && (
+          <div className="mt-12 rounded-xl bg-neutral-100 p-3 sm:p-6">
+            <OrderReceiptDocument order={checkoutOrder} profile={profile} className="rounded-sm" />
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  if (isDanalPendingTransfer) {
+    return (
+      <div className="container mx-auto px-4 py-16 max-w-5xl">
+        <div className="mx-auto max-w-lg text-center">
+          <Building2 className="w-16 h-16 mx-auto mb-4 text-blue-500" />
+          <h1 className="text-2xl font-bold mb-2">가상계좌 발급 완료</h1>
+          <p className="text-muted-foreground mb-6">
+            다날 결제창에서 안내된 계좌로 입금하시면 자동으로 결제가 완료됩니다.<br />
+            입금 완료 후 나의콘솔에서 다운로드할 수 있습니다.
+          </p>
+          {confirmedOrderId && (
+            <p className="mb-6 text-xs font-mono text-muted-foreground">Order ID #{confirmedOrderId}</p>
+          )}
           <div className="mt-8 flex gap-3 justify-center">
             <Link
               href="/mypage#orders"

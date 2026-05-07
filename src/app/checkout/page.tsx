@@ -5,20 +5,56 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useCartStore } from '@/stores/cart-store'
 import { createClient } from '@/lib/supabase'
 import { useToastStore } from '@/stores/toast-store'
-import { loadTossPayments, TossPaymentsWidgets } from '@tosspayments/tosspayments-sdk'
 import { ArrowLeft, ShieldCheck, Loader2, CreditCard, Building2, MessageCircle, Upload, Check, Coins, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
+import Script from 'next/script'
 import {
   clampRewardUseAmount,
   loadRewardBalance,
   loadRewardSettings,
 } from '@/lib/reward-points'
 
-const CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY!
-const CARD_PAYMENTS_DISABLED = true
+const DANAL_SDK_SRC = 'https://static.danalpay.com/d1/sdk/index.js'
+const DANAL_CLIENT_KEY = process.env.NEXT_PUBLIC_DANAL_CLIENT_KEY ?? ''
+const DANAL_MERCHANT_ID = process.env.NEXT_PUBLIC_DANAL_MERCHANT_ID ?? ''
+const DANAL_ENABLED = process.env.NEXT_PUBLIC_DANAL_ENABLED === 'true'
+  && Boolean(DANAL_CLIENT_KEY)
+  && Boolean(DANAL_MERCHANT_ID)
+const CARD_PAYMENTS_DISABLED = !DANAL_ENABLED
+const DANAL_METHODS = (process.env.NEXT_PUBLIC_DANAL_METHODS ?? 'CARD,VACCOUNT,TRANSFER,KAKAO,NAVER,PAYCO')
+  .split(',')
+  .map((method) => method.trim().toUpperCase())
+  .filter(Boolean)
 const PURCHASE_HISTORY_DISCOUNT_REASON = '구매 이력 할인'
 
 type PaymentMethod = 'card' | 'bank_transfer'
+
+type DanalPaymentsInstance = {
+  requestPayment(params: Record<string, unknown>): Promise<void>
+}
+
+declare global {
+  interface Window {
+    DanalPayments?: (clientKey: string) => DanalPaymentsInstance
+  }
+}
+
+function buildDanalMethodParams(notiUrl: string) {
+  const params: Record<string, unknown> = {}
+  for (const method of DANAL_METHODS) {
+    if (method === 'CARD') params.card = {}
+    if (method === 'VACCOUNT' || method === 'VIRTUAL_ACCOUNT') params.virtualAccount = { notiUrl }
+    if (method === 'TRANSFER') params.transfer = {}
+    if (method === 'NAVER' || method === 'NAVERPAY') params.naverPay = {}
+    if (method === 'KAKAO' || method === 'KAKAOPAY') params.kakaoPay = {}
+    if (method === 'PAYCO') params.payco = {}
+  }
+  return Object.keys(params).length > 0 ? params : { card: {} }
+}
+
+function compactDanalUserId(userId: string) {
+  return userId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32) || 'presales-user'
+}
 
 export default function CheckoutPage() {
   const { items, getTotal, getDiscountTotal, clearCart } = useCartStore()
@@ -33,13 +69,13 @@ export default function CheckoutPage() {
   const isChatPayment = chatPaymentId !== null && chatAmount !== null && chatAmount > 0
 
   const [ready, setReady] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [, setLoading] = useState(true)
   const [orderId, setOrderId] = useState<string | null>(null)
   const [dbOrderId, setDbOrderId] = useState<number | null>(null)
   const [paying, setPaying] = useState(false)
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('bank_transfer')
-  const widgetsRef = useRef<TossPaymentsWidgets | null>(null)
-  // 토스 가상계좌/현금영수증 SMS/이메일 발송에 필요
+  const [danalSdkReady, setDanalSdkReady] = useState(false)
+  // 다날 가상계좌/현금영수증 SMS/이메일 발송에 필요
   const customerRef = useRef<{ name?: string; email?: string; phone?: string }>({})
   const currentUserIdRef = useRef<string | null>(null)
 
@@ -232,7 +268,7 @@ export default function CheckoutPage() {
         currentUserIdRef.current = user.id
 
         if (CARD_PAYMENTS_DISABLED) {
-          addToast('현재 PG 연결 진행 중으로 카드결제를 이용할 수 없습니다. 상담 결제는 메시지로 문의주세요.', 'error')
+          addToast('다날 PG 설정이 완료되지 않아 카드결제를 이용할 수 없습니다. 상담 결제는 메시지로 문의주세요.', 'error')
           setLoading(false)
           return
         }
@@ -257,11 +293,11 @@ export default function CheckoutPage() {
           return
         }
 
-        const tossOrderId = `presales_${order.id}_${Date.now()}`
+        const danalOrderId = `presales_${order.id}_${Date.now()}`
         if (cancelled) return
 
         setDbOrderId(order.id)
-        setOrderId(tossOrderId)
+        setOrderId(danalOrderId)
         setFinalAmount(chatAmount ?? 0)
 
         // 가상계좌 SMS/이메일 발송용 고객 정보 캐시
@@ -275,16 +311,6 @@ export default function CheckoutPage() {
           email: prof?.email ?? user.email ?? undefined,
           phone: prof?.phone ?? undefined,
         }
-
-        const tossPayments = await loadTossPayments(CLIENT_KEY)
-        const widgets = tossPayments.widgets({ customerKey: user.id })
-        widgetsRef.current = widgets
-
-        await widgets.setAmount({ currency: 'KRW', value: chatAmount ?? 0 })
-        await Promise.all([
-          widgets.renderPaymentMethods({ selector: '#payment-method', variantKey: 'DEFAULT' }),
-          widgets.renderAgreement({ selector: '#agreement', variantKey: 'AGREEMENT' }),
-        ])
 
         if (!cancelled) {
           setReady(true)
@@ -610,12 +636,12 @@ export default function CheckoutPage() {
           return
         }
 
-        const tossOrderId = `presales_${order.id}_${Date.now()}`
+        const danalOrderId = `presales_${order.id}_${Date.now()}`
 
         if (cancelled) return
 
         setDbOrderId(order.id)
-        setOrderId(tossOrderId)
+        setOrderId(danalOrderId)
 
         // 가상계좌 SMS/이메일 발송용 고객 정보 캐시
         const { data: prof } = await supabase
@@ -634,33 +660,6 @@ export default function CheckoutPage() {
           setLoading(false)
           return
         }
-
-        if (CARD_PAYMENTS_DISABLED) {
-          setReady(true)
-          setLoading(false)
-          return
-        }
-
-        // 3. 토스 위젯 초기화
-        const tossPayments = await loadTossPayments(CLIENT_KEY)
-        const widgets = tossPayments.widgets({ customerKey: user.id })
-        widgetsRef.current = widgets
-
-        await widgets.setAmount({
-          currency: 'KRW',
-          value: expectedTotalAmount,
-        })
-
-        await Promise.all([
-          widgets.renderPaymentMethods({
-            selector: '#payment-method',
-            variantKey: 'DEFAULT',
-          }),
-          widgets.renderAgreement({
-            selector: '#agreement',
-            variantKey: 'AGREEMENT',
-          }),
-        ])
 
         if (!cancelled) {
           setReady(true)
@@ -686,7 +685,7 @@ export default function CheckoutPage() {
 
   async function handleCardPayment() {
     if (CARD_PAYMENTS_DISABLED) {
-      addToast('현재 PG 연결 진행 중으로 카드결제를 이용할 수 없습니다. 무통장 입금을 선택해주세요.', 'error')
+      addToast('다날 PG 설정이 완료되지 않아 카드결제를 이용할 수 없습니다. 무통장 입금을 선택해주세요.', 'error')
       setSelectedMethod('bank_transfer')
       return
     }
@@ -694,15 +693,22 @@ export default function CheckoutPage() {
       await handleZeroAmountPayment()
       return
     }
-    if (!widgetsRef.current || !orderId) return
+    if (!orderId) return
     if (!(await persistAdditionalInfo('card'))) return
+    if (!window.DanalPayments) {
+      addToast('다날 결제 모듈을 불러오는 중입니다. 잠시 후 다시 시도해주세요.', 'error')
+      return
+    }
 
     setPaying(true)
     try {
-      const successBase = `${window.location.origin}/checkout/success`
-      const successUrl = isChatPayment && chatPaymentId
-        ? `${successBase}?chat_payment_id=${encodeURIComponent(chatPaymentId)}`
+      const successBase = `${window.location.origin}/api/payment/danal/return`
+      const successParams = new URLSearchParams()
+      if (isChatPayment && chatPaymentId) successParams.set('chat_payment_id', chatPaymentId)
+      const successUrl = successParams.size > 0
+        ? `${successBase}?${successParams.toString()}`
         : successBase
+      const failUrl = `${window.location.origin}/checkout/fail?provider=danal&orderId=${encodeURIComponent(orderId)}`
 
       const orderName = isChatPayment
         ? (chatDescription ?? '채팅 결제')
@@ -711,15 +717,19 @@ export default function CheckoutPage() {
           : `${paidItems[0].title} 외 ${paidItems.length - 1}건`
 
       const customer = customerRef.current
-      await widgetsRef.current.requestPayment({
+      const danalPayments = window.DanalPayments(DANAL_CLIENT_KEY)
+      await danalPayments.requestPayment({
         orderId,
         orderName,
+        amount: finalAmount,
+        merchantId: DANAL_MERCHANT_ID,
+        userId: compactDanalUserId(currentUserIdRef.current ?? 'presales-user'),
         successUrl,
-        failUrl: `${window.location.origin}/checkout/fail`,
-        // 가상계좌 선택 시 입금 안내 SMS/이메일, 현금영수증 자동 발급에 사용
-        customerName: customer.name,
-        customerEmail: customer.email,
-        customerMobilePhone: customer.phone?.replace(/[^0-9]/g, '') || undefined,
+        failUrl,
+        userName: customer.name,
+        userEmail: customer.email,
+        paymentsMethod: 'INTEGRATED',
+        ...buildDanalMethodParams(`${window.location.origin}/api/payment/danal/noti`),
       })
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string }
@@ -852,12 +862,27 @@ export default function CheckoutPage() {
 
       <h1 className="text-2xl font-bold mb-8">결제하기</h1>
 
-      <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-        <p>
-          현재 PG 연결 진행 중으로 카드결제는 이용할 수 없습니다. 무통장 입금 신청 후 관리자가 입금을 승인하면 다운로드가 가능합니다.
-        </p>
-      </div>
+      <Script
+        src={DANAL_SDK_SRC}
+        strategy="afterInteractive"
+        onLoad={() => setDanalSdkReady(true)}
+        onReady={() => setDanalSdkReady(true)}
+        onError={() => {
+          setDanalSdkReady(false)
+          if (!CARD_PAYMENTS_DISABLED) {
+            addToast('다날 결제 모듈을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.', 'error')
+          }
+        }}
+      />
+
+      {CARD_PAYMENTS_DISABLED && (
+        <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <p>
+            다날 PG 설정이 완료되지 않아 카드결제는 이용할 수 없습니다. 무통장 입금 신청 후 관리자가 입금을 승인하면 다운로드가 가능합니다.
+          </p>
+        </div>
+      )}
 
       {/* 주문 요약 */}
       <div className="bg-muted/30 rounded-xl p-5 mb-6 space-y-3">
@@ -951,7 +976,7 @@ export default function CheckoutPage() {
             ) : selectedMethod === 'card' && (
               <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <p>{CARD_PAYMENTS_DISABLED ? '현재 PG 연결 진행 중으로 카드결제를 이용할 수 없습니다.' : '신용카드 결제의 경우 세금계산서가 발행되지 않습니다. 매출전표를 활용하시면 됩니다.'}</p>
+                <p>{CARD_PAYMENTS_DISABLED ? '다날 PG 설정이 완료되지 않아 카드결제를 이용할 수 없습니다.' : '신용카드 결제의 경우 세금계산서가 발행되지 않습니다. 매출전표를 활용하시면 됩니다.'}</p>
               </div>
             )}
 
@@ -1071,7 +1096,7 @@ export default function CheckoutPage() {
               type="button"
               onClick={() => {
                 if (CARD_PAYMENTS_DISABLED) {
-                  addToast('현재 카드결제는 이용할 수 없습니다. 무통장 입금을 이용해주세요.', 'error')
+                  addToast('다날 PG 설정이 완료되지 않아 카드결제를 이용할 수 없습니다. 무통장 입금을 이용해주세요.', 'error')
                   return
                 }
                 setSelectedMethod('card')
@@ -1087,7 +1112,7 @@ export default function CheckoutPage() {
               <CreditCard className={`w-5 h-5 shrink-0 ${selectedMethod === 'card' ? 'text-primary' : 'text-muted-foreground'}`} />
               <div>
                 <p className={`text-sm font-semibold ${selectedMethod === 'card' ? 'text-primary' : 'text-foreground'}`}>카드·가상계좌·간편결제</p>
-                <p className="text-[11px] text-muted-foreground">{CARD_PAYMENTS_DISABLED ? 'PG 연결 진행 중' : '가상계좌 선택 시 현금영수증 자동 발급'}</p>
+                <p className="text-[11px] text-muted-foreground">{CARD_PAYMENTS_DISABLED ? '다날 설정 필요' : '다날 PG 결제창'}</p>
               </div>
             </button>
             <button
@@ -1121,25 +1146,19 @@ export default function CheckoutPage() {
         </div>
       )}
 
-      {/* 토스 결제 위젯 (카드 선택 시 또는 채팅 결제 시 표시) */}
-      {!CARD_PAYMENTS_DISABLED && (isChatPayment || selectedMethod === 'card') && finalAmount > 0 && (
-        <>
-          {loading && (
-            <div className="flex items-center justify-center py-20 text-muted-foreground">
-              <Loader2 className="w-6 h-6 animate-spin mr-2" />
-              결제 수단을 불러오는 중...
-            </div>
-          )}
-          <div id="payment-method" className="mb-4" />
-          <div id="agreement" className="mb-6" />
-        </>
+      {/* 다날 결제 SDK 로딩 상태 */}
+      {!CARD_PAYMENTS_DISABLED && (isChatPayment || selectedMethod === 'card') && finalAmount > 0 && !danalSdkReady && (
+        <div className="mb-6 flex items-center justify-center rounded-xl border border-border bg-muted/30 py-5 text-sm text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+          다날 결제 모듈을 불러오는 중...
+        </div>
       )}
 
       {/* 결제 버튼 */}
       {((!isChatPayment && selectedMethod === 'bank_transfer') || ready) && (
         <button
           onClick={handlePayment}
-          disabled={paying}
+          disabled={paying || (!CARD_PAYMENTS_DISABLED && (isChatPayment || selectedMethod === 'card') && finalAmount > 0 && !danalSdkReady)}
           className="w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {paying ? (
@@ -1171,7 +1190,7 @@ export default function CheckoutPage() {
           ? '0원 주문은 주문 완료 후 바로 파일이 제공됩니다'
           : !isChatPayment && selectedMethod === 'bank_transfer'
           ? '무통장 입금은 입금 확인 후 파일이 제공됩니다'
-          : '결제는 토스페이먼츠를 통해 안전하게 처리됩니다'}
+          : '결제는 다날 PG를 통해 안전하게 처리됩니다'}
       </p>
     </div>
   )
