@@ -88,6 +88,7 @@ const adminSections: AdminSection[] = [
       { href: '/admin/notices', icon: Bell, label: '공지사항', description: '사이트 공지 작성' },
       { href: '/admin/faq', icon: HelpCircle, label: 'FAQ 관리', description: '자주 묻는 질문' },
       { href: '/admin/morning-brief', icon: Mail, label: '모닝브리프 기록', description: '메일 브리프 발송 이력' },
+      { href: '/admin/ticker-notices', icon: Megaphone, label: '티커 공지 관리', description: '메인 티커 문구' },
     ],
   },
   {

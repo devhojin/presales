@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { type DbProduct, formatPrice } from '@/lib/types'
 import { useCartStore } from '@/stores/cart-store'
 import { useToastStore } from '@/stores/toast-store'
+import { DEFAULT_TICKER_NOTICE, type TickerNotice } from '@/lib/ticker-notices'
 import { FileText, Download, Globe, Handshake, ArrowRight, ShoppingCart, Check, Star, Quote, Search, BookOpen, Presentation, Briefcase, TrendingUp, Wrench } from 'lucide-react'
 
 interface StatsData {
@@ -151,8 +152,6 @@ const heroFeaturePanels = [
   },
 ] as const
 
-const PAYMENT_NOTICE_TEXT = 'PG 연동문제로 무통장입금과 무료다운로드만 가능합니다.'
-
 function ProductRailItem({ product, categoryNames }: { product: DbProduct; categoryNames: string[] }) {
   return (
     <Link
@@ -233,6 +232,35 @@ function getReviewProduct(product: ReviewQueryRow['products']) {
   return Array.isArray(product) ? product[0] || null : product
 }
 
+function TickerNoticeItem({ notice }: { notice: TickerNotice }) {
+  const content = (
+    <>
+      <span className="h-2 w-2 rounded-full bg-amber-500" />
+      {notice.message}
+    </>
+  )
+
+  const className = 'inline-flex items-center gap-2 px-1 transition-colors hover:text-amber-700'
+
+  if (!notice.href) {
+    return <span className={className}>{content}</span>
+  }
+
+  if (notice.href.startsWith('/')) {
+    return (
+      <Link href={notice.href} className={className}>
+        {content}
+      </Link>
+    )
+  }
+
+  return (
+    <a href={notice.href} className={className} target="_blank" rel="noopener noreferrer">
+      {content}
+    </a>
+  )
+}
+
 function ReviewMarquee({ reviews }: { reviews: ReviewData[] }) {
   const marqueeReviews = [...reviews, ...reviews]
 
@@ -293,6 +321,7 @@ export default function Home() {
   const [reviews, setReviews] = useState<ReviewData[]>([])
   const [newProducts, setNewProducts] = useState<DbProduct[]>([])
   const [loadingProducts, setLoadingProducts] = useState(true)
+  const [tickerNotices, setTickerNotices] = useState<TickerNotice[]>([DEFAULT_TICKER_NOTICE])
 
   useEffect(() => {
     async function load() {
@@ -395,6 +424,30 @@ export default function Home() {
     load()
   }, [])
 
+  useEffect(() => {
+    let active = true
+
+    async function loadTickerNotices() {
+      try {
+        const response = await fetch('/api/ticker-notices', { cache: 'no-store' })
+        if (!response.ok) return
+
+        const data = await response.json() as { notices?: TickerNotice[] }
+        if (active && Array.isArray(data.notices)) {
+          setTickerNotices(data.notices)
+        }
+      } catch {
+        // 기본 결제 안내 문구를 유지합니다.
+      }
+    }
+
+    void loadTickerNotices()
+
+    return () => {
+      active = false
+    }
+  }, [])
+
   const categoryMap = new Map<number, string>()
   categories.forEach((c) => categoryMap.set(c.id, c.name))
 
@@ -406,23 +459,27 @@ export default function Home() {
     return ['문서']
   }
 
+  const tickerMarqueeItems = tickerNotices.length > 0
+    ? Array.from({ length: Math.max(8, tickerNotices.length * 4) }, (_, index) => tickerNotices[index % tickerNotices.length])
+    : []
+  const tickerAriaLabel = tickerNotices.map((notice) => notice.message).join(' · ')
+
   return (
     <div>
       {/* Hero — interactive proposal cockpit */}
       <section className="relative overflow-hidden bg-[#F7F8FA]">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(37,99,235,0.09),transparent_34%),linear-gradient(90deg,rgba(255,255,255,0.78),rgba(255,255,255,0))]" />
-        <div className="relative z-[2] border-y border-amber-200/80 bg-amber-50/95 text-amber-900 shadow-[0_10px_24px_rgba(180,83,9,0.08)]" aria-label={PAYMENT_NOTICE_TEXT}>
-          <div className="overflow-hidden whitespace-nowrap py-2.5">
-            <div className="presales-payment-ticker inline-flex items-center gap-8 text-[13px] font-semibold md:text-sm">
-              {Array.from({ length: 8 }).map((_, index) => (
-                <span key={index} className="inline-flex items-center gap-2 px-1">
-                  <span className="h-2 w-2 rounded-full bg-amber-500" />
-                  {PAYMENT_NOTICE_TEXT}
-                </span>
-              ))}
+        {tickerMarqueeItems.length > 0 && (
+          <div className="relative z-[2] border-y border-amber-200/80 bg-amber-50/95 text-amber-900 shadow-[0_10px_24px_rgba(180,83,9,0.08)]" aria-label={tickerAriaLabel}>
+            <div className="overflow-hidden whitespace-nowrap py-2.5">
+              <div className="presales-payment-ticker inline-flex items-center gap-8 text-[13px] font-semibold md:text-sm">
+                {tickerMarqueeItems.map((notice, index) => (
+                  <TickerNoticeItem key={`${notice.id}-${index}`} notice={notice} />
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
         <div className="relative mx-auto w-full max-w-[1400px] px-4 py-14 md:px-8 md:py-20 lg:py-24">
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[0.86fr_1.14fr] lg:gap-12">
             <div className="relative z-[1] min-w-0 w-full max-w-[620px] space-y-7">
