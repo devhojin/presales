@@ -268,7 +268,7 @@ export default function CheckoutPage() {
         currentUserIdRef.current = user.id
 
         if (CARD_PAYMENTS_DISABLED) {
-          addToast('다날 PG 설정이 완료되지 않아 카드결제를 이용할 수 없습니다. 상담 결제는 메시지로 문의주세요.', 'error')
+          addToast('상담 결제는 메시지로 문의주세요.', 'error')
           setLoading(false)
           return
         }
@@ -685,7 +685,7 @@ export default function CheckoutPage() {
 
   async function handleCardPayment() {
     if (CARD_PAYMENTS_DISABLED) {
-      addToast('다날 PG 설정이 완료되지 않아 카드결제를 이용할 수 없습니다. 무통장 입금을 선택해주세요.', 'error')
+      addToast('현재 선택할 수 없는 결제 수단입니다. 무통장 입금을 선택해주세요.', 'error')
       setSelectedMethod('bank_transfer')
       return
     }
@@ -862,26 +862,17 @@ export default function CheckoutPage() {
 
       <h1 className="text-2xl font-bold mb-8">결제하기</h1>
 
-      <Script
-        src={DANAL_SDK_SRC}
-        strategy="afterInteractive"
-        onLoad={() => setDanalSdkReady(true)}
-        onReady={() => setDanalSdkReady(true)}
-        onError={() => {
-          setDanalSdkReady(false)
-          if (!CARD_PAYMENTS_DISABLED) {
+      {!CARD_PAYMENTS_DISABLED && (
+        <Script
+          src={DANAL_SDK_SRC}
+          strategy="afterInteractive"
+          onLoad={() => setDanalSdkReady(true)}
+          onReady={() => setDanalSdkReady(true)}
+          onError={() => {
+            setDanalSdkReady(false)
             addToast('다날 결제 모듈을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.', 'error')
-          }
-        }}
-      />
-
-      {CARD_PAYMENTS_DISABLED && (
-        <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>
-            다날 PG 설정이 완료되지 않아 카드결제는 이용할 수 없습니다. 무통장 입금 신청 후 관리자가 입금을 승인하면 다운로드가 가능합니다.
-          </p>
-        </div>
+          }}
+        />
       )}
 
       {/* 주문 요약 */}
@@ -976,7 +967,7 @@ export default function CheckoutPage() {
             ) : selectedMethod === 'card' && (
               <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                 <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                <p>{CARD_PAYMENTS_DISABLED ? '다날 PG 설정이 완료되지 않아 카드결제를 이용할 수 없습니다.' : '신용카드 결제의 경우 세금계산서가 발행되지 않습니다. 매출전표를 활용하시면 됩니다.'}</p>
+                <p>신용카드 결제의 경우 세금계산서가 발행되지 않습니다. 매출전표를 활용하시면 됩니다.</p>
               </div>
             )}
 
@@ -1091,30 +1082,24 @@ export default function CheckoutPage() {
       {!isChatPayment && !isZeroAmountOrder && (
         <div className="mb-6">
           <h2 className="font-semibold text-sm mb-3">결제 수단 선택</h2>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                if (CARD_PAYMENTS_DISABLED) {
-                  addToast('다날 PG 설정이 완료되지 않아 카드결제를 이용할 수 없습니다. 무통장 입금을 이용해주세요.', 'error')
-                  return
-                }
-                setSelectedMethod('card')
-              }}
-              disabled={CARD_PAYMENTS_DISABLED}
-              className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-colors cursor-pointer text-left ${
-                selectedMethod === 'card'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:border-primary/40'
-              } ${CARD_PAYMENTS_DISABLED ? 'cursor-not-allowed opacity-55 hover:border-border' : ''
-              }`}
-            >
-              <CreditCard className={`w-5 h-5 shrink-0 ${selectedMethod === 'card' ? 'text-primary' : 'text-muted-foreground'}`} />
-              <div>
-                <p className={`text-sm font-semibold ${selectedMethod === 'card' ? 'text-primary' : 'text-foreground'}`}>카드·가상계좌·간편결제</p>
-                <p className="text-[11px] text-muted-foreground">{CARD_PAYMENTS_DISABLED ? '다날 설정 필요' : '다날 PG 결제창'}</p>
-              </div>
-            </button>
+          <div className={`grid gap-3 ${CARD_PAYMENTS_DISABLED ? 'grid-cols-1' : 'grid-cols-2'}`}>
+            {!CARD_PAYMENTS_DISABLED && (
+              <button
+                type="button"
+                onClick={() => setSelectedMethod('card')}
+                className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-colors cursor-pointer text-left ${
+                  selectedMethod === 'card'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:border-primary/40'
+                }`}
+              >
+                <CreditCard className={`w-5 h-5 shrink-0 ${selectedMethod === 'card' ? 'text-primary' : 'text-muted-foreground'}`} />
+                <div>
+                  <p className={`text-sm font-semibold ${selectedMethod === 'card' ? 'text-primary' : 'text-foreground'}`}>카드·가상계좌·간편결제</p>
+                  <p className="text-[11px] text-muted-foreground">다날 PG 결제창</p>
+                </div>
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setSelectedMethod('bank_transfer')}
