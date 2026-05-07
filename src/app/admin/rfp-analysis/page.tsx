@@ -581,7 +581,7 @@ export default function AdminRfpAnalysisPage() {
               const softDeleting = mutatingJobId === `${job.id}:soft`
               const hardDeleting = mutatingJobId === `${job.id}:hard`
               return (
-                <div key={job.id} className="grid gap-4 p-5 xl:grid-cols-[32px_130px_150px_minmax(220px,1fr)_minmax(300px,1.45fr)_190px] 2xl:grid-cols-[32px_150px_170px_minmax(340px,1.1fr)_minmax(540px,1.8fr)_210px]">
+                <div key={job.id} className="grid gap-4 p-5 xl:grid-cols-[32px_120px_135px_minmax(190px,0.85fr)_minmax(260px,1.2fr)_180px] 2xl:grid-cols-[32px_130px_145px_minmax(220px,0.9fr)_minmax(360px,1.25fr)_180px]">
                   <div className="flex items-start">
                     <input
                       type="checkbox"
