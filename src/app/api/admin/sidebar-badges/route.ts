@@ -6,6 +6,8 @@ import { isMemberAdminUnread, isOrderAdminUnread } from '@/lib/admin-read-state'
 import { getKstStartOfDayIso } from '@/lib/kst-date'
 import { logger } from '@/lib/logger'
 
+const GUEST_MEMBER_EMAIL_SUFFIX = '@guest.presales.local'
+
 type ChatNotification = {
   id: string
   label: string
@@ -13,6 +15,10 @@ type ChatNotification = {
   unreadCount: number
   lastMessageAt: string | null
   href: string
+}
+
+function isGuestMemberProfile(member: { email?: string | null }) {
+  return (member.email || '').toLowerCase().endsWith(GUEST_MEMBER_EMAIL_SUFFIX)
 }
 
 async function getAdminService() {
@@ -83,7 +89,7 @@ export async function GET() {
         .limit(10000),
       service
         .from('profiles')
-        .select('id, role, created_at, admin_memo, deleted_at')
+        .select('id, email, role, created_at, admin_memo, deleted_at')
         .order('created_at', { ascending: false })
         .limit(5000),
     ])
@@ -100,7 +106,10 @@ export async function GET() {
       0,
     )
     const unreadOrders = (ordersRes.data || []).filter(isOrderAdminUnread).length
-    const unreadMembers = (membersRes.data || []).filter(isMemberAdminUnread).length
+    const unreadMembers = (membersRes.data || [])
+      .filter((member) => !isGuestMemberProfile(member))
+      .filter(isMemberAdminUnread).length
+    const customerUnread = chatUnread + unreadMembers
     const chatUserIds = (chatRes.data || [])
       .map((room) => room.user_id)
       .filter((userId): userId is string => Boolean(userId))
@@ -143,6 +152,7 @@ export async function GET() {
       consultingPending: consultRes.count || 0,
       unreadOrders,
       unreadMembers,
+      customerUnread,
     })
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : '알 수 없는 오류'

@@ -138,6 +138,8 @@ function getActiveSection(pathname: string | null) {
 }
 
 function getBadgeCountForSection(section: AdminSection, badges: Record<string, number>) {
+  const sectionBadge = badges[`section:${section.key}`]
+  if (typeof sectionBadge === 'number') return sectionBadge
   return section.items.reduce((sum, item) => sum + (badges[item.href] || 0), 0)
 }
 
@@ -200,10 +202,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           consultingPending?: number
           unreadOrders?: number
           unreadMembers?: number
+          customerUnread?: number
           chatNotifications?: ChatNotification[]
         }
 
         setBadges({
+          'section:customers': data.customerUnread || 0,
           '/admin/orders': data.unreadOrders || 0,
           '/admin/members': data.unreadMembers || 0,
           '/admin/announcements': data.announcementsToday || 0,
@@ -230,6 +234,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         refreshBadges,
       )
       .subscribe()
+    const chatMessageChannel = supabase
+      .channel('admin-sidebar-chat-message-badges')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'chat_messages' },
+        refreshBadges,
+      )
+      .subscribe()
     const orderChannel = supabase
       .channel('admin-sidebar-order-badges')
       .on(
@@ -251,6 +263,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       clearInterval(interval)
       window.removeEventListener('admin-badges-refresh', refreshBadges)
       supabase.removeChannel(chatChannel)
+      supabase.removeChannel(chatMessageChannel)
       supabase.removeChannel(orderChannel)
       supabase.removeChannel(memberChannel)
     }
