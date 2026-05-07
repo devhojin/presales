@@ -68,6 +68,55 @@ interface Profile {
   deletion_reason?: string | null
 }
 
+interface MemberCustomGroup {
+  id: string
+  label: string
+  memberIds: string[]
+  createdAt: string
+}
+
+const CUSTOM_MEMBER_GROUPS_STORAGE_KEY = 'admin-member-custom-groups-v1'
+const GUEST_MEMBER_EMAIL_SUFFIX = '@guest.presales.local'
+
+function isGuestMember(member: Profile) {
+  return member.email.toLowerCase().endsWith(GUEST_MEMBER_EMAIL_SUFFIX)
+}
+
+function getMemberTypeLabel(member: Profile) {
+  if (isGuestMember(member)) return '비회원'
+  return member.role === 'admin' ? '관리자' : '일반'
+}
+
+function getMemberTypeBadgeClass(member: Profile) {
+  if (isGuestMember(member)) return 'bg-slate-100 text-slate-700 border border-slate-200'
+  if (member.role === 'admin') return 'bg-red-50 text-red-700 border border-red-200'
+  return 'bg-muted text-muted-foreground border border-border'
+}
+
+function parseStoredCustomGroups(raw: string | null): MemberCustomGroup[] {
+  if (!raw) return []
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed.flatMap((item): MemberCustomGroup[] => {
+      if (!item || typeof item !== 'object') return []
+      const row = item as Partial<MemberCustomGroup>
+      if (typeof row.id !== 'string' || typeof row.label !== 'string' || !Array.isArray(row.memberIds)) return []
+      const label = row.label.trim().slice(0, 32)
+      const memberIds = Array.from(new Set(row.memberIds.filter((id): id is string => typeof id === 'string' && id.length > 0)))
+      if (!label || memberIds.length === 0) return []
+      return [{
+        id: row.id,
+        label,
+        memberIds,
+        createdAt: typeof row.createdAt === 'string' ? row.createdAt : new Date().toISOString(),
+      }]
+    })
+  } catch {
+    return []
+  }
+}
+
 function parseMemberMemos(raw: string | null): MemoEntry[] {
   return getVisibleMemberMemos(raw)
 }
@@ -179,7 +228,7 @@ function exportCSV(members: Profile[], statsMap: Map<string, MemberStats>) {
     return [
       m.name || '',
       m.email,
-      m.role === 'admin' ? '관리자' : '일반',
+      getMemberTypeLabel(m),
       formatDate(m.created_at),
       stats?.order_count ?? 0,
       stats?.total_spent ?? 0,
@@ -308,6 +357,124 @@ function ConfirmModal({
         </div>
       </div>
     </div>
+    </ModalPortal>
+  )
+}
+
+type GroupCreateSource = 'selected' | 'current'
+
+function MemberGroupCreateModal({
+  selectedCount,
+  currentCount,
+  activeGroupLabel,
+  onSave,
+  onCancel,
+}: {
+  selectedCount: number
+  currentCount: number
+  activeGroupLabel: string
+  onSave: (label: string, source: GroupCreateSource) => void
+  onCancel: () => void
+}) {
+  const { handleMouseDown, modalStyle } = useDraggableModal()
+  const defaultSource: GroupCreateSource = selectedCount > 0 ? 'selected' : 'current'
+  const [source, setSource] = useState<GroupCreateSource>(defaultSource)
+  const [label, setLabel] = useState(selectedCount > 0 ? '선택 회원' : `${activeGroupLabel} 그룹`)
+
+  useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel()
+    }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [onCancel])
+
+  const targetCount = source === 'selected' ? selectedCount : currentCount
+  const canSave = label.trim().length > 0 && targetCount > 0
+
+  return (
+    <ModalPortal>
+      <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/40" onClick={onCancel} />
+        <div className="relative w-full max-w-sm rounded-xl bg-white p-6 shadow-xl" style={modalStyle}>
+          <div className="mb-5 flex items-start justify-between gap-3 cursor-move" onMouseDown={handleMouseDown}>
+            <div>
+              <h3 className="text-sm font-semibold text-foreground">새 그룹 만들기</h3>
+              <p className="mt-1 text-xs text-muted-foreground">회원 {targetCount}명</p>
+            </div>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex h-7 w-7 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground cursor-pointer"
+              aria-label="닫기"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-muted-foreground">그룹명</label>
+              <input
+                value={label}
+                onChange={(event) => setLabel(event.target.value.slice(0, 32))}
+                autoFocus
+                className="h-10 w-full rounded-xl border border-border px-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                placeholder="그룹명을 입력하세요"
+              />
+            </div>
+
+            <div>
+              <p className="mb-2 text-xs font-medium text-muted-foreground">대상</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => selectedCount > 0 && setSource('selected')}
+                  disabled={selectedCount === 0}
+                  className={`rounded-xl border px-3 py-2 text-left text-xs transition-colors ${
+                    source === 'selected'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-white text-muted-foreground hover:bg-muted'
+                  } disabled:cursor-not-allowed disabled:opacity-45`}
+                >
+                  <span className="block font-semibold">선택 회원</span>
+                  <span>{selectedCount}명</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSource('current')}
+                  className={`rounded-xl border px-3 py-2 text-left text-xs transition-colors ${
+                    source === 'current'
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-white text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  <span className="block font-semibold">현재 목록</span>
+                  <span>{currentCount}명</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded-xl bg-muted px-4 py-2 text-sm font-medium text-foreground hover:bg-muted cursor-pointer"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={() => onSave(label.trim(), source)}
+              disabled={!canSave}
+              className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+            >
+              만들기
+            </button>
+          </div>
+        </div>
+      </div>
     </ModalPortal>
   )
 }
@@ -1477,7 +1644,12 @@ function MemberDetailModal({
 // Main Page
 // ===========================
 
-type FilterTab = 'all' | 'new' | 'user' | 'admin' | 'deleted'
+type FixedFilterTab = 'all' | 'new' | 'guest' | 'user' | 'admin' | 'deleted'
+type FilterTab = FixedFilterTab | `custom:${string}`
+
+function isCustomFilterTab(tab: FilterTab): tab is `custom:${string}` {
+  return tab.startsWith('custom:')
+}
 
 export default function AdminMembers() {
   const [members, setMembers] = useState<Profile[]>([])
@@ -1487,6 +1659,8 @@ export default function AdminMembers() {
   const [search, setSearch] = useState('')
   const [filterTab, setFilterTab] = useState<FilterTab>('all')
   const [groupSidebarCollapsed, setGroupSidebarCollapsed] = useState(false)
+  const [customGroups, setCustomGroups] = useState<MemberCustomGroup[]>([])
+  const [createGroupOpen, setCreateGroupOpen] = useState(false)
   const [pageSize, setPageSize] = useState(100)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedMember, setSelectedMember] = useState<Profile | null>(null)
@@ -1504,6 +1678,7 @@ export default function AdminMembers() {
 
   useEffect(() => {
     setGroupSidebarCollapsed(localStorage.getItem('admin-member-groups-collapsed') === 'true')
+    setCustomGroups(parseStoredCustomGroups(localStorage.getItem(CUSTOM_MEMBER_GROUPS_STORAGE_KEY)))
   }, [])
 
   async function loadMembers() {
@@ -1634,14 +1809,19 @@ export default function AdminMembers() {
 
   // Filter + Search
   const filtered = useMemo(() => {
-    // 기본적으로 탈퇴(soft-deleted) 회원은 제외, deleted 탭에서만 노출
     const isDeleted = (m: Profile) => Boolean(m.deleted_at)
-    let result = filterTab === 'deleted'
-      ? members.filter(isDeleted)
-      : members.filter((m) => !isDeleted(m))
-    if (filterTab === 'new') result = result.filter(isMemberAdminUnread)
-    if (filterTab === 'user') result = result.filter((m) => m.role !== 'admin')
-    if (filterTab === 'admin') result = result.filter((m) => m.role === 'admin')
+    const customGroup = isCustomFilterTab(filterTab)
+      ? customGroups.find((group) => `custom:${group.id}` === filterTab)
+      : null
+    let result = customGroup
+      ? members.filter((m) => customGroup.memberIds.includes(m.id))
+      : filterTab === 'deleted'
+        ? members.filter(isDeleted)
+        : members.filter((m) => !isDeleted(m))
+    if (!customGroup && filterTab === 'new') result = result.filter(isMemberAdminUnread)
+    if (!customGroup && filterTab === 'guest') result = result.filter(isGuestMember)
+    if (!customGroup && filterTab === 'user') result = result.filter((m) => m.role !== 'admin' && !isGuestMember(m))
+    if (!customGroup && filterTab === 'admin') result = result.filter((m) => m.role === 'admin')
     if (search.trim()) {
       const q = search.trim().toLowerCase()
       result = result.filter(
@@ -1652,7 +1832,7 @@ export default function AdminMembers() {
       )
     }
     return result
-  }, [members, filterTab, search])
+  }, [members, customGroups, filterTab, search])
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
@@ -1667,7 +1847,8 @@ export default function AdminMembers() {
   const activeMembers = members.filter((m) => !m.deleted_at)
   const totalCount = activeMembers.length
   const adminCount = activeMembers.filter((m) => m.role === 'admin').length
-  const userCount = totalCount - adminCount
+  const guestCount = activeMembers.filter(isGuestMember).length
+  const userCount = activeMembers.filter((m) => m.role !== 'admin' && !isGuestMember(m)).length
   const newCount = activeMembers.filter(isMemberAdminUnread).length
   const deletedCount = members.length - activeMembers.length
 
@@ -1708,13 +1889,59 @@ export default function AdminMembers() {
     })
   }
 
-  const sidebarGroups: { key: FilterTab; label: string; count: number; icon: React.ReactNode }[] = [
+  function persistCustomGroups(nextGroups: MemberCustomGroup[]) {
+    setCustomGroups(nextGroups)
+    localStorage.setItem(CUSTOM_MEMBER_GROUPS_STORAGE_KEY, JSON.stringify(nextGroups))
+  }
+
+  function handleCreateCustomGroup(label: string, source: GroupCreateSource) {
+    const sourceMembers = source === 'selected'
+      ? members.filter((member) => selectedIds.has(member.id))
+      : filtered
+    const memberIds = Array.from(new Set(sourceMembers.map((member) => member.id)))
+    if (memberIds.length === 0) {
+      alert('그룹에 넣을 회원이 없습니다.')
+      return
+    }
+    const id = crypto.randomUUID()
+    const nextGroups = [
+      ...customGroups,
+      {
+        id,
+        label: label.slice(0, 32),
+        memberIds,
+        createdAt: new Date().toISOString(),
+      },
+    ]
+    persistCustomGroups(nextGroups)
+    setFilterTab(`custom:${id}`)
+    setSelectedIds(new Set())
+    setCreateGroupOpen(false)
+  }
+
+  function handleDeleteCustomGroup(id: string) {
+    const nextGroups = customGroups.filter((group) => group.id !== id)
+    persistCustomGroups(nextGroups)
+    if (filterTab === `custom:${id}`) setFilterTab('all')
+  }
+
+  const sidebarGroups: { key: FilterTab; label: string; count: number; icon: React.ReactNode; customId?: string }[] = [
     { key: 'all', label: '전체 사용자', count: totalCount, icon: <Users className="w-4 h-4" /> },
     { key: 'new', label: '신규회원', count: newCount, icon: <PlusCircle className="w-4 h-4" /> },
+    { key: 'guest', label: '비회원', count: guestCount, icon: <User className="w-4 h-4" /> },
     { key: 'user', label: '일반회원', count: userCount, icon: <User className="w-4 h-4" /> },
     { key: 'admin', label: '관리자', count: adminCount, icon: <Shield className="w-4 h-4" /> },
     { key: 'deleted', label: '탈퇴 회원', count: deletedCount, icon: <AlertTriangle className="w-4 h-4" /> },
+    ...customGroups.map((group) => ({
+      key: `custom:${group.id}` as const,
+      label: group.label,
+      count: group.memberIds.filter((id) => members.some((member) => member.id === id)).length,
+      icon: <Users className="w-4 h-4" />,
+      customId: group.id,
+    })),
   ]
+
+  const activeGroupLabel = sidebarGroups.find((group) => group.key === filterTab)?.label || '회원'
 
   return (
     <div className="min-h-screen bg-muted">
@@ -1747,41 +1974,61 @@ export default function AdminMembers() {
             </button>
           </div>
           <nav className="space-y-1">
-            {sidebarGroups.map((g) => (
-              <button
-                key={g.key}
-                onClick={() => setFilterTab(g.key)}
-                title={groupSidebarCollapsed ? `${g.label} ${g.count}` : undefined}
-                className={`cursor-pointer w-full flex items-center rounded-xl text-sm font-medium transition-colors ${
-                  groupSidebarCollapsed ? 'h-11 justify-center px-0' : 'justify-between px-3 py-2.5'
-                } ${
-                  filterTab === g.key
-                    ? 'bg-primary/8 text-primary'
-                    : 'text-muted-foreground hover:bg-muted'
-                }`}
-              >
-                <span className={`flex items-center ${groupSidebarCollapsed ? 'justify-center' : 'gap-2'}`}>
-                  {g.icon}
-                  {!groupSidebarCollapsed && g.label}
-                </span>
-                {!groupSidebarCollapsed && (
-                  <span
-                    className={`text-xs font-normal ${
-                      filterTab === g.key ? 'text-primary' : 'text-muted-foreground'
+            {sidebarGroups.map((g) => {
+              const customId = g.customId
+              return (
+                <div key={g.key} className="relative group">
+                  <button
+                    type="button"
+                    onClick={() => setFilterTab(g.key)}
+                    title={groupSidebarCollapsed ? `${g.label} ${g.count}` : undefined}
+                    className={`cursor-pointer w-full flex items-center rounded-xl text-sm font-medium transition-colors ${
+                      groupSidebarCollapsed ? 'h-11 justify-center px-0' : `justify-between px-3 py-2.5 ${customId ? 'pr-8' : ''}`
+                    } ${
+                      filterTab === g.key
+                        ? 'bg-primary/8 text-primary'
+                        : 'text-muted-foreground hover:bg-muted'
                     }`}
                   >
-                    {g.count}
-                  </span>
-                )}
-              </button>
-            ))}
+                    <span className={`flex min-w-0 items-center ${groupSidebarCollapsed ? 'justify-center' : 'gap-2'}`}>
+                      {g.icon}
+                      {!groupSidebarCollapsed && <span className="truncate">{g.label}</span>}
+                    </span>
+                    {!groupSidebarCollapsed && (
+                      <span
+                        className={`text-xs font-normal ${
+                          filterTab === g.key ? 'text-primary' : 'text-muted-foreground'
+                        }`}
+                      >
+                        {g.count}
+                      </span>
+                    )}
+                  </button>
+                  {customId && !groupSidebarCollapsed && (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        handleDeleteCustomGroup(customId)
+                      }}
+                      className="absolute right-1.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground opacity-0 transition-opacity hover:bg-white hover:text-red-600 group-hover:opacity-100 cursor-pointer"
+                      aria-label={`${g.label} 그룹 삭제`}
+                      title="그룹 삭제"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              )
+            })}
           </nav>
           {!groupSidebarCollapsed && (
             <div className="mt-4 px-3">
               <button
-                disabled
-                className="w-full text-left text-xs text-muted-foreground py-2 flex items-center gap-1.5 opacity-60"
-                title="준비 중"
+                type="button"
+                onClick={() => setCreateGroupOpen(true)}
+                className="w-full text-left text-xs text-muted-foreground py-2 flex items-center gap-1.5 hover:text-foreground cursor-pointer"
+                title={selectedIds.size > 0 ? '선택한 회원으로 새 그룹 만들기' : '현재 목록으로 새 그룹 만들기'}
               >
                 <span className="text-base leading-none">+</span> 새 그룹 만들기
               </button>
@@ -2002,13 +2249,9 @@ export default function AdminMembers() {
                           <td className="px-4 py-3">
                             <div className="flex flex-wrap items-center gap-1.5">
                               <Badge
-                                className={
-                                  m.role === 'admin'
-                                    ? 'bg-red-50 text-red-700 border border-red-200'
-                                    : 'bg-muted text-muted-foreground border border-border'
-                                }
+                                className={getMemberTypeBadgeClass(m)}
                               >
-                                {m.role === 'admin' ? '관리자' : '일반'}
+                                {getMemberTypeLabel(m)}
                               </Badge>
                               {m.deleted_at && (
                                 <Badge
@@ -2178,6 +2421,16 @@ export default function AdminMembers() {
             setMembers((prev) => prev.map((m) => m.id === memoModal.id ? { ...m, admin_memo: memoJson } : m))
           }}
           onCancel={() => setMemoModal(null)}
+        />
+      )}
+
+      {createGroupOpen && (
+        <MemberGroupCreateModal
+          selectedCount={selectedIds.size}
+          currentCount={filtered.length}
+          activeGroupLabel={activeGroupLabel}
+          onSave={handleCreateCustomGroup}
+          onCancel={() => setCreateGroupOpen(false)}
         />
       )}
 
