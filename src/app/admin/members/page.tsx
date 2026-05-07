@@ -1810,17 +1810,23 @@ export default function AdminMembers() {
   // Filter + Search
   const filtered = useMemo(() => {
     const isDeleted = (m: Profile) => Boolean(m.deleted_at)
+    const isRegisteredMember = (m: Profile) => !isGuestMember(m)
     const customGroup = isCustomFilterTab(filterTab)
       ? customGroups.find((group) => `custom:${group.id}` === filterTab)
       : null
-    let result = customGroup
-      ? members.filter((m) => customGroup.memberIds.includes(m.id))
-      : filterTab === 'deleted'
-        ? members.filter(isDeleted)
-        : members.filter((m) => !isDeleted(m))
+    let result: Profile[]
+    if (customGroup) {
+      result = members.filter((m) => customGroup.memberIds.includes(m.id))
+    } else if (filterTab === 'guest') {
+      result = members.filter((m) => !isDeleted(m) && isGuestMember(m))
+    } else if (filterTab === 'deleted') {
+      result = members.filter((m) => isDeleted(m) && isRegisteredMember(m))
+    } else {
+      result = members.filter((m) => !isDeleted(m) && isRegisteredMember(m))
+    }
+
     if (!customGroup && filterTab === 'new') result = result.filter(isMemberAdminUnread)
-    if (!customGroup && filterTab === 'guest') result = result.filter(isGuestMember)
-    if (!customGroup && filterTab === 'user') result = result.filter((m) => m.role !== 'admin' && !isGuestMember(m))
+    if (!customGroup && filterTab === 'user') result = result.filter((m) => m.role !== 'admin')
     if (!customGroup && filterTab === 'admin') result = result.filter((m) => m.role === 'admin')
     if (search.trim()) {
       const q = search.trim().toLowerCase()
@@ -1845,12 +1851,13 @@ export default function AdminMembers() {
 
   // Stats (탈퇴 회원 제외한 활성 기준)
   const activeMembers = members.filter((m) => !m.deleted_at)
-  const totalCount = activeMembers.length
-  const adminCount = activeMembers.filter((m) => m.role === 'admin').length
+  const activeRegisteredMembers = activeMembers.filter((m) => !isGuestMember(m))
+  const totalCount = activeRegisteredMembers.length
+  const adminCount = activeRegisteredMembers.filter((m) => m.role === 'admin').length
   const guestCount = activeMembers.filter(isGuestMember).length
-  const userCount = activeMembers.filter((m) => m.role !== 'admin' && !isGuestMember(m)).length
-  const newCount = activeMembers.filter(isMemberAdminUnread).length
-  const deletedCount = members.length - activeMembers.length
+  const userCount = activeRegisteredMembers.filter((m) => m.role !== 'admin').length
+  const newCount = activeRegisteredMembers.filter(isMemberAdminUnread).length
+  const deletedCount = members.filter((m) => Boolean(m.deleted_at) && !isGuestMember(m)).length
 
   // Selection
   const allPageSelected = paged.length > 0 && paged.every((m) => selectedIds.has(m.id))
