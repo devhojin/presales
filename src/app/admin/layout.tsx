@@ -35,17 +35,6 @@ type ChatNotification = {
 
 const adminSections: AdminSection[] = [
   {
-    key: 'analytics',
-    label: '이용현황',
-    shortLabel: 'Analytics',
-    summary: '방문과 매출 흐름',
-    href: '/admin/analytics',
-    icon: BarChart3,
-    items: [
-      { href: '/admin/analytics', icon: BarChart3, label: '이용현황', description: '방문과 매출 흐름' },
-    ],
-  },
-  {
     key: 'home',
     label: '홈',
     shortLabel: 'Home',
@@ -54,6 +43,7 @@ const adminSections: AdminSection[] = [
     icon: LayoutDashboard,
     items: [
       { href: '/admin', icon: LayoutDashboard, label: '대시보드', description: '핵심 지표와 최근 활동' },
+      { href: '/admin/analytics', icon: BarChart3, label: '이용현황', description: '방문과 매출 흐름' },
     ],
   },
   {
