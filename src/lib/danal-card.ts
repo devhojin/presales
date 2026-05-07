@@ -12,6 +12,7 @@ export type DanalCardConfig = {
 export type DanalCardResponse = Record<string, string>
 
 const DANAL_CARD_TX_URL = 'https://tx-creditcard.danalpay.com/credit/'
+const DANAL_CARD_FIXED_IV = 'd7d02c92cb930b661f107cb92690fc83'
 
 function firstEnv(names: string[]) {
   for (const name of names) {
@@ -28,7 +29,7 @@ function isHex(value: string, length: number) {
 export function getDanalCardConfig(): DanalCardConfig {
   const cpid = firstEnv(['DANAL_CARD_CPID', 'DANAL_MERCHANT_ID'])
   const cryptoKey = firstEnv(['DANAL_CARD_CRYPTO_KEY', 'DANAL_AUTH_KEY'])
-  const cryptoIv = firstEnv(['DANAL_CARD_CRYPTO_IV', 'DANAL_AUTH_IV'])
+  const cryptoIv = DANAL_CARD_FIXED_IV
   const enabledFlag = firstEnv(['DANAL_CARD_ENABLED', 'DANAL_ENABLED'])
   const txUrl = firstEnv(['DANAL_CARD_TX_URL']) || DANAL_CARD_TX_URL
   const enabled = enabledFlag !== 'false'

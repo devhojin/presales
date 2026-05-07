@@ -252,14 +252,18 @@ export async function POST(request: NextRequest) {
     })
 
     if (readyResponse.RETURNCODE !== '0000' || !readyResponse.STARTURL || !readyResponse.STARTPARAMS) {
+      const errorCode = readyResponse.RETURNCODE || 'DANAL_READY_FAILED'
+      const isCryptoMismatch = errorCode === '1114'
       logger.error('다날 카드 Ready 실패', 'payment/danal/ready', {
-        code: readyResponse.RETURNCODE,
+        code: errorCode,
         message: readyResponse.RETURNMSG,
         orderId: order.id,
       })
       return NextResponse.json({
-        error: readyResponse.RETURNMSG || 'DANAL_READY_FAILED',
-        code: readyResponse.RETURNCODE,
+        error: isCryptoMismatch
+          ? '다날 카드 CPID와 암호화키가 일치하지 않습니다.'
+          : readyResponse.RETURNMSG || '다날 결제창 생성에 실패했습니다.',
+        code: errorCode,
       }, { status: 502 })
     }
 
