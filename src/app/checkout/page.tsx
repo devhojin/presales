@@ -40,17 +40,17 @@ declare global {
   }
 }
 
-function buildDanalMethodParams(notiUrl: string) {
-  const params: Record<string, unknown> = {}
+function buildDanalMethods(notiUrl: string) {
+  const methods: Record<string, Record<string, unknown>> = {}
   for (const method of DANAL_METHODS) {
-    if (method === 'CARD') params.card = {}
-    if (method === 'VACCOUNT' || method === 'VIRTUAL_ACCOUNT') params.virtualAccount = { notiUrl }
-    if (method === 'TRANSFER') params.transfer = {}
-    if (method === 'NAVER' || method === 'NAVERPAY') params.naverPay = {}
-    if (method === 'KAKAO' || method === 'KAKAOPAY') params.kakaoPay = {}
-    if (method === 'PAYCO') params.payco = {}
+    if (method === 'CARD') methods.CARD = {}
+    if (method === 'VACCOUNT' || method === 'VIRTUAL_ACCOUNT') methods.VACCOUNT = { notiUrl }
+    if (method === 'TRANSFER') methods.TRANSFER = {}
+    if (method === 'NAVER' || method === 'NAVERPAY') methods.NAVER = {}
+    if (method === 'KAKAO' || method === 'KAKAOPAY') methods.KAKAO = {}
+    if (method === 'PAYCO') methods.PAYCO = {}
   }
-  return Object.keys(params).length > 0 ? params : { card: {} }
+  return Object.keys(methods).length > 0 ? methods : { CARD: {} }
 }
 
 function compactDanalUserId(userId: string) {
@@ -730,7 +730,7 @@ export default function CheckoutPage() {
         userName: customer.name,
         userEmail: customer.email,
         paymentsMethod: 'INTEGRATED',
-        ...buildDanalMethodParams(`${window.location.origin}/api/payment/danal/noti`),
+        methods: buildDanalMethods(`${window.location.origin}/api/payment/danal/noti`),
       })
     } catch (err: unknown) {
       const error = err as { code?: string; message?: string }
