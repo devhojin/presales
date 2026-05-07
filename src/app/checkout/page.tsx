@@ -17,7 +17,8 @@ import {
 const DANAL_SDK_SRC = 'https://static.danalpay.com/d1/sdk/index.js'
 const DANAL_CLIENT_KEY = process.env.NEXT_PUBLIC_DANAL_CLIENT_KEY ?? ''
 const DANAL_MERCHANT_ID = process.env.NEXT_PUBLIC_DANAL_MERCHANT_ID ?? ''
-const DANAL_ENABLED = process.env.NEXT_PUBLIC_DANAL_ENABLED === 'true'
+const DANAL_DISABLED_BY_FLAG = process.env.NEXT_PUBLIC_DANAL_ENABLED === 'false'
+const DANAL_ENABLED = !DANAL_DISABLED_BY_FLAG
   && Boolean(DANAL_CLIENT_KEY)
   && Boolean(DANAL_MERCHANT_ID)
 const CARD_PAYMENTS_DISABLED = !DANAL_ENABLED
@@ -53,7 +54,7 @@ function buildDanalMethodParams(notiUrl: string) {
 }
 
 function compactDanalUserId(userId: string) {
-  return userId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 32) || 'presales-user'
+  return userId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20) || 'presales-user'
 }
 
 export default function CheckoutPage() {
@@ -73,7 +74,7 @@ export default function CheckoutPage() {
   const [orderId, setOrderId] = useState<string | null>(null)
   const [dbOrderId, setDbOrderId] = useState<number | null>(null)
   const [paying, setPaying] = useState(false)
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('bank_transfer')
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>(() => CARD_PAYMENTS_DISABLED ? 'bank_transfer' : 'card')
   const [danalSdkReady, setDanalSdkReady] = useState(false)
   // 다날 가상계좌/현금영수증 SMS/이메일 발송에 필요
   const customerRef = useRef<{ name?: string; email?: string; phone?: string }>({})

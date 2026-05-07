@@ -18,6 +18,8 @@ type PaymentOrder = {
   user_id: string
   status: string | null
   total_amount: number
+  payment_method: string | null
+  payment_key: string | null
   coupon_id: string | null
   coupon_discount: number | null
   reward_discount: number | null
@@ -245,7 +247,7 @@ async function handleDanalReturn(request: NextRequest) {
 
   const { data: orderData } = await supabase
     .from('orders')
-    .select('id, user_id, status, total_amount, coupon_id, coupon_discount, reward_discount')
+    .select('id, user_id, status, total_amount, payment_method, payment_key, coupon_id, coupon_discount, reward_discount')
     .eq('id', dbOrderId)
     .single()
   const order = orderData as PaymentOrder | null
@@ -276,10 +278,18 @@ async function handleDanalReturn(request: NextRequest) {
     return redirectFail(request, '주문 소유자가 일치하지 않습니다.', 'ORDER_OWNER_MISMATCH')
   }
 
+  const normalizedMethod = normalizeDanalPaymentMethod(method)
+
   if (order.status === 'paid' || order.status === 'completed') {
+    if (order.payment_key !== transactionId || Number(order.total_amount) !== amount) {
+      return redirectFail(request, '이미 처리된 주문의 결제 정보가 일치하지 않습니다.', 'ORDER_ALREADY_PAID_MISMATCH')
+    }
     return redirectSuccess(request, dbOrderId, order.status)
   }
-  if (order.status === 'pending_transfer' && normalizeDanalPaymentMethod(method) === 'virtual_account') {
+  if (order.status === 'pending_transfer' && normalizedMethod === 'virtual_account') {
+    if (order.payment_method !== 'virtual_account' || order.payment_key !== transactionId || Number(order.total_amount) !== amount) {
+      return redirectFail(request, '가상계좌 발급 주문의 결제 정보가 일치하지 않습니다.', 'VACCOUNT_BINDING_MISMATCH')
+    }
     return redirectSuccess(request, dbOrderId, order.status)
   }
   if (order.status !== 'pending') {
@@ -383,7 +393,7 @@ async function handleDanalReturn(request: NextRequest) {
       method,
       transactionId,
       merchantId: getRequiredEnv('DANAL_MERCHANT_ID'),
-      amount: String(amount),
+      amount,
       orderId,
     }),
   })
@@ -406,7 +416,6 @@ async function handleDanalReturn(request: NextRequest) {
     return redirectFail(request, confirmData.message || '다날 결제 승인에 실패했습니다.', confirmData.code || 'DANAL_CONFIRM_FAILED')
   }
 
-  const normalizedMethod = normalizeDanalPaymentMethod(method)
   const isVirtualAccount = normalizedMethod === 'virtual_account'
   const nextStatus = isVirtualAccount ? 'pending_transfer' : 'paid'
   const patch: Record<string, unknown> = {

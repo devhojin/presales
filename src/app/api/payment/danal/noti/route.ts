@@ -32,11 +32,14 @@ type PaymentOrder = {
   user_id: string
   status: string | null
   total_amount: number
+  payment_method: string | null
   payment_key: string | null
   coupon_id: string | null
   coupon_discount: number | null
   reward_discount: number | null
 }
+
+const DEFAULT_DANAL_NOTI_ALLOWED_IPS = ['150.242.132.116']
 
 function getRequiredEnv(name: string) {
   const value = process.env[name]?.trim()
@@ -46,6 +49,41 @@ function getRequiredEnv(name: string) {
 
 function jsonResponse(code: 'SUCCESS' | 'FAIL') {
   return NextResponse.json({ code }, { status: 200 })
+}
+
+function getAllowedNotiIps() {
+  const raw = process.env.DANAL_NOTI_ALLOWED_IPS?.trim()
+  const values = raw
+    ? raw.split(',').map((ip) => ip.trim()).filter(Boolean)
+    : DEFAULT_DANAL_NOTI_ALLOWED_IPS
+  return new Set(values)
+}
+
+function getIpCandidates(headers: Headers) {
+  const candidates = new Set<string>()
+  const realIp = headers.get('x-real-ip')?.trim()
+  if (realIp) candidates.add(realIp)
+
+  const forwardedFor = headers.get('x-forwarded-for')
+  if (forwardedFor) {
+    for (const value of forwardedFor.split(',')) {
+      const ip = value.trim()
+      if (ip) candidates.add(ip)
+    }
+  }
+
+  const clientIp = getClientIp(headers)
+  if (clientIp) candidates.add(clientIp)
+  return candidates
+}
+
+function isAllowedDanalNotiSource(headers: Headers) {
+  const allowedIps = getAllowedNotiIps()
+  if (allowedIps.has('*')) return true
+  for (const ip of getIpCandidates(headers)) {
+    if (allowedIps.has(ip)) return true
+  }
+  return false
 }
 
 function parseDbOrderId(orderId: string) {
@@ -127,6 +165,11 @@ export async function POST(request: NextRequest) {
       return jsonResponse('FAIL')
     }
 
+    if (!isAllowedDanalNotiSource(request.headers)) {
+      logger.error('다날 Noti: 허용되지 않은 송신 IP', 'payment/danal/noti', { ip })
+      return jsonResponse('FAIL')
+    }
+
     const payload = await readDanalNotiPayload(request)
     if (payload.code !== 'SUCCESS') {
       logger.error('다날 Noti: SUCCESS가 아닌 통지 수신', 'payment/danal/noti', {
@@ -157,7 +200,7 @@ export async function POST(request: NextRequest) {
 
     const { data: orderData, error: orderErr } = await supabase
       .from('orders')
-      .select('id, user_id, status, total_amount, payment_key, coupon_id, coupon_discount, reward_discount')
+      .select('id, user_id, status, total_amount, payment_method, payment_key, coupon_id, coupon_discount, reward_discount')
       .eq('id', dbOrderId)
       .single()
     const order = orderData as PaymentOrder | null
@@ -175,63 +218,57 @@ export async function POST(request: NextRequest) {
       return jsonResponse('FAIL')
     }
 
+    const isBoundVirtualAccount =
+      order.payment_method === 'virtual_account'
+      && order.payment_key === transactionId
+
     if (order.status === 'paid' || order.status === 'completed') {
+      if (!isBoundVirtualAccount) {
+        logger.error('다날 Noti: 완료 주문 거래번호 불일치', 'payment/danal/noti', {
+          dbOrderId,
+          status: order.status,
+        })
+        return jsonResponse('FAIL')
+      }
       return jsonResponse('SUCCESS')
     }
-    if (order.status !== 'pending_transfer' && order.status !== 'pending') {
+    if (order.status !== 'pending_transfer') {
       logger.error('다날 Noti: 처리 불가 주문 상태', 'payment/danal/noti', {
         dbOrderId,
         status: order.status,
       })
       return jsonResponse('FAIL')
     }
-
-    let couponReservedForPending = false
-    if (order.status === 'pending' && order.coupon_id) {
-      const { data: couponResult, error: couponErr } = await supabase.rpc('increment_coupon_usage', {
-        p_coupon_id: order.coupon_id,
-        p_user_id: order.user_id,
-        p_order_id: dbOrderId,
-        p_applied_amount: order.coupon_discount || 0,
+    if (!isBoundVirtualAccount) {
+      logger.error('다날 Noti: 가상계좌 발급 거래와 불일치', 'payment/danal/noti', {
+        dbOrderId,
+        paymentMethod: order.payment_method,
       })
-      if (couponErr || (couponResult && (couponResult as { ok?: boolean }).ok === false)) {
-        logger.error('다날 Noti: pending 주문 쿠폰 예약 실패', 'payment/danal/noti', {
-          dbOrderId,
-          couponId: order.coupon_id,
-          error: couponErr?.message,
-          result: couponResult,
-        })
-        return jsonResponse('FAIL')
-      }
-      couponReservedForPending = true
+      return jsonResponse('FAIL')
     }
 
     const paidAt = parseDanalDateTime(payload.depositDateTime) ?? new Date().toISOString()
-    const { error: updateError } = await supabase
+    const { data: updatedOrders, error: updateError } = await supabase
       .from('orders')
       .update({
         status: 'paid',
         payment_method: 'virtual_account',
-        payment_key: transactionId,
         virtual_account: payload.virtualAccountNumber ?? null,
         virtual_account_bank: payload.bankName || payload.bankCode || null,
         virtual_account_due: parseDanalDateTime(payload.expireDateTime),
         paid_at: paidAt,
       } as Record<string, unknown>)
       .eq('id', dbOrderId)
-      .in('status', ['pending_transfer', 'pending'])
+      .eq('status', 'pending_transfer')
+      .eq('payment_method', 'virtual_account')
+      .eq('payment_key', transactionId)
+      .select('id')
 
-    if (updateError) {
-      if (couponReservedForPending && order.coupon_id) {
-        await supabase.rpc('rollback_coupon_usage', {
-          p_coupon_id: order.coupon_id,
-          p_user_id: order.user_id,
-          p_order_id: dbOrderId,
-        })
-      }
+    if (updateError || !updatedOrders || updatedOrders.length === 0) {
       logger.error('다날 Noti: 주문 업데이트 실패', 'payment/danal/noti', {
         dbOrderId,
-        error: updateError.message,
+        error: updateError?.message,
+        updatedCount: updatedOrders?.length ?? 0,
       })
       return jsonResponse('FAIL')
     }
