@@ -481,6 +481,19 @@ function AdminAnnouncementDetail({ announcement: ann, onTogglePublish, onBack }:
         {ann.eligibility && (
           <div className="mb-6"><p className="text-xs font-semibold text-muted-foreground mb-2">지원 자격</p><p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed">{ann.eligibility}</p></div>
         )}
+        {ann.source_url && (
+          <div className="border-t border-border/50 pt-5">
+            <a
+              href={ann.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              원문 보기
+              <ExternalLink className="w-4 h-4" />
+            </a>
+          </div>
+        )}
       </div>
     </div>
   )
