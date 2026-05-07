@@ -7,50 +7,19 @@ import { createClient } from '@/lib/supabase'
 import { useToastStore } from '@/stores/toast-store'
 import { ArrowLeft, ShieldCheck, Loader2, CreditCard, Building2, MessageCircle, Upload, Check, Coins, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
-import Script from 'next/script'
 import {
   clampRewardUseAmount,
   loadRewardBalance,
   loadRewardSettings,
 } from '@/lib/reward-points'
 
-const DANAL_SDK_SRC = 'https://static.danalpay.com/d1/sdk/index.js'
 const PURCHASE_HISTORY_DISCOUNT_REASON = '구매 이력 할인'
 
 type PaymentMethod = 'card' | 'bank_transfer'
 
 type DanalClientConfig = {
   enabled: boolean
-  clientKey: string
-  merchantId: string
-  methods: string[]
-}
-
-type DanalPaymentsInstance = {
-  requestPayment(params: Record<string, unknown>): Promise<void>
-}
-
-declare global {
-  interface Window {
-    DanalPayments?: (clientKey: string) => DanalPaymentsInstance
-  }
-}
-
-function buildDanalMethods(methodsList: string[], notiUrl: string) {
-  const methods: Record<string, Record<string, unknown>> = {}
-  for (const method of methodsList) {
-    if (method === 'CARD') methods.CARD = {}
-    if (method === 'VACCOUNT' || method === 'VIRTUAL_ACCOUNT') methods.VACCOUNT = { notiUrl }
-    if (method === 'TRANSFER') methods.TRANSFER = {}
-    if (method === 'NAVER' || method === 'NAVERPAY') methods.NAVER = {}
-    if (method === 'KAKAO' || method === 'KAKAOPAY') methods.KAKAO = {}
-    if (method === 'PAYCO') methods.PAYCO = {}
-  }
-  return Object.keys(methods).length > 0 ? methods : { CARD: {} }
-}
-
-function compactDanalUserId(userId: string) {
-  return userId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 20) || 'presales-user'
+  provider?: string
 }
 
 export default function CheckoutPage() {
@@ -67,13 +36,11 @@ export default function CheckoutPage() {
 
   const [ready, setReady] = useState(false)
   const [, setLoading] = useState(true)
-  const [orderId, setOrderId] = useState<string | null>(null)
   const [dbOrderId, setDbOrderId] = useState<number | null>(null)
   const [paying, setPaying] = useState(false)
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('bank_transfer')
   const [danalConfig, setDanalConfig] = useState<DanalClientConfig | null>(null)
   const [danalConfigLoaded, setDanalConfigLoaded] = useState(false)
-  const [danalSdkReady, setDanalSdkReady] = useState(false)
   const cardPaymentsDisabled = !danalConfig?.enabled
   // 다날 가상계좌/현금영수증 SMS/이메일 발송에 필요
   const customerRef = useRef<{ name?: string; email?: string; phone?: string }>({})
@@ -112,7 +79,7 @@ export default function CheckoutPage() {
       } catch (err) {
         console.error('[checkout] Danal config load failed', err)
         if (!cancelled) {
-          setDanalConfig({ enabled: false, clientKey: '', merchantId: '', methods: [] })
+          setDanalConfig({ enabled: false })
           setSelectedMethod('bank_transfer')
         }
       } finally {
@@ -320,11 +287,9 @@ export default function CheckoutPage() {
           return
         }
 
-        const danalOrderId = `presales_${order.id}_${Date.now()}`
         if (cancelled) return
 
         setDbOrderId(order.id)
-        setOrderId(danalOrderId)
         setFinalAmount(chatAmount ?? 0)
 
         // 가상계좌 SMS/이메일 발송용 고객 정보 캐시
@@ -663,12 +628,9 @@ export default function CheckoutPage() {
           return
         }
 
-        const danalOrderId = `presales_${order.id}_${Date.now()}`
-
         if (cancelled) return
 
         setDbOrderId(order.id)
-        setOrderId(danalOrderId)
 
         // 가상계좌 SMS/이메일 발송용 고객 정보 캐시
         const { data: prof } = await supabase
@@ -711,7 +673,7 @@ export default function CheckoutPage() {
   }, [danalConfigLoaded])
 
   async function handleCardPayment() {
-    if (cardPaymentsDisabled || !danalConfig?.clientKey || !danalConfig.merchantId) {
+    if (cardPaymentsDisabled) {
       addToast('현재 선택할 수 없는 결제 수단입니다. 무통장 입금을 선택해주세요.', 'error')
       setSelectedMethod('bank_transfer')
       return
@@ -720,50 +682,41 @@ export default function CheckoutPage() {
       await handleZeroAmountPayment()
       return
     }
-    if (!orderId) return
+    if (!dbOrderId) return
     if (!(await persistAdditionalInfo('card'))) return
-    if (!window.DanalPayments) {
-      addToast('다날 결제 모듈을 불러오는 중입니다. 잠시 후 다시 시도해주세요.', 'error')
-      return
-    }
 
     setPaying(true)
     try {
-      const successBase = `${window.location.origin}/api/payment/danal/return`
-      const successParams = new URLSearchParams()
-      if (isChatPayment && chatPaymentId) successParams.set('chat_payment_id', chatPaymentId)
-      const successUrl = successParams.size > 0
-        ? `${successBase}?${successParams.toString()}`
-        : successBase
-      const failUrl = `${window.location.origin}/checkout/fail?provider=danal&orderId=${encodeURIComponent(orderId)}`
-
-      const orderName = isChatPayment
-        ? (chatDescription ?? '채팅 결제')
-        : paidItems.length === 1
-          ? paidItems[0].title
-          : `${paidItems[0].title} 외 ${paidItems.length - 1}건`
-
-      const customer = customerRef.current
-      const danalPayments = window.DanalPayments(danalConfig.clientKey)
-      await danalPayments.requestPayment({
-        orderId,
-        orderName,
-        amount: finalAmount,
-        merchantId: danalConfig.merchantId,
-        userId: compactDanalUserId(currentUserIdRef.current ?? 'presales-user'),
-        successUrl,
-        failUrl,
-        userName: customer.name,
-        userEmail: customer.email,
-        paymentsMethod: 'INTEGRATED',
-        methods: buildDanalMethods(danalConfig.methods, `${window.location.origin}/api/payment/danal/noti`),
+      const res = await fetch('/api/payment/danal/ready', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: dbOrderId, chatPaymentId }),
       })
-    } catch (err: unknown) {
-      const error = err as { code?: string; message?: string }
-      if (error.code === 'USER_CANCEL') {
+      const data = await res.json() as {
+        startUrl?: string
+        startParams?: string
+        error?: string
+        code?: string
+      }
+      if (!res.ok || !data.startUrl || !data.startParams) {
+        addToast(data.error || '다날 결제창 생성에 실패했습니다.', 'error')
         setPaying(false)
         return
       }
+
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = data.startUrl
+      form.acceptCharset = 'EUC-KR'
+      const input = document.createElement('input')
+      input.type = 'hidden'
+      input.name = 'STARTPARAMS'
+      input.value = data.startParams
+      form.appendChild(input)
+      document.body.appendChild(form)
+      form.submit()
+    } catch (err: unknown) {
+      const error = err as { code?: string; message?: string }
       console.error('[결제 요청 실패]', error)
       addToast(error.message || '결제 요청에 실패했습니다.', 'error')
 
@@ -888,19 +841,6 @@ export default function CheckoutPage() {
       )}
 
       <h1 className="text-2xl font-bold mb-8">결제하기</h1>
-
-      {!cardPaymentsDisabled && (
-        <Script
-          src={DANAL_SDK_SRC}
-          strategy="afterInteractive"
-          onLoad={() => setDanalSdkReady(true)}
-          onReady={() => setDanalSdkReady(true)}
-          onError={() => {
-            setDanalSdkReady(false)
-            addToast('다날 결제 모듈을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.', 'error')
-          }}
-        />
-      )}
 
       {/* 주문 요약 */}
       <div className="bg-muted/30 rounded-xl p-5 mb-6 space-y-3">
@@ -1122,8 +1062,8 @@ export default function CheckoutPage() {
               >
                 <CreditCard className={`w-5 h-5 shrink-0 ${selectedMethod === 'card' ? 'text-primary' : 'text-muted-foreground'}`} />
                 <div>
-                  <p className={`text-sm font-semibold ${selectedMethod === 'card' ? 'text-primary' : 'text-foreground'}`}>카드·가상계좌·간편결제</p>
-                  <p className="text-[11px] text-muted-foreground">다날 PG 결제창</p>
+                  <p className={`text-sm font-semibold ${selectedMethod === 'card' ? 'text-primary' : 'text-foreground'}`}>카드·간편결제</p>
+                  <p className="text-[11px] text-muted-foreground">다날페이 카드 결제창</p>
                 </div>
               </button>
             )}
@@ -1158,19 +1098,11 @@ export default function CheckoutPage() {
         </div>
       )}
 
-      {/* 다날 결제 SDK 로딩 상태 */}
-      {!cardPaymentsDisabled && (isChatPayment || selectedMethod === 'card') && finalAmount > 0 && !danalSdkReady && (
-        <div className="mb-6 flex items-center justify-center rounded-xl border border-border bg-muted/30 py-5 text-sm text-muted-foreground">
-          <Loader2 className="w-4 h-4 animate-spin mr-2" />
-          다날 결제 모듈을 불러오는 중...
-        </div>
-      )}
-
       {/* 결제 버튼 */}
       {((!isChatPayment && selectedMethod === 'bank_transfer') || ready) && (
         <button
           onClick={handlePayment}
-          disabled={paying || (!cardPaymentsDisabled && (isChatPayment || selectedMethod === 'card') && finalAmount > 0 && !danalSdkReady)}
+          disabled={paying}
           className="w-full h-12 rounded-lg bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {paying ? (

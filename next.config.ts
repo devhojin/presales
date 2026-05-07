@@ -53,7 +53,7 @@ const cspDirectives = [
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
-  "form-action 'self' https://*.kakao.com",
+  "form-action 'self' https://*.danalpay.com https://*.kakao.com",
   "frame-ancestors 'none'",
   "upgrade-insecure-requests",
 ].join("; ");
